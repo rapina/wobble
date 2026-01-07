@@ -254,6 +254,17 @@ export function SimulationScreen({
         }
     }, [formula, formulaId, seenFormulas]);
 
+    // Mark formula as seen when viewed
+    useEffect(() => {
+        if (formulaId && !seenFormulas.has(formulaId)) {
+            // Small delay to ensure it's intentionally viewed
+            const timer = setTimeout(() => {
+                markAsSeen(formulaId);
+            }, 1500);
+            return () => clearTimeout(timer);
+        }
+    }, [formulaId]);
+
     // Mark formula as seen
     const markAsSeen = (id: string) => {
         const newSeen = new Set(seenFormulas);
@@ -371,17 +382,35 @@ export function SimulationScreen({
                     </div>
 
                     {/* Formula List Button */}
-                    <button
-                        onClick={() => setShowFormulaList(true)}
-                        className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95"
-                        style={{
-                            background: theme.red,
-                            border: `2px solid ${theme.border}`,
-                            boxShadow: `0 3px 0 ${theme.border}`,
-                        }}
-                    >
-                        <List className="h-5 w-5 text-white" />
-                    </button>
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowFormulaList(true)}
+                            className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95"
+                            style={{
+                                background: theme.red,
+                                border: `2px solid ${theme.border}`,
+                                boxShadow: `0 3px 0 ${theme.border}`,
+                            }}
+                        >
+                            <List className="h-5 w-5 text-white" />
+                        </button>
+                        {/* Unseen formulas indicator */}
+                        {(() => {
+                            const totalUnseen = formulas.filter(f => !seenFormulas.has(f.id)).length;
+                            return totalUnseen > 0 ? (
+                                <span
+                                    className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-black rounded-full"
+                                    style={{
+                                        background: '#ffd700',
+                                        color: '#000',
+                                        border: `1.5px solid ${theme.border}`,
+                                    }}
+                                >
+                                    {totalUnseen}
+                                </span>
+                            ) : null;
+                        })()}
+                    </div>
                 </div>
             </div>
 
@@ -512,6 +541,22 @@ export function SimulationScreen({
                             >
                                 <div className="flex items-center gap-2">
                                     <ChevronDown className="h-5 w-5 text-white/50" />
+                                    {/* Unseen count badge */}
+                                    {(() => {
+                                        const unseenCount = filteredFormulas.filter(f => !seenFormulas.has(f.id)).length;
+                                        return unseenCount > 0 ? (
+                                            <span
+                                                className="px-2 py-0.5 text-xs font-bold rounded-full"
+                                                style={{
+                                                    background: '#ff6b6b',
+                                                    color: 'white',
+                                                    border: `1.5px solid ${theme.border}`,
+                                                }}
+                                            >
+                                                {unseenCount} NEW
+                                            </span>
+                                        ) : null;
+                                    })()}
                                 </div>
                                 <button
                                     onClick={() => setShowFormulaList(false)}
@@ -574,6 +619,7 @@ export function SimulationScreen({
                                         const fColor = categoryColors[f.category];
                                         const isSelected = f.id === formulaId;
                                         const fName = i18n.language === 'en' && f.nameEn ? f.nameEn : f.name;
+                                        const isNew = !seenFormulas.has(f.id);
                                         return (
                                             <button
                                                 key={f.id}
@@ -581,13 +627,27 @@ export function SimulationScreen({
                                                     onFormulaChange(f);
                                                     setShowFormulaList(false);
                                                 }}
-                                                className="text-left px-4 py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                                className="relative text-left px-4 py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                                                 style={{
                                                     background: isSelected ? fColor : theme.bgPanelLight,
                                                     border: `2px solid ${theme.border}`,
                                                     boxShadow: `0 3px 0 ${theme.border}`,
                                                 }}
                                             >
+                                                {/* NEW badge for unseen formulas */}
+                                                {isNew && !isSelected && (
+                                                    <span
+                                                        className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 text-[10px] font-black rounded-md"
+                                                        style={{
+                                                            background: '#ff6b6b',
+                                                            color: 'white',
+                                                            border: `1.5px solid ${theme.border}`,
+                                                            boxShadow: `0 1px 0 ${theme.border}`,
+                                                        }}
+                                                    >
+                                                        NEW
+                                                    </span>
+                                                )}
                                                 <div className="flex items-center gap-2">
                                                     <span
                                                         className="w-2 h-2 rounded-full flex-shrink-0"
