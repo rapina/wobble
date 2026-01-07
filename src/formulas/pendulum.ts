@@ -1,0 +1,84 @@
+import { Formula } from './types';
+import { colors } from '../styles/colors';
+
+export const pendulum: Formula = {
+    id: 'pendulum',
+    name: '단진자 주기',
+    nameEn: 'Simple Pendulum',
+    expression: 'T = 2π√(L/g)',
+    description: '진자가 한 번 왕복하는 시간',
+    applications: [
+        '괘종시계의 정확한 시간 측정',
+        '지진계의 진동 감지',
+        '중력 가속도 정밀 측정',
+        '메트로놈의 박자 조절',
+    ],
+    category: 'mechanics',
+    variables: [
+        {
+            symbol: 'L',
+            name: '줄 길이',
+            role: 'input',
+            unit: 'm',
+            range: [0.5, 5],
+            default: 2,
+            visual: {
+                property: 'distance',
+                scale: (value: number) => value * 40,
+                color: colors.distance,
+            },
+        },
+        {
+            symbol: 'g',
+            name: '중력가속도',
+            role: 'input',
+            unit: 'm/s²',
+            range: [1, 20],
+            default: 9.8,
+            visual: {
+                property: 'speed',
+                scale: (value: number) => value * 0.3,
+                color: colors.velocity,
+            },
+        },
+        {
+            symbol: 'T',
+            name: '주기',
+            role: 'output',
+            unit: 's',
+            range: [0, 10],
+            default: 2.84,
+            visual: {
+                property: 'oscillate',
+                scale: (value: number) => value,
+                color: colors.time,
+            },
+        },
+    ],
+    calculate: (inputs: Record<string, number>) => {
+        const L = inputs.L ?? 2;
+        const g = inputs.g ?? 9.8;
+        return {
+            T: 2 * Math.PI * Math.sqrt(L / g),
+        };
+    },
+    formatCalculation: (inputs: Record<string, number>) => {
+        const L = inputs.L ?? 2;
+        const g = inputs.g ?? 9.8;
+        const T = 2 * Math.PI * Math.sqrt(L / g);
+        return `T = 2π × √(${L.toFixed(1)} ÷ ${g.toFixed(1)}) = ${T.toFixed(2)}`;
+    },
+    layout: {
+        type: 'pendulum',
+        connections: [
+            { from: 'L', to: 'g', operator: '÷' },
+            { from: 'g', to: 'T', operator: '√' },
+        ],
+    },
+    displayLayout: {
+        type: 'fraction',
+        output: 'T',
+        numerator: ['L'],
+        denominator: ['g'],
+    },
+};

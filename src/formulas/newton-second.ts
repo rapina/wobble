@@ -1,0 +1,83 @@
+import { Formula } from './types';
+import { colors } from '../styles/colors';
+
+export const newtonSecond: Formula = {
+    id: 'newton-second',
+    name: '뉴턴 제2법칙',
+    nameEn: "Newton's Second Law",
+    expression: 'F = ma',
+    description: '힘은 질량과 가속도의 곱과 같다',
+    applications: [
+        '자동차 급브레이크 시 필요한 제동력 계산',
+        '로켓 발사 시 필요한 추진력 설계',
+        '엘리베이터 가속 시 케이블 장력 계산',
+        '스포츠에서 공을 차거나 던질 때 힘 분석',
+    ],
+    category: 'mechanics',
+    variables: [
+        {
+            symbol: 'm',
+            name: '질량',
+            role: 'input',
+            unit: 'kg',
+            range: [1, 100],
+            default: 10,
+            visual: {
+                property: 'size',
+                scale: (value: number) => 40 + value * 1.2,
+                color: colors.mass,
+            },
+        },
+        {
+            symbol: 'a',
+            name: '가속도',
+            role: 'input',
+            unit: 'm/s²',
+            range: [0.1, 20],
+            default: 5,
+            visual: {
+                property: 'stretch',
+                scale: (value: number) => 1 + value * 0.05, // More visible stretch
+                color: colors.velocity,
+            },
+        },
+        {
+            symbol: 'F',
+            name: '힘',
+            role: 'output',
+            unit: 'N',
+            range: [0, 2000],
+            default: 50,
+            visual: {
+                property: 'shake',
+                scale: (value: number) => Math.min(value * 0.02, 10), // More visible shake
+                color: colors.force,
+            },
+        },
+    ],
+    calculate: (inputs: Record<string, number>) => {
+        const m = inputs.m ?? 10;
+        const a = inputs.a ?? 5;
+        return {
+            F: m * a,
+        };
+    },
+    formatCalculation: (inputs: Record<string, number>) => {
+        const m = inputs.m ?? 10;
+        const a = inputs.a ?? 5;
+        const F = m * a;
+        return `F = ${m.toFixed(0)} × ${a.toFixed(1)} = ${F.toFixed(1)}`;
+    },
+    layout: {
+        type: 'linear',
+        connections: [
+            { from: 'm', to: 'a', operator: '×' },
+            { from: 'a', to: 'F', operator: '=' },
+        ],
+    },
+    displayLayout: {
+        type: 'linear',
+        output: 'F',
+        numerator: ['m', 'a'],
+    },
+};
