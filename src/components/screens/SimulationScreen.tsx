@@ -4,20 +4,19 @@ import { ParameterControl } from '../controls/ParameterControl';
 import { FormulaLayout } from '../controls/FormulaLayout';
 import { useSimulation } from '../../hooks/useSimulation';
 import { useAdMob } from '../../hooks/useAdMob';
-import { BottomSheet } from '@/components/ui/bottom-sheet';
-import { ArrowLeft, List, X, Info } from 'lucide-react';
+import { ArrowLeft, List, X, Info, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Formula, FormulaCategory } from '../../formulas/types';
 import Balatro from '@/components/Balatro';
 
 // Balatro-inspired color palette
-const categoryConfig: Record<FormulaCategory, { color: string }> = {
-    mechanics: { color: '#f8b862' },
-    wave: { color: '#6ecff6' },
-    gravity: { color: '#c792ea' },
-    thermodynamics: { color: '#ff6b6b' },
-    electricity: { color: '#69f0ae' },
-    special: { color: '#ffd700' },
+const categoryConfig: Record<FormulaCategory, { color: string; name: string }> = {
+    mechanics: { color: '#f8b862', name: '역학' },
+    wave: { color: '#6ecff6', name: '파동' },
+    gravity: { color: '#c792ea', name: '중력' },
+    thermodynamics: { color: '#ff6b6b', name: '열역학' },
+    electricity: { color: '#69f0ae', name: '전기' },
+    special: { color: '#ffd700', name: '특수' },
 };
 
 // Balatro theme
@@ -50,6 +49,19 @@ export function SimulationScreen({
     const [showFormulaList, setShowFormulaList] = useState(false);
     const [selectedCard, setSelectedCard] = useState<string | null>(null);
     const [showInfoPopup, setShowInfoPopup] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<FormulaCategory | 'all'>('all');
+
+    // Get unique categories from formulas
+    const categories = useMemo(() => {
+        const cats = [...new Set(formulas.map(f => f.category))];
+        return cats.sort();
+    }, [formulas]);
+
+    // Filter formulas by category
+    const filteredFormulas = useMemo(() => {
+        if (selectedCategory === 'all') return formulas;
+        return formulas.filter(f => f.category === selectedCategory);
+    }, [formulas, selectedCategory]);
 
     // Show AdMob banner when initialized
     useEffect(() => {
@@ -264,65 +276,146 @@ export function SimulationScreen({
                 </div>
             )}
 
-            {/* Formula List Bottom Sheet */}
+            {/* Formula List Dropdown (Top-down) */}
             {showFormulaList && (
-                <BottomSheet
-                    snapPoints={{ collapsed: 400, half: 400, expanded: 600 }}
-                    defaultSnap="collapsed"
-                    onSnapChange={(snap) => {
-                        if (snap === 'collapsed') setShowFormulaList(false);
-                    }}
-                    accentColor={theme.gold}
-                    header={
-                        <div className="flex items-center justify-between">
-                            <span className="text-lg font-black text-white">
-                                공식 목록
-                            </span>
-                            <button
-                                onClick={() => setShowFormulaList(false)}
-                                className="h-10 w-10 rounded-xl flex items-center justify-center transition-all hover:scale-105 active:scale-95"
-                                style={{
-                                    background: theme.red,
-                                    border: `3px solid ${theme.border}`,
-                                    boxShadow: `0 4px 0 ${theme.border}`,
-                                }}
+                <>
+                    {/* Backdrop */}
+                    <div
+                        className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+                        onClick={() => setShowFormulaList(false)}
+                    />
+
+                    {/* Dropdown Panel */}
+                    <div
+                        className="fixed left-0 right-0 z-40 animate-in slide-in-from-top duration-300"
+                        style={{
+                            top: 0,
+                            paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)',
+                            paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
+                            paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
+                        }}
+                    >
+                        <div
+                            className="rounded-b-2xl overflow-hidden"
+                            style={{
+                                background: theme.bgPanel,
+                                border: `3px solid ${theme.border}`,
+                                borderTop: 'none',
+                                boxShadow: `0 8px 0 ${theme.border}, 0 16px 40px rgba(0,0,0,0.5)`,
+                                maxHeight: 'calc(100vh - 120px)',
+                            }}
+                        >
+                            {/* Header with close button */}
+                            <div
+                                className="flex items-center justify-between px-4 py-3"
+                                style={{ borderBottom: `2px solid ${theme.border}` }}
                             >
-                                <X className="h-5 w-5 text-white" />
-                            </button>
-                        </div>
-                    }
-                >
-                    <div className="grid grid-cols-2 gap-4">
-                        {formulas.map((f) => {
-                            const fConfig = categoryConfig[f.category];
-                            const isSelected = f.id === formulaId;
-                            return (
+                                <div className="flex items-center gap-2">
+                                    <ChevronDown className="h-5 w-5 text-white/50" />
+                                </div>
                                 <button
-                                    key={f.id}
-                                    onClick={() => {
-                                        onFormulaChange(f);
-                                        setShowFormulaList(false);
-                                    }}
-                                    className="text-left px-5 py-4 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    onClick={() => setShowFormulaList(false)}
+                                    className="h-9 w-9 rounded-lg flex items-center justify-center transition-all active:scale-95"
                                     style={{
-                                        background: isSelected ? fConfig.color : theme.bgPanelLight,
-                                        border: `3px solid ${theme.border}`,
-                                        boxShadow: `0 4px 0 ${theme.border}`,
+                                        background: theme.red,
+                                        border: `2px solid ${theme.border}`,
+                                        boxShadow: `0 2px 0 ${theme.border}`,
                                     }}
                                 >
-                                    <span
-                                        className="block text-sm font-black truncate"
-                                        style={{
-                                            color: isSelected ? '#000' : 'white',
-                                        }}
-                                    >
-                                        {f.name}
-                                    </span>
+                                    <X className="h-4 w-4 text-white" />
                                 </button>
-                            );
-                        })}
+                            </div>
+
+                            {/* Category Tabs */}
+                            <div
+                                className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide"
+                                style={{ borderBottom: `2px solid ${theme.border}` }}
+                            >
+                                <button
+                                    onClick={() => setSelectedCategory('all')}
+                                    className="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-bold transition-all active:scale-95"
+                                    style={{
+                                        background: selectedCategory === 'all' ? theme.gold : theme.bgPanelLight,
+                                        color: selectedCategory === 'all' ? '#000' : '#fff',
+                                        border: `2px solid ${theme.border}`,
+                                        boxShadow: `0 2px 0 ${theme.border}`,
+                                    }}
+                                >
+                                    전체
+                                </button>
+                                {categories.map((cat) => {
+                                    const config = categoryConfig[cat];
+                                    const isActive = selectedCategory === cat;
+                                    return (
+                                        <button
+                                            key={cat}
+                                            onClick={() => setSelectedCategory(cat)}
+                                            className="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-bold transition-all active:scale-95"
+                                            style={{
+                                                background: isActive ? config.color : theme.bgPanelLight,
+                                                color: isActive ? '#000' : '#fff',
+                                                border: `2px solid ${theme.border}`,
+                                                boxShadow: `0 2px 0 ${theme.border}`,
+                                            }}
+                                        >
+                                            {config.name}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Formula Grid */}
+                            <div
+                                className="p-4 overflow-y-auto"
+                                style={{ maxHeight: 'calc(100vh - 280px)' }}
+                            >
+                                <div className="grid grid-cols-2 gap-3">
+                                    {filteredFormulas.map((f) => {
+                                        const fConfig = categoryConfig[f.category];
+                                        const isSelected = f.id === formulaId;
+                                        return (
+                                            <button
+                                                key={f.id}
+                                                onClick={() => {
+                                                    onFormulaChange(f);
+                                                    setShowFormulaList(false);
+                                                }}
+                                                className="text-left px-4 py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                                style={{
+                                                    background: isSelected ? fConfig.color : theme.bgPanelLight,
+                                                    border: `2px solid ${theme.border}`,
+                                                    boxShadow: `0 3px 0 ${theme.border}`,
+                                                }}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <span
+                                                        className="w-2 h-2 rounded-full flex-shrink-0"
+                                                        style={{ background: fConfig.color }}
+                                                    />
+                                                    <span
+                                                        className="block text-sm font-bold truncate"
+                                                        style={{
+                                                            color: isSelected ? '#000' : 'white',
+                                                        }}
+                                                    >
+                                                        {f.name}
+                                                    </span>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Empty state */}
+                                {filteredFormulas.length === 0 && (
+                                    <div className="text-center py-8 text-white/50 text-sm">
+                                        이 카테고리에 공식이 없습니다
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
-                </BottomSheet>
+                </>
             )}
 
             {/* Info Popup */}

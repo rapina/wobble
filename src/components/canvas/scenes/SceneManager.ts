@@ -22,6 +22,21 @@ import { CollisionScene } from './CollisionScene';
 import { BuoyancyScene } from './BuoyancyScene';
 import { PhotoelectricScene } from './PhotoelectricScene';
 import { DeBroglieScene } from './DeBroglieScene';
+// New thermodynamics scenes
+import { FirstLawScene } from './FirstLawScene';
+import { EntropyScene } from './EntropyScene';
+import { ThermalConductionScene } from './ThermalConductionScene';
+import { StefanBoltzmannScene } from './StefanBoltzmannScene';
+// New wave/optics scenes
+import { LensScene } from './LensScene';
+import { DiffractionScene } from './DiffractionScene';
+import { DoubleSlitScene } from './DoubleSlitScene';
+import { SoundSpeedScene } from './SoundSpeedScene';
+// New gravity scenes
+import { FreeFallScene } from './FreeFallScene';
+import { ProjectileScene } from './ProjectileScene';
+import { EscapeVelocityScene } from './EscapeVelocityScene';
+import { KeplerThirdScene } from './KeplerThirdScene';
 
 type SceneConstructor = new (app: Application) => BaseScene;
 
@@ -48,6 +63,21 @@ const sceneMap: Record<string, SceneConstructor> = {
     'buoyancy': BuoyancyScene,
     'photoelectric': PhotoelectricScene,
     'debroglie': DeBroglieScene,
+    // New thermodynamics scenes
+    'first-law': FirstLawScene,
+    'entropy': EntropyScene,
+    'thermal-conduction': ThermalConductionScene,
+    'stefan-boltzmann': StefanBoltzmannScene,
+    // New wave/optics scenes
+    'lens': LensScene,
+    'diffraction': DiffractionScene,
+    'double-slit': DoubleSlitScene,
+    'sound-speed': SoundSpeedScene,
+    // New gravity scenes
+    'free-fall': FreeFallScene,
+    'projectile': ProjectileScene,
+    'escape-velocity': EscapeVelocityScene,
+    'kepler-third': KeplerThirdScene,
 };
 
 export function getSceneClass(formulaId: string): SceneConstructor | null {

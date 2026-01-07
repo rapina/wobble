@@ -65,7 +65,6 @@ export interface BlobOptions {
     showSweat?: boolean;
     glowColor?: string | number;
     glowIntensity?: number;
-    symbol?: string;
     wobblePhase?: number;
     opacity?: number;
 }
@@ -92,7 +91,6 @@ const defaultOptions: Required<BlobOptions> = {
     showSweat: false,
     glowColor: 0xffffff,
     glowIntensity: 0,
-    symbol: '',
     wobblePhase: 0,
     opacity: 1,
 };
@@ -249,7 +247,7 @@ export class Blob extends Container {
     }
 
     private drawBody(): void {
-        const { size, color, shape, scaleX, scaleY, wobblePhase, symbol } = this.options;
+        const { size, color, shape, scaleX, scaleY, wobblePhase } = this.options;
         const g = this.bodyGraphics;
         g.clear();
 
@@ -284,11 +282,6 @@ export class Blob extends Container {
         const highlightY = -size * 0.2 * scaleY;
         g.ellipse(highlightX, highlightY, size * 0.12, size * 0.08);
         g.fill({ color: 0xffffff, alpha: 0.4 });
-
-        // Draw symbol if present (for charge particles)
-        if (symbol) {
-            this.drawSymbol(g, symbol, size);
-        }
     }
 
     private drawLocoRocoBody(g: Graphics, size: number, scaleX: number, scaleY: number, wobblePhase: number): void {
@@ -530,24 +523,6 @@ export class Blob extends Container {
         }
 
         g.closePath();
-    }
-
-    private drawSymbol(g: Graphics, symbol: string, size: number): void {
-        const symbolSize = size * 0.2;
-
-        if (symbol === '+') {
-            // Plus sign
-            g.moveTo(-symbolSize, 0);
-            g.lineTo(symbolSize, 0);
-            g.moveTo(0, -symbolSize);
-            g.lineTo(0, symbolSize);
-            g.stroke({ color: 0xffffff, width: 3, cap: 'round' });
-        } else if (symbol === '-') {
-            // Minus sign
-            g.moveTo(-symbolSize, 0);
-            g.lineTo(symbolSize, 0);
-            g.stroke({ color: 0xffffff, width: 3, cap: 'round' });
-        }
     }
 
     private drawFace(): void {

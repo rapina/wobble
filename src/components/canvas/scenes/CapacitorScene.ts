@@ -67,8 +67,7 @@ export class CapacitorScene extends BaseScene {
                 size: 22,
                 color: isPositive ? 0xff6b6b : 0x4ecdc4,
                 shape: SHAPES[i % SHAPES.length],
-                expression: 'happy',
-                symbol: isPositive ? '+' : '-',
+                expression: isPositive ? 'charge' : 'sleepy',
             });
             this.container.addChild(blob);
             this.chargeBlobs.push(blob);

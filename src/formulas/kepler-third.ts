@@ -1,0 +1,109 @@
+import { Formula } from './types';
+import { colors } from '../styles/colors';
+
+export const keplerThird: Formula = {
+    id: 'kepler-third',
+    name: '케플러 제3법칙',
+    nameEn: "Kepler's Third Law",
+    expression: 'T² = (4π²/GM)r³',
+    description: '행성의 공전주기와 궤도반경의 관계',
+    applications: [
+        '인공위성의 궤도 주기 계산',
+        '외계 행성 탐색 (항성의 흔들림 분석)',
+        '달의 공전주기로 지구 질량 추정',
+        'GPS 위성의 정확한 궤도 설계',
+    ],
+    category: 'gravity',
+    variables: [
+        {
+            symbol: 'M',
+            name: '중심 천체 질량',
+            role: 'input',
+            unit: '×10²⁴kg',
+            range: [1, 100000],
+            default: 5.97,
+            visual: {
+                property: 'size',
+                scale: (value: number) => 40 + Math.log10(value) * 15,
+                color: colors.mass,
+            },
+        },
+        {
+            symbol: 'r',
+            name: '궤도 반지름',
+            role: 'input',
+            unit: '×10⁶m',
+            range: [1, 10000],
+            default: 384,
+            visual: {
+                property: 'distance',
+                scale: (value: number) => Math.min(value * 0.3, 100),
+                color: colors.distance,
+            },
+        },
+        {
+            symbol: 'T',
+            name: '공전 주기',
+            role: 'output',
+            unit: '일',
+            range: [0, 1000],
+            default: 27.3,
+            visual: {
+                property: 'oscillate',
+                scale: (value: number) => Math.min(value / 10, 5),
+                color: colors.time,
+            },
+        },
+    ],
+    calculate: (inputs: Record<string, number>) => {
+        const M = inputs.M ?? 5.97; // ×10²⁴ kg
+        const r = inputs.r ?? 384; // ×10⁶ m
+        const G = 6.674e-11;
+        const M_kg = M * 1e24;
+        const r_m = r * 1e6;
+        // T² = (4π²/GM)r³
+        const T_squared = (4 * Math.PI * Math.PI * Math.pow(r_m, 3)) / (G * M_kg);
+        const T_seconds = Math.sqrt(T_squared);
+        const T_days = T_seconds / (24 * 3600);
+        return { T: T_days };
+    },
+    formatCalculation: (inputs: Record<string, number>) => {
+        const M = inputs.M ?? 5.97;
+        const r = inputs.r ?? 384;
+        const G = 6.674e-11;
+        const M_kg = M * 1e24;
+        const r_m = r * 1e6;
+        const T_squared = (4 * Math.PI * Math.PI * Math.pow(r_m, 3)) / (G * M_kg);
+        const T_seconds = Math.sqrt(T_squared);
+        const T_days = T_seconds / (24 * 3600);
+        return `T = √(4π²r³/GM) = ${T_days.toFixed(1)} 일`;
+    },
+    layout: {
+        type: 'orbital',
+        connections: [
+            { from: 'M', to: 'r', operator: '÷' },
+            { from: 'r', to: 'T', operator: '√' },
+        ],
+    },
+    displayLayout: {
+        type: 'custom',
+        output: 'T',
+        expression: [
+            { type: 'text', value: '√' },
+            { type: 'group', items: [
+                {
+                    type: 'fraction',
+                    numerator: [
+                        { type: 'text', value: '4π²' },
+                        { type: 'var', symbol: 'r', square: true },
+                        { type: 'text', value: 'r' },
+                    ],
+                    denominator: [
+                        { type: 'text', value: 'G' },
+                        { type: 'var', symbol: 'M' },
+                    ],
+                },
+            ]},
+        ],
+    },
+};

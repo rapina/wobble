@@ -9,13 +9,25 @@ import { elasticCollision } from './elastic-collision';
 // Gravity & Oscillation
 import { gravity } from './gravity';
 import { pendulum } from './pendulum';
-// Wave
+import { freeFall } from './free-fall';
+import { projectile } from './projectile';
+import { escapeVelocity } from './escape-velocity';
+import { keplerThird } from './kepler-third';
+// Wave & Optics
 import { wave } from './wave';
 import { snell } from './snell';
 import { doppler } from './doppler';
+import { lens } from './lens';
+import { diffraction } from './diffraction';
+import { doubleSlit } from './double-slit';
+import { soundSpeed } from './sound-speed';
 // Thermodynamics
 import { idealGas } from './ideal-gas';
 import { heat } from './heat';
+import { firstLaw } from './first-law';
+import { entropy } from './entropy';
+import { thermalConduction } from './thermal-conduction';
+import { stefanBoltzmann } from './stefan-boltzmann';
 // Electricity
 import { ohm } from './ohm';
 import { coulomb } from './coulomb';
@@ -36,16 +48,28 @@ export const formulas: Record<string, Formula> = {
     hooke: hooke,
     centripetal: centripetal,
     'elastic-collision': elasticCollision,
-    // Gravity & Oscillation
+    // Gravity
     gravity: gravity,
     pendulum: pendulum,
+    'free-fall': freeFall,
+    projectile: projectile,
+    'escape-velocity': escapeVelocity,
+    'kepler-third': keplerThird,
     // Wave & Optics
     wave: wave,
     snell: snell,
     doppler: doppler,
+    lens: lens,
+    diffraction: diffraction,
+    'double-slit': doubleSlit,
+    'sound-speed': soundSpeed,
     // Thermodynamics
     'ideal-gas': idealGas,
     heat: heat,
+    'first-law': firstLaw,
+    entropy: entropy,
+    'thermal-conduction': thermalConduction,
+    'stefan-boltzmann': stefanBoltzmann,
     // Electricity
     ohm: ohm,
     coulomb: coulomb,

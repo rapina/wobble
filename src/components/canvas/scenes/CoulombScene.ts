@@ -58,8 +58,7 @@ export class CoulombScene extends BaseScene {
             size: 55,
             color: 0xff6b6b,
             shape: 'circle',
-            expression: 'happy',
-            symbol: '+',
+            expression: 'charge',
             glowIntensity: 0.3,
             glowColor: 0xff6b6b,
         });
@@ -70,8 +69,7 @@ export class CoulombScene extends BaseScene {
             size: 55,
             color: 0x4ecdc4,
             shape: 'square',
-            expression: 'happy',
-            symbol: '-',
+            expression: 'sleepy',
             glowIntensity: 0.3,
             glowColor: 0x4ecdc4,
         });
@@ -94,13 +92,28 @@ export class CoulombScene extends BaseScene {
     }
 
     protected onVariablesChange(): void {
-        const q1 = this.variables['q1'] || 1;
-        const q2 = this.variables['q2'] || 1;
-        const r = this.variables['r'] || 1;
+        // Variable names match formula: q₁, q₂ (range 1-100), r (range 1-50)
+        const q1 = this.variables['q₁'] || 10;
+        const q2 = this.variables['q₂'] || 10;
+        const r = this.variables['r'] || 10;
 
-        this.charge1Blob.updateOptions({ size: 40 + Math.abs(q1) * 8 });
-        this.charge2Blob.updateOptions({ size: 40 + Math.abs(q2) * 8 });
-        this.targetDistance = 60 + r * 50;
+        // q₁, q₂ range 1-100: normalize to 0-1 for size scaling
+        const q1Normalized = (q1 - 1) / 99;
+        const q2Normalized = (q2 - 1) / 99;
+
+        // More dramatic size change: 35 to 75
+        this.charge1Blob.updateOptions({
+            size: 35 + q1Normalized * 40,
+            glowIntensity: 0.2 + q1Normalized * 0.8,
+        });
+        this.charge2Blob.updateOptions({
+            size: 35 + q2Normalized * 40,
+            glowIntensity: 0.2 + q2Normalized * 0.8,
+        });
+
+        // r range 1-50: smaller r = closer charges
+        const rNormalized = (r - 1) / 49; // 0 to 1
+        this.targetDistance = 70 + rNormalized * 150; // 70 to 220 pixels
     }
 
     protected animate(ticker: Ticker): void {
@@ -109,68 +122,81 @@ export class CoulombScene extends BaseScene {
         this.time += dt;
 
         // Smooth distance transition
-        this.distance = lerp(this.distance, this.targetDistance, 0.05);
+        this.distance = lerp(this.distance, this.targetDistance, 0.08);
 
-        const q1 = this.variables['q1'] || 1;
-        const q2 = this.variables['q2'] || 1;
-        const r = this.variables['r'] || 1;
+        const q1 = this.variables['q₁'] || 10;
+        const q2 = this.variables['q₂'] || 10;
+        const r = this.variables['r'] || 10;
 
-        // Calculate Coulomb force (F = k * q1 * q2 / r²)
-        const k = 8.99e9;
-        const F = (k * Math.abs(q1) * Math.abs(q2)) / (r * r);
-        this.forceStrength = Math.min(1, F / 1e10); // Normalize for visualization
+        // Calculate normalized force strength for visualization
+        // F ∝ q1 * q2 / r² - use normalized values
+        const q1Normalized = (q1 - 1) / 99;
+        const q2Normalized = (q2 - 1) / 99;
+        const rNormalized = (r - 1) / 49;
 
-        // Determine if attractive or repulsive
-        const isAttractive = q1 * q2 < 0;
+        // Force is proportional to q1*q2/r², normalize to 0-1 range
+        const chargeProduct = q1Normalized * q2Normalized;
+        const distanceFactor = Math.max(0.1, rNormalized); // Avoid division by zero
+        this.forceStrength = Math.min(1, (chargeProduct / (distanceFactor * distanceFactor)) * 2);
+
+        // Assume both charges are positive (repulsive) or could implement sign logic
+        const isAttractive = false; // For simplicity, assuming same sign charges
 
         // Position charges
         const pos1X = this.centerX - this.distance / 2;
         const pos2X = this.centerX + this.distance / 2;
 
-        // Oscillation effect based on force
-        const oscillation = Math.sin(this.time * 4) * 3 * this.forceStrength;
-        const attractionOffset = isAttractive ? oscillation : -oscillation;
+        // More dramatic oscillation effect based on force (repulsion = push apart)
+        const oscillationSpeed = 3 + this.forceStrength * 5;
+        const oscillationAmount = 2 + this.forceStrength * 8;
+        const oscillation = Math.sin(this.time * oscillationSpeed) * oscillationAmount;
+        const repulsionOffset = oscillation; // Repulsive force
 
-        this.charge1Blob.setPosition(pos1X + attractionOffset, this.centerY);
-        this.charge2Blob.setPosition(pos2X - attractionOffset, this.centerY);
+        this.charge1Blob.setPosition(pos1X - repulsionOffset, this.centerY);
+        this.charge2Blob.setPosition(pos2X + repulsionOffset, this.centerY);
 
         // Expressions based on distance and force
         let expression1: BlobExpression = 'happy';
         let expression2: BlobExpression = 'happy';
 
-        if (this.distance < 80) {
-            expression1 = isAttractive ? 'excited' : 'worried';
-            expression2 = isAttractive ? 'excited' : 'worried';
-        } else if (this.forceStrength > 0.7) {
-            expression1 = 'surprised';
-            expression2 = 'surprised';
+        if (this.forceStrength > 0.6) {
+            expression1 = 'effort';
+            expression2 = 'effort';
+        } else if (this.forceStrength > 0.3) {
+            expression1 = 'charge';
+            expression2 = 'charge';
         }
 
+        // Wobble speed increases with force
+        const wobbleSpeed = 2 + this.forceStrength * 4;
         this.charge1Blob.updateOptions({
-            wobblePhase: this.time * 2,
+            wobblePhase: this.time * wobbleSpeed,
             lookDirection: { x: 1, y: 0 },
             expression: expression1,
-            glowIntensity: 0.3 + this.forceStrength * 0.3,
+            scaleX: 1 + Math.sin(this.time * 5) * this.forceStrength * 0.1,
         });
 
         this.charge2Blob.updateOptions({
-            wobblePhase: this.time * 2 + Math.PI,
+            wobblePhase: this.time * wobbleSpeed + Math.PI,
             lookDirection: { x: -1, y: 0 },
             expression: expression2,
-            glowIntensity: 0.3 + this.forceStrength * 0.3,
+            scaleX: 1 + Math.sin(this.time * 5 + Math.PI) * this.forceStrength * 0.1,
         });
 
         // Update field particles
         this.updateFieldParticles(pos1X, pos2X, isAttractive, delta);
 
-        // Generate sparks when close
-        if (this.distance < 90 && Math.random() < 0.15 * this.forceStrength) {
+        // Generate sparks based on force strength (more sparks = stronger force)
+        const sparkProbability = 0.1 + this.forceStrength * 0.4;
+        if (Math.random() < sparkProbability) {
             const midX = this.centerX;
+            // Sparks appear between the charges
+            const sparkSpread = 20 + (1 - this.forceStrength) * 60;
             this.sparks.push({
-                x: midX + (Math.random() - 0.5) * 30,
-                y: this.centerY + (Math.random() - 0.5) * 30,
-                vx: (Math.random() - 0.5) * 3,
-                vy: (Math.random() - 0.5) * 3,
+                x: midX + (Math.random() - 0.5) * sparkSpread,
+                y: this.centerY + (Math.random() - 0.5) * 40,
+                vx: (Math.random() - 0.5) * (2 + this.forceStrength * 4),
+                vy: (Math.random() - 0.5) * (2 + this.forceStrength * 4),
                 life: 1,
             });
         }
@@ -324,7 +350,8 @@ export class CoulombScene extends BaseScene {
         const g = this.forceGraphics;
         g.clear();
 
-        const arrowLength = 30 + this.forceStrength * 40;
+        // More dramatic arrow length based on force
+        const arrowLength = 25 + this.forceStrength * 60;
 
         // Force on charge 1 (points toward/away from charge 2)
         const dir1 = isAttractive ? 0 : Math.PI;
@@ -385,63 +412,40 @@ export class CoulombScene extends BaseScene {
         const g = this.indicatorGraphics;
         g.clear();
 
-        // Distance indicator
+        // Distance indicator at bottom
         const indicatorY = this.height - 40;
 
         // Background panel
-        g.roundRect(20, indicatorY - 20, 130, 40, 8);
+        g.roundRect(this.centerX - 80, indicatorY - 20, 160, 40, 8);
         g.fill({ color: 0x1a1a2e, alpha: 0.8 });
 
-        // r label and bar
-        g.circle(35, indicatorY, 8);
-        g.fill({ color: 0x888888, alpha: 0.5 });
+        // r (distance) bar - r range 1-50
+        const rNormalized = (r - 1) / 49;
+        const barX = this.centerX - 65;
+        const maxBarWidth = 70;
 
-        // Distance bar
-        const barX = 50;
-        const maxBarWidth = 60;
         g.roundRect(barX, indicatorY - 5, maxBarWidth, 10, 3);
         g.fill({ color: 0x333344 });
+        g.roundRect(barX, indicatorY - 5, maxBarWidth * rNormalized, 10, 3);
+        g.fill({ color: 0x888888, alpha: 0.7 });
 
-        // Distance fill (inverse - smaller r = larger force)
-        const distanceFill = Math.min(1, r / 3);
-        g.roundRect(barX, indicatorY - 5, maxBarWidth * distanceFill, 10, 3);
-        g.fill({ color: 0x888888, alpha: 0.6 });
-
-        // Force indicator (1/r²)
-        const forceBarX = barX + maxBarWidth + 20;
-        g.roundRect(forceBarX, indicatorY - 5, 30, 10, 3);
+        // Force indicator bar
+        const forceBarX = this.centerX + 10;
+        const forceBarWidth = 60;
+        g.roundRect(forceBarX, indicatorY - 5, forceBarWidth, 10, 3);
         g.fill({ color: 0x333344 });
 
-        g.roundRect(forceBarX, indicatorY - 5, 30 * force, 10, 3);
-        g.fill({ color: pixiColors.force, alpha: 0.7 });
+        // Force fill with color based on strength
+        const forceColor = force > 0.6 ? 0xff6b6b : force > 0.3 ? 0xf39c12 : 0x2ecc71;
+        g.roundRect(forceBarX, indicatorY - 5, forceBarWidth * force, 10, 3);
+        g.fill({ color: forceColor, alpha: 0.8 });
 
-        // Attraction/Repulsion indicator
-        const indicatorX = this.width - 40;
-        g.circle(indicatorX, indicatorY, 15);
-        g.fill({ color: isAttractive ? 0x4ecdc4 : 0xff6b6b, alpha: 0.5 });
-
-        // Arrow showing direction
-        if (isAttractive) {
-            // Arrows pointing inward
-            g.moveTo(indicatorX - 8, indicatorY);
-            g.lineTo(indicatorX - 3, indicatorY - 4);
-            g.moveTo(indicatorX - 8, indicatorY);
-            g.lineTo(indicatorX - 3, indicatorY + 4);
-            g.moveTo(indicatorX + 8, indicatorY);
-            g.lineTo(indicatorX + 3, indicatorY - 4);
-            g.moveTo(indicatorX + 8, indicatorY);
-            g.lineTo(indicatorX + 3, indicatorY + 4);
-        } else {
-            // Arrows pointing outward
-            g.moveTo(indicatorX - 3, indicatorY);
-            g.lineTo(indicatorX - 8, indicatorY - 4);
-            g.moveTo(indicatorX - 3, indicatorY);
-            g.lineTo(indicatorX - 8, indicatorY + 4);
-            g.moveTo(indicatorX + 3, indicatorY);
-            g.lineTo(indicatorX + 8, indicatorY - 4);
-            g.moveTo(indicatorX + 3, indicatorY);
-            g.lineTo(indicatorX + 8, indicatorY + 4);
-        }
-        g.stroke({ color: 0xffffff, width: 2 });
+        // Force meter arrow indicator
+        const arrowX = forceBarX + forceBarWidth * force;
+        g.moveTo(arrowX, indicatorY - 10);
+        g.lineTo(arrowX - 4, indicatorY - 16);
+        g.lineTo(arrowX + 4, indicatorY - 16);
+        g.closePath();
+        g.fill({ color: 0xffffff, alpha: 0.8 });
     }
 }
