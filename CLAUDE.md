@@ -30,6 +30,8 @@ Each physics formula is defined in its own file implementing the `Formula` inter
 - **Variables**: Defined with `role: 'input'` or `role: 'output'`, ranges, defaults, and visual mappings
 - **calculate()**: Computes output values from input values
 - **layout**: Defines visualization type (`linear`, `orbital`, `wave`, `spring`, etc.)
+- **applications**: Optional array of real-world usage examples (displayed in info popup)
+- **displayLayout**: Custom expression rendering for mathematical formulas (supports fractions, groups, operators)
 - **registry.ts**: Central registry mapping formula IDs to implementations
 
 To add a new formula:
@@ -64,9 +66,65 @@ The UI uses a Balatro-inspired visual theme with card-based parameter controls a
 
 `@/*` maps to `./src/*` (configured in both vite.config.ts and tsconfig.app.json)
 
+### AdMob Integration (`src/hooks/useAdMob.ts`)
+
+Banner ads using `@capacitor-community/admob`:
+
+- **useAdMob hook**: Initializes AdMob and manages banner visibility
+- **Test Ad IDs**: Configured for development (Android: `ca-app-pub-3940256099942544/6300978111`)
+- **AndroidManifest.xml**: Contains AdMob App ID in meta-data
+- **SimulationScreen**: Shows real ads on native, placeholder on web
+
+### UI Components
+
+- **FormulaLayout** (`controls/FormulaLayout.tsx`): Renders mathematical expressions with custom displayLayout
+  - Supports: `var`, `op`, `text`, `group`, `fraction` element types
+  - Recursive rendering for nested expressions
+- **ParameterCard/OutputCard**: Card-based variable display with compact mode for fractions
+- **BottomSheet**: Formula list selection with snap points
+- **Info Popup**: Shows formula applications (real-world usage examples)
+
 ## Key Technical Notes
 
 - **TypeScript class fields**: Uses `useDefineForClassFields: true`. Scene classes use `declare` keyword for properties initialized in `setup()` to avoid overwriting
 - **Capacitor**: Android native wrapper. Build output goes to `dist/`, which Capacitor syncs to Android
 - **PixiJS v8**: Canvas rendering library for physics visualizations
 - **JAVA_HOME**: Android builds require `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-24.jdk/Contents/Home`
+
+## DisplayLayout Type System
+
+Custom formula expression rendering defined in `src/formulas/types.ts`:
+
+```typescript
+type ExpressionElement =
+    | { type: 'var'; symbol: string; square?: boolean }  // Variable card
+    | { type: 'op'; value: string }                       // Operator (+, -, ×, etc.)
+    | { type: 'text'; value: string }                     // Constant text (k, G, etc.)
+    | { type: 'group'; items: ExpressionElement[] }       // Grouped expression
+    | { type: 'fraction'; numerator: ExpressionElement[]; denominator: ExpressionElement[] }
+```
+
+Example for `F = mv²/r`:
+```typescript
+displayLayout: {
+    type: 'custom',
+    output: 'F',
+    expression: [{
+        type: 'fraction',
+        numerator: [
+            { type: 'var', symbol: 'm' },
+            { type: 'var', symbol: 'v', square: true },
+        ],
+        denominator: [{ type: 'var', symbol: 'r' }],
+    }],
+}
+```
+
+## Scene Enhancements
+
+Notable scene implementations:
+
+- **SnellScene**: Fluid-like lower medium with animated waves and bubble particles
+- **IdealGasScene**: Volume visualization with scale bar, piston, flash effects on changes
+- **CentripetalScene**: Circular motion with force arrow visualization
+- **GravityScene**: Orbital motion between two masses
