@@ -7,6 +7,7 @@ interface PurchaseState {
     isLoading: boolean;
     setAdFree: (value: boolean) => void;
     setLoading: (value: boolean) => void;
+    reset: () => void;
 }
 
 const getInitialAdFreeState = (): boolean => {
@@ -33,5 +34,14 @@ export const usePurchaseStore = create<PurchaseState>((set) => ({
 
     setLoading: (value: boolean) => {
         set({ isLoading: value });
+    },
+
+    reset: () => {
+        try {
+            localStorage.removeItem(STORAGE_KEY);
+        } catch {
+            // localStorage not available
+        }
+        set({ isAdFree: false, isLoading: false });
     },
 }));

@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Check, RefreshCw, Loader2 } from 'lucide-react';
+import { X, Check, RefreshCw, Loader2, Trash2, AlertTriangle } from 'lucide-react';
 import { useInAppPurchase } from '@/hooks/useInAppPurchase';
 import { usePurchaseStore } from '@/stores/purchaseStore';
+import { useCollectionStore } from '@/stores/collectionStore';
 import { IS_AD_TESTING } from '@/hooks/useAdMob';
 import { cn } from '@/lib/utils';
 
@@ -12,8 +13,11 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-    const { t } = useTranslation();
-    const { isAdFree, setAdFree } = usePurchaseStore();
+    const { t, i18n } = useTranslation();
+    const isKorean = i18n.language === 'ko';
+    const { isAdFree, setAdFree, reset: resetPurchase } = usePurchaseStore();
+    const { resetCollection } = useCollectionStore();
+    const [showResetConfirm, setShowResetConfirm] = useState(false);
     const {
         isNative,
         product,
@@ -23,6 +27,22 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         purchaseRemoveAds,
         restorePurchases,
     } = useInAppPurchase();
+
+    const handleResetAllData = () => {
+        // Clear all localStorage
+        localStorage.clear();
+
+        // Reset zustand stores
+        resetCollection();
+        resetPurchase();
+
+        // Close modal and refresh
+        setShowResetConfirm(false);
+        onClose();
+
+        // Reload to ensure clean state
+        window.location.reload();
+    };
 
     useEffect(() => {
         // 개발 모드에서도 상품 정보 로드 (가격 표시용)
@@ -214,6 +234,67 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                             {error}
                         </p>
                     )}
+
+                    {/* Divider */}
+                    <div className="border-t border-white/10 pt-4 mt-4">
+                        {/* Reset All Data Button */}
+                        {!showResetConfirm ? (
+                            <button
+                                onClick={() => setShowResetConfirm(true)}
+                                className={cn(
+                                    "w-full py-3 rounded-xl font-medium",
+                                    "transition-all duration-200",
+                                    "hover:bg-red-500/20 active:scale-[0.98]"
+                                )}
+                                style={{
+                                    background: 'rgba(255,255,255,0.05)',
+                                    color: 'rgba(255,100,100,0.8)',
+                                    border: '2px solid rgba(255,100,100,0.3)',
+                                }}
+                            >
+                                <span className="flex items-center justify-center gap-2">
+                                    <Trash2 className="w-4 h-4" />
+                                    {isKorean ? '모든 데이터 초기화' : 'Reset All Data'}
+                                </span>
+                            </button>
+                        ) : (
+                            <div
+                                className="p-4 rounded-xl space-y-3"
+                                style={{
+                                    background: 'rgba(255,100,100,0.1)',
+                                    border: '2px solid rgba(255,100,100,0.4)',
+                                }}
+                            >
+                                <div className="flex items-start gap-3">
+                                    <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="text-sm font-medium text-red-400">
+                                            {isKorean ? '정말 초기화하시겠습니까?' : 'Are you sure?'}
+                                        </p>
+                                        <p className="text-xs text-white/50 mt-1">
+                                            {isKorean
+                                                ? '모든 진행 상황과 설정이 삭제됩니다. 광고 제거 구매는 복원할 수 있습니다.'
+                                                : 'All progress and settings will be deleted. Ad removal purchase can be restored.'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setShowResetConfirm(false)}
+                                        className="flex-1 py-2 rounded-lg text-sm font-medium bg-white/10 text-white/70 transition-all active:scale-[0.98]"
+                                    >
+                                        {isKorean ? '취소' : 'Cancel'}
+                                    </button>
+                                    <button
+                                        onClick={handleResetAllData}
+                                        className="flex-1 py-2 rounded-lg text-sm font-bold bg-red-500 text-white transition-all active:scale-[0.98]"
+                                    >
+                                        {isKorean ? '초기화' : 'Reset'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

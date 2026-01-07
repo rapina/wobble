@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PixiCanvas } from '../canvas/PixiCanvas';
+import { PixiCanvas, PixiCanvasHandle } from '../canvas/PixiCanvas';
 import { ParameterControl } from '../controls/ParameterControl';
 import { FormulaLayout } from '../controls/FormulaLayout';
 import { useSimulation } from '../../hooks/useSimulation';
@@ -14,6 +14,7 @@ import { SettingsModal } from '../ui/SettingsModal';
 import { ArrowLeft, List, X, Info, ChevronDown, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Formula, FormulaCategory } from '../../formulas/types';
+import { WobbleShape } from '../canvas/Wobble';
 import Balatro from '@/components/Balatro';
 
 // Balatro-inspired color palette
@@ -54,7 +55,7 @@ export function SimulationScreen({
     const { formula, variables, inputVariables, setVariable } = useSimulation(formulaId);
     const { isInitialized, isBannerVisible, showBanner, hideBanner, isNative } = useAdMob();
     const { isAdFree } = usePurchaseStore();
-    const unlockByFormula = useCollectionStore(state => state.unlockByFormula);
+    const { unlockByFormula, getNewUnlocksForFormula } = useCollectionStore();
     const localizedFormula = useLocalizedFormula(formula);
     const localizedVariables = useLocalizedVariables(formula?.variables ?? []);
     const [mounted, setMounted] = useState(false);
@@ -69,6 +70,10 @@ export function SimulationScreen({
     });
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
     const [sliderRect, setSliderRect] = useState<DOMRect | null>(null);
+    const [pendingNewWobbles, setPendingNewWobbles] = useState<WobbleShape[]>([]);
+    const [tutorialShownThisSession, setTutorialShownThisSession] = useState(false);
+    const [discoveryShownThisSession, setDiscoveryShownThisSession] = useState(false);
+    const canvasRef = useRef<PixiCanvasHandle>(null);
 
     // Tutorial hook
     const tutorial = useTutorial({
@@ -120,13 +125,20 @@ export function SimulationScreen({
         }
     }, [showInfoPopup]);
 
+    // Track when tutorial becomes active (to prevent auto-restart)
+    useEffect(() => {
+        if (tutorial.isActive) {
+            setTutorialShownThisSession(true);
+        }
+    }, [tutorial.isActive]);
+
     // Auto-start tutorial for first-time users (after info popup is closed)
     useEffect(() => {
         // Check if info popup needs to be shown for this formula
         const needsInfoPopup = formula?.applications && formula.applications.length > 0 && !seenFormulas.has(formulaId);
 
-        // Don't start if tutorial already completed or active
-        if (!formula || tutorial.hasCompletedTutorial || tutorial.isActive) return;
+        // Don't start if tutorial already completed globally, active, or shown this session
+        if (!formula || tutorial.hasCompletedTutorial || tutorial.isActive || tutorialShownThisSession) return;
 
         // Don't start if info popup is currently showing
         if (showInfoPopup) return;
@@ -138,7 +150,7 @@ export function SimulationScreen({
             tutorial.startTutorial();
         }, 500);
         return () => clearTimeout(timer);
-    }, [formula?.id, showInfoPopup, infoPopupShownOnce, seenFormulas]);
+    }, [formula, formulaId, showInfoPopup, infoPopupShownOnce, seenFormulas, tutorial.hasCompletedTutorial, tutorial.isActive, tutorialShownThisSession]);
 
     // Get unique categories from formulas
     const categories = useMemo(() => {
@@ -189,12 +201,50 @@ export function SimulationScreen({
         return () => clearTimeout(timer);
     }, [formulaId]);
 
-    // Unlock wobbles when formula is used
+    // Check for new wobbles and unlock when formula is used
     useEffect(() => {
         if (formulaId) {
-            unlockByFormula(formulaId);
+            const newWobbles = getNewUnlocksForFormula(formulaId);
+            if (newWobbles.length > 0) {
+                setPendingNewWobbles(newWobbles);
+                unlockByFormula(formulaId);
+            }
         }
-    }, [formulaId, unlockByFormula]);
+    }, [formulaId, unlockByFormula, getNewUnlocksForFormula]);
+
+    // Show new wobble discovery in scene after tutorial completes
+    useEffect(() => {
+        // Don't show if no pending wobbles or already shown
+        if (pendingNewWobbles.length === 0 || discoveryShownThisSession) return;
+
+        // Don't show if info popup is currently showing
+        if (showInfoPopup) return;
+
+        // Don't show if tutorial is active
+        if (tutorial.isActive) return;
+
+        // Check if info popup needs to be shown
+        const needsInfoPopup = formula?.applications && formula.applications.length > 0 && !seenFormulas.has(formulaId);
+        if (needsInfoPopup && !infoPopupShownOnce) return;
+
+        // Check if tutorial has been handled (either completed globally or shown this session)
+        const tutorialHandled = tutorial.hasCompletedTutorial || tutorialShownThisSession;
+        // If tutorial still needs to run and not currently active, wait
+        if (!tutorialHandled && !tutorial.isActive) return;
+
+        // All conditions met - show discovery in scene
+        const timer = setTimeout(() => {
+            if (canvasRef.current) {
+                setDiscoveryShownThisSession(true);
+                canvasRef.current.showNewWobbleDiscovery(
+                    pendingNewWobbles,
+                    i18n.language === 'ko',
+                    () => setPendingNewWobbles([])
+                );
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [pendingNewWobbles, discoveryShownThisSession, showInfoPopup, tutorial.isActive, tutorial.hasCompletedTutorial, tutorialShownThisSession, infoPopupShownOnce, seenFormulas, formulaId, formula?.applications, i18n.language]);
 
     // Auto-show info popup for formulas not seen before
     useEffect(() => {
@@ -202,7 +252,7 @@ export function SimulationScreen({
             const timer = setTimeout(() => setShowInfoPopup(true), 300);
             return () => clearTimeout(timer);
         }
-    }, [formulaId]);
+    }, [formula, formulaId, seenFormulas]);
 
     // Mark formula as seen
     const markAsSeen = (id: string) => {
@@ -248,7 +298,7 @@ export function SimulationScreen({
                 }}
                 onClick={() => setSelectedCard(null)}
             >
-                <PixiCanvas formulaId={formulaId} variables={variables} />
+                <PixiCanvas ref={canvasRef} formulaId={formulaId} variables={variables} />
             </div>
 
             {/* Top Header */}
@@ -705,6 +755,7 @@ export function SimulationScreen({
                     sliderRect={sliderRect}
                 />
             )}
+
         </div>
     );
 }

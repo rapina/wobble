@@ -1,7 +1,8 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { usePixiApp } from '../../hooks/usePixiApp';
 import { BaseScene } from './scenes/BaseScene';
 import { getSceneClass } from './scenes/SceneManager';
+import { WobbleShape } from './Wobble';
 
 interface PixiCanvasProps {
     formulaId: string;
@@ -10,15 +11,28 @@ interface PixiCanvasProps {
     height?: number | string;
 }
 
-export function PixiCanvas({
+export interface PixiCanvasHandle {
+    showNewWobbleDiscovery: (shapes: WobbleShape[], isKorean: boolean, onComplete?: () => void) => void;
+}
+
+export const PixiCanvas = forwardRef<PixiCanvasHandle, PixiCanvasProps>(function PixiCanvas({
     formulaId,
     variables,
     width = '100%',
     height = '100%',
-}: PixiCanvasProps) {
+}, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
     const { app, isReady } = usePixiApp(containerRef);
     const sceneRef = useRef<BaseScene | null>(null);
+
+    // Expose methods to parent
+    useImperativeHandle(ref, () => ({
+        showNewWobbleDiscovery: (shapes: WobbleShape[], isKorean: boolean, onComplete?: () => void) => {
+            if (sceneRef.current) {
+                sceneRef.current.showNewWobbleDiscovery(shapes, isKorean, onComplete);
+            }
+        },
+    }), []);
 
     // Create/switch scene based on formulaId
     useEffect(() => {
@@ -71,4 +85,4 @@ export function PixiCanvas({
             }}
         />
     );
-}
+});

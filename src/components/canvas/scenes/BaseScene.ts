@@ -1,5 +1,6 @@
-import { Application, Container, Ticker, Graphics } from 'pixi.js';
+import { Application, Container, Ticker, Graphics, Text, TextStyle } from 'pixi.js';
 import { pixiColors } from '../../../utils/pixiHelpers';
+import { Wobble, WobbleShape, WOBBLE_CHARACTERS } from '../Wobble';
 
 let sceneIdCounter = 0;
 
@@ -28,6 +29,14 @@ export abstract class BaseScene {
     private boundAnimate: (ticker: Ticker) => void;
     protected sceneId: string;
     private _destroyed = false;
+
+    // New wobble discovery animation
+    private discoveryOverlay: Container | null = null;
+    private discoveryQueue: WobbleShape[] = [];
+    private isShowingDiscovery = false;
+    private discoveryPhase = 0;
+    private discoveryWobble: Wobble | null = null;
+    private onDiscoveryComplete: (() => void) | null = null;
 
     constructor(app: Application) {
         const counter = ++sceneIdCounter;
@@ -62,6 +71,7 @@ export abstract class BaseScene {
             }
             this.updateGrid(ticker);
             this.animate(ticker);
+            this.updateDiscoveryAnimation(ticker);
         };
 
         // Setup scene
@@ -236,9 +246,254 @@ export abstract class BaseScene {
     }
 
     /**
+     * Show new wobble discovery animation
+     */
+    public showNewWobbleDiscovery(shapes: WobbleShape[], isKorean: boolean, onComplete?: () => void): void {
+        if (shapes.length === 0) return;
+
+        this.discoveryQueue = [...shapes];
+        this.onDiscoveryComplete = onComplete || null;
+        this.showNextDiscovery(isKorean);
+    }
+
+    private showNextDiscovery(isKorean: boolean): void {
+        if (this.discoveryQueue.length === 0) {
+            this.hideDiscovery();
+            if (this.onDiscoveryComplete) {
+                this.onDiscoveryComplete();
+                this.onDiscoveryComplete = null;
+            }
+            return;
+        }
+
+        const shape = this.discoveryQueue.shift()!;
+        const character = WOBBLE_CHARACTERS[shape];
+        const wobbleSize = Math.min(this.width, this.height) * 0.2;
+
+        // Create overlay container
+        if (this.discoveryOverlay) {
+            this.container.removeChild(this.discoveryOverlay);
+            this.discoveryOverlay.destroy({ children: true });
+        }
+
+        this.discoveryOverlay = new Container();
+        this.discoveryOverlay.eventMode = 'static';
+        this.discoveryOverlay.cursor = 'pointer';
+
+        // Store isKorean for tap handler
+        const storedIsKorean = isKorean;
+        this.discoveryOverlay.on('pointertap', () => {
+            if (this.discoveryQueue.length > 0) {
+                this.showNextDiscovery(storedIsKorean);
+            } else {
+                this.hideDiscovery();
+                if (this.onDiscoveryComplete) {
+                    this.onDiscoveryComplete();
+                    this.onDiscoveryComplete = null;
+                }
+            }
+        });
+
+        // Semi-transparent background
+        const bg = new Graphics();
+        bg.rect(0, 0, this.width, this.height);
+        bg.fill({ color: 0x000000, alpha: 0.7 });
+        this.discoveryOverlay.addChild(bg);
+
+        // Create wobble
+        this.discoveryWobble = new Wobble({
+            size: wobbleSize,
+            color: character.color,
+            shape: shape,
+            expression: 'excited',
+            showShadow: true,
+        });
+        this.discoveryWobble.position.set(this.centerX, this.centerY - 20);
+        this.discoveryWobble.scale.set(0);
+        this.discoveryOverlay.addChild(this.discoveryWobble);
+
+        // Title text
+        const titleStyle = new TextStyle({
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            fontSize: 14,
+            fill: 0xffffff,
+            align: 'center',
+        });
+        const titleText = new Text({
+            text: isKorean ? '새로운 주민 발견!' : 'New Resident Found!',
+            style: titleStyle,
+        });
+        titleText.anchor.set(0.5);
+        titleText.position.set(this.centerX, this.centerY - wobbleSize - 50);
+        titleText.alpha = 0;
+        this.discoveryOverlay.addChild(titleText);
+
+        // Name text
+        const nameStyle = new TextStyle({
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            fontSize: 28,
+            fontWeight: 'bold',
+            fill: 0xc9a227,
+            align: 'center',
+        });
+        const nameText = new Text({
+            text: isKorean ? character.nameKo : character.name,
+            style: nameStyle,
+        });
+        nameText.anchor.set(0.5);
+        nameText.position.set(this.centerX, this.centerY + wobbleSize + 30);
+        nameText.alpha = 0;
+        this.discoveryOverlay.addChild(nameText);
+
+        // Personality text
+        const personalityStyle = new TextStyle({
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            fontSize: 12,
+            fill: 0xaaaaaa,
+            align: 'center',
+            wordWrap: true,
+            wordWrapWidth: this.width * 0.7,
+        });
+        const personalityText = new Text({
+            text: isKorean ? character.personalityKo : character.personality,
+            style: personalityStyle,
+        });
+        personalityText.anchor.set(0.5);
+        personalityText.position.set(this.centerX, this.centerY + wobbleSize + 60);
+        personalityText.alpha = 0;
+        this.discoveryOverlay.addChild(personalityText);
+
+        // Tap hint
+        const hintStyle = new TextStyle({
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            fontSize: 11,
+            fill: 0x666666,
+            align: 'center',
+        });
+        const remaining = this.discoveryQueue.length;
+        const hintText = new Text({
+            text: remaining > 0
+                ? (isKorean ? `탭하여 다음 (${remaining}명 남음)` : `Tap for next (${remaining} more)`)
+                : (isKorean ? '탭하여 계속' : 'Tap to continue'),
+            style: hintStyle,
+        });
+        hintText.anchor.set(0.5);
+        hintText.position.set(this.centerX, this.height - 40);
+        hintText.alpha = 0;
+        this.discoveryOverlay.addChild(hintText);
+
+        // Add sparkle particles
+        this.createSparkles();
+
+        this.container.addChild(this.discoveryOverlay);
+        this.isShowingDiscovery = true;
+        this.discoveryPhase = 0;
+    }
+
+    private createSparkles(): void {
+        if (!this.discoveryOverlay) return;
+
+        for (let i = 0; i < 12; i++) {
+            const sparkle = new Graphics();
+            const size = 3 + Math.random() * 4;
+            sparkle.star(0, 0, 4, size, size * 0.4);
+            sparkle.fill({ color: 0xc9a227, alpha: 0.8 });
+
+            const angle = (i / 12) * Math.PI * 2;
+            const radius = 80 + Math.random() * 40;
+            sparkle.position.set(
+                this.centerX + Math.cos(angle) * radius,
+                this.centerY - 20 + Math.sin(angle) * radius
+            );
+            sparkle.alpha = 0;
+            sparkle.scale.set(0);
+
+            // Store animation data
+            (sparkle as any)._sparkleData = {
+                angle,
+                radius,
+                delay: i * 0.05,
+                speed: 0.5 + Math.random() * 0.5,
+            };
+
+            this.discoveryOverlay.addChild(sparkle);
+        }
+    }
+
+    private updateDiscoveryAnimation(ticker: Ticker): void {
+        if (!this.isShowingDiscovery || !this.discoveryOverlay) return;
+
+        const delta = ticker.deltaMS / 1000;
+        this.discoveryPhase += delta;
+
+        // Animate wobble entrance
+        if (this.discoveryWobble) {
+            const targetScale = 1;
+            const progress = Math.min(this.discoveryPhase / 0.4, 1);
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            const bounce = progress < 1 ? easeOut * (1 + Math.sin(progress * Math.PI) * 0.2) : 1;
+            this.discoveryWobble.scale.set(bounce);
+
+            // Wobble animation
+            this.discoveryWobble.updateOptions({
+                wobblePhase: this.discoveryPhase * 3,
+                scaleX: 1 + Math.sin(this.discoveryPhase * 4) * 0.05,
+                scaleY: 1 - Math.sin(this.discoveryPhase * 4) * 0.05,
+            });
+
+            // Cycle expressions
+            const expressionIndex = Math.floor(this.discoveryPhase / 0.8) % 3;
+            const expressions: ('excited' | 'happy' | 'surprised')[] = ['excited', 'happy', 'surprised'];
+            this.discoveryWobble.updateOptions({ expression: expressions[expressionIndex] });
+        }
+
+        // Animate texts
+        const children = this.discoveryOverlay.children;
+        for (const child of children) {
+            if (child instanceof Text) {
+                const targetAlpha = 1;
+                const textDelay = 0.2;
+                const textProgress = Math.max(0, Math.min((this.discoveryPhase - textDelay) / 0.3, 1));
+                child.alpha = textProgress;
+            }
+        }
+
+        // Animate sparkles
+        for (const child of children) {
+            const data = (child as any)._sparkleData;
+            if (data) {
+                const sparkleProgress = Math.max(0, this.discoveryPhase - data.delay);
+                const alpha = Math.min(sparkleProgress / 0.2, 1) * (0.5 + Math.sin(sparkleProgress * data.speed * 5) * 0.5);
+                child.alpha = alpha * 0.8;
+                child.scale.set(0.5 + Math.sin(sparkleProgress * data.speed * 3) * 0.3);
+                child.rotation = sparkleProgress * data.speed * 2;
+
+                // Float outward slightly
+                const floatRadius = data.radius + sparkleProgress * 10;
+                (child as Graphics).position.set(
+                    this.centerX + Math.cos(data.angle + sparkleProgress * 0.5) * floatRadius,
+                    this.centerY - 20 + Math.sin(data.angle + sparkleProgress * 0.5) * floatRadius
+                );
+            }
+        }
+    }
+
+    private hideDiscovery(): void {
+        this.isShowingDiscovery = false;
+        if (this.discoveryOverlay) {
+            this.container.removeChild(this.discoveryOverlay);
+            this.discoveryOverlay.destroy({ children: true });
+            this.discoveryOverlay = null;
+        }
+        this.discoveryWobble = null;
+        this.discoveryPhase = 0;
+    }
+
+    /**
      * Cleanup scene
      */
     public destroy(): void {
+        this.hideDiscovery();
         this._destroyed = true;
         try {
             if (this.ticker && this.boundAnimate) {

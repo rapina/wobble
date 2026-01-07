@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Application } from 'pixi.js';
+import { Application, Ticker } from 'pixi.js';
 import { Wobble, WobbleExpression, WobbleShape } from './Wobble';
 
 interface WobbleDisplayProps {
@@ -19,6 +19,8 @@ export function WobbleDisplay({
 }: WobbleDisplayProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const appRef = useRef<Application | null>(null);
+    const wobbleRef = useRef<Wobble | null>(null);
+    const tickerCallbackRef = useRef<((ticker: Ticker) => void) | null>(null);
     const mountedRef = useRef(true);
 
     useEffect(() => {
@@ -40,7 +42,11 @@ export function WobbleDisplay({
             autoDensity: true,
         }).then(() => {
             if (!mountedRef.current) {
-                app.destroy(true, { children: true });
+                try {
+                    app.destroy(true, { children: true });
+                } catch {
+                    // Ignore cleanup errors
+                }
                 return;
             }
 
@@ -60,27 +66,53 @@ export function WobbleDisplay({
                 showShadow: true,
                 shadowOffsetY: size * 0.15,
             });
+            wobbleRef.current = wobble;
 
             wobble.position.set(canvasSize / 2, canvasSize / 2);
             app.stage.addChild(wobble);
 
             // Wobble animation
             let phase = 0;
-            app.ticker.add((ticker) => {
+            const tickerCallback = (ticker: Ticker) => {
                 phase += ticker.deltaTime * 0.05;
                 wobble.updateOptions({
                     wobblePhase: phase,
                     scaleX: 1 + Math.sin(phase * 0.8) * 0.03,
                     scaleY: 1 - Math.sin(phase * 0.8) * 0.03,
                 });
-            });
+            };
+            tickerCallbackRef.current = tickerCallback;
+            app.ticker.add(tickerCallback);
         });
 
         return () => {
             mountedRef.current = false;
-            if (appRef.current) {
-                appRef.current.destroy(true, { children: true });
+
+            const app = appRef.current;
+            if (app) {
+                try {
+                    // Stop ticker first
+                    app.ticker.stop();
+                    if (tickerCallbackRef.current) {
+                        app.ticker.remove(tickerCallbackRef.current);
+                    }
+
+                    // Remove wobble from stage
+                    if (wobbleRef.current && wobbleRef.current.parent) {
+                        wobbleRef.current.parent.removeChild(wobbleRef.current);
+                    }
+
+                    // Clear stage
+                    app.stage.removeChildren();
+
+                    // Destroy app
+                    app.destroy(true, { children: true, texture: false, textureSource: false });
+                } catch {
+                    // Ignore cleanup errors
+                }
                 appRef.current = null;
+                wobbleRef.current = null;
+                tickerCallbackRef.current = null;
             }
         };
     }, [size, color, shape, expression]);

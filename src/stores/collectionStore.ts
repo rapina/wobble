@@ -7,9 +7,10 @@ const ALL_SHAPES: WobbleShape[] = ['circle', 'square', 'triangle', 'star', 'diam
 interface CollectionState {
     unlockedWobbles: WobbleShape[];
     unlockWobble: (shape: WobbleShape) => void;
-    unlockByFormula: (formulaId: string) => void;
+    unlockByFormula: (formulaId: string) => WobbleShape[];  // Returns newly unlocked shapes
     isUnlocked: (shape: WobbleShape) => boolean;
     getProgress: () => { unlocked: number; total: number };
+    getNewUnlocksForFormula: (formulaId: string) => WobbleShape[];  // Check without unlocking
     resetCollection: () => void;
 }
 
@@ -47,7 +48,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
         }
     },
 
-    unlockByFormula: (formulaId: string) => {
+    unlockByFormula: (formulaId: string): WobbleShape[] => {
         const shapes = FORMULA_WOBBLES[formulaId];
         if (shapes) {
             const current = get().unlockedWobbles;
@@ -56,8 +57,10 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
                 const updated = [...current, ...newShapes];
                 saveCollection(updated);
                 set({ unlockedWobbles: updated });
+                return newShapes;
             }
         }
+        return [];
     },
 
     isUnlocked: (shape: WobbleShape) => {
@@ -69,6 +72,15 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
             unlocked: get().unlockedWobbles.length,
             total: ALL_SHAPES.length,
         };
+    },
+
+    getNewUnlocksForFormula: (formulaId: string): WobbleShape[] => {
+        const shapes = FORMULA_WOBBLES[formulaId];
+        if (shapes) {
+            const current = get().unlockedWobbles;
+            return shapes.filter(s => !current.includes(s));
+        }
+        return [];
     },
 
     resetCollection: () => {
