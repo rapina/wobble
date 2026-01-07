@@ -151,6 +151,11 @@ export const FORMULA_WOBBLES: Record<string, WobbleShape[]> = {
     // Special
     'time-dilation': ['circle'],
     'photoelectric': ['circle', 'star'],
+
+    // New shape-featured formulas
+    'pressure': ['triangle'],        // Spike pressing down
+    'wien': ['star'],                // Twinkle changing color with temperature
+    'torque': ['pentagon'],          // Penta pushing lever
 };
 
 export interface WobbleOptions {

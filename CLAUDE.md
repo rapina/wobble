@@ -39,6 +39,9 @@ To add a new formula:
 2. Register in `src/formulas/registry.ts`
 3. Create corresponding scene in `src/components/canvas/scenes/`
 4. Register scene in `SceneManager.ts`
+5. Update `FORMULAS.md` with the new formula details
+
+See `FORMULAS.md` for the complete list of implemented formulas and their status.
 
 ### Scene System (`src/components/canvas/scenes/`)
 
@@ -49,7 +52,7 @@ PixiJS-based animations. Each scene extends `BaseScene`:
 - **onVariablesChange()**: React to slider/input changes
 - **SceneManager.ts**: Maps formula IDs to scene classes
 
-The `Blob` class (`canvas/Blob.ts`) provides reusable animated character graphics with expressions, shapes, legs, sweat effects, and speed lines.
+The `Wobble` class (`canvas/Wobble.ts`) provides reusable animated character graphics with expressions, shapes, legs, sweat effects, and speed lines. See `FORMULAS.md` for character shape details and usage.
 
 ### State Management
 

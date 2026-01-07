@@ -35,6 +35,10 @@ import { FreeFallScene } from './FreeFallScene';
 import { ProjectileScene } from './ProjectileScene';
 import { EscapeVelocityScene } from './EscapeVelocityScene';
 import { KeplerThirdScene } from './KeplerThirdScene';
+// New shape-featured scenes (triangle, star, pentagon)
+import { PressureScene } from './PressureScene';
+import { WienScene } from './WienScene';
+import { TorqueScene } from './TorqueScene';
 
 type SceneConstructor = new (app: Application) => BaseScene;
 
@@ -74,6 +78,10 @@ const sceneMap: Record<string, SceneConstructor> = {
     'projectile': ProjectileScene,
     'escape-velocity': EscapeVelocityScene,
     'kepler-third': KeplerThirdScene,
+    // New shape-featured scenes (triangle, star, pentagon)
+    'pressure': PressureScene,
+    'wien': WienScene,
+    'torque': TorqueScene,
 };
 
 export function getSceneClass(formulaId: string): SceneConstructor | null {

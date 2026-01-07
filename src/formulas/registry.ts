@@ -6,6 +6,8 @@ import { momentum } from './momentum';
 import { hooke } from './hooke';
 import { centripetal } from './centripetal';
 import { elasticCollision } from './elastic-collision';
+import { pressure } from './pressure';
+import { torque } from './torque';
 // Gravity & Oscillation
 import { gravity } from './gravity';
 import { pendulum } from './pendulum';
@@ -26,6 +28,7 @@ import { firstLaw } from './first-law';
 import { entropy } from './entropy';
 import { thermalConduction } from './thermal-conduction';
 import { stefanBoltzmann } from './stefan-boltzmann';
+import { wien } from './wien';
 // Electricity
 import { ohm } from './ohm';
 import { coulomb } from './coulomb';
@@ -46,6 +49,8 @@ export const formulas: Record<string, Formula> = {
     hooke: hooke,
     centripetal: centripetal,
     'elastic-collision': elasticCollision,
+    pressure: pressure,
+    torque: torque,
     // Gravity
     gravity: gravity,
     pendulum: pendulum,
@@ -66,6 +71,7 @@ export const formulas: Record<string, Formula> = {
     entropy: entropy,
     'thermal-conduction': thermalConduction,
     'stefan-boltzmann': stefanBoltzmann,
+    wien: wien,
     // Electricity
     ohm: ohm,
     coulomb: coulomb,
