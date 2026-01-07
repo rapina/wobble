@@ -7,17 +7,25 @@ export const hooke: Formula = {
     nameEn: "Hooke's Law",
     expression: 'F = -kx',
     description: '스프링이 늘어나거나 줄어든 길이에 비례하여 복원력이 작용한다',
+    descriptionEn: 'Restoring force is proportional to the spring displacement',
     applications: [
         '자동차 서스펜션 설계',
         '침대 매트리스의 탄성 조절',
         '체중계의 스프링 눈금 설계',
         '트램폴린과 방방이의 탄성 설계',
     ],
+    applicationsEn: [
+        'Designing car suspension systems',
+        'Adjusting mattress elasticity',
+        'Designing spring scales for weight measurement',
+        'Designing elasticity for trampolines and bouncy houses',
+    ],
     category: 'mechanics',
     variables: [
         {
             symbol: 'k',
             name: '스프링 상수',
+            nameEn: 'Spring Constant',
             role: 'input',
             unit: 'N/m',
             range: [10, 100],
@@ -31,6 +39,7 @@ export const hooke: Formula = {
         {
             symbol: 'x',
             name: '변위',
+            nameEn: 'Displacement',
             role: 'input',
             unit: 'm',
             range: [0.1, 2],
@@ -44,6 +53,7 @@ export const hooke: Formula = {
         {
             symbol: 'F',
             name: '복원력',
+            nameEn: 'Restoring Force',
             role: 'output',
             unit: 'N',
             range: [0, 200],

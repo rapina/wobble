@@ -7,17 +7,25 @@ export const buoyancy: Formula = {
     nameEn: 'Buoyancy',
     expression: 'F = ρVg',
     description: '유체 속에서 물체를 위로 밀어올리는 힘',
+    descriptionEn: 'The upward force pushing an object in a fluid',
     applications: [
         '배와 잠수함의 부양 설계',
         '열기구와 비행선의 부력 계산',
         '수영할 때 몸이 뜨는 원리',
         '해수와 담수에서의 부력 차이',
     ],
+    applicationsEn: [
+        'Designing ship and submarine flotation',
+        'Calculating hot air balloon lift',
+        'Why our bodies float when swimming',
+        'Buoyancy differences in saltwater vs freshwater',
+    ],
     category: 'special',
     variables: [
         {
             symbol: 'ρ',
             name: '유체 밀도',
+            nameEn: 'Fluid Density',
             role: 'input',
             unit: 'kg/m³',
             range: [100, 1500],
@@ -31,6 +39,7 @@ export const buoyancy: Formula = {
         {
             symbol: 'V',
             name: '잠긴 부피',
+            nameEn: 'Submerged Volume',
             role: 'input',
             unit: 'L',
             range: [1, 100],
@@ -44,6 +53,7 @@ export const buoyancy: Formula = {
         {
             symbol: 'g',
             name: '중력 가속도',
+            nameEn: 'Gravitational Accel.',
             role: 'input',
             unit: 'm/s²',
             range: [1, 25],
@@ -57,6 +67,7 @@ export const buoyancy: Formula = {
         {
             symbol: 'F',
             name: '부력',
+            nameEn: 'Buoyant Force',
             role: 'output',
             unit: 'N',
             range: [0, 500],

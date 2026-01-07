@@ -7,17 +7,25 @@ export const photoelectric: Formula = {
     nameEn: 'Photoelectric Effect',
     expression: 'Ek = hf - W',
     description: '빛이 금속 표면에서 전자를 방출시킬 때, 전자의 운동에너지',
+    descriptionEn: 'The kinetic energy of electrons emitted when light strikes a metal surface',
     applications: [
         '태양전지의 전기 생산 원리',
         '디지털 카메라 이미지 센서',
         '자동문의 적외선 센서',
         '야간 투시경과 광전자 증배관',
     ],
+    applicationsEn: [
+        'How solar cells generate electricity',
+        'Digital camera image sensors',
+        'Automatic door infrared sensors',
+        'Night vision and photomultiplier tubes',
+    ],
     category: 'special',
     variables: [
         {
             symbol: 'f',
             name: '빛의 진동수',
+            nameEn: 'Light Frequency',
             role: 'input',
             unit: '×10¹⁴ Hz',
             range: [4, 12],
@@ -31,6 +39,7 @@ export const photoelectric: Formula = {
         {
             symbol: 'W',
             name: '일함수',
+            nameEn: 'Work Function',
             role: 'input',
             unit: 'eV',
             range: [1, 5],
@@ -44,6 +53,7 @@ export const photoelectric: Formula = {
         {
             symbol: 'Ek',
             name: '운동에너지',
+            nameEn: 'Kinetic Energy',
             role: 'output',
             unit: 'eV',
             range: [0, 5],

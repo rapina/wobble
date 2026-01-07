@@ -7,17 +7,25 @@ export const firstLaw: Formula = {
     nameEn: 'First Law of Thermodynamics',
     expression: 'ΔU = Q - W',
     description: '에너지 보존 법칙: 내부에너지 변화 = 열 - 일',
+    descriptionEn: 'Energy conservation: change in internal energy = heat - work',
     applications: [
         '냉장고와 에어컨의 냉각 사이클 설계',
         '자동차 엔진의 효율 계산',
         '발전소의 열에너지 → 전기에너지 변환',
         '단열 팽창을 이용한 구름 생성 원리',
     ],
+    applicationsEn: [
+        'Designing refrigerator and AC cooling cycles',
+        'Calculating car engine efficiency',
+        'Power plant heat-to-electricity conversion',
+        'Cloud formation through adiabatic expansion',
+    ],
     category: 'thermodynamics',
     variables: [
         {
             symbol: 'Q',
             name: '열량',
+            nameEn: 'Heat',
             role: 'input',
             unit: 'J',
             range: [100, 800],
@@ -31,6 +39,7 @@ export const firstLaw: Formula = {
         {
             symbol: 'W',
             name: '일',
+            nameEn: 'Work',
             role: 'input',
             unit: 'J',
             range: [50, 600],
@@ -44,6 +53,7 @@ export const firstLaw: Formula = {
         {
             symbol: 'ΔU',
             name: '내부에너지 변화',
+            nameEn: 'Internal Energy Change',
             role: 'output',
             unit: 'J',
             range: [-500, 750],

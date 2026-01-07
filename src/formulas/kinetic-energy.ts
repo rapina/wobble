@@ -7,17 +7,25 @@ export const kineticEnergy: Formula = {
     nameEn: 'Kinetic Energy',
     expression: 'E = ½mv²',
     description: '움직이는 물체가 가진 에너지',
+    descriptionEn: 'Energy possessed by a moving object',
     applications: [
         '자동차 충돌 시 발생하는 충격 에너지 계산',
         '롤러코스터 설계 시 속도와 에너지 관계 분석',
         '총알이나 운석의 파괴력 계산',
         '풍력 발전기의 발전량 예측',
     ],
+    applicationsEn: [
+        'Calculating impact energy in car collisions',
+        'Analyzing speed-energy relationship in roller coaster design',
+        'Calculating destructive power of bullets or meteorites',
+        'Predicting power generation of wind turbines',
+    ],
     category: 'mechanics',
     variables: [
         {
             symbol: 'm',
             name: '질량',
+            nameEn: 'Mass',
             role: 'input',
             unit: 'kg',
             range: [1, 50],
@@ -31,6 +39,7 @@ export const kineticEnergy: Formula = {
         {
             symbol: 'v',
             name: '속도',
+            nameEn: 'Velocity',
             role: 'input',
             unit: 'm/s',
             range: [1, 20],
@@ -44,6 +53,7 @@ export const kineticEnergy: Formula = {
         {
             symbol: 'E',
             name: '에너지',
+            nameEn: 'Energy',
             role: 'output',
             unit: 'J',
             range: [0, 10000],

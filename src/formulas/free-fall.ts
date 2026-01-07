@@ -7,17 +7,25 @@ export const freeFall: Formula = {
     nameEn: 'Free Fall',
     expression: 'h = ½gt²',
     description: '중력에 의해 자유낙하하는 물체의 이동 거리',
+    descriptionEn: 'The distance traveled by an object in free fall under gravity',
     applications: [
         '스카이다이버의 낙하 시간 계산',
         '놀이공원 자이로드롭 설계',
         '갈릴레오의 피사의 사탑 실험',
         '행성 표면 중력 측정',
     ],
+    applicationsEn: [
+        'Calculating skydiver fall time',
+        'Designing amusement park drop towers',
+        'Galileo\'s Leaning Tower of Pisa experiment',
+        'Measuring planetary surface gravity',
+    ],
     category: 'gravity',
     variables: [
         {
             symbol: 'g',
             name: '중력가속도',
+            nameEn: 'Gravitational Accel.',
             role: 'input',
             unit: 'm/s²',
             range: [1, 25],
@@ -31,6 +39,7 @@ export const freeFall: Formula = {
         {
             symbol: 't',
             name: '시간',
+            nameEn: 'Time',
             role: 'input',
             unit: 's',
             range: [0.5, 10],
@@ -44,6 +53,7 @@ export const freeFall: Formula = {
         {
             symbol: 'h',
             name: '낙하 거리',
+            nameEn: 'Fall Distance',
             role: 'output',
             unit: 'm',
             range: [0, 500],

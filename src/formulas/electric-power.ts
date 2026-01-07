@@ -7,17 +7,25 @@ export const electricPower: Formula = {
     nameEn: 'Electric Power',
     expression: 'P = VI',
     description: '전기 에너지가 소비되거나 생성되는 속도',
+    descriptionEn: 'The rate at which electrical energy is consumed or generated',
     applications: [
         '전기요금 계산 (kWh)',
         '가전제품의 소비 전력 비교',
         '태양광 패널의 발전량 측정',
         '전기차 배터리 충전 시간 계산',
     ],
+    applicationsEn: [
+        'Calculating electricity bills (kWh)',
+        'Comparing power consumption of appliances',
+        'Measuring solar panel output',
+        'Calculating EV battery charging time',
+    ],
     category: 'electricity',
     variables: [
         {
             symbol: 'V',
             name: '전압',
+            nameEn: 'Voltage',
             role: 'input',
             unit: 'V',
             range: [1, 240],
@@ -31,6 +39,7 @@ export const electricPower: Formula = {
         {
             symbol: 'I',
             name: '전류',
+            nameEn: 'Current',
             role: 'input',
             unit: 'A',
             range: [0.1, 20],
@@ -44,6 +53,7 @@ export const electricPower: Formula = {
         {
             symbol: 'P',
             name: '전력',
+            nameEn: 'Power',
             role: 'output',
             unit: 'W',
             range: [0, 5000],

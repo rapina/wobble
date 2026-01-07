@@ -7,17 +7,25 @@ export const capacitor: Formula = {
     nameEn: 'Capacitor Energy',
     expression: 'E = ½CV²',
     description: '축전기에 저장된 전기 에너지',
+    descriptionEn: 'The electrical energy stored in a capacitor',
     applications: [
         '카메라 플래시의 순간 발광',
         '전기차의 회생 제동 에너지 저장',
         '제세동기(AED)의 심장 충격',
         '무정전 전원장치(UPS) 설계',
     ],
+    applicationsEn: [
+        'Camera flash instant discharge',
+        'Regenerative braking in electric vehicles',
+        'Defibrillator (AED) cardiac shock',
+        'Uninterruptible power supply (UPS) design',
+    ],
     category: 'electricity',
     variables: [
         {
             symbol: 'C',
             name: '전기용량',
+            nameEn: 'Capacitance',
             role: 'input',
             unit: 'mF',
             range: [1, 10],
@@ -31,6 +39,7 @@ export const capacitor: Formula = {
         {
             symbol: 'V',
             name: '전압',
+            nameEn: 'Voltage',
             role: 'input',
             unit: 'kV',
             range: [1, 10],
@@ -44,6 +53,7 @@ export const capacitor: Formula = {
         {
             symbol: 'E',
             name: '저장 에너지',
+            nameEn: 'Stored Energy',
             role: 'output',
             unit: 'kJ',
             range: [0, 500],

@@ -7,17 +7,25 @@ export const wave: Formula = {
     nameEn: 'Wave Velocity',
     expression: 'v = fλ',
     description: '파동이 전파되는 속도',
+    descriptionEn: 'Speed at which a wave propagates',
     applications: [
         '라디오와 TV 방송 주파수 설계',
         '초음파 검사 장비의 해상도 계산',
         '악기의 음높이와 줄 길이 관계',
         '와이파이와 블루투스 통신 설계',
     ],
+    applicationsEn: [
+        'Designing radio and TV broadcast frequencies',
+        'Calculating ultrasound equipment resolution',
+        'Relationship between musical pitch and string length',
+        'Designing WiFi and Bluetooth communication',
+    ],
     category: 'wave',
     variables: [
         {
             symbol: 'f',
             name: '진동수',
+            nameEn: 'Frequency',
             role: 'input',
             unit: 'Hz',
             range: [0.5, 5],
@@ -31,6 +39,7 @@ export const wave: Formula = {
         {
             symbol: 'λ',
             name: '파장',
+            nameEn: 'Wavelength',
             role: 'input',
             unit: 'm',
             range: [1, 10],
@@ -44,6 +53,7 @@ export const wave: Formula = {
         {
             symbol: 'v',
             name: '파동 속도',
+            nameEn: 'Wave Speed',
             role: 'output',
             unit: 'm/s',
             range: [0, 50],

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Balatro from '@/components/Balatro';
 import ShuffleText from '@/components/ShuffleText';
 import { RotatingText } from '@/components/RotatingText';
 import { BlobDisplay } from '@/components/canvas/BlobDisplay';
+import { LanguageToggle } from '@/components/LanguageToggle';
 import { cn } from '@/lib/utils';
 
 export type GameMode = 'sandbox' | 'puzzle' | 'learning';
@@ -12,6 +14,7 @@ interface HomeScreenProps {
 }
 
 export function HomeScreen({ onSelectMode }: HomeScreenProps) {
+    const { t } = useTranslation();
     const [mounted, setMounted] = useState(false);
     const [hoveredButton, setHoveredButton] = useState<string | null>(null);
 
@@ -41,6 +44,17 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
 
             {/* Vignette overlay */}
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)]" />
+
+            {/* Language Toggle - Top Right */}
+            <div
+                className="absolute z-20"
+                style={{
+                    top: 'max(env(safe-area-inset-top, 0px), 16px)',
+                    right: 'max(env(safe-area-inset-right, 0px), 16px)',
+                }}
+            >
+                <LanguageToggle />
+            </div>
 
             {/* Content */}
             <div
@@ -74,7 +88,7 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                             loop={true}
                             loopDelay={5000}
                         >
-                            WOBBLE
+                            {t('home.title')}
                         </ShuffleText>
                     </h1>
                     <p
@@ -86,7 +100,7 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                     >
                         PHYSICS{' '}
                         <RotatingText
-                            texts={['ARCADE', 'SANDBOX', 'PUZZLE']}
+                            texts={t('home.modes', { returnObjects: true }) as string[]}
                             interval={2500}
                         />
                     </p>
@@ -138,10 +152,10 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                                     textShadow: '0 0 10px rgba(245, 176, 65, 0.5)',
                                 }}
                             >
-                                실험실
+                                {t('home.sandbox')}
                             </span>
                             <span className="block text-base text-white/60 mt-3">
-                                자유롭게 물리 탐험
+                                {t('home.sandboxDesc')}
                             </span>
                         </div>
                     </button>
@@ -162,10 +176,10 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                     >
                         <div className="px-7 py-4 text-center relative">
                             <span className="block text-xl font-bold text-white/50">
-                                퍼즐
+                                {t('home.puzzle')}
                             </span>
                             <span className="block text-sm text-white/30 mt-3">
-                                스테이지 클리어
+                                {t('home.puzzleDesc')}
                             </span>
                             <span
                                 className="absolute right-7 top-1/2 -translate-y-1/2 px-4 py-2 rounded-full text-xs font-bold"
@@ -174,7 +188,7 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                                     color: 'rgba(255,255,255,0.4)',
                                 }}
                             >
-                                SOON
+                                {t('home.soon')}
                             </span>
                         </div>
                     </button>

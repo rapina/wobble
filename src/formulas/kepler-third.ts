@@ -7,17 +7,25 @@ export const keplerThird: Formula = {
     nameEn: "Kepler's Third Law",
     expression: 'T² = (4π²/GM)r³',
     description: '행성의 공전주기와 궤도반경의 관계',
+    descriptionEn: 'The relationship between orbital period and orbital radius',
     applications: [
         '인공위성의 궤도 주기 계산',
         '외계 행성 탐색 (항성의 흔들림 분석)',
         '달의 공전주기로 지구 질량 추정',
         'GPS 위성의 정확한 궤도 설계',
     ],
+    applicationsEn: [
+        'Calculating satellite orbital periods',
+        'Detecting exoplanets via stellar wobble',
+        'Estimating Earth\'s mass from Moon\'s orbit',
+        'Precise GPS satellite orbit design',
+    ],
     category: 'gravity',
     variables: [
         {
             symbol: 'M',
             name: '중심 천체 질량',
+            nameEn: 'Central Body Mass',
             role: 'input',
             unit: '×10²⁴kg',
             range: [1, 100000],
@@ -31,6 +39,7 @@ export const keplerThird: Formula = {
         {
             symbol: 'r',
             name: '궤도 반지름',
+            nameEn: 'Orbital Radius',
             role: 'input',
             unit: '×10⁶m',
             range: [1, 10000],
@@ -44,6 +53,7 @@ export const keplerThird: Formula = {
         {
             symbol: 'T',
             name: '공전 주기',
+            nameEn: 'Orbital Period',
             role: 'output',
             unit: '일',
             range: [0, 1000],

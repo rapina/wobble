@@ -7,17 +7,25 @@ export const elasticCollision: Formula = {
     nameEn: 'Elastic Collision',
     expression: "e = -(v₂'-v₁')/(v₂-v₁)",
     description: '충돌 전후 상대속도의 비율로 반발 계수를 나타낸다',
+    descriptionEn: 'The coefficient of restitution as the ratio of relative velocities before and after collision',
     applications: [
         '당구공 충돌 후 움직임 예측',
         '테니스 라켓과 공의 반발력 설계',
         '자동차 범퍼의 충격 흡수 설계',
         '농구공의 바운스 높이 계산',
     ],
+    applicationsEn: [
+        'Predicting billiard ball motion after collision',
+        'Designing tennis racket rebound',
+        'Car bumper shock absorption design',
+        'Calculating basketball bounce height',
+    ],
     category: 'mechanics',
     variables: [
         {
             symbol: 'm₁',
             name: '질량 1',
+            nameEn: 'Mass 1',
             role: 'input',
             unit: 'kg',
             range: [1, 20],
@@ -31,6 +39,7 @@ export const elasticCollision: Formula = {
         {
             symbol: 'm₂',
             name: '질량 2',
+            nameEn: 'Mass 2',
             role: 'input',
             unit: 'kg',
             range: [1, 20],
@@ -44,6 +53,7 @@ export const elasticCollision: Formula = {
         {
             symbol: 'v₁',
             name: '속도 1',
+            nameEn: 'Velocity 1',
             role: 'input',
             unit: 'm/s',
             range: [1, 10],
@@ -57,6 +67,7 @@ export const elasticCollision: Formula = {
         {
             symbol: 'e',
             name: '반발 계수',
+            nameEn: 'Restitution Coeff.',
             role: 'input',
             unit: '',
             range: [0, 1],
@@ -70,6 +81,7 @@ export const elasticCollision: Formula = {
         {
             symbol: "v₁'",
             name: '충돌 후 속도 1',
+            nameEn: 'Velocity 1 After',
             role: 'output',
             unit: 'm/s',
             range: [-10, 10],

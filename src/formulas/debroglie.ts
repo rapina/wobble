@@ -7,17 +7,25 @@ export const debroglie: Formula = {
     nameEn: 'De Broglie Wavelength',
     expression: 'λ = h/p',
     description: '모든 물질은 파동성을 가지며, 그 파장은 운동량에 반비례한다',
+    descriptionEn: 'All matter has wave properties, with wavelength inversely proportional to momentum',
     applications: [
         '전자현미경의 초고해상도 원리',
         '반도체 칩의 나노 구조 설계',
         '양자 컴퓨터의 기본 원리',
         '물질의 파동-입자 이중성 증명',
     ],
+    applicationsEn: [
+        'Ultra-high resolution electron microscopy',
+        'Designing nano-scale semiconductor chips',
+        'Fundamental principles of quantum computers',
+        'Demonstrating wave-particle duality',
+    ],
     category: 'special',
     variables: [
         {
             symbol: 'm',
             name: '질량',
+            nameEn: 'Mass',
             role: 'input',
             unit: '×10⁻³¹ kg',
             range: [1, 100],
@@ -31,6 +39,7 @@ export const debroglie: Formula = {
         {
             symbol: 'v',
             name: '속도',
+            nameEn: 'Velocity',
             role: 'input',
             unit: '×10⁶ m/s',
             range: [0.1, 10],
@@ -44,6 +53,7 @@ export const debroglie: Formula = {
         {
             symbol: 'λ',
             name: '드브로이 파장',
+            nameEn: 'De Broglie Wavelength',
             role: 'output',
             unit: 'nm',
             range: [0, 10],

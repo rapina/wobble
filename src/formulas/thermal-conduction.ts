@@ -7,17 +7,25 @@ export const thermalConduction: Formula = {
     nameEn: "Fourier's Law",
     expression: 'Q = kAΔT/L',
     description: '물질을 통해 전달되는 열량',
+    descriptionEn: 'The amount of heat transferred through a material',
     applications: [
         '건물 단열재의 효율 계산',
         '전자기기 방열판 설계',
         '요리할 때 냄비 손잡이가 뜨거워지는 정도',
         '겨울철 이중창의 단열 효과',
     ],
+    applicationsEn: [
+        'Calculating building insulation efficiency',
+        'Designing electronics heat sinks',
+        'How hot pot handles get while cooking',
+        'Double-pane window insulation in winter',
+    ],
     category: 'thermodynamics',
     variables: [
         {
             symbol: 'k',
             name: '열전도율',
+            nameEn: 'Thermal Conductivity',
             role: 'input',
             unit: 'W/m·K',
             range: [10, 400],
@@ -31,6 +39,7 @@ export const thermalConduction: Formula = {
         {
             symbol: 'A',
             name: '단면적',
+            nameEn: 'Cross-sectional Area',
             role: 'input',
             unit: 'cm²',
             range: [10, 80],
@@ -44,6 +53,7 @@ export const thermalConduction: Formula = {
         {
             symbol: 'ΔT',
             name: '온도차',
+            nameEn: 'Temperature Difference',
             role: 'input',
             unit: '°C',
             range: [20, 150],
@@ -57,6 +67,7 @@ export const thermalConduction: Formula = {
         {
             symbol: 'L',
             name: '길이',
+            nameEn: 'Length',
             role: 'input',
             unit: 'cm',
             range: [5, 40],
@@ -70,6 +81,7 @@ export const thermalConduction: Formula = {
         {
             symbol: 'Q',
             name: '열전달률',
+            nameEn: 'Heat Transfer Rate',
             role: 'output',
             unit: 'W',
             range: [0, 8000],

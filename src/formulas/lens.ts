@@ -7,17 +7,25 @@ export const lens: Formula = {
     nameEn: 'Thin Lens Equation',
     expression: '1/f = 1/a + 1/b',
     description: '렌즈의 초점거리와 물체·상 거리의 관계',
+    descriptionEn: 'The relationship between focal length, object distance, and image distance',
     applications: [
         '안경 렌즈의 도수 계산',
         '카메라 초점 조절 원리',
         '현미경과 망원경의 배율 설계',
         '눈의 수정체 조절 기능 이해',
     ],
+    applicationsEn: [
+        'Calculating eyeglass lens prescription',
+        'How camera focusing works',
+        'Designing microscope and telescope magnification',
+        'Understanding eye lens accommodation',
+    ],
     category: 'wave',
     variables: [
         {
             symbol: 'a',
             name: '물체 거리',
+            nameEn: 'Object Distance',
             role: 'input',
             unit: 'cm',
             range: [5, 100],
@@ -31,6 +39,7 @@ export const lens: Formula = {
         {
             symbol: 'b',
             name: '상 거리',
+            nameEn: 'Image Distance',
             role: 'input',
             unit: 'cm',
             range: [5, 100],
@@ -44,6 +53,7 @@ export const lens: Formula = {
         {
             symbol: 'f',
             name: '초점 거리',
+            nameEn: 'Focal Length',
             role: 'output',
             unit: 'cm',
             range: [1, 50],

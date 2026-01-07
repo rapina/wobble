@@ -7,17 +7,25 @@ export const momentum: Formula = {
     nameEn: 'Momentum',
     expression: 'p = mv',
     description: '물체의 운동 상태를 나타내는 물리량',
+    descriptionEn: 'Physical quantity representing the motion state of an object',
     applications: [
         '당구나 볼링에서 공의 충돌 예측',
         '교통사고 분석 시 차량 속도 추정',
         '우주선 도킹 시 충격 최소화 설계',
         '권투 글러브가 충격을 줄이는 원리',
     ],
+    applicationsEn: [
+        'Predicting ball collisions in billiards or bowling',
+        'Estimating vehicle speed in traffic accident analysis',
+        'Designing minimal impact for spacecraft docking',
+        'How boxing gloves reduce impact force',
+    ],
     category: 'mechanics',
     variables: [
         {
             symbol: 'm',
             name: '질량',
+            nameEn: 'Mass',
             role: 'input',
             unit: 'kg',
             range: [1, 50],
@@ -31,6 +39,7 @@ export const momentum: Formula = {
         {
             symbol: 'v',
             name: '속도',
+            nameEn: 'Velocity',
             role: 'input',
             unit: 'm/s',
             range: [1, 20],
@@ -44,6 +53,7 @@ export const momentum: Formula = {
         {
             symbol: 'p',
             name: '운동량',
+            nameEn: 'Momentum',
             role: 'output',
             unit: 'kg·m/s',
             range: [0, 1000],

@@ -7,17 +7,25 @@ export const reflection: Formula = {
     nameEn: 'Law of Reflection',
     expression: 'θᵢ = θᵣ',
     description: '빛이 표면에서 반사될 때 입사각과 반사각은 같다',
+    descriptionEn: 'When light reflects off a surface, angle of incidence equals angle of reflection',
     applications: [
         '거울에 비친 내 모습',
         '자동차 백미러와 사이드미러',
         '레이저 반사경과 광학 장비',
         '건물 유리창에 비친 풍경',
     ],
+    applicationsEn: [
+        'Seeing your reflection in a mirror',
+        'Car rearview and side mirrors',
+        'Laser reflectors and optical equipment',
+        'Scenery reflected in building windows',
+    ],
     category: 'wave',
     variables: [
         {
             symbol: 'θᵢ',
             name: '입사각',
+            nameEn: 'Angle of Incidence',
             role: 'input',
             unit: '°',
             range: [0, 85],
@@ -31,6 +39,7 @@ export const reflection: Formula = {
         {
             symbol: 'θᵣ',
             name: '반사각',
+            nameEn: 'Angle of Reflection',
             role: 'output',
             unit: '°',
             range: [0, 85],

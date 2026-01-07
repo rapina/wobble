@@ -7,17 +7,25 @@ export const coulomb: Formula = {
     nameEn: "Coulomb's Law",
     expression: 'F = kq₁q₂/r²',
     description: '두 전하 사이에 작용하는 전기력',
+    descriptionEn: 'The electric force between two charges',
     applications: [
         '정전기 방지 제품 설계',
         '복사기와 레이저 프린터의 토너 부착 원리',
         '번개와 정전기 방전 현상 이해',
         '원자 내 전자와 핵 사이의 결합력 계산',
     ],
+    applicationsEn: [
+        'Designing anti-static products',
+        'Toner adhesion in copiers and laser printers',
+        'Understanding lightning and static discharge',
+        'Calculating electron-nucleus binding force in atoms',
+    ],
     category: 'electricity',
     variables: [
         {
             symbol: 'q₁',
             name: '전하 1',
+            nameEn: 'Charge 1',
             role: 'input',
             unit: 'μC',
             range: [1, 100],
@@ -31,6 +39,7 @@ export const coulomb: Formula = {
         {
             symbol: 'q₂',
             name: '전하 2',
+            nameEn: 'Charge 2',
             role: 'input',
             unit: 'μC',
             range: [1, 100],
@@ -44,6 +53,7 @@ export const coulomb: Formula = {
         {
             symbol: 'r',
             name: '거리',
+            nameEn: 'Distance',
             role: 'input',
             unit: 'cm',
             range: [1, 50],
@@ -57,6 +67,7 @@ export const coulomb: Formula = {
         {
             symbol: 'F',
             name: '전기력',
+            nameEn: 'Electric Force',
             role: 'output',
             unit: 'N',
             range: [0, 1000],

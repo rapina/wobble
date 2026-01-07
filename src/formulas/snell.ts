@@ -7,17 +7,25 @@ export const snell: Formula = {
     nameEn: "Snell's Law",
     expression: 'n₁sinθ₁ = n₂sinθ₂',
     description: '빛이 다른 매질로 들어갈 때 굴절되는 각도의 관계',
+    descriptionEn: 'Relationship of refraction angles when light enters a different medium',
     applications: [
         '안경 렌즈와 콘택트렌즈 설계',
         '광섬유 통신의 전반사 원리',
         '무지개가 생기는 원리',
         '수영장 물 속이 얕아 보이는 이유',
     ],
+    applicationsEn: [
+        'Designing eyeglasses and contact lenses',
+        'Total internal reflection in fiber optic communications',
+        'How rainbows form',
+        'Why pools appear shallower than they are',
+    ],
     category: 'wave',
     variables: [
         {
             symbol: 'n₁',
             name: '매질 1 굴절률',
+            nameEn: 'Medium 1 Refractive Index',
             role: 'input',
             unit: '',
             range: [1, 2.5],
@@ -31,6 +39,7 @@ export const snell: Formula = {
         {
             symbol: 'θ₁',
             name: '입사각',
+            nameEn: 'Incident Angle',
             role: 'input',
             unit: '°',
             range: [0, 85],
@@ -44,6 +53,7 @@ export const snell: Formula = {
         {
             symbol: 'n₂',
             name: '매질 2 굴절률',
+            nameEn: 'Medium 2 Refractive Index',
             role: 'input',
             unit: '',
             range: [1, 2.5],
@@ -57,6 +67,7 @@ export const snell: Formula = {
         {
             symbol: 'θ₂',
             name: '굴절각',
+            nameEn: 'Refracted Angle',
             role: 'output',
             unit: '°',
             range: [0, 90],

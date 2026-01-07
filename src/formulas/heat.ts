@@ -7,17 +7,25 @@ export const heat: Formula = {
     nameEn: 'Heat Transfer',
     expression: 'Q = mcΔT',
     description: '물체의 온도를 변화시키는 데 필요한 열에너지',
+    descriptionEn: 'The heat energy required to change an object\'s temperature',
     applications: [
         '물을 끓이는 데 필요한 에너지 계산',
         '냉난방 시스템 용량 설계',
         '요리할 때 조리 시간 예측',
         '수영장 온수 가열 비용 계산',
     ],
+    applicationsEn: [
+        'Calculating energy needed to boil water',
+        'Designing HVAC system capacity',
+        'Estimating cooking times',
+        'Calculating pool heating costs',
+    ],
     category: 'thermodynamics',
     variables: [
         {
             symbol: 'm',
             name: '질량',
+            nameEn: 'Mass',
             role: 'input',
             unit: 'kg',
             range: [0.5, 10],
@@ -31,6 +39,7 @@ export const heat: Formula = {
         {
             symbol: 'c',
             name: '비열',
+            nameEn: 'Specific Heat',
             role: 'input',
             unit: 'J/kg·K',
             range: [500, 4200],
@@ -44,6 +53,7 @@ export const heat: Formula = {
         {
             symbol: 'ΔT',
             name: '온도 변화',
+            nameEn: 'Temperature Change',
             role: 'input',
             unit: 'K',
             range: [1, 50],
@@ -57,6 +67,7 @@ export const heat: Formula = {
         {
             symbol: 'Q',
             name: '열량',
+            nameEn: 'Heat',
             role: 'output',
             unit: 'kJ',
             range: [0, 2000],

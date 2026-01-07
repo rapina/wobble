@@ -7,17 +7,25 @@ export const ohm: Formula = {
     nameEn: "Ohm's Law",
     expression: 'V = IR',
     description: '전압, 전류, 저항 사이의 관계',
+    descriptionEn: 'Relationship between voltage, current, and resistance',
     applications: [
         '가정용 전기 배선 설계',
         '스마트폰 충전기의 전류 제한',
         '전기 히터의 발열량 조절',
         'LED 조명의 저항값 계산',
     ],
+    applicationsEn: [
+        'Designing household electrical wiring',
+        'Limiting current in smartphone chargers',
+        'Adjusting heat output of electric heaters',
+        'Calculating resistance values for LED lighting',
+    ],
     category: 'electricity',
     variables: [
         {
             symbol: 'I',
             name: '전류',
+            nameEn: 'Current',
             role: 'input',
             unit: 'A',
             range: [0.1, 10],
@@ -31,6 +39,7 @@ export const ohm: Formula = {
         {
             symbol: 'R',
             name: '저항',
+            nameEn: 'Resistance',
             role: 'input',
             unit: 'Ω',
             range: [1, 100],
@@ -44,6 +53,7 @@ export const ohm: Formula = {
         {
             symbol: 'V',
             name: '전압',
+            nameEn: 'Voltage',
             role: 'output',
             unit: 'V',
             range: [0, 1000],

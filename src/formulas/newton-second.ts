@@ -7,17 +7,25 @@ export const newtonSecond: Formula = {
     nameEn: "Newton's Second Law",
     expression: 'F = ma',
     description: '힘은 질량과 가속도의 곱과 같다',
+    descriptionEn: 'Force equals mass times acceleration',
     applications: [
         '자동차 급브레이크 시 필요한 제동력 계산',
         '로켓 발사 시 필요한 추진력 설계',
         '엘리베이터 가속 시 케이블 장력 계산',
         '스포츠에서 공을 차거나 던질 때 힘 분석',
     ],
+    applicationsEn: [
+        'Calculating braking force for emergency stops',
+        'Designing thrust for rocket launches',
+        'Calculating cable tension during elevator acceleration',
+        'Analyzing force when kicking or throwing a ball in sports',
+    ],
     category: 'mechanics',
     variables: [
         {
             symbol: 'm',
             name: '질량',
+            nameEn: 'Mass',
             role: 'input',
             unit: 'kg',
             range: [1, 100],
@@ -31,6 +39,7 @@ export const newtonSecond: Formula = {
         {
             symbol: 'a',
             name: '가속도',
+            nameEn: 'Acceleration',
             role: 'input',
             unit: 'm/s²',
             range: [0.1, 20],
@@ -44,6 +53,7 @@ export const newtonSecond: Formula = {
         {
             symbol: 'F',
             name: '힘',
+            nameEn: 'Force',
             role: 'output',
             unit: 'N',
             range: [0, 2000],

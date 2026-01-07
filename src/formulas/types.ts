@@ -16,6 +16,7 @@ export interface VisualMapping {
 export interface Variable {
     symbol: string;
     name: string;
+    nameEn?: string;
     role: 'input' | 'output';
     unit: string;
     range: [number, number];
@@ -84,8 +85,10 @@ export interface Formula {
     nameEn?: string;
     expression: string;
     description: string;
+    descriptionEn?: string;
     /** 실생활에서 이 공식이 사용되는 예시들 */
     applications?: string[];
+    applicationsEn?: string[];
     category: FormulaCategory;
     variables: Variable[];
     calculate: (inputs: Record<string, number>) => Record<string, number>;

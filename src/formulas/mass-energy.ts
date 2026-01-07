@@ -7,17 +7,25 @@ export const massEnergy: Formula = {
     nameEn: 'Mass-Energy Equivalence',
     expression: 'E = mc²',
     description: '아인슈타인의 특수 상대성 이론: 작은 질량도 거대한 에너지로 변환된다',
+    descriptionEn: 'Einstein\'s special relativity: even small mass converts to enormous energy',
     applications: [
         '원자력 발전소의 에너지 생산',
         '태양이 빛과 열을 내는 원리 (핵융합)',
         'PET 스캔 의료 영상 기술',
         '핵무기의 파괴력 계산',
     ],
+    applicationsEn: [
+        'Energy production in nuclear power plants',
+        'How the Sun produces light and heat (fusion)',
+        'PET scan medical imaging technology',
+        'Calculating nuclear weapon yield',
+    ],
     category: 'special',
     variables: [
         {
             symbol: 'm',
             name: '질량',
+            nameEn: 'Mass',
             role: 'input',
             unit: 'kg',
             range: [0.001, 0.01],
@@ -31,6 +39,7 @@ export const massEnergy: Formula = {
         {
             symbol: 'c',
             name: '광속 배율',
+            nameEn: 'Speed of Light Factor',
             role: 'input',
             unit: '×10⁸ m/s',
             range: [1, 5],
@@ -44,6 +53,7 @@ export const massEnergy: Formula = {
         {
             symbol: 'E',
             name: '에너지',
+            nameEn: 'Energy',
             role: 'output',
             unit: 'PJ',
             range: [0, 250],

@@ -7,17 +7,25 @@ export const pendulum: Formula = {
     nameEn: 'Simple Pendulum',
     expression: 'T = 2π√(L/g)',
     description: '진자가 한 번 왕복하는 시간',
+    descriptionEn: 'The time for a pendulum to complete one full swing',
     applications: [
         '괘종시계의 정확한 시간 측정',
         '지진계의 진동 감지',
         '중력 가속도 정밀 측정',
         '메트로놈의 박자 조절',
     ],
+    applicationsEn: [
+        'Precise timekeeping in grandfather clocks',
+        'Seismograph vibration detection',
+        'Precision measurement of gravitational acceleration',
+        'Metronome tempo adjustment',
+    ],
     category: 'mechanics',
     variables: [
         {
             symbol: 'L',
             name: '줄 길이',
+            nameEn: 'String Length',
             role: 'input',
             unit: 'm',
             range: [0.5, 5],
@@ -31,6 +39,7 @@ export const pendulum: Formula = {
         {
             symbol: 'g',
             name: '중력가속도',
+            nameEn: 'Gravitational Accel.',
             role: 'input',
             unit: 'm/s²',
             range: [1, 20],
@@ -44,6 +53,7 @@ export const pendulum: Formula = {
         {
             symbol: 'T',
             name: '주기',
+            nameEn: 'Period',
             role: 'output',
             unit: 's',
             range: [0, 10],

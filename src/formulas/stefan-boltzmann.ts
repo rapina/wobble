@@ -7,17 +7,25 @@ export const stefanBoltzmann: Formula = {
     nameEn: 'Stefan-Boltzmann Law',
     expression: 'P = σAT⁴',
     description: '흑체가 방출하는 복사 에너지',
+    descriptionEn: 'The radiant energy emitted by a black body',
     applications: [
         '태양의 표면 온도 측정',
         '적외선 체온계의 작동 원리',
         '별의 밝기와 크기 관계 계산',
         '지구의 열균형과 기후 모델링',
     ],
+    applicationsEn: [
+        'Measuring the Sun\'s surface temperature',
+        'How infrared thermometers work',
+        'Calculating star brightness and size relationships',
+        'Earth\'s thermal equilibrium and climate modeling',
+    ],
     category: 'thermodynamics',
     variables: [
         {
             symbol: 'A',
             name: '표면적',
+            nameEn: 'Surface Area',
             role: 'input',
             unit: 'm²',
             range: [1, 10],
@@ -31,6 +39,7 @@ export const stefanBoltzmann: Formula = {
         {
             symbol: 'T',
             name: '절대온도',
+            nameEn: 'Absolute Temperature',
             role: 'input',
             unit: 'K',
             range: [300, 1200],
@@ -44,6 +53,7 @@ export const stefanBoltzmann: Formula = {
         {
             symbol: 'P',
             name: '복사 전력',
+            nameEn: 'Radiated Power',
             role: 'output',
             unit: 'W',
             range: [0, 500000],

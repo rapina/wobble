@@ -7,17 +7,25 @@ export const entropy: Formula = {
     nameEn: 'Entropy',
     expression: 'ΔS = Q/T',
     description: '열역학 제2법칙: 무질서도의 변화량',
+    descriptionEn: 'Second law of thermodynamics: change in disorder',
     applications: [
         '열기관의 효율 한계 계산 (카르노 사이클)',
         '화학 반응의 자발성 예측',
         '냉장고가 열을 밖으로 내보내는 원리',
         '우주의 열적 죽음 이론',
     ],
+    applicationsEn: [
+        'Calculating heat engine efficiency limits (Carnot cycle)',
+        'Predicting spontaneity of chemical reactions',
+        'How refrigerators expel heat',
+        'Heat death of the universe theory',
+    ],
     category: 'thermodynamics',
     variables: [
         {
             symbol: 'Q',
             name: '열량',
+            nameEn: 'Heat',
             role: 'input',
             unit: 'J',
             range: [200, 1200],
@@ -31,6 +39,7 @@ export const entropy: Formula = {
         {
             symbol: 'T',
             name: '절대온도',
+            nameEn: 'Absolute Temperature',
             role: 'input',
             unit: 'K',
             range: [150, 600],
@@ -44,6 +53,7 @@ export const entropy: Formula = {
         {
             symbol: 'ΔS',
             name: '엔트로피 변화',
+            nameEn: 'Entropy Change',
             role: 'output',
             unit: 'J/K',
             range: [0, 8],

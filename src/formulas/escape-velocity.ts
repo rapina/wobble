@@ -7,17 +7,25 @@ export const escapeVelocity: Formula = {
     nameEn: 'Escape Velocity',
     expression: 'v = √(2GM/r)',
     description: '행성의 중력을 벗어나기 위한 최소 속도',
+    descriptionEn: 'The minimum velocity needed to escape a planet\'s gravity',
     applications: [
         '로켓 발사 속도 계산',
         '블랙홀의 사건 지평선 이해',
         '행성 대기 유지 조건',
         '우주 탐사선의 궤도 설계',
     ],
+    applicationsEn: [
+        'Calculating rocket launch velocity',
+        'Understanding black hole event horizons',
+        'Conditions for planetary atmosphere retention',
+        'Designing spacecraft trajectories',
+    ],
     category: 'gravity',
     variables: [
         {
             symbol: 'M',
             name: '행성 질량',
+            nameEn: 'Planet Mass',
             role: 'input',
             unit: '×10²⁴kg',
             range: [0.1, 200],
@@ -31,6 +39,7 @@ export const escapeVelocity: Formula = {
         {
             symbol: 'r',
             name: '행성 반지름',
+            nameEn: 'Planet Radius',
             role: 'input',
             unit: '×10⁶m',
             range: [1, 100],
@@ -44,6 +53,7 @@ export const escapeVelocity: Formula = {
         {
             symbol: 'v',
             name: '탈출속도',
+            nameEn: 'Escape Velocity',
             role: 'output',
             unit: 'km/s',
             range: [0, 100],

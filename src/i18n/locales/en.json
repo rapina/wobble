@@ -1,0 +1,29 @@
+{
+    "home": {
+        "title": "WOBBLE",
+        "sandbox": "Lab",
+        "sandboxDesc": "Explore physics freely",
+        "puzzle": "Puzzle",
+        "puzzleDesc": "Clear stages",
+        "soon": "SOON",
+        "modes": ["ARCADE", "SANDBOX", "PUZZLE"]
+    },
+    "simulation": {
+        "loading": "Loading...",
+        "categories": {
+            "all": "All",
+            "mechanics": "Mechanics",
+            "wave": "Wave",
+            "gravity": "Gravity",
+            "thermodynamics": "Thermo",
+            "electricity": "Electric",
+            "special": "Special"
+        },
+        "emptyCategory": "No formulas in this category",
+        "info": {
+            "title": "Real-World Uses",
+            "applicationsLabel": "Practical Applications",
+            "dontShowAgain": "Don't auto-show for this formula"
+        }
+    }
+}

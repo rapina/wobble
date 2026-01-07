@@ -7,17 +7,25 @@ export const centripetal: Formula = {
     nameEn: 'Centripetal Force',
     expression: 'F = mv²/r',
     description: '원운동하는 물체를 중심으로 당기는 힘',
+    descriptionEn: 'The force pulling a rotating object toward the center',
     applications: [
         '놀이공원 회전 놀이기구의 안전 설계',
         '자동차가 커브길을 돌 때 필요한 마찰력 계산',
         '세탁기 탈수 기능의 원리',
         '인공위성의 궤도 속도 계산',
     ],
+    applicationsEn: [
+        'Safety design for amusement park rides',
+        'Calculating friction for cars on curves',
+        'How washing machine spin cycles work',
+        'Calculating satellite orbital velocity',
+    ],
     category: 'mechanics',
     variables: [
         {
             symbol: 'm',
             name: '질량',
+            nameEn: 'Mass',
             role: 'input',
             unit: 'kg',
             range: [1, 20],
@@ -31,6 +39,7 @@ export const centripetal: Formula = {
         {
             symbol: 'v',
             name: '속력',
+            nameEn: 'Velocity',
             role: 'input',
             unit: 'm/s',
             range: [1, 10],
@@ -44,6 +53,7 @@ export const centripetal: Formula = {
         {
             symbol: 'r',
             name: '반지름',
+            nameEn: 'Radius',
             role: 'input',
             unit: 'm',
             range: [1, 10],
@@ -57,6 +67,7 @@ export const centripetal: Formula = {
         {
             symbol: 'F',
             name: '구심력',
+            nameEn: 'Centripetal Force',
             role: 'output',
             unit: 'N',
             range: [0, 500],

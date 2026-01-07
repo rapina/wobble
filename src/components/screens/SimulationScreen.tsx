@@ -1,22 +1,24 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PixiCanvas } from '../canvas/PixiCanvas';
 import { ParameterControl } from '../controls/ParameterControl';
 import { FormulaLayout } from '../controls/FormulaLayout';
 import { useSimulation } from '../../hooks/useSimulation';
 import { useAdMob } from '../../hooks/useAdMob';
+import { useLocalizedFormula, useLocalizedVariables } from '../../hooks/useLocalizedFormula';
 import { ArrowLeft, List, X, Info, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Formula, FormulaCategory } from '../../formulas/types';
 import Balatro from '@/components/Balatro';
 
 // Balatro-inspired color palette
-const categoryConfig: Record<FormulaCategory, { color: string; name: string }> = {
-    mechanics: { color: '#f8b862', name: '역학' },
-    wave: { color: '#6ecff6', name: '파동' },
-    gravity: { color: '#c792ea', name: '중력' },
-    thermodynamics: { color: '#ff6b6b', name: '열역학' },
-    electricity: { color: '#69f0ae', name: '전기' },
-    special: { color: '#ffd700', name: '특수' },
+const categoryColors: Record<FormulaCategory, string> = {
+    mechanics: '#f8b862',
+    wave: '#6ecff6',
+    gravity: '#c792ea',
+    thermodynamics: '#ff6b6b',
+    electricity: '#69f0ae',
+    special: '#ffd700',
 };
 
 // Balatro theme
@@ -43,8 +45,11 @@ export function SimulationScreen({
     onFormulaChange,
     onBack,
 }: SimulationScreenProps) {
+    const { t, i18n } = useTranslation();
     const { formula, variables, inputVariables, setVariable } = useSimulation(formulaId);
     const { isInitialized, isBannerVisible, showBanner, hideBanner, isNative } = useAdMob();
+    const localizedFormula = useLocalizedFormula(formula);
+    const localizedVariables = useLocalizedVariables(formula?.variables ?? []);
     const [mounted, setMounted] = useState(false);
     const [showFormulaList, setShowFormulaList] = useState(false);
     const [selectedCard, setSelectedCard] = useState<string | null>(null);
@@ -123,7 +128,7 @@ export function SimulationScreen({
     if (!formula) {
         return (
             <div className="flex justify-center items-center h-full" style={{ background: theme.bg }}>
-                <div className="animate-pulse text-white/50">Loading...</div>
+                <div className="animate-pulse text-white/50">{t('simulation.loading')}</div>
             </div>
         );
     }
@@ -193,7 +198,7 @@ export function SimulationScreen({
                             }}
                         >
                             <span className="text-sm font-black text-black">
-                                {formula.name}
+                                {localizedFormula?.name}
                             </span>
                         </div>
 
@@ -238,11 +243,12 @@ export function SimulationScreen({
                 {/* Shared Parameter Control - appears when card selected */}
                 {selectedCard && (() => {
                     const selectedVar = formula.variables.find(v => v.symbol === selectedCard);
+                    const localizedVar = localizedVariables.find(v => v.symbol === selectedCard);
                     if (!selectedVar || selectedVar.role === 'output') return null;
                     return (
                         <ParameterControl
                             symbol={selectedVar.symbol}
-                            name={selectedVar.name}
+                            name={localizedVar?.localizedName ?? selectedVar.name}
                             value={variables[selectedVar.symbol] ?? selectedVar.default}
                             min={selectedVar.range[0]}
                             max={selectedVar.range[1]}
@@ -361,10 +367,10 @@ export function SimulationScreen({
                                         boxShadow: `0 2px 0 ${theme.border}`,
                                     }}
                                 >
-                                    전체
+                                    {t('simulation.categories.all')}
                                 </button>
                                 {categories.map((cat) => {
-                                    const config = categoryConfig[cat];
+                                    const color = categoryColors[cat];
                                     const isActive = selectedCategory === cat;
                                     return (
                                         <button
@@ -372,13 +378,13 @@ export function SimulationScreen({
                                             onClick={() => setSelectedCategory(cat)}
                                             className="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-bold transition-all active:scale-95"
                                             style={{
-                                                background: isActive ? config.color : theme.bgPanelLight,
+                                                background: isActive ? color : theme.bgPanelLight,
                                                 color: isActive ? '#000' : '#fff',
                                                 border: `2px solid ${theme.border}`,
                                                 boxShadow: `0 2px 0 ${theme.border}`,
                                             }}
                                         >
-                                            {config.name}
+                                            {t(`simulation.categories.${cat}`)}
                                         </button>
                                     );
                                 })}
@@ -391,8 +397,9 @@ export function SimulationScreen({
                             >
                                 <div className="grid grid-cols-2 gap-3">
                                     {filteredFormulas.map((f) => {
-                                        const fConfig = categoryConfig[f.category];
+                                        const fColor = categoryColors[f.category];
                                         const isSelected = f.id === formulaId;
+                                        const fName = i18n.language === 'en' && f.nameEn ? f.nameEn : f.name;
                                         return (
                                             <button
                                                 key={f.id}
@@ -402,7 +409,7 @@ export function SimulationScreen({
                                                 }}
                                                 className="text-left px-4 py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                                                 style={{
-                                                    background: isSelected ? fConfig.color : theme.bgPanelLight,
+                                                    background: isSelected ? fColor : theme.bgPanelLight,
                                                     border: `2px solid ${theme.border}`,
                                                     boxShadow: `0 3px 0 ${theme.border}`,
                                                 }}
@@ -410,7 +417,7 @@ export function SimulationScreen({
                                                 <div className="flex items-center gap-2">
                                                     <span
                                                         className="w-2 h-2 rounded-full flex-shrink-0"
-                                                        style={{ background: fConfig.color }}
+                                                        style={{ background: fColor }}
                                                     />
                                                     <span
                                                         className="block text-sm font-bold truncate"
@@ -418,7 +425,7 @@ export function SimulationScreen({
                                                             color: isSelected ? '#000' : 'white',
                                                         }}
                                                     >
-                                                        {f.name}
+                                                        {fName}
                                                     </span>
                                                 </div>
                                             </button>
@@ -429,7 +436,7 @@ export function SimulationScreen({
                                 {/* Empty state */}
                                 {filteredFormulas.length === 0 && (
                                     <div className="text-center py-8 text-white/50 text-sm">
-                                        이 카테고리에 공식이 없습니다
+                                        {t('simulation.emptyCategory')}
                                     </div>
                                 )}
                             </div>
@@ -468,7 +475,7 @@ export function SimulationScreen({
                             <div className="flex items-center gap-2">
                                 <Info className="h-5 w-5 text-white" />
                                 <span className="text-lg font-black text-white">
-                                    어디에 쓰일까?
+                                    {t('simulation.info.title')}
                                 </span>
                             </div>
                             <button
@@ -494,21 +501,21 @@ export function SimulationScreen({
                                 }}
                             >
                                 <span className="text-sm font-black text-black">
-                                    {formula.name}
+                                    {localizedFormula?.name}
                                 </span>
                             </div>
                             <p className="text-white/70 text-sm">
-                                {formula.description}
+                                {localizedFormula?.description}
                             </p>
                         </div>
 
                         {/* Applications List */}
                         <div className="px-5 py-4 space-y-3">
                             <span className="text-xs font-bold text-white/50 uppercase tracking-wide">
-                                실생활 활용 예시
+                                {t('simulation.info.applicationsLabel')}
                             </span>
                             <ul className="space-y-2">
-                                {formula.applications.map((app, index) => (
+                                {localizedFormula?.applications.map((app, index) => (
                                     <li
                                         key={index}
                                         className="flex items-start gap-3 p-3 rounded-lg"
@@ -554,7 +561,7 @@ export function SimulationScreen({
                                         border: `2px solid ${theme.border}`,
                                     }}
                                 >
-                                    이 공식은 다시 자동으로 표시하지 않기
+                                    {t('simulation.info.dontShowAgain')}
                                 </button>
                             </div>
                         )}

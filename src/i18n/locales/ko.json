@@ -1,0 +1,29 @@
+{
+    "home": {
+        "title": "WOBBLE",
+        "sandbox": "실험실",
+        "sandboxDesc": "자유롭게 물리 탐험",
+        "puzzle": "퍼즐",
+        "puzzleDesc": "스테이지 클리어",
+        "soon": "SOON",
+        "modes": ["ARCADE", "SANDBOX", "PUZZLE"]
+    },
+    "simulation": {
+        "loading": "로딩 중...",
+        "categories": {
+            "all": "전체",
+            "mechanics": "역학",
+            "wave": "파동",
+            "gravity": "중력",
+            "thermodynamics": "열역학",
+            "electricity": "전기",
+            "special": "특수"
+        },
+        "emptyCategory": "이 카테고리에 공식이 없습니다",
+        "info": {
+            "title": "어디에 쓰일까?",
+            "applicationsLabel": "실생활 활용 예시",
+            "dontShowAgain": "이 공식은 다시 자동으로 표시하지 않기"
+        }
+    }
+}

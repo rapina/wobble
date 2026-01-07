@@ -7,17 +7,25 @@ export const projectile: Formula = {
     nameEn: 'Projectile Motion',
     expression: 'R = v²sin2θ/g',
     description: '비스듬히 던진 물체의 수평 도달 거리',
+    descriptionEn: 'The horizontal range of an object thrown at an angle',
     applications: [
         '축구나 농구에서 공의 궤적 예측',
         '대포나 미사일의 사거리 계산',
         '분수대 물줄기 설계',
         '골프 드라이버 샷의 최적 각도',
     ],
+    applicationsEn: [
+        'Predicting ball trajectory in soccer or basketball',
+        'Calculating cannon or missile range',
+        'Designing fountain water jets',
+        'Finding optimal angle for golf drives',
+    ],
     category: 'gravity',
     variables: [
         {
             symbol: 'v',
             name: '초기 속력',
+            nameEn: 'Initial Velocity',
             role: 'input',
             unit: 'm/s',
             range: [5, 50],
@@ -31,6 +39,7 @@ export const projectile: Formula = {
         {
             symbol: 'θ',
             name: '발사각',
+            nameEn: 'Launch Angle',
             role: 'input',
             unit: '°',
             range: [10, 80],
@@ -44,6 +53,7 @@ export const projectile: Formula = {
         {
             symbol: 'g',
             name: '중력가속도',
+            nameEn: 'Gravitational Accel.',
             role: 'input',
             unit: 'm/s²',
             range: [1, 25],
@@ -57,6 +67,7 @@ export const projectile: Formula = {
         {
             symbol: 'R',
             name: '수평 도달거리',
+            nameEn: 'Horizontal Range',
             role: 'output',
             unit: 'm',
             range: [0, 300],

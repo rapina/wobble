@@ -7,17 +7,25 @@ export const lorentz: Formula = {
     nameEn: 'Lorentz Force',
     expression: 'F = qvB',
     description: '자기장 속에서 운동하는 전하에 작용하는 힘',
+    descriptionEn: 'The force acting on a moving charge in a magnetic field',
     applications: [
         '전동기(모터)의 회전 원리',
         'MRI 의료 영상 장비',
         '입자가속기에서 입자 경로 제어',
         '오로라 현상의 원리',
     ],
+    applicationsEn: [
+        'How electric motors rotate',
+        'MRI medical imaging equipment',
+        'Controlling particle paths in accelerators',
+        'The physics behind aurora phenomena',
+    ],
     category: 'electricity',
     variables: [
         {
             symbol: 'q',
             name: '전하량',
+            nameEn: 'Charge',
             role: 'input',
             unit: 'μC',
             range: [1, 100],
@@ -31,6 +39,7 @@ export const lorentz: Formula = {
         {
             symbol: 'v',
             name: '속력',
+            nameEn: 'Velocity',
             role: 'input',
             unit: 'm/s',
             range: [1, 20],
@@ -44,6 +53,7 @@ export const lorentz: Formula = {
         {
             symbol: 'B',
             name: '자기장 세기',
+            nameEn: 'Magnetic Field',
             role: 'input',
             unit: 'T',
             range: [0.1, 2],
@@ -57,6 +67,7 @@ export const lorentz: Formula = {
         {
             symbol: 'F',
             name: '로렌츠 힘',
+            nameEn: 'Lorentz Force',
             role: 'output',
             unit: 'mN',
             range: [0, 4000],
