@@ -5,6 +5,7 @@ import ShuffleText from '@/components/ShuffleText';
 import { RotatingText } from '@/components/RotatingText';
 import { BlobDisplay } from '@/components/canvas/BlobDisplay';
 import { LanguageToggle } from '@/components/LanguageToggle';
+import { MusicToggle } from '@/components/MusicToggle';
 import { cn } from '@/lib/utils';
 
 export type GameMode = 'sandbox' | 'puzzle' | 'learning';
@@ -45,14 +46,15 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
             {/* Vignette overlay */}
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)]" />
 
-            {/* Language Toggle - Top Right */}
+            {/* Settings - Top Right */}
             <div
-                className="absolute z-20"
+                className="absolute z-20 flex gap-2"
                 style={{
                     top: 'max(env(safe-area-inset-top, 0px), 16px)',
                     right: 'max(env(safe-area-inset-right, 0px), 16px)',
                 }}
             >
+                <MusicToggle />
                 <LanguageToggle />
             </div>
 

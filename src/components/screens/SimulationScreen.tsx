@@ -99,15 +99,40 @@ export function SimulationScreen({
         return () => clearTimeout(timer);
     }, [tutorial.isActive, tutorial.currentTargetSymbol, selectedCard]);
 
-    // Auto-start tutorial for first-time users
+    // Track if info popup was shown for this formula
+    const [infoPopupShownOnce, setInfoPopupShownOnce] = useState(false);
+
+    // Reset info popup tracking when formula changes
     useEffect(() => {
-        if (formula && !tutorial.hasCompletedTutorial && !tutorial.isActive) {
-            const timer = setTimeout(() => {
-                tutorial.startTutorial();
-            }, 800);
-            return () => clearTimeout(timer);
+        setInfoPopupShownOnce(false);
+    }, [formulaId]);
+
+    // Track when info popup is shown
+    useEffect(() => {
+        if (showInfoPopup) {
+            setInfoPopupShownOnce(true);
         }
-    }, [formula?.id]);
+    }, [showInfoPopup]);
+
+    // Auto-start tutorial for first-time users (after info popup is closed)
+    useEffect(() => {
+        // Check if info popup needs to be shown for this formula
+        const needsInfoPopup = formula?.applications && formula.applications.length > 0 && !seenFormulas.has(formulaId);
+
+        // Don't start if tutorial already completed or active
+        if (!formula || tutorial.hasCompletedTutorial || tutorial.isActive) return;
+
+        // Don't start if info popup is currently showing
+        if (showInfoPopup) return;
+
+        // If info popup was needed but hasn't been shown yet, wait
+        if (needsInfoPopup && !infoPopupShownOnce) return;
+
+        const timer = setTimeout(() => {
+            tutorial.startTutorial();
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [formula?.id, showInfoPopup, infoPopupShownOnce, seenFormulas]);
 
     // Get unique categories from formulas
     const categories = useMemo(() => {

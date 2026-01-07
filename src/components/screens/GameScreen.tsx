@@ -4,6 +4,7 @@ import { HomeScreen, GameMode } from './HomeScreen';
 import { SimulationScreen } from './SimulationScreen';
 import { formulaList } from '../../formulas/registry';
 import { Formula } from '../../formulas/types';
+import { useMusic } from '../../hooks/useMusic';
 import { cn } from '@/lib/utils';
 
 type ScreenState = 'home' | 'sandbox' | 'puzzle' | 'learning';
@@ -13,6 +14,7 @@ export function GameScreen() {
     const [selectedFormula, setSelectedFormula] = useState<Formula | null>(null);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const { isMusicEnabled } = useMusic();
 
     // Initialize with first formula when entering sandbox
     useEffect(() => {
@@ -21,27 +23,23 @@ export function GameScreen() {
         }
     }, [screenState, selectedFormula]);
 
-    // Background music
+    // Background music - initialize audio element
     useEffect(() => {
         const audio = new Audio('/assets/bg.mp3');
         audio.loop = true;
         audio.volume = 0.02;
         audioRef.current = audio;
 
-        const playMusic = () => {
-            audio.play().catch(() => {});
-        };
-
-        playMusic();
-
         const handleInteraction = () => {
-            playMusic();
+            if (isMusicEnabled) {
+                audio.play().catch(() => {});
+            }
             document.removeEventListener('click', handleInteraction);
         };
         document.addEventListener('click', handleInteraction);
 
         const appStateListener = App.addListener('appStateChange', ({ isActive }) => {
-            if (isActive) {
+            if (isActive && isMusicEnabled) {
                 audio.play().catch(() => {});
             } else {
                 audio.pause();
@@ -54,6 +52,18 @@ export function GameScreen() {
             appStateListener.then(listener => listener.remove());
         };
     }, []);
+
+    // Control music based on isMusicEnabled setting
+    useEffect(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        if (isMusicEnabled) {
+            audio.play().catch(() => {});
+        } else {
+            audio.pause();
+        }
+    }, [isMusicEnabled]);
 
     const handleSelectMode = (mode: GameMode) => {
         if (mode === 'sandbox') {
