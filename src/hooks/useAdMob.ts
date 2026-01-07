@@ -90,7 +90,7 @@ export function useAdMob(): UseAdMobReturn {
 
             const options: BannerAdOptions = {
                 adId,
-                adSize: BannerAdSize.BANNER,
+                adSize: BannerAdSize.ADAPTIVE_BANNER,
                 position: BannerAdPosition.BOTTOM_CENTER,
                 margin: 0,
                 isTesting: true,

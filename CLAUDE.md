@@ -120,6 +120,51 @@ displayLayout: {
 }
 ```
 
+## Formula Selection Criteria
+
+When adding or reviewing physics formulas, apply these criteria to ensure intuitive visualization:
+
+### ✓ Good Formula Characteristics
+
+1. **Clear Input→Output Relationship**: The effect of changing input variables should be immediately visible
+   - Example: Snell's Law - changing incident angle directly shows refracted angle change
+   - Example: Lens formula - object distance change shows image position/size change
+
+2. **Visual Causality**: Users can see "why" the output changes
+   - Example: Reflection - light blob bounces off mirror at same angle
+   - Example: Total internal reflection - light dramatically changes behavior at critical angle
+
+3. **Appropriate Parameter Range**: Variable changes produce noticeable visual differences
+   - Bad: Sound speed (331-361 m/s, only 9% difference - imperceptible)
+   - Good: Snell's Law (angles 0-85° - dramatic visible change)
+
+4. **Simple Conceptual Model**: Can be represented with 1-3 key elements
+   - Example: Reflection needs only: light source, mirror, angles
+   - Example: Entropy needs: container, particles, temperature
+
+### ✗ Formulas to Avoid
+
+1. **Abstract Relationships**: No clear visual metaphor
+   - Diffraction patterns - interference is mathematically beautiful but visually confusing
+
+2. **Too Many Variables**: More than 3-4 input parameters becomes overwhelming
+   - Diffraction grating had λ, d, n, θ - too complex for mobile screen
+
+3. **Imperceptible Differences**: Output changes are too subtle
+   - Sound speed variation with temperature - speed difference not visible
+
+4. **Requires Prior Knowledge**: Concept isn't self-explanatory from animation
+   - Doppler effect - frequency shift concept is abstract without sound
+
+### Reference Implementation
+
+**Snell's Law** is the gold standard for intuitive visualization:
+- Light blob travels along actual ray path
+- Media density shown through color/opacity
+- Angle change is immediate and obvious
+- Wavy surface adds life without distracting
+- Bubbles provide environmental context
+
 ## Scene Enhancements
 
 Notable scene implementations:

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Balatro from '@/components/Balatro';
 import ShuffleText from '@/components/ShuffleText';
+import { RotatingText } from '@/components/RotatingText';
 import { BlobDisplay } from '@/components/canvas/BlobDisplay';
 import { cn } from '@/lib/utils';
 
@@ -46,7 +47,7 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                 className="relative z-10 h-full flex flex-col"
                 style={{
                     paddingTop: 'max(env(safe-area-inset-top, 0px), 80px)',
-                    paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 80px)',
+                    paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 140px)',
                     paddingLeft: 'max(env(safe-area-inset-left, 0px), 40px)',
                     paddingRight: 'max(env(safe-area-inset-right, 0px), 40px)',
                 }}
@@ -77,13 +78,17 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                         </ShuffleText>
                     </h1>
                     <p
-                        className="text-lg tracking-[0.3em] mt-4 font-bold"
+                        className="text-base tracking-[0.2em] mt-4 font-bold"
                         style={{
                             color: '#5DADE2',
                             textShadow: '0 0 20px rgba(93, 173, 226, 0.6)',
                         }}
                     >
-                        PHYSICS
+                        PHYSICS{' '}
+                        <RotatingText
+                            texts={['ARCADE', 'SANDBOX', 'PUZZLE']}
+                            interval={2500}
+                        />
                     </p>
                 </div>
 
@@ -175,6 +180,16 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                     </button>
                 </div>
 
+            </div>
+
+            {/* Footer - 광고 배너 위에 위치 */}
+            <div
+                className="absolute left-0 right-0 text-center text-white/30 text-xs"
+                style={{ bottom: 100 }}
+            >
+                <span className="font-medium">2026 Sputnik Workshop</span>
+                <span className="mx-2">·</span>
+                <span className="font-mono">v{__APP_VERSION__}</span>
             </div>
         </div>
     );

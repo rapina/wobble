@@ -50,6 +50,10 @@ export function SimulationScreen({
     const [selectedCard, setSelectedCard] = useState<string | null>(null);
     const [showInfoPopup, setShowInfoPopup] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<FormulaCategory | 'all'>('all');
+    const [seenFormulas, setSeenFormulas] = useState<Set<string>>(() => {
+        const saved = localStorage.getItem('wobble-seen-formulas');
+        return saved ? new Set(JSON.parse(saved)) : new Set();
+    });
 
     // Get unique categories from formulas
     const categories = useMemo(() => {
@@ -99,6 +103,22 @@ export function SimulationScreen({
         const timer = setTimeout(() => setMounted(true), 50);
         return () => clearTimeout(timer);
     }, [formulaId]);
+
+    // Auto-show info popup for formulas not seen before
+    useEffect(() => {
+        if (formula?.applications && formula.applications.length > 0 && !seenFormulas.has(formulaId)) {
+            const timer = setTimeout(() => setShowInfoPopup(true), 300);
+            return () => clearTimeout(timer);
+        }
+    }, [formulaId]);
+
+    // Mark formula as seen
+    const markAsSeen = (id: string) => {
+        const newSeen = new Set(seenFormulas);
+        newSeen.add(id);
+        setSeenFormulas(newSeen);
+        localStorage.setItem('wobble-seen-formulas', JSON.stringify([...newSeen]));
+    };
 
     if (!formula) {
         return (
@@ -513,6 +533,31 @@ export function SimulationScreen({
                                 ))}
                             </ul>
                         </div>
+
+                        {/* Don't show again option */}
+                        {!seenFormulas.has(formulaId) && (
+                            <div
+                                className="px-5 py-3"
+                                style={{
+                                    borderTop: `2px solid ${theme.border}`,
+                                    background: 'rgba(0,0,0,0.2)',
+                                }}
+                            >
+                                <button
+                                    onClick={() => {
+                                        markAsSeen(formulaId);
+                                        setShowInfoPopup(false);
+                                    }}
+                                    className="w-full py-2 rounded-lg text-white/50 text-xs transition-all active:scale-95 hover:text-white/70"
+                                    style={{
+                                        background: theme.bgPanelLight,
+                                        border: `2px solid ${theme.border}`,
+                                    }}
+                                >
+                                    이 공식은 다시 자동으로 표시하지 않기
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

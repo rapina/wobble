@@ -16,11 +16,9 @@ import { keplerThird } from './kepler-third';
 // Wave & Optics
 import { wave } from './wave';
 import { snell } from './snell';
-import { doppler } from './doppler';
 import { lens } from './lens';
-import { diffraction } from './diffraction';
-import { doubleSlit } from './double-slit';
-import { soundSpeed } from './sound-speed';
+import { reflection } from './reflection';
+import { standingWave } from './standing-wave';
 // Thermodynamics
 import { idealGas } from './ideal-gas';
 import { heat } from './heat';
@@ -57,12 +55,10 @@ export const formulas: Record<string, Formula> = {
     'kepler-third': keplerThird,
     // Wave & Optics
     wave: wave,
+    reflection: reflection,
     snell: snell,
-    doppler: doppler,
     lens: lens,
-    diffraction: diffraction,
-    'double-slit': doubleSlit,
-    'sound-speed': soundSpeed,
+    'standing-wave': standingWave,
     // Thermodynamics
     'ideal-gas': idealGas,
     heat: heat,

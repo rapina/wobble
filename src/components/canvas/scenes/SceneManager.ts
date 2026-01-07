@@ -15,7 +15,6 @@ import { LorentzScene } from './LorentzScene';
 import { CapacitorScene } from './CapacitorScene';
 import { MassEnergyScene } from './MassEnergyScene';
 import { SnellScene } from './SnellScene';
-import { DopplerScene } from './DopplerScene';
 import { HeatScene } from './HeatScene';
 import { CentripetalScene } from './CentripetalScene';
 import { CollisionScene } from './CollisionScene';
@@ -29,9 +28,8 @@ import { ThermalConductionScene } from './ThermalConductionScene';
 import { StefanBoltzmannScene } from './StefanBoltzmannScene';
 // New wave/optics scenes
 import { LensScene } from './LensScene';
-import { DiffractionScene } from './DiffractionScene';
-import { DoubleSlitScene } from './DoubleSlitScene';
-import { SoundSpeedScene } from './SoundSpeedScene';
+import { ReflectionScene } from './ReflectionScene';
+import { StandingWaveScene } from './StandingWaveScene';
 // New gravity scenes
 import { FreeFallScene } from './FreeFallScene';
 import { ProjectileScene } from './ProjectileScene';
@@ -56,7 +54,6 @@ const sceneMap: Record<string, SceneConstructor> = {
     'capacitor': CapacitorScene,
     'mass-energy': MassEnergyScene,
     'snell': SnellScene,
-    'doppler': DopplerScene,
     'heat': HeatScene,
     'centripetal': CentripetalScene,
     'elastic-collision': CollisionScene,
@@ -70,9 +67,8 @@ const sceneMap: Record<string, SceneConstructor> = {
     'stefan-boltzmann': StefanBoltzmannScene,
     // New wave/optics scenes
     'lens': LensScene,
-    'diffraction': DiffractionScene,
-    'double-slit': DoubleSlitScene,
-    'sound-speed': SoundSpeedScene,
+    'reflection': ReflectionScene,
+    'standing-wave': StandingWaveScene,
     // New gravity scenes
     'free-fall': FreeFallScene,
     'projectile': ProjectileScene,
