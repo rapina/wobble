@@ -61,7 +61,7 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                 className="relative z-10 h-full flex flex-col"
                 style={{
                     paddingTop: 'max(env(safe-area-inset-top, 0px), 80px)',
-                    paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 140px)',
+                    paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 200px)',
                     paddingLeft: 'max(env(safe-area-inset-left, 0px), 40px)',
                     paddingRight: 'max(env(safe-area-inset-right, 0px), 40px)',
                 }}
@@ -194,6 +194,14 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                     </button>
                 </div>
 
+            </div>
+
+            {/* Disclaimer */}
+            <div
+                className="absolute left-0 right-0 text-center text-white/40 text-xs px-6 leading-relaxed whitespace-pre-line"
+                style={{ bottom: 120 }}
+            >
+                {t('home.disclaimer')}
             </div>
 
             {/* Footer - 광고 배너 위에 위치 */}

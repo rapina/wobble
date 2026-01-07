@@ -6,7 +6,8 @@
         "puzzle": "Puzzle",
         "puzzleDesc": "Clear stages",
         "soon": "SOON",
-        "modes": ["ARCADE", "SANDBOX", "PUZZLE"]
+        "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
+        "disclaimer": "This simulation is a tool for experimenting with and observing physics concepts.\nResults may differ from actual calculations."
     },
     "simulation": {
         "loading": "Loading...",

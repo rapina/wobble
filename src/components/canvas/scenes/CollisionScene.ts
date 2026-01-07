@@ -57,7 +57,7 @@ export class CollisionScene extends BaseScene {
 
         // Create cue ball
         const cueBlobObj = new Blob({
-            size: 45,
+            size: 28,
             color: 0xffffff,
             shape: 'circle',
             expression: 'charge',
@@ -70,16 +70,16 @@ export class CollisionScene extends BaseScene {
             vx: 0,
             vy: 0,
             mass: this.m1,
-            radius: 22,
+            radius: 14,
             hit: false,
         };
 
         // Create target balls in triangle formation
         this.targetBalls = [];
         const colors = [0xff6b6b, 0x4ecdc4, 0xf7dc6f, 0x9b59b6, 0x3498db, 0xe74c3c];
-        const startX = this.width - 120;
+        const startX = this.width - 80;
         const startY = this.centerY;
-        const spacing = 38;
+        const spacing = 28;
 
         // Triangle pattern: 1-2-3 formation
         const positions = [
@@ -93,7 +93,7 @@ export class CollisionScene extends BaseScene {
 
         positions.forEach((pos, i) => {
             const targetBlob = new Blob({
-                size: 40,
+                size: 24,
                 color: colors[i % colors.length],
                 shape: 'circle',
                 expression: 'happy',
@@ -107,7 +107,7 @@ export class CollisionScene extends BaseScene {
                 vx: 0,
                 vy: 0,
                 mass: this.m2,
-                radius: 20,
+                radius: 12,
                 hit: false,
             });
         });
@@ -127,12 +127,12 @@ export class CollisionScene extends BaseScene {
         this.cueBall.vy = 0;
         this.cueBall.hit = false;
         this.cueBall.mass = this.m1;
-        this.cueBall.radius = 18 + this.m1 * 0.5;
+        this.cueBall.radius = 10 + this.m1 * 0.4;
 
         // Reset target balls in triangle
-        const startX = this.width - 120;
+        const startX = this.width - 80;
         const startY = this.centerY;
-        const spacing = 38;
+        const spacing = 28;
 
         const positions = [
             { row: 0, col: 0 },
@@ -151,7 +151,7 @@ export class CollisionScene extends BaseScene {
             ball.vy = 0;
             ball.hit = false;
             ball.mass = this.m2;
-            ball.radius = 16 + this.m2 * 0.4;
+            ball.radius = 8 + this.m2 * 0.4;
         });
 
         // Start moving after brief pause
@@ -169,11 +169,11 @@ export class CollisionScene extends BaseScene {
         this.e = this.variables['e'] ?? 0.8;
 
         // Update cue ball size
-        this.cueBall.blob.updateOptions({ size: 36 + this.m1 * 1.5 });
+        this.cueBall.blob.updateOptions({ size: 20 + this.m1 * 0.8 });
 
         // Update target ball sizes
         this.targetBalls.forEach(ball => {
-            ball.blob.updateOptions({ size: 32 + this.m2 * 1.2 });
+            ball.blob.updateOptions({ size: 16 + this.m2 * 0.8 });
         });
 
         this.resetSimulation();
@@ -290,9 +290,9 @@ export class CollisionScene extends BaseScene {
     }
 
     private bounceOffWalls(ball: BallState): void {
-        const margin = 30;
-        const tableTop = this.centerY - 80;
-        const tableBottom = this.centerY + 80;
+        const margin = 15;
+        const tableTop = 25;
+        const tableBottom = this.height - 25;
         const tableLeft = margin;
         const tableRight = this.width - margin;
 
@@ -382,10 +382,10 @@ export class CollisionScene extends BaseScene {
         const g = this.uiGraphics;
         g.clear();
 
-        const tableTop = this.centerY - 80;
-        const tableBottom = this.centerY + 80;
-        const tableLeft = 30;
-        const tableRight = this.width - 30;
+        const tableTop = 25;
+        const tableBottom = this.height - 25;
+        const tableLeft = 15;
+        const tableRight = this.width - 15;
 
         // Table surface
         g.roundRect(tableLeft, tableTop, tableRight - tableLeft, tableBottom - tableTop, 8);
@@ -399,26 +399,26 @@ export class CollisionScene extends BaseScene {
         g.roundRect(tableLeft + 8, tableTop + 8, tableRight - tableLeft - 16, tableBottom - tableTop - 16, 4);
         g.stroke({ color: 0x228b22, width: 1, alpha: 0.5 });
 
-        // Restitution indicator
-        const eBarX = 20;
-        const eBarY = this.height - 30;
-        const eBarWidth = 80;
+        // Restitution indicator (inside table, top-left)
+        const eBarX = tableLeft + 10;
+        const eBarY = tableTop + 10;
+        const eBarWidth = 60;
 
-        g.roundRect(eBarX, eBarY, eBarWidth, 10, 4);
-        g.fill({ color: 0x333333, alpha: 0.6 });
+        g.roundRect(eBarX, eBarY, eBarWidth, 8, 3);
+        g.fill({ color: 0x333333, alpha: 0.5 });
 
-        g.roundRect(eBarX, eBarY, this.e * eBarWidth, 10, 4);
-        g.fill({ color: this.e > 0.8 ? 0x4ecdc4 : this.e > 0.5 ? 0xf5b041 : 0xff6b6b, alpha: 0.8 });
+        g.roundRect(eBarX, eBarY, this.e * eBarWidth, 8, 3);
+        g.fill({ color: this.e > 0.8 ? 0x4ecdc4 : this.e > 0.5 ? 0xf5b041 : 0xff6b6b, alpha: 0.7 });
 
-        // Phase indicator
+        // Phase indicator (inside table, top-right)
         const phaseColors: Record<string, number> = {
             ready: 0x888888,
             moving: 0x4ecdc4,
             settling: 0xf5b041,
             pause: 0x666666,
         };
-        g.circle(this.width - 25, 25, 8);
-        g.fill({ color: phaseColors[this.phase], alpha: 0.8 });
+        g.circle(tableRight - 15, tableTop + 15, 6);
+        g.fill({ color: phaseColors[this.phase], alpha: 0.7 });
     }
 
     private drawParticles(): void {

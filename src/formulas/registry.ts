@@ -33,10 +33,10 @@ import { electricPower } from './electric-power';
 import { lorentz } from './lorentz';
 import { capacitor } from './capacitor';
 // Special / Modern Physics
-import { massEnergy } from './mass-energy';
 import { buoyancy } from './buoyancy';
 import { photoelectric } from './photoelectric';
 import { debroglie } from './debroglie';
+import { timeDilation } from './time-dilation';
 
 export const formulas: Record<string, Formula> = {
     // Mechanics
@@ -73,10 +73,10 @@ export const formulas: Record<string, Formula> = {
     lorentz: lorentz,
     capacitor: capacitor,
     // Special / Modern Physics
-    'mass-energy': massEnergy,
     buoyancy: buoyancy,
     photoelectric: photoelectric,
     debroglie: debroglie,
+    'time-dilation': timeDilation,
 };
 
 export const formulaList = Object.values(formulas);
