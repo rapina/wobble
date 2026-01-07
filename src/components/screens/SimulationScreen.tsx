@@ -68,6 +68,10 @@ export function SimulationScreen({
         const saved = localStorage.getItem('wobble-seen-formulas');
         return saved ? new Set(JSON.parse(saved)) : new Set();
     });
+    const [dontShowInfoFormulas, setDontShowInfoFormulas] = useState<Set<string>>(() => {
+        const saved = localStorage.getItem('wobble-dont-show-info-formulas');
+        return saved ? new Set(JSON.parse(saved)) : new Set();
+    });
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
     const [sliderRect, setSliderRect] = useState<DOMRect | null>(null);
     const [pendingNewWobbles, setPendingNewWobbles] = useState<WobbleShape[]>([]);
@@ -135,7 +139,7 @@ export function SimulationScreen({
     // Auto-start tutorial for first-time users (after info popup is closed)
     useEffect(() => {
         // Check if info popup needs to be shown for this formula
-        const needsInfoPopup = formula?.applications && formula.applications.length > 0 && !seenFormulas.has(formulaId);
+        const needsInfoPopup = formula?.applications && formula.applications.length > 0 && !dontShowInfoFormulas.has(formulaId);
 
         // Don't start if tutorial already completed globally, active, or shown this session
         if (!formula || tutorial.hasCompletedTutorial || tutorial.isActive || tutorialShownThisSession) return;
@@ -150,7 +154,7 @@ export function SimulationScreen({
             tutorial.startTutorial();
         }, 500);
         return () => clearTimeout(timer);
-    }, [formula, formulaId, showInfoPopup, infoPopupShownOnce, seenFormulas, tutorial.hasCompletedTutorial, tutorial.isActive, tutorialShownThisSession]);
+    }, [formula, formulaId, showInfoPopup, infoPopupShownOnce, dontShowInfoFormulas, tutorial.hasCompletedTutorial, tutorial.isActive, tutorialShownThisSession]);
 
     // Get unique categories from formulas
     const categories = useMemo(() => {
@@ -224,7 +228,7 @@ export function SimulationScreen({
         if (tutorial.isActive) return;
 
         // Check if info popup needs to be shown
-        const needsInfoPopup = formula?.applications && formula.applications.length > 0 && !seenFormulas.has(formulaId);
+        const needsInfoPopup = formula?.applications && formula.applications.length > 0 && !dontShowInfoFormulas.has(formulaId);
         if (needsInfoPopup && !infoPopupShownOnce) return;
 
         // Check if tutorial has been handled (either completed globally or shown this session)
@@ -244,15 +248,15 @@ export function SimulationScreen({
             }
         }, 300);
         return () => clearTimeout(timer);
-    }, [pendingNewWobbles, discoveryShownThisSession, showInfoPopup, tutorial.isActive, tutorial.hasCompletedTutorial, tutorialShownThisSession, infoPopupShownOnce, seenFormulas, formulaId, formula?.applications, i18n.language]);
+    }, [pendingNewWobbles, discoveryShownThisSession, showInfoPopup, tutorial.isActive, tutorial.hasCompletedTutorial, tutorialShownThisSession, infoPopupShownOnce, dontShowInfoFormulas, formulaId, formula?.applications, i18n.language]);
 
-    // Auto-show info popup for formulas not seen before
+    // Auto-show info popup for formulas where user hasn't clicked "don't show again"
     useEffect(() => {
-        if (formula?.applications && formula.applications.length > 0 && !seenFormulas.has(formulaId)) {
+        if (formula?.applications && formula.applications.length > 0 && !dontShowInfoFormulas.has(formulaId)) {
             const timer = setTimeout(() => setShowInfoPopup(true), 300);
             return () => clearTimeout(timer);
         }
-    }, [formula, formulaId, seenFormulas]);
+    }, [formula, formulaId, dontShowInfoFormulas]);
 
     // Mark formula as seen when viewed
     useEffect(() => {
@@ -265,12 +269,20 @@ export function SimulationScreen({
         }
     }, [formulaId]);
 
-    // Mark formula as seen
+    // Mark formula as seen (for NEW badge)
     const markAsSeen = (id: string) => {
         const newSeen = new Set(seenFormulas);
         newSeen.add(id);
         setSeenFormulas(newSeen);
         localStorage.setItem('wobble-seen-formulas', JSON.stringify([...newSeen]));
+    };
+
+    // Mark formula as "don't show info popup again"
+    const markAsDontShowInfo = (id: string) => {
+        const newSet = new Set(dontShowInfoFormulas);
+        newSet.add(id);
+        setDontShowInfoFormulas(newSet);
+        localStorage.setItem('wobble-dont-show-info-formulas', JSON.stringify([...newSet]));
     };
 
     if (!formula) {
@@ -776,7 +788,7 @@ export function SimulationScreen({
                         </div>
 
                         {/* Don't show again option */}
-                        {!seenFormulas.has(formulaId) && (
+                        {!dontShowInfoFormulas.has(formulaId) && (
                             <div
                                 className="px-5 py-3"
                                 style={{
@@ -786,7 +798,7 @@ export function SimulationScreen({
                             >
                                 <button
                                     onClick={() => {
-                                        markAsSeen(formulaId);
+                                        markAsDontShowInfo(formulaId);
                                         setShowInfoPopup(false);
                                     }}
                                     className="w-full py-2 rounded-lg text-white/50 text-xs transition-all active:scale-95 hover:text-white/70"
