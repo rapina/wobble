@@ -1,9 +1,18 @@
-import { Ticker, Graphics, Text, TextStyle } from 'pixi.js';
+import { Ticker, Graphics } from 'pixi.js';
 import { BaseScene } from './BaseScene';
 import { Blob, BlobExpression } from '../Blob';
-import { pixiColors, lerp, clamp } from '../../../utils/pixiHelpers';
+import { pixiColors } from '../../../utils/pixiHelpers';
 
-type Phase = 'approach' | 'collision' | 'separate' | 'pause';
+interface BallState {
+    blob: Blob;
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    mass: number;
+    radius: number;
+    hit: boolean;
+}
 
 interface CollisionParticle {
     x: number;
@@ -15,23 +24,13 @@ interface CollisionParticle {
 }
 
 export class CollisionScene extends BaseScene {
-    declare private blob1: Blob;
-    declare private blob2: Blob;
+    declare private cueBall: BallState;
+    declare private targetBalls: BallState[];
     declare private uiGraphics: Graphics;
     declare private particleGraphics: Graphics;
-
-    declare private phase: Phase;
-    declare private phaseTime: number;
-    declare private blob1X: number;
-    declare private blob2X: number;
-    declare private blob1V: number;
-    declare private blob2V: number;
-    declare private initialV1: number;
-    declare private finalV1: number;
-    declare private finalV2: number;
     declare private particles: CollisionParticle[];
-
-    declare private statusLabel: Text;
+    declare private phase: 'ready' | 'moving' | 'settling' | 'pause';
+    declare private phaseTime: number;
 
     // Cached values
     declare private m1: number;
@@ -40,90 +39,143 @@ export class CollisionScene extends BaseScene {
     declare private e: number;
 
     protected setup(): void {
-        this.phase = 'approach';
-        this.phaseTime = 0;
         this.particles = [];
+        this.phase = 'ready';
+        this.phaseTime = 0;
 
         this.m1 = 10;
         this.m2 = 5;
         this.v1 = 5;
         this.e = 0.8;
 
-        // Graphics
+        // Graphics layers
         this.uiGraphics = new Graphics();
         this.container.addChild(this.uiGraphics);
 
         this.particleGraphics = new Graphics();
         this.container.addChild(this.particleGraphics);
 
-        // Blob 1 (left, moving right)
-        this.blob1 = new Blob({
-            size: 60,
-            color: pixiColors.mass,
+        // Create cue ball
+        const cueBlobObj = new Blob({
+            size: 45,
+            color: 0xffffff,
             shape: 'circle',
-            expression: 'happy',
+            expression: 'charge',
         });
-        this.container.addChild(this.blob1);
+        this.container.addChild(cueBlobObj);
+        this.cueBall = {
+            blob: cueBlobObj,
+            x: 60,
+            y: this.centerY,
+            vx: 0,
+            vy: 0,
+            mass: this.m1,
+            radius: 22,
+            hit: false,
+        };
 
-        // Blob 2 (right, stationary)
-        this.blob2 = new Blob({
-            size: 50,
-            color: pixiColors.velocity,
-            shape: 'circle',
-            expression: 'neutral',
-        });
-        this.container.addChild(this.blob2);
+        // Create target balls in triangle formation
+        this.targetBalls = [];
+        const colors = [0xff6b6b, 0x4ecdc4, 0xf7dc6f, 0x9b59b6, 0x3498db, 0xe74c3c];
+        const startX = this.width - 120;
+        const startY = this.centerY;
+        const spacing = 38;
 
-        // Status label
-        const labelStyle = new TextStyle({
-            fontFamily: 'Arial, sans-serif',
-            fontSize: 13,
-            fontWeight: 'bold',
-            fill: 0xffffff,
+        // Triangle pattern: 1-2-3 formation
+        const positions = [
+            { row: 0, col: 0 },      // Front
+            { row: 1, col: -0.5 },   // Second row
+            { row: 1, col: 0.5 },
+            { row: 2, col: -1 },     // Third row
+            { row: 2, col: 0 },
+            { row: 2, col: 1 },
+        ];
+
+        positions.forEach((pos, i) => {
+            const targetBlob = new Blob({
+                size: 40,
+                color: colors[i % colors.length],
+                shape: 'circle',
+                expression: 'happy',
+            });
+            this.container.addChild(targetBlob);
+
+            this.targetBalls.push({
+                blob: targetBlob,
+                x: startX - pos.row * spacing * 0.866,
+                y: startY + pos.col * spacing,
+                vx: 0,
+                vy: 0,
+                mass: this.m2,
+                radius: 20,
+                hit: false,
+            });
         });
-        this.statusLabel = new Text({ text: '접근 중', style: labelStyle });
-        this.statusLabel.position.set(20, 20);
-        this.container.addChild(this.statusLabel);
 
         this.resetSimulation();
     }
 
     private resetSimulation(): void {
-        this.blob1X = 70;
-        this.blob2X = this.width - 100;
-
-        // Blob 1 moves right with v1, Blob 2 is stationary
-        this.initialV1 = this.v1 * 0.8;
-        this.blob1V = this.initialV1;
-        this.blob2V = 0;
-
-        // Calculate post-collision velocities
-        // For collision with stationary object:
-        // v1' = (m1 - e*m2)/(m1+m2) * v1
-        // v2' = (1+e)*m1/(m1+m2) * v1
-        this.finalV1 = ((this.m1 - this.e * this.m2) / (this.m1 + this.m2)) * this.initialV1;
-        this.finalV2 = ((1 + this.e) * this.m1 / (this.m1 + this.m2)) * this.initialV1;
-
-        this.phase = 'approach';
+        this.phase = 'ready';
         this.phaseTime = 0;
+        this.particles = [];
+
+        // Reset cue ball
+        this.cueBall.x = 60;
+        this.cueBall.y = this.centerY;
+        this.cueBall.vx = this.v1 * 1.5;
+        this.cueBall.vy = 0;
+        this.cueBall.hit = false;
+        this.cueBall.mass = this.m1;
+        this.cueBall.radius = 18 + this.m1 * 0.5;
+
+        // Reset target balls in triangle
+        const startX = this.width - 120;
+        const startY = this.centerY;
+        const spacing = 38;
+
+        const positions = [
+            { row: 0, col: 0 },
+            { row: 1, col: -0.5 },
+            { row: 1, col: 0.5 },
+            { row: 2, col: -1 },
+            { row: 2, col: 0 },
+            { row: 2, col: 1 },
+        ];
+
+        this.targetBalls.forEach((ball, i) => {
+            const pos = positions[i];
+            ball.x = startX - pos.row * spacing * 0.866;
+            ball.y = startY + pos.col * spacing;
+            ball.vx = 0;
+            ball.vy = 0;
+            ball.hit = false;
+            ball.mass = this.m2;
+            ball.radius = 16 + this.m2 * 0.4;
+        });
+
+        // Start moving after brief pause
+        setTimeout(() => {
+            if (this.phase === 'ready') {
+                this.phase = 'moving';
+            }
+        }, 500);
     }
 
     protected onVariablesChange(): void {
-        const m1 = this.variables['m₁'] ?? 10;
-        const m2 = this.variables['m₂'] ?? 5;
-        const v1 = this.variables['v₁'] ?? 5;
-        const e = this.variables['e'] ?? 0.8;
+        this.m1 = this.variables['m₁'] ?? 10;
+        this.m2 = this.variables['m₂'] ?? 5;
+        this.v1 = this.variables['v₁'] ?? 5;
+        this.e = this.variables['e'] ?? 0.8;
 
-        this.m1 = m1;
-        this.m2 = m2;
-        this.v1 = v1;
-        this.e = e;
+        // Update cue ball size
+        this.cueBall.blob.updateOptions({ size: 36 + this.m1 * 1.5 });
 
-        // Update blob sizes based on mass
-        this.blob1.updateOptions({ size: 35 + m1 * 2.5 });
-        this.blob2.updateOptions({ size: 35 + m2 * 2.5 });
+        // Update target ball sizes
+        this.targetBalls.forEach(ball => {
+            ball.blob.updateOptions({ size: 32 + this.m2 * 1.2 });
+        });
 
-        // Reset simulation when variables change
         this.resetSimulation();
     }
 
@@ -131,119 +183,153 @@ export class CollisionScene extends BaseScene {
         const delta = ticker.deltaMS / 16.67;
         this.phaseTime += delta * 0.016;
 
-        const collisionDist = (35 + this.m1 * 2.5) / 2 + (35 + this.m2 * 2.5) / 2 + 10;
+        if (this.phase === 'moving' || this.phase === 'settling') {
+            // Update cue ball position
+            this.cueBall.x += this.cueBall.vx * delta;
+            this.cueBall.y += this.cueBall.vy * delta;
 
-        switch (this.phase) {
-            case 'approach':
-                this.blob1X += this.blob1V * delta;
-                this.blob2X += this.blob2V * delta;
+            // Apply friction
+            this.cueBall.vx *= 0.995;
+            this.cueBall.vy *= 0.995;
 
-                if (this.blob2X - this.blob1X < collisionDist) {
-                    this.phase = 'collision';
-                    this.phaseTime = 0;
+            // Update target balls
+            this.targetBalls.forEach(ball => {
+                ball.x += ball.vx * delta;
+                ball.y += ball.vy * delta;
+                ball.vx *= 0.995;
+                ball.vy *= 0.995;
+            });
 
-                    // Apply post-collision velocities
-                    this.blob1V = this.finalV1;
-                    this.blob2V = this.finalV2;
+            // Check collisions between cue ball and targets
+            this.targetBalls.forEach(target => {
+                this.checkCollision(this.cueBall, target);
+            });
 
-                    // Create collision particles based on impact energy
-                    this.createCollisionParticles();
+            // Check collisions between target balls
+            for (let i = 0; i < this.targetBalls.length; i++) {
+                for (let j = i + 1; j < this.targetBalls.length; j++) {
+                    this.checkCollision(this.targetBalls[i], this.targetBalls[j]);
                 }
-                break;
+            }
 
-            case 'collision':
-                if (this.phaseTime > 0.25) {
-                    this.phase = 'separate';
-                    this.phaseTime = 0;
-                }
-                break;
+            // Wall bounces
+            this.bounceOffWalls(this.cueBall);
+            this.targetBalls.forEach(ball => this.bounceOffWalls(ball));
 
-            case 'separate':
-                this.blob1X += this.blob1V * delta;
-                this.blob2X += this.blob2V * delta;
+            // Check if all balls have settled
+            const allSettled = this.isSettled(this.cueBall) &&
+                this.targetBalls.every(b => this.isSettled(b));
 
-                if (this.phaseTime > 2.5 || this.blob2X > this.width + 50) {
-                    this.phase = 'pause';
-                    this.phaseTime = 0;
-                }
-                break;
+            if (allSettled && this.phase === 'moving') {
+                this.phase = 'settling';
+                this.phaseTime = 0;
+            }
 
-            case 'pause':
-                if (this.phaseTime > 1) {
-                    this.resetSimulation();
-                }
-                break;
+            if (this.phase === 'settling' && this.phaseTime > 1.5) {
+                this.phase = 'pause';
+                this.phaseTime = 0;
+            }
+        }
+
+        if (this.phase === 'pause' && this.phaseTime > 1) {
+            this.resetSimulation();
         }
 
         // Update particles
         this.updateParticles(delta);
 
-        // Expressions
-        let expr1: BlobExpression = 'happy';
-        let expr2: BlobExpression = 'neutral';
+        // Update blob positions and expressions
+        this.updateBlobs();
 
-        if (this.phase === 'collision') {
-            expr1 = 'surprised';
-            expr2 = 'surprised';
-        } else if (this.phase === 'approach') {
-            expr1 = 'charge';
-            expr2 = 'worried';
-        } else if (this.phase === 'separate') {
-            expr1 = this.blob1V < 0 ? 'worried' : 'happy';
-            expr2 = 'excited';
-        }
-
-        // Blob 1
-        const squash1 = this.phase === 'collision' ? 0.75 : 1;
-        const stretch1 = this.phase === 'collision' ? 1.25 : 1;
-
-        this.blob1.setPosition(this.blob1X, this.centerY);
-        this.blob1.updateOptions({
-            wobblePhase: this.phaseTime * 4,
-            expression: expr1,
-            scaleX: stretch1 + Math.abs(this.blob1V) * 0.01,
-            scaleY: squash1,
-            showSpeedLines: Math.abs(this.blob1V) > 1 && this.phase !== 'collision',
-            speedDirection: this.blob1V > 0 ? Math.PI : 0,
-            lookDirection: { x: Math.sign(this.blob1V), y: 0 },
-        });
-
-        // Blob 2
-        const squash2 = this.phase === 'collision' ? 0.75 : 1;
-        const stretch2 = this.phase === 'collision' ? 1.25 : 1;
-
-        this.blob2.setPosition(this.blob2X, this.centerY);
-        this.blob2.updateOptions({
-            wobblePhase: this.phaseTime * 4 + Math.PI,
-            expression: expr2,
-            scaleX: stretch2 + Math.abs(this.blob2V) * 0.01,
-            scaleY: squash2,
-            showSpeedLines: Math.abs(this.blob2V) > 1 && this.phase !== 'collision',
-            speedDirection: this.blob2V > 0 ? Math.PI : 0,
-            lookDirection: { x: this.phase === 'approach' ? -1 : 1, y: 0 },
-        });
-
-        // Draw UI
-        this.drawUI();
+        // Draw
+        this.drawTable();
         this.drawParticles();
-        this.updateStatus();
     }
 
-    private createCollisionParticles(): void {
-        const impactX = (this.blob1X + this.blob2X) / 2;
-        const impactEnergy = 0.5 * this.m1 * this.initialV1 * this.initialV1;
-        const particleCount = Math.floor(5 + (impactEnergy / 100) * 10);
+    private checkCollision(a: BallState, b: BallState): void {
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const minDist = a.radius + b.radius;
 
-        for (let i = 0; i < particleCount; i++) {
-            const angle = (Math.PI * 2 * i) / particleCount + Math.random() * 0.3;
-            const speed = 2 + Math.random() * 3 + this.e * 2;
+        if (dist < minDist && dist > 0) {
+            // Collision detected
+            const nx = dx / dist;
+            const ny = dy / dist;
+
+            // Relative velocity
+            const dvx = a.vx - b.vx;
+            const dvy = a.vy - b.vy;
+            const dvn = dvx * nx + dvy * ny;
+
+            // Only if approaching
+            if (dvn > 0) {
+                // Impulse with restitution
+                const impulse = (1 + this.e) * dvn / (1 / a.mass + 1 / b.mass);
+
+                a.vx -= impulse * nx / a.mass;
+                a.vy -= impulse * ny / a.mass;
+                b.vx += impulse * nx / b.mass;
+                b.vy += impulse * ny / b.mass;
+
+                // Separate balls
+                const overlap = minDist - dist;
+                const totalMass = a.mass + b.mass;
+                a.x -= overlap * nx * (b.mass / totalMass);
+                a.y -= overlap * ny * (b.mass / totalMass);
+                b.x += overlap * nx * (a.mass / totalMass);
+                b.y += overlap * ny * (a.mass / totalMass);
+
+                a.hit = true;
+                b.hit = true;
+
+                // Create collision particles
+                this.createCollisionParticles((a.x + b.x) / 2, (a.y + b.y) / 2, dvn);
+            }
+        }
+    }
+
+    private bounceOffWalls(ball: BallState): void {
+        const margin = 30;
+        const tableTop = this.centerY - 80;
+        const tableBottom = this.centerY + 80;
+        const tableLeft = margin;
+        const tableRight = this.width - margin;
+
+        if (ball.x - ball.radius < tableLeft) {
+            ball.x = tableLeft + ball.radius;
+            ball.vx = -ball.vx * this.e;
+        }
+        if (ball.x + ball.radius > tableRight) {
+            ball.x = tableRight - ball.radius;
+            ball.vx = -ball.vx * this.e;
+        }
+        if (ball.y - ball.radius < tableTop) {
+            ball.y = tableTop + ball.radius;
+            ball.vy = -ball.vy * this.e;
+        }
+        if (ball.y + ball.radius > tableBottom) {
+            ball.y = tableBottom - ball.radius;
+            ball.vy = -ball.vy * this.e;
+        }
+    }
+
+    private isSettled(ball: BallState): boolean {
+        return Math.abs(ball.vx) < 0.1 && Math.abs(ball.vy) < 0.1;
+    }
+
+    private createCollisionParticles(x: number, y: number, intensity: number): void {
+        const count = Math.floor(4 + intensity * 2);
+        for (let i = 0; i < count; i++) {
+            const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+            const speed = 1.5 + Math.random() * 2;
             this.particles.push({
-                x: impactX,
-                y: this.centerY + (Math.random() - 0.5) * 30,
+                x,
+                y,
                 vx: Math.cos(angle) * speed,
                 vy: Math.sin(angle) * speed,
                 life: 1,
-                size: 3 + Math.random() * 3,
+                size: 2 + Math.random() * 2,
             });
         }
     }
@@ -252,77 +338,87 @@ export class CollisionScene extends BaseScene {
         this.particles.forEach(p => {
             p.x += p.vx * delta;
             p.y += p.vy * delta;
-            p.vy += 0.05 * delta;
-            p.life -= 0.025 * delta;
+            p.life -= 0.03 * delta;
         });
         this.particles = this.particles.filter(p => p.life > 0);
     }
 
-    private drawUI(): void {
+    private updateBlobs(): void {
+        // Cue ball
+        const cueSpeed = Math.sqrt(this.cueBall.vx ** 2 + this.cueBall.vy ** 2);
+        let cueExpr: BlobExpression = 'happy';
+        if (this.phase === 'ready') cueExpr = 'charge';
+        else if (cueSpeed > 2) cueExpr = 'excited';
+        else if (this.cueBall.hit) cueExpr = 'surprised';
+
+        this.cueBall.blob.setPosition(this.cueBall.x, this.cueBall.y);
+        this.cueBall.blob.updateOptions({
+            wobblePhase: this.phaseTime * 4,
+            expression: cueExpr,
+            scaleX: 1 + cueSpeed * 0.02,
+            showSpeedLines: cueSpeed > 3,
+            speedDirection: Math.atan2(this.cueBall.vy, this.cueBall.vx) + Math.PI,
+        });
+
+        // Target balls
+        this.targetBalls.forEach((ball, i) => {
+            const speed = Math.sqrt(ball.vx ** 2 + ball.vy ** 2);
+            let expr: BlobExpression = 'happy';
+            if (speed > 2) expr = 'surprised';
+            else if (ball.hit && speed < 0.5) expr = 'sleepy';
+
+            ball.blob.setPosition(ball.x, ball.y);
+            ball.blob.updateOptions({
+                wobblePhase: this.phaseTime * 3 + i,
+                expression: expr,
+                scaleX: 1 + speed * 0.015,
+                showSpeedLines: speed > 2.5,
+                speedDirection: Math.atan2(ball.vy, ball.vx) + Math.PI,
+            });
+        });
+    }
+
+    private drawTable(): void {
         const g = this.uiGraphics;
         g.clear();
 
-        const groundY = this.centerY + 70;
+        const tableTop = this.centerY - 80;
+        const tableBottom = this.centerY + 80;
+        const tableLeft = 30;
+        const tableRight = this.width - 30;
 
-        // Ground line
-        g.moveTo(40, groundY);
-        g.lineTo(this.width - 40, groundY);
-        g.stroke({ color: 0x444444, width: 2 });
+        // Table surface
+        g.roundRect(tableLeft, tableTop, tableRight - tableLeft, tableBottom - tableTop, 8);
+        g.fill({ color: 0x0d5c0d, alpha: 0.6 });
 
-        // Velocity arrows
-        if (this.phase === 'approach' || this.phase === 'separate') {
-            // Blob 1 velocity arrow
-            if (Math.abs(this.blob1V) > 0.3) {
-                this.drawVelocityArrow(g, this.blob1X, this.centerY - 50, this.blob1V, 0xf5b041);
-            }
+        // Table border
+        g.roundRect(tableLeft, tableTop, tableRight - tableLeft, tableBottom - tableTop, 8);
+        g.stroke({ color: 0x8b4513, width: 6, alpha: 0.8 });
 
-            // Blob 2 velocity arrow
-            if (Math.abs(this.blob2V) > 0.3) {
-                this.drawVelocityArrow(g, this.blob2X, this.centerY - 50, this.blob2V, 0x5dade2);
-            }
-        }
+        // Inner line
+        g.roundRect(tableLeft + 8, tableTop + 8, tableRight - tableLeft - 16, tableBottom - tableTop - 16, 4);
+        g.stroke({ color: 0x228b22, width: 1, alpha: 0.5 });
 
-        // Restitution coefficient indicator (e)
-        const eBarX = this.width - 120;
-        const eBarY = this.height - 35;
+        // Restitution indicator
+        const eBarX = 20;
+        const eBarY = this.height - 30;
         const eBarWidth = 80;
 
-        g.roundRect(eBarX, eBarY, eBarWidth, 10, 3);
-        g.fill({ color: 0x333344 });
+        g.roundRect(eBarX, eBarY, eBarWidth, 10, 4);
+        g.fill({ color: 0x333333, alpha: 0.6 });
 
-        g.roundRect(eBarX + 1, eBarY + 1, this.e * (eBarWidth - 2), 8, 2);
-        g.fill({ color: this.e > 0.9 ? 0x4ecdc4 : this.e > 0.5 ? 0xf5b041 : 0xff6b6b });
+        g.roundRect(eBarX, eBarY, this.e * eBarWidth, 10, 4);
+        g.fill({ color: this.e > 0.8 ? 0x4ecdc4 : this.e > 0.5 ? 0xf5b041 : 0xff6b6b, alpha: 0.8 });
 
-        // Mass comparison circles
-        const massY = groundY + 30;
-        const m1Size = 8 + this.m1 * 0.4;
-        const m2Size = 8 + this.m2 * 0.4;
-
-        g.circle(60, massY, m1Size);
-        g.fill({ color: pixiColors.mass, alpha: 0.7 });
-
-        g.circle(100, massY, m2Size);
-        g.fill({ color: pixiColors.velocity, alpha: 0.7 });
-    }
-
-    private drawVelocityArrow(g: Graphics, x: number, y: number, velocity: number, color: number): void {
-        const length = clamp(Math.abs(velocity) * 8, 10, 60);
-        const dir = Math.sign(velocity);
-
-        const startX = x;
-        const endX = x + dir * length;
-
-        // Arrow line
-        g.moveTo(startX, y);
-        g.lineTo(endX, y);
-        g.stroke({ color, width: 3 });
-
-        // Arrow head
-        g.moveTo(endX, y);
-        g.lineTo(endX - dir * 10, y - 6);
-        g.moveTo(endX, y);
-        g.lineTo(endX - dir * 10, y + 6);
-        g.stroke({ color, width: 3 });
+        // Phase indicator
+        const phaseColors: Record<string, number> = {
+            ready: 0x888888,
+            moving: 0x4ecdc4,
+            settling: 0xf5b041,
+            pause: 0x666666,
+        };
+        g.circle(this.width - 25, 25, 8);
+        g.fill({ color: phaseColors[this.phase], alpha: 0.8 });
     }
 
     private drawParticles(): void {
@@ -331,28 +427,7 @@ export class CollisionScene extends BaseScene {
 
         this.particles.forEach(p => {
             g.circle(p.x, p.y, p.size * p.life);
-            g.fill({ color: 0xf7dc6f, alpha: p.life * 0.7 });
+            g.fill({ color: 0xffffff, alpha: p.life * 0.8 });
         });
-    }
-
-    private updateStatus(): void {
-        switch (this.phase) {
-            case 'approach':
-                this.statusLabel.text = '충돌 전';
-                this.statusLabel.style.fill = 0xf5b041;
-                break;
-            case 'collision':
-                this.statusLabel.text = '충돌!';
-                this.statusLabel.style.fill = 0xff6b6b;
-                break;
-            case 'separate':
-                this.statusLabel.text = '충돌 후';
-                this.statusLabel.style.fill = 0x4ecdc4;
-                break;
-            case 'pause':
-                this.statusLabel.text = '대기 중...';
-                this.statusLabel.style.fill = 0x888888;
-                break;
-        }
     }
 }
