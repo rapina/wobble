@@ -3,6 +3,7 @@ import { PixiCanvas } from '../canvas/PixiCanvas';
 import { ParameterControl } from '../controls/ParameterControl';
 import { FormulaLayout } from '../controls/FormulaLayout';
 import { useSimulation } from '../../hooks/useSimulation';
+import { useAdMob } from '../../hooks/useAdMob';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { ArrowLeft, List, X, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -44,10 +45,23 @@ export function SimulationScreen({
     onBack,
 }: SimulationScreenProps) {
     const { formula, variables, inputVariables, setVariable } = useSimulation(formulaId);
+    const { isInitialized, isBannerVisible, showBanner, hideBanner, isNative } = useAdMob();
     const [mounted, setMounted] = useState(false);
     const [showFormulaList, setShowFormulaList] = useState(false);
     const [selectedCard, setSelectedCard] = useState<string | null>(null);
     const [showInfoPopup, setShowInfoPopup] = useState(false);
+
+    // Show AdMob banner when initialized
+    useEffect(() => {
+        if (isInitialized && !isBannerVisible) {
+            showBanner();
+        }
+        return () => {
+            if (isBannerVisible) {
+                hideBanner();
+            }
+        };
+    }, [isInitialized]);
 
     // Memoize Balatro background to prevent re-render on variable changes
     const balatroBackground = useMemo(() => (
@@ -104,7 +118,7 @@ export function SimulationScreen({
                     top: 'calc(max(env(safe-area-inset-top, 0px), 12px) + 56px)',
                     left: 'max(env(safe-area-inset-left, 0px), 12px)',
                     right: 'max(env(safe-area-inset-right, 0px), 12px)',
-                    bottom: 'calc(max(env(safe-area-inset-bottom, 0px), 8px) + 160px)',
+                    bottom: 'calc(max(env(safe-area-inset-bottom, 0px), 8px) + 210px)', // +50px for ad banner
                     border: `3px solid ${theme.border}`,
                     boxShadow: `0 6px 0 ${theme.border}, 0 10px 30px rgba(0,0,0,0.5)`,
                 }}
@@ -186,7 +200,7 @@ export function SimulationScreen({
             <div
                 className="absolute left-0 right-0 z-10 flex flex-col items-center gap-3 px-4"
                 style={{
-                    bottom: 'max(env(safe-area-inset-bottom, 0px), 8px)',
+                    bottom: 'calc(max(env(safe-area-inset-bottom, 0px), 8px) + 58px)', // Above ad banner
                 }}
             >
                 {/* Shared Parameter Control - appears when card selected */}
@@ -226,6 +240,29 @@ export function SimulationScreen({
                     </div>
                 )}
             </div>
+
+            {/* AdMob Banner Area - Native shows real ads, Web shows placeholder */}
+            {!isNative && (
+                <div
+                    className="absolute left-0 right-0 z-10 flex items-center justify-center"
+                    style={{
+                        bottom: 'max(env(safe-area-inset-bottom, 0px), 8px)',
+                        height: '50px',
+                        paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
+                        paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
+                    }}
+                >
+                    <div
+                        className="w-full max-w-[320px] h-[50px] rounded-lg flex items-center justify-center"
+                        style={{
+                            background: 'rgba(0,0,0,0.4)',
+                            border: `2px dashed ${theme.border}`,
+                        }}
+                    >
+                        <span className="text-white/30 text-xs font-bold">AD BANNER (WEB)</span>
+                    </div>
+                </div>
+            )}
 
             {/* Formula List Bottom Sheet */}
             {showFormulaList && (
