@@ -9,9 +9,16 @@ import {
     AdMobBannerSize,
 } from '@capacitor-community/admob';
 
+// 테스트 모드 여부 (환경변수로 제어)
+export const IS_AD_TESTING = import.meta.env.VITE_AD_TESTING === 'true';
+
 // Test Ad Unit IDs
 const TEST_BANNER_ID_ANDROID = 'ca-app-pub-3940256099942544/6300978111';
 const TEST_BANNER_ID_IOS = 'ca-app-pub-3940256099942544/2934735716';
+
+// Production Ad Unit IDs (TODO: 실제 ID로 교체)
+const PROD_BANNER_ID_ANDROID = 'ca-app-pub-XXXXX/YYYYY';
+const PROD_BANNER_ID_IOS = 'ca-app-pub-XXXXX/YYYYY';
 
 interface UseAdMobReturn {
     isInitialized: boolean;
@@ -32,7 +39,7 @@ export function useAdMob(): UseAdMobReturn {
         const initializeAdMob = async () => {
             try {
                 await AdMob.initialize({
-                    initializeForTesting: true,
+                    initializeForTesting: IS_AD_TESTING,
                 });
                 setIsInitialized(true);
                 console.log('AdMob initialized successfully');
@@ -84,21 +91,22 @@ export function useAdMob(): UseAdMobReturn {
         if (!isNative || !isInitialized) return;
 
         try {
-            const adId = Capacitor.getPlatform() === 'ios'
-                ? TEST_BANNER_ID_IOS
-                : TEST_BANNER_ID_ANDROID;
+            const isIOS = Capacitor.getPlatform() === 'ios';
+            const adId = IS_AD_TESTING
+                ? (isIOS ? TEST_BANNER_ID_IOS : TEST_BANNER_ID_ANDROID)
+                : (isIOS ? PROD_BANNER_ID_IOS : PROD_BANNER_ID_ANDROID);
 
             const options: BannerAdOptions = {
                 adId,
                 adSize: BannerAdSize.ADAPTIVE_BANNER,
                 position: BannerAdPosition.BOTTOM_CENTER,
                 margin: 0,
-                isTesting: true,
+                isTesting: IS_AD_TESTING,
             };
 
             await AdMob.showBanner(options);
             setIsBannerVisible(true);
-            console.log('Banner shown');
+            console.log('Banner shown, testing:', IS_AD_TESTING);
         } catch (error) {
             console.error('Failed to show banner:', error);
         }

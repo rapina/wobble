@@ -7,7 +7,10 @@ import { useSimulation } from '../../hooks/useSimulation';
 import { useAdMob } from '../../hooks/useAdMob';
 import { useLocalizedFormula, useLocalizedVariables } from '../../hooks/useLocalizedFormula';
 import { useTutorial } from '../../hooks/useTutorial';
+import { usePurchaseStore } from '@/stores/purchaseStore';
+import { useCollectionStore } from '@/stores/collectionStore';
 import { TutorialOverlay } from '../tutorial/TutorialOverlay';
+import { SettingsModal } from '../ui/SettingsModal';
 import { ArrowLeft, List, X, Info, ChevronDown, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Formula, FormulaCategory } from '../../formulas/types';
@@ -50,10 +53,13 @@ export function SimulationScreen({
     const { t, i18n } = useTranslation();
     const { formula, variables, inputVariables, setVariable } = useSimulation(formulaId);
     const { isInitialized, isBannerVisible, showBanner, hideBanner, isNative } = useAdMob();
+    const { isAdFree } = usePurchaseStore();
+    const unlockByFormula = useCollectionStore(state => state.unlockByFormula);
     const localizedFormula = useLocalizedFormula(formula);
     const localizedVariables = useLocalizedVariables(formula?.variables ?? []);
     const [mounted, setMounted] = useState(false);
     const [showFormulaList, setShowFormulaList] = useState(false);
+    const [showSettingsModal, setShowSettingsModal] = useState(false);
     const [selectedCard, setSelectedCard] = useState<string | null>(null);
     const [showInfoPopup, setShowInfoPopup] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<FormulaCategory | 'all'>('all');
@@ -146,9 +152,9 @@ export function SimulationScreen({
         return formulas.filter(f => f.category === selectedCategory);
     }, [formulas, selectedCategory]);
 
-    // Show AdMob banner when initialized
+    // Show AdMob banner when initialized (unless ad-free)
     useEffect(() => {
-        if (isInitialized && !isBannerVisible) {
+        if (isInitialized && !isBannerVisible && !isAdFree) {
             showBanner();
         }
         return () => {
@@ -156,7 +162,7 @@ export function SimulationScreen({
                 hideBanner();
             }
         };
-    }, [isInitialized]);
+    }, [isInitialized, isAdFree]);
 
     // Memoize Balatro background to prevent re-render on variable changes
     const balatroBackground = useMemo(() => (
@@ -182,6 +188,13 @@ export function SimulationScreen({
         const timer = setTimeout(() => setMounted(true), 50);
         return () => clearTimeout(timer);
     }, [formulaId]);
+
+    // Unlock wobbles when formula is used
+    useEffect(() => {
+        if (formulaId) {
+            unlockByFormula(formulaId);
+        }
+    }, [formulaId, unlockByFormula]);
 
     // Auto-show info popup for formulas not seen before
     useEffect(() => {
@@ -229,7 +242,7 @@ export function SimulationScreen({
                     top: 'calc(max(env(safe-area-inset-top, 0px), 12px) + 56px)',
                     left: 'max(env(safe-area-inset-left, 0px), 12px)',
                     right: 'max(env(safe-area-inset-right, 0px), 12px)',
-                    bottom: 'calc(max(env(safe-area-inset-bottom, 0px), 8px) + 210px)', // +50px for ad banner
+                    bottom: `calc(max(env(safe-area-inset-bottom, 0px), 8px) + ${isAdFree ? 164 : 262}px)`, // +24px for remove ads button spacing
                     border: `3px solid ${theme.border}`,
                     boxShadow: `0 6px 0 ${theme.border}, 0 10px 30px rgba(0,0,0,0.5)`,
                 }}
@@ -326,7 +339,7 @@ export function SimulationScreen({
             <div
                 className="absolute left-0 right-0 z-10 flex flex-col items-center gap-3 px-4"
                 style={{
-                    bottom: 'calc(max(env(safe-area-inset-bottom, 0px), 8px) + 58px)', // Above ad banner
+                    bottom: `calc(max(env(safe-area-inset-bottom, 0px), 8px) + ${isAdFree ? 12 : 110}px)`, // Above ad banner + remove ads button
                 }}
             >
                 {/* Shared Parameter Control - appears when card selected */}
@@ -368,28 +381,50 @@ export function SimulationScreen({
                 )}
             </div>
 
-            {/* AdMob Banner Area - Native shows real ads, Web shows placeholder */}
-            {!isNative && (
+            {/* AdMob Banner Area with Remove Ads button */}
+            {!isAdFree && (
                 <div
-                    className="absolute left-0 right-0 z-10 flex items-center justify-center"
+                    className="absolute left-0 right-0 z-10 flex flex-col items-center"
                     style={{
-                        bottom: 'max(env(safe-area-inset-bottom, 0px), 8px)',
-                        height: '50px',
+                        // 네이티브: 배너(~60px) 위에 버튼 배치 / 웹: 하단에 배치
+                        bottom: `calc(max(env(safe-area-inset-bottom, 0px), 8px) + ${isNative ? 60 : 0}px)`,
                         paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
                         paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
                     }}
                 >
-                    <div
-                        className="w-full max-w-[320px] h-[50px] rounded-lg flex items-center justify-center"
+                    {/* Remove Ads Button */}
+                    <button
+                        onClick={() => setShowSettingsModal(true)}
+                        className="mb-2 px-3 py-1 rounded-full text-xs font-medium transition-all active:scale-95"
                         style={{
-                            background: 'rgba(0,0,0,0.4)',
-                            border: `2px dashed ${theme.border}`,
+                            background: 'rgba(0,0,0,0.5)',
+                            color: 'rgba(255,255,255,0.6)',
+                            border: '1px solid rgba(255,255,255,0.2)',
                         }}
                     >
-                        <span className="text-white/30 text-xs font-bold">AD BANNER (WEB)</span>
-                    </div>
+                        {t('settings.removeAds', 'Remove Ads')}
+                    </button>
+
+                    {/* Web placeholder */}
+                    {!isNative && (
+                        <div
+                            className="w-full max-w-[320px] h-[50px] rounded-lg flex items-center justify-center"
+                            style={{
+                                background: 'rgba(0,0,0,0.4)',
+                                border: `2px dashed ${theme.border}`,
+                            }}
+                        >
+                            <span className="text-white/30 text-xs font-bold">AD BANNER (WEB)</span>
+                        </div>
+                    )}
                 </div>
             )}
+
+            {/* Settings Modal */}
+            <SettingsModal
+                isOpen={showSettingsModal}
+                onClose={() => setShowSettingsModal(false)}
+            />
 
             {/* Formula List Dropdown (Top-down) */}
             {showFormulaList && (

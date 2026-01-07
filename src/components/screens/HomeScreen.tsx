@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Settings } from 'lucide-react';
 import Balatro from '@/components/Balatro';
 import ShuffleText from '@/components/ShuffleText';
 import { RotatingText } from '@/components/RotatingText';
 import { BlobDisplay } from '@/components/canvas/BlobDisplay';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { MusicToggle } from '@/components/MusicToggle';
+import { SettingsModal } from '@/components/ui/SettingsModal';
+import { useCollectionStore } from '@/stores/collectionStore';
+import { BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type GameMode = 'sandbox' | 'puzzle' | 'learning';
+export type GameMode = 'sandbox' | 'collection' | 'puzzle' | 'learning';
 
 interface HomeScreenProps {
     onSelectMode: (mode: GameMode) => void;
@@ -18,6 +22,9 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
     const { t } = useTranslation();
     const [mounted, setMounted] = useState(false);
     const [hoveredButton, setHoveredButton] = useState<string | null>(null);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const { getProgress } = useCollectionStore();
+    const collectionProgress = getProgress();
 
     useEffect(() => {
         const timer = setTimeout(() => setMounted(true), 100);
@@ -54,6 +61,17 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                     right: 'max(env(safe-area-inset-right, 0px), 16px)',
                 }}
             >
+                <button
+                    onClick={() => setIsSettingsOpen(true)}
+                    className="relative h-10 w-10 rounded-lg flex items-center justify-center transition-all active:scale-95"
+                    style={{
+                        background: '#374244',
+                        border: '2px solid #1a1a1a',
+                        boxShadow: '0 3px 0 #1a1a1a',
+                    }}
+                >
+                    <Settings className="w-5 h-5 text-white/80" />
+                </button>
                 <MusicToggle />
                 <LanguageToggle />
             </div>
@@ -122,7 +140,7 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                 {/* Menu Cards */}
                 <div
                     className={cn(
-                        "space-y-6",
+                        "space-y-3",
                         "transition-all duration-1000 delay-300 ease-out",
                         mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
                     )}
@@ -134,7 +152,7 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                         onMouseLeave={() => setHoveredButton(null)}
                         className={cn(
                             "w-full relative overflow-hidden",
-                            "rounded-2xl border-4 border-[#F5B041]",
+                            "rounded-xl border-3 border-[#F5B041]",
                             "transition-all duration-200",
                             "hover:scale-[1.02] hover:border-[#FFD700]",
                             "active:scale-[0.98]"
@@ -142,13 +160,14 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                         style={{
                             background: 'linear-gradient(180deg, #2a2a4a 0%, #1a1a2e 100%)',
                             boxShadow: hoveredButton === 'sandbox'
-                                ? '0 0 40px rgba(245, 176, 65, 0.5), inset 0 0 30px rgba(245, 176, 65, 0.1)'
-                                : '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)',
+                                ? '0 0 30px rgba(245, 176, 65, 0.4), inset 0 0 20px rgba(245, 176, 65, 0.1)'
+                                : '0 4px 16px rgba(0,0,0,0.4)',
+                            borderWidth: '3px',
                         }}
                     >
-                        <div className="px-7 py-5 text-center">
+                        <div className="px-5 py-3 text-center">
                             <span
-                                className="block text-2xl font-black"
+                                className="block text-xl font-black"
                                 style={{
                                     color: '#F5B041',
                                     textShadow: '0 0 10px rgba(245, 176, 65, 0.5)',
@@ -156,41 +175,81 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                             >
                                 {t('home.sandbox')}
                             </span>
-                            <span className="block text-base text-white/60 mt-3">
+                            <span className="block text-sm text-white/60 mt-1">
                                 {t('home.sandboxDesc')}
                             </span>
                         </div>
                     </button>
 
-                    {/* Puzzle - Secondary Card */}
+                    {/* Puzzle - Disabled Card */}
                     <button
                         disabled
                         className={cn(
                             "w-full relative overflow-hidden",
-                            "rounded-2xl border-3 border-white/20",
+                            "rounded-xl border-2 border-white/20",
                             "opacity-50 cursor-not-allowed"
                         )}
                         style={{
                             background: 'linear-gradient(180deg, #1f1f35 0%, #15152a 100%)',
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
-                            borderWidth: '3px',
+                            boxShadow: '0 3px 12px rgba(0,0,0,0.3)',
                         }}
                     >
-                        <div className="px-7 py-4 text-center relative">
-                            <span className="block text-xl font-bold text-white/50">
+                        <div className="px-5 py-3 text-center relative">
+                            <span className="block text-lg font-bold text-white/50">
                                 {t('home.puzzle')}
                             </span>
-                            <span className="block text-sm text-white/30 mt-3">
+                            <span className="block text-xs text-white/30 mt-1">
                                 {t('home.puzzleDesc')}
                             </span>
                             <span
-                                className="absolute right-7 top-1/2 -translate-y-1/2 px-4 py-2 rounded-full text-xs font-bold"
+                                className="absolute right-5 top-1/2 -translate-y-1/2 px-2 py-1 rounded-full text-[10px] font-bold"
                                 style={{
                                     background: 'rgba(255,255,255,0.1)',
                                     color: 'rgba(255,255,255,0.4)',
                                 }}
                             >
                                 {t('home.soon')}
+                            </span>
+                        </div>
+                    </button>
+
+                    {/* Collection - Bottom Card */}
+                    <button
+                        onClick={() => onSelectMode('collection')}
+                        onMouseEnter={() => setHoveredButton('collection')}
+                        onMouseLeave={() => setHoveredButton(null)}
+                        className={cn(
+                            "w-full relative overflow-hidden",
+                            "rounded-xl border-2 border-[#BB8FCE]/60",
+                            "transition-all duration-200",
+                            "hover:scale-[1.02] hover:border-[#BB8FCE]",
+                            "active:scale-[0.98]"
+                        )}
+                        style={{
+                            background: 'linear-gradient(180deg, #2a2a4a 0%, #1a1a2e 100%)',
+                            boxShadow: hoveredButton === 'collection'
+                                ? '0 0 20px rgba(187, 143, 206, 0.3)'
+                                : '0 3px 12px rgba(0,0,0,0.3)',
+                        }}
+                    >
+                        <div className="px-5 py-2.5 text-center relative">
+                            <div className="flex items-center justify-center gap-2">
+                                <BookOpen className="w-4 h-4" style={{ color: '#BB8FCE' }} />
+                                <span
+                                    className="text-lg font-bold"
+                                    style={{ color: '#BB8FCE' }}
+                                >
+                                    {t('home.collection')}
+                                </span>
+                            </div>
+                            <span
+                                className="absolute right-5 top-1/2 -translate-y-1/2 px-2 py-1 rounded-full text-xs font-bold"
+                                style={{
+                                    background: 'rgba(187, 143, 206, 0.2)',
+                                    color: '#BB8FCE',
+                                }}
+                            >
+                                {collectionProgress.unlocked}/{collectionProgress.total}
                             </span>
                         </div>
                     </button>
@@ -215,6 +274,12 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                 <span className="mx-2">·</span>
                 <span className="font-mono">v{__APP_VERSION__}</span>
             </div>
+
+            {/* Settings Modal */}
+            <SettingsModal
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+            />
         </div>
     );
 }

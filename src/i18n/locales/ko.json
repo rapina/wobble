@@ -3,11 +3,13 @@
         "title": "WOBBLE",
         "sandbox": "실험실",
         "sandboxDesc": "자유롭게 물리 탐험",
+        "collection": "도감",
+        "collectionDesc": "워블 행성의 주민들",
         "puzzle": "퍼즐",
         "puzzleDesc": "스테이지 클리어",
         "soon": "SOON",
         "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
-        "disclaimer": "이 시뮬레이션은 물리 개념을 직접 실험하고 관찰하기 위한 도구입니다.\n실제 계산과는 차이가 있을 수 있습니다."
+        "disclaimer": "Wobble은 물리를 재미있게 탐험하는 게임입니다.\n실제 계산과는 차이가 있을 수 있습니다."
     },
     "simulation": {
         "loading": "로딩 중...",
@@ -33,5 +35,17 @@
         "skip": "건너뛰기",
         "done": "알겠어요!",
         "startButton": "사용법 보기"
+    },
+    "settings": {
+        "title": "설정",
+        "removeAds": "광고 제거",
+        "removeAdsDesc": "1회 구매로 영구 적용",
+        "adFree": "광고 제거됨",
+        "adFreeDesc": "광고 없이 즐기세요!",
+        "buyFor": "구매하기",
+        "restore": "구매 복원",
+        "loading": "로딩 중...",
+        "loadingProduct": "상품 정보 불러오는 중...",
+        "webOnly": "모바일 앱에서 구매할 수 있습니다"
     }
 }

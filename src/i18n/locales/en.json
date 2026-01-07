@@ -3,11 +3,13 @@
         "title": "WOBBLE",
         "sandbox": "Lab",
         "sandboxDesc": "Explore physics freely",
+        "collection": "Collection",
+        "collectionDesc": "Residents of Planet Wobble",
         "puzzle": "Puzzle",
         "puzzleDesc": "Clear stages",
         "soon": "SOON",
         "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
-        "disclaimer": "This simulation is a tool for experimenting with and observing physics concepts.\nResults may differ from actual calculations."
+        "disclaimer": "Wobble is a game for exploring physics in a fun way.\nResults may differ from actual calculations."
     },
     "simulation": {
         "loading": "Loading...",
@@ -33,5 +35,17 @@
         "skip": "Skip",
         "done": "Got it!",
         "startButton": "How to use"
+    },
+    "settings": {
+        "title": "Settings",
+        "removeAds": "Remove Ads",
+        "removeAdsDesc": "One-time purchase",
+        "adFree": "Ads Removed",
+        "adFreeDesc": "Enjoy ad-free experience!",
+        "buyFor": "Buy for",
+        "restore": "Restore Purchases",
+        "loading": "Loading...",
+        "loadingProduct": "Loading product...",
+        "webOnly": "Purchases available in the mobile app"
     }
 }

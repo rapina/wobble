@@ -1,13 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { App } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { HomeScreen, GameMode } from './HomeScreen';
 import { SimulationScreen } from './SimulationScreen';
+import { CollectionScreen } from './CollectionScreen';
 import { formulaList } from '../../formulas/registry';
 import { Formula } from '../../formulas/types';
 import { useMusic } from '../../hooks/useMusic';
+import { useInAppPurchase } from '../../hooks/useInAppPurchase';
 import { cn } from '@/lib/utils';
 
-type ScreenState = 'home' | 'sandbox' | 'puzzle' | 'learning';
+type ScreenState = 'home' | 'sandbox' | 'collection' | 'puzzle' | 'learning';
 
 export function GameScreen() {
     const [screenState, setScreenState] = useState<ScreenState>('home');
@@ -15,6 +18,16 @@ export function GameScreen() {
     const [isTransitioning, setIsTransitioning] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const { isMusicEnabled } = useMusic();
+    const { restorePurchases } = useInAppPurchase();
+
+    // Restore purchases on app start (for reinstall support)
+    useEffect(() => {
+        if (Capacitor.isNativePlatform()) {
+            restorePurchases().catch(() => {
+                // Silently fail - user can manually restore from settings
+            });
+        }
+    }, []);
 
     // Initialize with first formula when entering sandbox
     useEffect(() => {
@@ -75,6 +88,12 @@ export function GameScreen() {
                 }
                 setIsTransitioning(false);
             }, 150);
+        } else if (mode === 'collection') {
+            setIsTransitioning(true);
+            setTimeout(() => {
+                setScreenState('collection');
+                setIsTransitioning(false);
+            }, 150);
         }
     };
 
@@ -108,6 +127,10 @@ export function GameScreen() {
                         formulaId={selectedFormula.id}
                         formulas={formulaList}
                         onFormulaChange={handleFormulaChange}
+                        onBack={handleBackToHome}
+                    />
+                ) : screenState === 'collection' ? (
+                    <CollectionScreen
                         onBack={handleBackToHome}
                     />
                 ) : null}
