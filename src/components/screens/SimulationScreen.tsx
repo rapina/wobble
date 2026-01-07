@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PixiCanvas } from '../canvas/PixiCanvas';
 import { ParameterControl } from '../controls/ParameterControl';
@@ -6,7 +6,9 @@ import { FormulaLayout } from '../controls/FormulaLayout';
 import { useSimulation } from '../../hooks/useSimulation';
 import { useAdMob } from '../../hooks/useAdMob';
 import { useLocalizedFormula, useLocalizedVariables } from '../../hooks/useLocalizedFormula';
-import { ArrowLeft, List, X, Info, ChevronDown } from 'lucide-react';
+import { useTutorial } from '../../hooks/useTutorial';
+import { TutorialOverlay } from '../tutorial/TutorialOverlay';
+import { ArrowLeft, List, X, Info, ChevronDown, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Formula, FormulaCategory } from '../../formulas/types';
 import Balatro from '@/components/Balatro';
@@ -59,6 +61,53 @@ export function SimulationScreen({
         const saved = localStorage.getItem('wobble-seen-formulas');
         return saved ? new Set(JSON.parse(saved)) : new Set();
     });
+    const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+    const [sliderRect, setSliderRect] = useState<DOMRect | null>(null);
+
+    // Tutorial hook
+    const tutorial = useTutorial({
+        formulaId,
+        variables: formula?.variables ?? [],
+        onSelectCard: setSelectedCard,
+    });
+
+    // Update target rect when tutorial step changes
+    useEffect(() => {
+        if (!tutorial.isActive || !tutorial.currentTargetSymbol) {
+            setTargetRect(null);
+            setSliderRect(null);
+            return;
+        }
+
+        // Small delay to let DOM update
+        const timer = setTimeout(() => {
+            const cardEl = document.querySelector(
+                `[data-tutorial-symbol="${tutorial.currentTargetSymbol}"]`
+            );
+            const sliderEl = document.querySelector(
+                `[data-tutorial-slider="${tutorial.currentTargetSymbol}"]`
+            );
+
+            if (cardEl) {
+                setTargetRect(cardEl.getBoundingClientRect());
+            }
+            if (sliderEl) {
+                setSliderRect(sliderEl.getBoundingClientRect());
+            }
+        }, 100);
+
+        return () => clearTimeout(timer);
+    }, [tutorial.isActive, tutorial.currentTargetSymbol, selectedCard]);
+
+    // Auto-start tutorial for first-time users
+    useEffect(() => {
+        if (formula && !tutorial.hasCompletedTutorial && !tutorial.isActive) {
+            const timer = setTimeout(() => {
+                tutorial.startTutorial();
+            }, 800);
+            return () => clearTimeout(timer);
+        }
+    }, [formula?.id]);
 
     // Get unique categories from formulas
     const categories = useMemo(() => {
@@ -214,6 +263,21 @@ export function SimulationScreen({
                                 }}
                             >
                                 <Info className="h-5 w-5 text-white" />
+                            </button>
+                        )}
+
+                        {/* Tutorial Button */}
+                        {tutorial.hasCompletedTutorial && (
+                            <button
+                                onClick={() => tutorial.startTutorial()}
+                                className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95"
+                                style={{
+                                    background: '#9b59b6',
+                                    border: `2px solid ${theme.border}`,
+                                    boxShadow: `0 3px 0 ${theme.border}`,
+                                }}
+                            >
+                                <HelpCircle className="h-5 w-5 text-white" />
                             </button>
                         )}
                     </div>
@@ -567,6 +631,19 @@ export function SimulationScreen({
                         )}
                     </div>
                 </div>
+            )}
+
+            {/* Tutorial Overlay */}
+            {tutorial.isActive && (
+                <TutorialOverlay
+                    steps={tutorial.steps}
+                    currentStep={tutorial.currentStep}
+                    onNext={tutorial.nextStep}
+                    onSkip={tutorial.skipTutorial}
+                    onComplete={tutorial.completeTutorial}
+                    targetRect={targetRect}
+                    sliderRect={sliderRect}
+                />
             )}
         </div>
     );

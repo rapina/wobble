@@ -26,5 +26,12 @@
             "applicationsLabel": "실생활 활용 예시",
             "dontShowAgain": "이 공식은 다시 자동으로 표시하지 않기"
         }
+    },
+    "tutorial": {
+        "stepMessage": "{{symbol}} 카드를 탭해서 {{name}} 값을 조절해보세요. 슬라이더로 시뮬레이션이 어떻게 변하는지 확인하세요!",
+        "next": "다음",
+        "skip": "건너뛰기",
+        "done": "알겠어요!",
+        "startButton": "사용법 보기"
     }
 }

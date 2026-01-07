@@ -26,5 +26,12 @@
             "applicationsLabel": "Practical Applications",
             "dontShowAgain": "Don't auto-show for this formula"
         }
+    },
+    "tutorial": {
+        "stepMessage": "Tap the {{symbol}} card to adjust {{name}}. Use the slider to see how it affects the simulation!",
+        "next": "Next",
+        "skip": "Skip",
+        "done": "Got it!",
+        "startButton": "How to use"
     }
 }

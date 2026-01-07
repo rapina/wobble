@@ -26,6 +26,7 @@ export function ParameterCard({
     if (compact) {
         return (
             <div
+                data-tutorial-symbol={symbol}
                 className="w-[36px] rounded select-none shrink-0 transition-all duration-200 cursor-pointer"
                 style={{
                     background: theme.bgPanel,
@@ -62,6 +63,7 @@ export function ParameterCard({
 
     return (
         <div
+            data-tutorial-symbol={symbol}
             className={`w-[52px] rounded-lg select-none shrink-0 transition-all duration-200 cursor-pointer ${
                 isSelected ? '-translate-y-2' : ''
             }`}

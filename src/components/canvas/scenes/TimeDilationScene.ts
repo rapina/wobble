@@ -83,9 +83,11 @@ export class TimeDilationScene extends BaseScene {
         // Lorentz factor
         const gamma = 1 / Math.sqrt(1 - v * v);
 
-        // Orbit parameters
+        // Orbit parameters - orbit starts/ends at blob position
+        const startX = this.centerX + 25;
+        const startY = this.centerY - 55;
         const orbitRadiusX = this.width * 0.35;
-        const orbitRadiusY = this.height * 0.32;
+        const orbitRadiusY = this.height * 0.35;
         const orbitSpeed = 0.015 + v * 0.02;
 
         switch (this.phase) {
@@ -106,8 +108,8 @@ export class TimeDilationScene extends BaseScene {
 
                 // Add to trail
                 if (this.time % 0.05 < 0.02) {
-                    const trailX = this.centerX + Math.sin(this.orbitAngle) * orbitRadiusX;
-                    const trailY = this.centerY + Math.cos(this.orbitAngle) * orbitRadiusY * 0.3 - orbitRadiusY * 0.7 * (1 - Math.cos(this.orbitAngle));
+                    const trailX = startX + Math.sin(this.orbitAngle) * orbitRadiusX;
+                    const trailY = startY + (1 - Math.cos(this.orbitAngle)) * orbitRadiusY;
                     this.orbitTrail.push({ x: trailX, y: trailY, alpha: 1 });
                 }
 
@@ -131,16 +133,13 @@ export class TimeDilationScene extends BaseScene {
         this.orbitTrail = this.orbitTrail.filter(t => t.alpha > 0.05);
 
         // Calculate travel blob position
-        const startX = this.centerX + 25;
-        const startY = this.centerY - 55;
-
         if (this.phase === 'waiting' || this.phase === 'reunited') {
             // Side by side with earth blob
             this.travelBlob.setPosition(startX, startY);
         } else {
-            // On orbit
-            const travelX = this.centerX + Math.sin(this.orbitAngle) * orbitRadiusX;
-            const travelY = this.centerY + Math.cos(this.orbitAngle) * orbitRadiusY * 0.3 - orbitRadiusY * 0.7 * (1 - Math.cos(this.orbitAngle));
+            // On orbit - same formula as trail
+            const travelX = startX + Math.sin(this.orbitAngle) * orbitRadiusX;
+            const travelY = startY + (1 - Math.cos(this.orbitAngle)) * orbitRadiusY;
             this.travelBlob.setPosition(travelX, travelY);
         }
 
@@ -148,8 +147,8 @@ export class TimeDilationScene extends BaseScene {
         this.updateBlobAppearances(v, gamma);
 
         // Draw
-        this.drawEffects(v, orbitRadiusX, orbitRadiusY);
-        this.drawRocket(v, orbitRadiusX, orbitRadiusY);
+        this.drawEffects(v, orbitRadiusX, orbitRadiusY, startX, startY);
+        this.drawRocket(v, orbitRadiusX, orbitRadiusY, startX, startY);
         this.drawAgeIndicators();
     }
 
@@ -201,7 +200,7 @@ export class TimeDilationScene extends BaseScene {
         return (r << 16) | (g << 8) | b;
     }
 
-    private drawEffects(v: number, orbitRX: number, orbitRY: number): void {
+    private drawEffects(v: number, orbitRX: number, orbitRY: number, startX: number, startY: number): void {
         const g = this.effectGraphics;
         g.clear();
 
@@ -236,11 +235,11 @@ export class TimeDilationScene extends BaseScene {
         g.circle(earthX - 20, earthY - 25, 12);
         g.fill({ color: 0xffffff, alpha: 0.2 });
 
-        // Draw orbit path (dotted ellipse)
+        // Draw orbit path (dotted ellipse) - same formula as blob movement
         for (let i = 0; i <= 40; i++) {
             const angle = (i / 40) * Math.PI * 2;
-            const dotX = this.centerX + Math.sin(angle) * orbitRX;
-            const dotY = this.centerY + Math.cos(angle) * orbitRY * 0.3 - orbitRY * 0.7 * (1 - Math.cos(angle));
+            const dotX = startX + Math.sin(angle) * orbitRX;
+            const dotY = startY + (1 - Math.cos(angle)) * orbitRY;
             g.circle(dotX, dotY, 2);
             g.fill({ color: 0x666677, alpha: 0.25 });
         }
@@ -264,19 +263,19 @@ export class TimeDilationScene extends BaseScene {
         });
     }
 
-    private drawRocket(v: number, orbitRX: number, orbitRY: number): void {
+    private drawRocket(v: number, orbitRX: number, orbitRY: number, startX: number, startY: number): void {
         const g = this.rocketGraphics;
         g.clear();
 
         if (this.phase !== 'traveling') return;
 
-        // Position on orbit
-        const cx = this.centerX + Math.sin(this.orbitAngle) * orbitRX;
-        const cy = this.centerY + Math.cos(this.orbitAngle) * orbitRY * 0.3 - orbitRY * 0.7 * (1 - Math.cos(this.orbitAngle));
+        // Position on orbit - same formula as blob
+        const cx = startX + Math.sin(this.orbitAngle) * orbitRX;
+        const cy = startY + (1 - Math.cos(this.orbitAngle)) * orbitRY;
 
         // Tangent direction (derivative of position)
         const dx = Math.cos(this.orbitAngle) * orbitRX;
-        const dy = -Math.sin(this.orbitAngle) * orbitRY * 0.3 - orbitRY * 0.7 * Math.sin(this.orbitAngle);
+        const dy = Math.sin(this.orbitAngle) * orbitRY;
         const angle = Math.atan2(dy, dx);
 
         const cos = Math.cos(angle);

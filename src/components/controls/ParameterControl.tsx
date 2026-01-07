@@ -33,6 +33,7 @@ export function ParameterControl({
 
     return (
         <div
+            data-tutorial-slider={symbol}
             className="w-full max-w-sm rounded-xl select-none animate-in fade-in slide-in-from-bottom-2 duration-200"
             style={{
                 background: theme.bgPanel,
