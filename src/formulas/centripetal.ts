@@ -92,10 +92,17 @@ export const centripetal: Formula = {
         ],
     },
     displayLayout: {
-        type: 'fraction',
+        type: 'custom',
         output: 'F',
-        numerator: ['m', 'v'],
-        denominator: ['r'],
-        squares: ['v'],
+        expression: [
+            {
+                type: 'fraction',
+                numerator: [
+                    { type: 'var', symbol: 'm' },
+                    { type: 'var', symbol: 'v', square: true },
+                ],
+                denominator: [{ type: 'var', symbol: 'r' }],
+            },
+        ],
     },
 };

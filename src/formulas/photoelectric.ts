@@ -83,8 +83,13 @@ export const photoelectric: Formula = {
         ],
     },
     displayLayout: {
-        type: 'linear',
+        type: 'custom',
         output: 'Ek',
-        numerator: ['f', 'W'],
+        expression: [
+            { type: 'text', value: 'h' },
+            { type: 'var', symbol: 'f' },
+            { type: 'op', value: '-' },
+            { type: 'var', symbol: 'W' },
+        ],
     },
 };

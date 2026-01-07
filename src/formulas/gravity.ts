@@ -94,10 +94,18 @@ export const gravity: Formula = {
         ],
     },
     displayLayout: {
-        type: 'fraction',
+        type: 'custom',
         output: 'F',
-        numerator: ['m1', 'm2'],
-        denominator: ['r'],
-        squares: ['r'],
+        expression: [
+            {
+                type: 'fraction',
+                numerator: [
+                    { type: 'text', value: 'G' },
+                    { type: 'var', symbol: 'm1' },
+                    { type: 'var', symbol: 'm2' },
+                ],
+                denominator: [{ type: 'var', symbol: 'r', square: true }],
+            },
+        ],
     },
 };

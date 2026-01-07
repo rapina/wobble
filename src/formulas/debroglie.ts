@@ -79,9 +79,18 @@ export const debroglie: Formula = {
         ],
     },
     displayLayout: {
-        type: 'fraction',
+        type: 'custom',
         output: 'λ',
-        numerator: [],
-        denominator: ['m', 'v'],
+        expression: [
+            {
+                type: 'fraction',
+                numerator: [{ type: 'text', value: 'h' }],
+                denominator: [
+                    { type: 'var', symbol: 'm' },
+                    { type: 'op', value: '×' },
+                    { type: 'var', symbol: 'v' },
+                ],
+            },
+        ],
     },
 };

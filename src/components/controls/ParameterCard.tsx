@@ -11,6 +11,7 @@ interface ParameterCardProps {
     color: string;
     isSelected?: boolean;
     onSelect?: () => void;
+    compact?: boolean;
 }
 
 export function ParameterCard({
@@ -20,7 +21,45 @@ export function ParameterCard({
     color,
     isSelected = false,
     onSelect,
+    compact = false,
 }: ParameterCardProps) {
+    if (compact) {
+        return (
+            <div
+                className="w-[36px] rounded select-none shrink-0 transition-all duration-200 cursor-pointer"
+                style={{
+                    background: theme.bgPanel,
+                    border: `2px solid ${isSelected ? color : theme.border}`,
+                    boxShadow: `0 2px 0 ${theme.border}`,
+                }}
+                onClick={onSelect}
+            >
+                <div
+                    className="px-1 py-0.5 rounded-t text-center"
+                    style={{
+                        background: color,
+                        borderBottom: `1px solid ${theme.border}`,
+                    }}
+                >
+                    <div className="text-[10px] font-black text-black leading-none">
+                        {symbol}
+                    </div>
+                </div>
+                <div className="p-0.5">
+                    <div
+                        className="text-center text-[9px] font-black font-mono py-0.5 rounded"
+                        style={{
+                            background: '#1a1a1a',
+                            color: color,
+                        }}
+                    >
+                        {value.toFixed(1)}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div
             className={`w-[52px] rounded-lg select-none shrink-0 transition-all duration-200 cursor-pointer ${

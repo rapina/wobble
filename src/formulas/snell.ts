@@ -111,8 +111,21 @@ export const snell: Formula = {
         ],
     },
     displayLayout: {
-        type: 'linear',
+        type: 'custom',
         output: 'θ₂',
-        numerator: ['n₁', 'θ₁', 'n₂'],
+        expression: [
+            { type: 'text', value: 'arcsin' },
+            { type: 'group', items: [
+                {
+                    type: 'fraction',
+                    numerator: [
+                        { type: 'var', symbol: 'n₁' },
+                        { type: 'text', value: 'sin' },
+                        { type: 'var', symbol: 'θ₁' },
+                    ],
+                    denominator: [{ type: 'var', symbol: 'n₂' }],
+                },
+            ]},
+        ],
     },
 };

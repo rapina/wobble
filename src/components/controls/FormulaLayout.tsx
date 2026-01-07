@@ -1,4 +1,4 @@
-import { DisplayLayout, Variable } from '../../formulas/types';
+import { DisplayLayout, Variable, ExpressionElement } from '../../formulas/types';
 import { ParameterCard } from './ParameterCard';
 import { OutputCard } from './OutputCard';
 
@@ -25,7 +25,7 @@ export function FormulaLayout({
     const getVariable = (symbol: string) => variables.find(v => v.symbol === symbol);
     const outputVar = getVariable(displayLayout.output);
 
-    const renderCard = (symbol: string, showSquare?: boolean) => {
+    const renderCard = (symbol: string, showSquare?: boolean, compact?: boolean) => {
         const variable = getVariable(symbol);
         if (!variable) return null;
 
@@ -40,6 +40,7 @@ export function FormulaLayout({
                         color: variable.visual.color,
                     }]}
                     values={values}
+                    compact={compact}
                 />
             );
         }
@@ -56,6 +57,7 @@ export function FormulaLayout({
                     onSelect={() => onSelectCard(
                         selectedCard === variable.symbol ? null : variable.symbol
                     )}
+                    compact={compact}
                 />
                 {showSquare && (
                     <span
@@ -69,9 +71,9 @@ export function FormulaLayout({
         );
     };
 
-    const renderOperator = (op: string) => (
+    const renderOperator = (op: string, small?: boolean) => (
         <div
-            className="text-xl font-black select-none flex items-center justify-center px-1"
+            className={`${small ? 'text-sm' : 'text-xl'} font-black select-none flex items-center justify-center px-0.5`}
             style={{
                 color: theme.gold,
                 textShadow: `0 2px 0 ${theme.border}`,
@@ -82,6 +84,82 @@ export function FormulaLayout({
     );
 
     const isSquare = (symbol: string) => displayLayout.squares?.includes(symbol);
+
+    // Render expression element recursively (for custom layout)
+    const renderExpression = (element: ExpressionElement, index: number, compact?: boolean): React.ReactNode => {
+        switch (element.type) {
+            case 'var':
+                return (
+                    <div key={index} className="flex items-center">
+                        {renderCard(element.symbol, element.square, compact)}
+                    </div>
+                );
+            case 'op':
+                return (
+                    <div key={index}>
+                        {renderOperator(element.value, compact)}
+                    </div>
+                );
+            case 'text':
+                return (
+                    <div
+                        key={index}
+                        className={`${compact ? 'text-sm' : 'text-lg'} font-black select-none`}
+                        style={{ color: theme.gold }}
+                    >
+                        {element.value}
+                    </div>
+                );
+            case 'group':
+                return (
+                    <div key={index} className="flex items-center">
+                        <span
+                            className={`${compact ? 'text-xl' : 'text-2xl'} font-light select-none`}
+                            style={{ color: theme.gold }}
+                        >
+                            (
+                        </span>
+                        <div className="flex items-center gap-0.5">
+                            {element.items.map((item, i) => renderExpression(item, i, compact))}
+                        </div>
+                        <span
+                            className={`${compact ? 'text-xl' : 'text-2xl'} font-light select-none`}
+                            style={{ color: theme.gold }}
+                        >
+                            )
+                        </span>
+                    </div>
+                );
+            case 'fraction':
+                return (
+                    <div key={index} className="flex flex-col items-center mx-1">
+                        <div className="flex items-center gap-0.5">
+                            {element.numerator.map((item, i) => renderExpression(item, i, true))}
+                        </div>
+                        <div
+                            className="w-full h-[2px] my-0.5 rounded-full min-w-[40px]"
+                            style={{ background: theme.gold }}
+                        />
+                        <div className="flex items-center gap-0.5">
+                            {element.denominator.map((item, i) => renderExpression(item, i, true))}
+                        </div>
+                    </div>
+                );
+            default:
+                return null;
+        }
+    };
+
+    // Custom layout: render expression array
+    if (displayLayout.type === 'custom' && displayLayout.expression) {
+        return (
+            <div className="flex items-center gap-0.5">
+                {outputVar && renderCard(displayLayout.output)}
+                {renderOperator('=')}
+                {displayLayout.expression.map((element, index) => renderExpression(element, index))}
+            </div>
+        );
+    }
 
     // Linear layout: output = a × b × c
     if (displayLayout.type === 'linear') {

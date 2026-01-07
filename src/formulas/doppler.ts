@@ -106,9 +106,22 @@ export const doppler: Formula = {
         ],
     },
     displayLayout: {
-        type: 'fraction',
+        type: 'custom',
         output: "f'",
-        numerator: ['f', 'v'],
-        denominator: ['vs'],
+        expression: [
+            {
+                type: 'fraction',
+                numerator: [
+                    { type: 'var', symbol: 'f' },
+                    { type: 'op', value: '×' },
+                    { type: 'var', symbol: 'v' },
+                ],
+                denominator: [
+                    { type: 'var', symbol: 'v' },
+                    { type: 'op', value: '-' },
+                    { type: 'var', symbol: 'vs' },
+                ],
+            },
+        ],
     },
 };

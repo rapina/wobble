@@ -109,8 +109,26 @@ export const elasticCollision: Formula = {
         ],
     },
     displayLayout: {
-        type: 'linear',
+        type: 'custom',
         output: "v₁'",
-        numerator: ['m₁', 'm₂', 'v₁', 'e'],
+        expression: [
+            {
+                type: 'fraction',
+                numerator: [
+                    { type: 'group', items: [
+                        { type: 'var', symbol: 'm₁' },
+                        { type: 'op', value: '-' },
+                        { type: 'var', symbol: 'e' },
+                        { type: 'var', symbol: 'm₂' },
+                    ]},
+                    { type: 'var', symbol: 'v₁' },
+                ],
+                denominator: [
+                    { type: 'var', symbol: 'm₁' },
+                    { type: 'op', value: '+' },
+                    { type: 'var', symbol: 'm₂' },
+                ],
+            },
+        ],
     },
 };

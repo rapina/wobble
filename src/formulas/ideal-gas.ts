@@ -96,9 +96,18 @@ export const idealGas: Formula = {
         ],
     },
     displayLayout: {
-        type: 'fraction',
+        type: 'custom',
         output: 'P',
-        numerator: ['n', 'T'],
-        denominator: ['V'],
+        expression: [
+            {
+                type: 'fraction',
+                numerator: [
+                    { type: 'var', symbol: 'n' },
+                    { type: 'text', value: 'R' },
+                    { type: 'var', symbol: 'T' },
+                ],
+                denominator: [{ type: 'var', symbol: 'V' }],
+            },
+        ],
     },
 };

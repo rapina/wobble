@@ -76,9 +76,18 @@ export const pendulum: Formula = {
         ],
     },
     displayLayout: {
-        type: 'fraction',
+        type: 'custom',
         output: 'T',
-        numerator: ['L'],
-        denominator: ['g'],
+        expression: [
+            { type: 'text', value: '2π' },
+            { type: 'text', value: '√' },
+            { type: 'group', items: [
+                {
+                    type: 'fraction',
+                    numerator: [{ type: 'var', symbol: 'L' }],
+                    denominator: [{ type: 'var', symbol: 'g' }],
+                },
+            ]},
+        ],
     },
 };

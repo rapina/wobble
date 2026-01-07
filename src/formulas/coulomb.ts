@@ -101,10 +101,18 @@ export const coulomb: Formula = {
         ],
     },
     displayLayout: {
-        type: 'fraction',
+        type: 'custom',
         output: 'F',
-        numerator: ['q₁', 'q₂'],
-        denominator: ['r'],
-        squares: ['r'],
+        expression: [
+            {
+                type: 'fraction',
+                numerator: [
+                    { type: 'text', value: 'k' },
+                    { type: 'var', symbol: 'q₁' },
+                    { type: 'var', symbol: 'q₂' },
+                ],
+                denominator: [{ type: 'var', symbol: 'r', square: true }],
+            },
+        ],
     },
 };

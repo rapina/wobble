@@ -55,7 +55,15 @@ export type FormulaCategory =
     | 'special';
 
 // Display layout for formula visualization
-export type DisplayLayoutType = 'linear' | 'fraction' | 'fraction-square';
+export type DisplayLayoutType = 'linear' | 'fraction' | 'fraction-square' | 'custom';
+
+// Expression element types for custom layout
+export type ExpressionElement =
+    | { type: 'var'; symbol: string; square?: boolean }
+    | { type: 'op'; value: string }
+    | { type: 'text'; value: string }
+    | { type: 'group'; items: ExpressionElement[] }
+    | { type: 'fraction'; numerator: ExpressionElement[]; denominator: ExpressionElement[] };
 
 export interface DisplayLayout {
     type: DisplayLayoutType;
@@ -66,6 +74,8 @@ export interface DisplayLayout {
     denominator?: string[]; // symbols in denominator
     coefficient?: string; // e.g., "½" for kinetic energy
     squares?: string[]; // symbols that should show ² superscript
+    // For custom: expression array
+    expression?: ExpressionElement[];
 }
 
 export interface Formula {
