@@ -97,8 +97,8 @@ export function useTutorial({
         setIsActive(false);
         setCurrentStep(0);
         onSelectCard(null);
-        // Don't mark as complete - tutorial will show again next time
-    }, [onSelectCard]);
+        markComplete();
+    }, [onSelectCard, markComplete]);
 
     return {
         isActive,
