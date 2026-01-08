@@ -5,8 +5,8 @@
         "sandboxDesc": "Explore physics freely",
         "collection": "Collection",
         "collectionDesc": "Residents of Planet Wobble",
-        "puzzle": "Puzzle",
-        "puzzleDesc": "Clear stages",
+        "game": "Adventure",
+        "gameDesc": "New episodes now playing!",
         "soon": "SOON",
         "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
         "disclaimer": "Wobble is a game for exploring physics in a fun way.\nResults may differ from actual calculations."
@@ -47,5 +47,30 @@
         "loading": "Loading...",
         "loadingProduct": "Loading product...",
         "webOnly": "Purchases available in the mobile app"
+    },
+    "game": {
+        "title": "Adventure",
+        "selectAdventure": "Select Adventure",
+        "wobbleAdventure": "Planet Wobble Crisis",
+        "wobbleAdventureEpisode": "EP.1",
+        "wobbleAdventureDesc": "The rules of the world are vanishing! Wobi must survive the Shadow invasion and restore order to Planet Wobble!",
+        "comingSoon": "Coming Soon",
+        "levelSelect": "Level Select",
+        "completed": "completed",
+        "locked": "Locked",
+        "success": "Success!",
+        "cleared": "cleared!",
+        "nextLevel": "Next Level",
+        "levels": "Levels",
+        "target": "Target",
+        "tapToContinue": "Tap to continue",
+        "tapForNext": "Tap for next",
+        "tryAgain": "Try Again",
+        "play": "Play",
+        "newWobbleUnlocked": "New Wobble unlocked!",
+        "formulaLearned": "Physics You Used",
+        "formulaUsed": "These formulas powered your game!",
+        "realWorldUse": "Real-world use",
+        "continue": "Continue"
     }
 }

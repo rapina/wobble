@@ -7,7 +7,7 @@ import { useCollectionStore } from '@/stores/collectionStore';
 import { WOBBLE_CHARACTERS, WobbleShape, WobbleExpression } from '@/components/canvas/Wobble';
 import { cn } from '@/lib/utils';
 
-const ALL_SHAPES: WobbleShape[] = ['circle', 'square', 'triangle', 'star', 'diamond', 'pentagon'];
+const ALL_SHAPES: WobbleShape[] = ['circle', 'square', 'triangle', 'star', 'diamond', 'pentagon', 'shadow'];
 
 // Balatro theme
 const theme = {
@@ -40,8 +40,12 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
     useEffect(() => {
         if (!selectedWobble) return;
 
-        const expressions: WobbleExpression[] = ['happy', 'excited', 'surprised', 'worried', 'sleepy'];
+        // Shadow has different expressions (angry-focused)
+        const expressions: WobbleExpression[] = selectedWobble === 'shadow'
+            ? ['angry', 'worried', 'effort', 'angry', 'struggle']
+            : ['happy', 'excited', 'surprised', 'worried', 'sleepy'];
         let index = 0;
+        setDemoExpression(expressions[0]);
 
         const interval = setInterval(() => {
             index = (index + 1) % expressions.length;

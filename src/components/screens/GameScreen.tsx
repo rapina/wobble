@@ -4,13 +4,15 @@ import { Capacitor } from '@capacitor/core';
 import { HomeScreen, GameMode } from './HomeScreen';
 import { SimulationScreen } from './SimulationScreen';
 import { CollectionScreen } from './CollectionScreen';
+import { MinigameScreen } from './MinigameScreen';
+import { AdventureSelectScreen } from './AdventureSelectScreen';
 import { formulaList } from '../../formulas/registry';
 import { Formula } from '../../formulas/types';
 import { useMusic } from '../../hooks/useMusic';
 import { useInAppPurchase } from '../../hooks/useInAppPurchase';
 import { cn } from '@/lib/utils';
 
-type ScreenState = 'home' | 'sandbox' | 'collection' | 'puzzle' | 'learning';
+type ScreenState = 'home' | 'sandbox' | 'collection' | 'adventure-select' | 'game' | 'learning';
 
 export function GameScreen() {
     const [screenState, setScreenState] = useState<ScreenState>('home');
@@ -94,7 +96,31 @@ export function GameScreen() {
                 setScreenState('collection');
                 setIsTransitioning(false);
             }, 150);
+        } else if (mode === 'game') {
+            setIsTransitioning(true);
+            setTimeout(() => {
+                setScreenState('adventure-select');
+                setIsTransitioning(false);
+            }, 150);
         }
+    };
+
+    const handleSelectAdventure = (adventureId: string) => {
+        if (adventureId === 'wobble-survivor') {
+            setIsTransitioning(true);
+            setTimeout(() => {
+                setScreenState('game');
+                setIsTransitioning(false);
+            }, 150);
+        }
+    };
+
+    const handleBackToAdventureSelect = () => {
+        setIsTransitioning(true);
+        setTimeout(() => {
+            setScreenState('adventure-select');
+            setIsTransitioning(false);
+        }, 150);
     };
 
     const handleFormulaChange = (formula: Formula) => {
@@ -132,6 +158,15 @@ export function GameScreen() {
                 ) : screenState === 'collection' ? (
                     <CollectionScreen
                         onBack={handleBackToHome}
+                    />
+                ) : screenState === 'adventure-select' ? (
+                    <AdventureSelectScreen
+                        onBack={handleBackToHome}
+                        onSelectAdventure={handleSelectAdventure}
+                    />
+                ) : screenState === 'game' ? (
+                    <MinigameScreen
+                        onBack={handleBackToAdventureSelect}
                     />
                 ) : null}
             </div>

@@ -40,6 +40,7 @@ export function ParameterControl({
                 border: `3px solid ${theme.border}`,
                 boxShadow: `0 4px 0 ${theme.border}, 0 8px 24px rgba(0,0,0,0.4)`,
             }}
+            onClick={(e) => e.stopPropagation()}
         >
             {/* Header */}
             <div

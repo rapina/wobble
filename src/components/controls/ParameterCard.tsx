@@ -33,7 +33,10 @@ export function ParameterCard({
                     border: `2px solid ${isSelected ? color : theme.border}`,
                     boxShadow: `0 2px 0 ${theme.border}`,
                 }}
-                onClick={onSelect}
+                onClick={(e) => {
+                e.stopPropagation();
+                onSelect?.();
+            }}
             >
                 <div
                     className="px-1 py-0.5 rounded-t text-center"
@@ -74,7 +77,10 @@ export function ParameterCard({
                     ? `0 6px 0 ${theme.border}, 0 8px 20px rgba(0,0,0,0.4)`
                     : `0 3px 0 ${theme.border}`,
             }}
-            onClick={onSelect}
+            onClick={(e) => {
+                e.stopPropagation();
+                onSelect?.();
+            }}
         >
             {/* Color Header */}
             <div

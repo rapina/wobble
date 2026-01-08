@@ -9,6 +9,7 @@ import { useLocalizedFormula, useLocalizedVariables } from '../../hooks/useLocal
 import { useTutorial } from '../../hooks/useTutorial';
 import { usePurchaseStore } from '@/stores/purchaseStore';
 import { useCollectionStore } from '@/stores/collectionStore';
+import { useProgressStore } from '@/stores/progressStore';
 import { TutorialOverlay } from '../tutorial/TutorialOverlay';
 import { SettingsModal } from '../ui/SettingsModal';
 import { ArrowLeft, List, X, Info, ChevronDown, HelpCircle } from 'lucide-react';
@@ -56,6 +57,7 @@ export function SimulationScreen({
     const { isInitialized, isBannerVisible, showBanner, hideBanner, isNative } = useAdMob();
     const { isAdFree } = usePurchaseStore();
     const { unlockByFormula, getNewUnlocksForFormula } = useCollectionStore();
+    const { studyFormula } = useProgressStore();
     const localizedFormula = useLocalizedFormula(formula);
     const localizedVariables = useLocalizedVariables(formula?.variables ?? []);
     const [mounted, setMounted] = useState(false);
@@ -258,16 +260,17 @@ export function SimulationScreen({
         }
     }, [formula, formulaId, dontShowInfoFormulas]);
 
-    // Mark formula as seen when viewed
+    // Mark formula as seen and studied when viewed
     useEffect(() => {
         if (formulaId && !seenFormulas.has(formulaId)) {
             // Small delay to ensure it's intentionally viewed
             const timer = setTimeout(() => {
                 markAsSeen(formulaId);
+                studyFormula(formulaId); // Record as studied for minigame unlocks
             }, 1500);
             return () => clearTimeout(timer);
         }
-    }, [formulaId]);
+    }, [formulaId, studyFormula]);
 
     // Mark formula as seen (for NEW badge)
     const markAsSeen = (id: string) => {

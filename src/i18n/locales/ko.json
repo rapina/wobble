@@ -5,8 +5,8 @@
         "sandboxDesc": "자유롭게 물리 탐험",
         "collection": "도감",
         "collectionDesc": "워블 행성의 주민들",
-        "puzzle": "퍼즐",
-        "puzzleDesc": "스테이지 클리어",
+        "game": "어드벤쳐",
+        "gameDesc": "새 에피소드 상영 중!",
         "soon": "SOON",
         "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
         "disclaimer": "Wobble은 물리를 재미있게 탐험하는 게임입니다.\n실제 계산과는 차이가 있을 수 있습니다."
@@ -47,5 +47,30 @@
         "loading": "로딩 중...",
         "loadingProduct": "상품 정보 불러오는 중...",
         "webOnly": "모바일 앱에서 구매할 수 있습니다"
+    },
+    "game": {
+        "title": "어드벤쳐",
+        "selectAdventure": "어드벤쳐 선택",
+        "wobbleAdventure": "워블 행성의 위기",
+        "wobbleAdventureEpisode": "EP.1",
+        "wobbleAdventureDesc": "세계의 규칙이 사라지고 있다! 워비는 섀도우의 침공에서 살아남아 워블 행성의 질서를 되찾아야 한다!",
+        "comingSoon": "준비 중",
+        "levelSelect": "레벨 선택",
+        "completed": "완료",
+        "locked": "잠김",
+        "success": "성공!",
+        "cleared": "클리어!",
+        "nextLevel": "다음 레벨",
+        "levels": "레벨 선택",
+        "target": "목표",
+        "tapToContinue": "탭하여 계속",
+        "tapForNext": "탭하여 다음",
+        "tryAgain": "다시 시도",
+        "play": "실행",
+        "newWobbleUnlocked": "새로운 워블 해금!",
+        "formulaLearned": "오늘 배운 공식",
+        "formulaUsed": "방금 미니게임에서 사용된 공식이에요!",
+        "realWorldUse": "실생활 적용",
+        "continue": "계속하기"
     }
 }

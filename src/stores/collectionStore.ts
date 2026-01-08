@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { WobbleShape, WOBBLE_CHARACTERS, FORMULA_WOBBLES } from '../components/canvas/Wobble';
 
 const STORAGE_KEY = 'wobble-collection';
-const ALL_SHAPES: WobbleShape[] = ['circle', 'square', 'triangle', 'star', 'diamond', 'pentagon'];
+const ALL_SHAPES: WobbleShape[] = ['circle', 'square', 'triangle', 'star', 'diamond', 'pentagon', 'shadow'];
 
 interface CollectionState {
     unlockedWobbles: WobbleShape[];

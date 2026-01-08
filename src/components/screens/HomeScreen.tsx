@@ -12,7 +12,7 @@ import { useCollectionStore } from '@/stores/collectionStore';
 import { BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type GameMode = 'sandbox' | 'collection' | 'puzzle' | 'learning';
+export type GameMode = 'sandbox' | 'collection' | 'game' | 'learning';
 
 interface HomeScreenProps {
     onSelectMode: (mode: GameMode) => void;
@@ -181,34 +181,34 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                         </div>
                     </button>
 
-                    {/* Puzzle - Disabled Card */}
+                    {/* Minigame Mode Card */}
                     <button
-                        disabled
+                        onClick={() => onSelectMode('game')}
+                        onMouseEnter={() => setHoveredButton('game')}
+                        onMouseLeave={() => setHoveredButton(null)}
                         className={cn(
                             "w-full relative overflow-hidden",
-                            "rounded-xl border-2 border-white/20",
-                            "opacity-50 cursor-not-allowed"
+                            "rounded-xl border-2 border-[#FF6B9D]/60",
+                            "transition-all duration-200",
+                            "hover:scale-[1.02] hover:border-[#FF6B9D]",
+                            "active:scale-[0.98]"
                         )}
                         style={{
-                            background: 'linear-gradient(180deg, #1f1f35 0%, #15152a 100%)',
-                            boxShadow: '0 3px 12px rgba(0,0,0,0.3)',
+                            background: 'linear-gradient(180deg, #2a2a4a 0%, #1a1a2e 100%)',
+                            boxShadow: hoveredButton === 'game'
+                                ? '0 0 20px rgba(255, 107, 157, 0.3)'
+                                : '0 3px 12px rgba(0,0,0,0.3)',
                         }}
                     >
-                        <div className="px-5 py-3 text-center relative">
-                            <span className="block text-lg font-bold text-white/50">
-                                {t('home.puzzle')}
-                            </span>
-                            <span className="block text-xs text-white/30 mt-1">
-                                {t('home.puzzleDesc')}
-                            </span>
+                        <div className="px-5 py-3 text-center">
                             <span
-                                className="absolute right-5 top-1/2 -translate-y-1/2 px-2 py-1 rounded-full text-[10px] font-bold"
-                                style={{
-                                    background: 'rgba(255,255,255,0.1)',
-                                    color: 'rgba(255,255,255,0.4)',
-                                }}
+                                className="block text-lg font-bold"
+                                style={{ color: '#FF6B9D' }}
                             >
-                                {t('home.soon')}
+                                {t('home.game')}
+                            </span>
+                            <span className="block text-xs text-white/60 mt-1">
+                                {t('home.gameDesc')}
                             </span>
                         </div>
                     </button>

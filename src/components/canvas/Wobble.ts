@@ -13,6 +13,7 @@ export type WobbleExpression =
     | 'charge'
     | 'excited'
     | 'sleepy'
+    | 'angry'
     | 'none';
 
 /**
@@ -24,8 +25,9 @@ export type WobbleExpression =
  * - 'star': Twinkle (트윙클) - 특별하고 행운을 가져다주는 존재
  * - 'diamond': Gem (젬) - 귀하고 우아한 목표 지향적 성격
  * - 'pentagon': Penta (펜타) - 믿음직하고 든든한 보호자
+ * - 'shadow': Shadow (섀도우) - 어둡고 적대적인 적 캐릭터
  */
-export type WobbleShape = 'circle' | 'square' | 'triangle' | 'star' | 'diamond' | 'pentagon';
+export type WobbleShape = 'circle' | 'square' | 'triangle' | 'star' | 'diamond' | 'pentagon' | 'shadow';
 
 /** Shape별 역할 정의 (씬에서 참조용) */
 export const SHAPE_ROLES = {
@@ -35,6 +37,7 @@ export const SHAPE_ROLES = {
     star: 'bonus',            // 보너스, 파워업
     diamond: 'goal',          // 목표, 수집 대상
     pentagon: 'defender',     // 방어자, 지지자
+    shadow: 'enemy',          // 적, 법칙 파괴자
 } as const;
 
 /** 워블 캐릭터 정보 인터페이스 */
@@ -103,6 +106,15 @@ export const WOBBLE_CHARACTERS: Record<WobbleShape, WobbleCharacter> = {
         personalityKo: '믿음직하고 든든한 보호자',
         role: 'defender',
         color: 0x82E0AA,
+    },
+    shadow: {
+        shape: 'shadow',
+        name: 'Shadow',
+        nameKo: '섀도우',
+        personality: 'Dark law destroyer from the void',
+        personalityKo: '어둠에서 온 법칙 파괴자',
+        role: 'enemy',
+        color: 0x1a1a1a,
     },
 };
 
@@ -371,6 +383,7 @@ export class Wobble extends Container {
             star: 1.35,
             diamond: 1.2,
             pentagon: 1.15,
+            shadow: 1.1,
         };
         const scaledSize = size * (shapeScale[shape] || 1);
 
@@ -390,6 +403,9 @@ export class Wobble extends Container {
                 break;
             case 'pentagon':
                 this.drawPentagonBody(g, scaledSize, scaleX, scaleY, wobblePhase);
+                break;
+            case 'shadow':
+                this.drawShadowBody(g, scaledSize, scaleX, scaleY, wobblePhase);
                 break;
             default:
                 // 원형 워블 (기본)
@@ -637,6 +653,48 @@ export class Wobble extends Container {
         g.closePath();
     }
 
+    /**
+     * 섀도우 워블 - Shadow (섀도우)
+     * 뾰족뾰족한 어두운 털이 있는 원형 - 적 캐릭터
+     */
+    private drawShadowBody(g: Graphics, size: number, scaleX: number, scaleY: number, wobblePhase: number): void {
+        const r = size / 2;
+        const spikes = 24; // Number of fluffy spikes around the edge
+        const spikeDepth = size * 0.12; // How deep the spikes go
+        const wobbleAmount = size * 0.02;
+
+        const getWobble = (angle: number) => {
+            return Math.sin(wobblePhase * 3 + angle * 4) * wobbleAmount;
+        };
+
+        const points: { x: number; y: number }[] = [];
+
+        for (let i = 0; i < spikes * 2; i++) {
+            const angle = (i / (spikes * 2)) * Math.PI * 2 - Math.PI / 2;
+            const isSpike = i % 2 === 0;
+            const radius = isSpike ? r + spikeDepth : r - spikeDepth * 0.3;
+            const wobble = getWobble(angle);
+
+            points.push({
+                x: Math.cos(angle) * (radius + wobble) * scaleX,
+                y: Math.sin(angle) * (radius + wobble) * scaleY,
+            });
+        }
+
+        // Draw smooth curve through spiky points
+        g.moveTo(points[0].x, points[0].y);
+
+        for (let i = 0; i < points.length; i++) {
+            const curr = points[i];
+            const next = points[(i + 1) % points.length];
+            const cpX = (curr.x + next.x) / 2;
+            const cpY = (curr.y + next.y) / 2;
+            g.quadraticCurveTo(curr.x, curr.y, cpX, cpY);
+        }
+
+        g.closePath();
+    }
+
     private drawFace(): void {
         const { size, expression, scaleX, scaleY, lookDirection } = this.options;
         const g = this.faceGraphics;
@@ -734,6 +792,24 @@ export class Wobble extends Container {
                 g.ellipse(cx, eyeY, bigEyeSize * 0.65, bigEyeSize * 0.45);
                 g.fill(LOCOROCO_OUTLINE);
             });
+        } else if (expression === 'angry') {
+            // Angry narrowed eyes with yellow/gold color (like the shadow enemy)
+            [-1, 1].forEach((side) => {
+                const cx = side * eyeSpacing + lookX * 0.5;
+                // Yellow/gold angry eye
+                g.ellipse(cx, eyeY + lookY * 0.3, bigEyeSize * 0.9, bigEyeSize * 0.5);
+                g.fill(0xD4A017); // Gold/yellow color
+                g.ellipse(cx, eyeY + lookY * 0.3, bigEyeSize * 0.9, bigEyeSize * 0.5);
+                g.stroke({ color: LOCOROCO_OUTLINE, width: 2 });
+                // Black pupil
+                g.circle(cx + lookX * 0.2, eyeY + lookY * 0.3, bigEyeSize * 0.35);
+                g.fill(LOCOROCO_OUTLINE);
+                // Angry eyebrow - angled inward
+                const browY = eyeY - bigEyeSize * 1.2;
+                g.moveTo(cx - side * bigEyeSize * 0.8, browY - side * bigEyeSize * 0.4);
+                g.lineTo(cx + side * bigEyeSize * 0.3, browY + side * bigEyeSize * 0.2);
+                g.stroke({ color: LOCOROCO_OUTLINE, width: 3, cap: 'round' });
+            });
         } else {
             [-1, 1].forEach((side) => {
                 const cx = side * eyeSpacing + lookX * 0.5;
@@ -803,6 +879,10 @@ export class Wobble extends Container {
                 mouthWidth * 0.5, mouthY
             );
             g.stroke({ color: LOCOROCO_OUTLINE, width: 2.5, cap: 'round' });
+        } else if (expression === 'angry') {
+            // Small frowning mouth
+            g.ellipse(0, mouthY, mouthSize * 0.5, mouthSize * 0.35);
+            g.fill(LOCOROCO_OUTLINE);
         } else {
             g.moveTo(-mouthWidth * 0.6, mouthY - mouthSize * 0.15);
             g.quadraticCurveTo(0, mouthY + mouthSize * 0.5, mouthWidth * 0.6, mouthY - mouthSize * 0.15);
