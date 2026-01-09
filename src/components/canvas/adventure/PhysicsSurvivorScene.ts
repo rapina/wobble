@@ -1,43 +1,19 @@
 import { Application, Container, Graphics, Text, TextStyle, Ticker, FederatedPointerEvent } from 'pixi.js';
-import { AdventureScene, AdventureSceneOptions,  } from './AdventureScene';
+import { AdventureScene, AdventureSceneOptions } from './AdventureScene';
 import { Wobble } from '../Wobble';
 import { Perk, getRandomPerks, formatPerkEffect } from './perks';
 import { BalatroFilter } from '../filters/BalatroFilter';
 import { useCollectionStore } from '@/stores/collectionStore';
-
-// Game state type
-type GameState = 'playing' | 'perk-selection' | 'game-over';
-
-interface Projectile {
-    graphics: Graphics;
-    x: number;
-    y: number;
-    vx: number;
-    vy: number;
-    mass: number;
-    damage: number;
-    bounces: number;
-    maxBounces: number;
-}
-
-interface Enemy {
-    graphics: Container;
-    wobble?: Wobble;
-    x: number;
-    y: number;
-    vx: number;
-    vy: number;
-    health: number;
-    maxHealth: number;
-    speed: number;
-    mass: number;
-    size: number;
-}
-
-interface TextEffect {
-    timer: number;
-    text: Text;
-}
+import {
+    GameState,
+    PlayerStats,
+    DEFAULT_PLAYER_STATS,
+    TextEffect,
+    HitEffect,
+} from './survivor';
+import { EnemySystem } from './survivor/EnemySystem';
+import { ProjectileSystem } from './survivor/ProjectileSystem';
+import { BackgroundSystem } from './survivor/BackgroundSystem';
 
 export class PhysicsSurvivorScene extends AdventureScene {
     // Game state
@@ -68,17 +44,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private cardAnimTime = 0;
 
     // Accumulated stats from perks
-    private stats = {
-        damageMultiplier: 1,
-        fireRateMultiplier: 1,
-        projectileSpeedMultiplier: 1,
-        projectileSizeMultiplier: 1,
-        knockbackMultiplier: 1,
-        bounceCount: 0,
-        piercingCount: 0,
-        explosionRadius: 0,
-        moveSpeedMultiplier: 1,
-    };
+    private stats: PlayerStats = { ...DEFAULT_PLAYER_STATS };
 
     // Containers
     declare private gameContainer: Container;
@@ -95,25 +61,22 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private playerVy = 0;
     private recoilDecay = 0.9;
 
-    // Projectiles & Enemies
-    private projectiles: Projectile[] = [];
-    private enemies: Enemy[] = [];
+    // Systems
+    declare private enemySystem: EnemySystem;
+    declare private projectileSystem: ProjectileSystem;
+    declare private backgroundSystem: BackgroundSystem;
 
     // Fire system
     private fireRate = 0.5; // seconds between shots
     private fireTimer = 0;
-    private projectileSpeed = 8;
-    private projectileSize = 8;
 
     // Enemy spawn
     private spawnRate = 2; // seconds between spawns
     private spawnTimer = 0;
-    private enemySpeed = 1.5;
-    private enemySize = 25;
 
     // Effects
     private textEffects: TextEffect[] = [];
-    private hitEffects: { x: number; y: number; timer: number; graphics: Graphics }[] = [];
+    private hitEffects: HitEffect[] = [];
 
     // UI
     declare private healthBar: Graphics;
@@ -127,20 +90,23 @@ export class PhysicsSurvivorScene extends AdventureScene {
     // Animation
     private animPhase = 0;
 
-    // Touch/drag movement (1:1 position mapping)
-    private isDragging = false;
-    private dragStartX = 0;      // Touch start position
-    private dragStartY = 0;
-    private playerStartX = 0;    // Player position when drag started
-    private playerStartY = 0;
+    // Virtual joystick movement
+    private joystickActive = false;
+    private joystickCenterX = 0;
+    private joystickCenterY = 0;
+    private inputDirX = 0;  // Normalized input direction (-1 to 1)
+    private inputDirY = 0;
+    private inputMagnitude = 0;  // 0 to 1
+    private readonly joystickMaxRadius = 60;  // Max drag distance from center
+    private readonly playerBaseSpeed = 4;  // Base movement speed
 
-    // Background system - corrupted physics world
+    // Joystick visual
+    declare private joystickContainer: Container;
+    declare private joystickBase: Graphics;
+    declare private joystickKnob: Graphics;
+
+    // Background container
     declare private bgContainer: Container;
-    declare private cracksGraphics: Graphics;
-    declare private glitchGraphics: Graphics;
-    declare private formulaSymbols: { text: Text; baseX: number; baseY: number; broken: boolean; phase: number }[];
-    private glitchTimer = 0;
-    private restorationLevel = 0; // 0 to 1 based on perks collected
 
     constructor(app: Application, options?: AdventureSceneOptions) {
         super(app, options);
@@ -154,13 +120,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Background container (behind everything, but after base background)
         this.bgContainer = new Container();
         this.container.addChild(this.bgContainer);
-
-        // Cracks and glitch graphics
-        this.cracksGraphics = new Graphics();
-        this.bgContainer.addChild(this.cracksGraphics);
-
-        this.glitchGraphics = new Graphics();
-        this.bgContainer.addChild(this.glitchGraphics);
 
         // Create containers
         this.gameContainer = new Container();
@@ -183,162 +142,32 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.perkContainer.visible = false;
         this.container.addChild(this.perkContainer);
 
-        // Initialize formula symbols array
-        this.formulaSymbols = [];
+        // Initialize systems
+        this.backgroundSystem = new BackgroundSystem({
+            bgContainer: this.bgContainer,
+            width: this.width,
+            height: this.height,
+        });
+
+        this.enemySystem = new EnemySystem({
+            enemyContainer: this.enemyContainer,
+            effectContainer: this.effectContainer,
+            width: this.width,
+            height: this.height,
+            baseEnemySpeed: 1.5,
+        });
+
+        this.projectileSystem = new ProjectileSystem({
+            projectileContainer: this.projectileContainer,
+            effectContainer: this.effectContainer,
+            width: this.width,
+            height: this.height,
+        });
     }
 
     // Override background to create corrupted world effect
     protected drawBackground(): void {
-        this.background.clear();
-        // Dark corrupted background with slight purple/red tint
-        this.background.rect(0, 0, this.width, this.height);
-        this.background.fill(0x0d0a14); // Very dark purple-black
-
-        // Add subtle gradient effect
-        const gradient = new Graphics();
-        gradient.rect(0, 0, this.width, this.height);
-        gradient.fill({ color: 0x1a0a20, alpha: 0.5 });
-        this.bgContainer.addChild(gradient);
-
-        // Create floating formula symbols
-        this.createFormulaSymbols();
-    }
-
-    private createFormulaSymbols(): void {
-        // Physics formulas to display as floating symbols
-        const formulas = ['F=ma', 'E=mc²', 'p=mv', 'KE=½mv²', 'F=kx', 'PV=nRT', 'v=fλ', 'F=G(m₁m₂)/r²'];
-
-        for (let i = 0; i < 12; i++) {
-            const formula = formulas[i % formulas.length];
-            const style = new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 14 + Math.random() * 8,
-                fill: 0x3d2a4d,
-                fontWeight: 'bold',
-            });
-
-            const text = new Text({ text: formula, style });
-            text.anchor.set(0.5);
-            const baseX = Math.random() * this.width;
-            const baseY = Math.random() * this.height;
-            text.position.set(baseX, baseY);
-            text.alpha = 0.15 + Math.random() * 0.15;
-
-            this.bgContainer.addChild(text);
-            this.formulaSymbols.push({
-                text,
-                baseX,
-                baseY,
-                broken: true,
-                phase: Math.random() * Math.PI * 2,
-            });
-        }
-    }
-
-    private updateBackground(delta: number): void {
-        this.glitchTimer += delta / 60;
-
-        // Calculate restoration level based on active perks (max 10 perks = fully restored)
-        this.restorationLevel = Math.min(1, this.activePerks.length / 8);
-
-        // Update cracks (fade out as restoration increases)
-        this.drawCracks();
-
-        // Update glitch effect (less frequent as restoration increases)
-        this.updateGlitch(delta);
-
-        // Update floating formula symbols
-        this.updateFormulaSymbols(delta);
-    }
-
-    private drawCracks(): void {
-        this.cracksGraphics.clear();
-
-        // Draw fewer cracks as restoration increases
-        const crackIntensity = 1 - this.restorationLevel;
-        if (crackIntensity < 0.1) return;
-
-        const numCracks = Math.floor(8 * crackIntensity);
-
-        for (let i = 0; i < numCracks; i++) {
-            // Use deterministic positions based on index
-            const startX = ((i * 137) % this.width);
-            const startY = ((i * 89) % this.height);
-
-            this.cracksGraphics.moveTo(startX, startY);
-
-            let x = startX;
-            let y = startY;
-            const segments = 3 + Math.floor(Math.random() * 3);
-
-            for (let j = 0; j < segments; j++) {
-                const angle = Math.random() * Math.PI * 2;
-                const length = 20 + Math.random() * 40;
-                x += Math.cos(angle) * length;
-                y += Math.sin(angle) * length;
-                this.cracksGraphics.lineTo(x, y);
-            }
-
-            const alpha = 0.3 * crackIntensity * (0.5 + Math.sin(this.glitchTimer * 2 + i) * 0.5);
-            this.cracksGraphics.stroke({ color: 0x6a3a7d, width: 2, alpha });
-        }
-    }
-
-    private updateGlitch(delta: number): void {
-        this.glitchGraphics.clear();
-
-        const glitchChance = 0.15 * (1 - this.restorationLevel);
-        if (Math.random() > glitchChance) return;
-
-        // Random glitch rectangles
-        const numGlitches = Math.floor(3 + Math.random() * 5);
-        for (let i = 0; i < numGlitches; i++) {
-            const x = Math.random() * this.width;
-            const y = Math.random() * this.height;
-            const w = 10 + Math.random() * 50;
-            const h = 2 + Math.random() * 8;
-
-            const colors = [0x6a3a7d, 0x8b4a9d, 0x4a2a5d, 0x9a5aad];
-            const color = colors[Math.floor(Math.random() * colors.length)];
-
-            this.glitchGraphics.rect(x, y, w, h);
-            this.glitchGraphics.fill({ color, alpha: 0.3 + Math.random() * 0.3 });
-        }
-    }
-
-    private updateFormulaSymbols(delta: number): void {
-        for (const symbol of this.formulaSymbols) {
-            symbol.phase += delta / 60;
-
-            // Floating motion
-            const floatX = Math.sin(symbol.phase * 0.5) * 10;
-            const floatY = Math.cos(symbol.phase * 0.3) * 8;
-
-            // Glitch displacement (less as restoration increases)
-            const glitchDisplacement = (1 - this.restorationLevel) * 5;
-            const glitchX = (Math.random() - 0.5) * glitchDisplacement;
-            const glitchY = (Math.random() - 0.5) * glitchDisplacement;
-
-            symbol.text.position.set(
-                symbol.baseX + floatX + glitchX,
-                symbol.baseY + floatY + glitchY
-            );
-
-            // Color and alpha based on restoration
-            const baseAlpha = 0.15 + this.restorationLevel * 0.25;
-            const flickerAlpha = symbol.broken ? Math.random() * 0.1 : 0;
-            symbol.text.alpha = baseAlpha - flickerAlpha;
-
-            // Change color as restoration increases (from dark purple to bright cyan)
-            if (this.restorationLevel > 0.3) {
-                const restored = this.restorationLevel;
-                const r = Math.floor(0x3d + (0x5d - 0x3d) * restored);
-                const g = Math.floor(0x2a + (0xad - 0x2a) * restored);
-                const b = Math.floor(0x4d + (0xe2 - 0x4d) * restored);
-                const color = (r << 16) | (g << 8) | b;
-                symbol.text.style.fill = color;
-            }
-        }
+        this.backgroundSystem.initialize(this.background);
     }
 
     protected onInitialDraw(): void {
@@ -376,42 +205,90 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.gameContainer.on('pointermove', this.onPointerMove.bind(this));
         this.gameContainer.on('pointerup', this.onPointerUp.bind(this));
         this.gameContainer.on('pointerupoutside', this.onPointerUp.bind(this));
+
+        // Create virtual joystick visual
+        this.joystickContainer = new Container();
+        this.joystickContainer.visible = false;
+        this.uiContainer.addChild(this.joystickContainer);
+
+        // Joystick base (outer ring)
+        this.joystickBase = new Graphics();
+        this.joystickBase.circle(0, 0, this.joystickMaxRadius);
+        this.joystickBase.fill({ color: 0x000000, alpha: 0.2 });
+        this.joystickBase.circle(0, 0, this.joystickMaxRadius);
+        this.joystickBase.stroke({ color: 0xffffff, width: 2, alpha: 0.4 });
+        this.joystickContainer.addChild(this.joystickBase);
+
+        // Joystick knob (inner circle)
+        this.joystickKnob = new Graphics();
+        this.joystickKnob.circle(0, 0, 20);
+        this.joystickKnob.fill({ color: 0xffffff, alpha: 0.5 });
+        this.joystickKnob.circle(0, 0, 20);
+        this.joystickKnob.stroke({ color: 0xffffff, width: 2, alpha: 0.8 });
+        this.joystickContainer.addChild(this.joystickKnob);
     }
 
     private onPointerDown(e: FederatedPointerEvent): void {
         if (this.phase === 'narration' || this.gameState !== 'playing') return;
 
-        this.isDragging = true;
         const pos = e.getLocalPosition(this.gameContainer);
-        // Store touch start position and player's current position
-        this.dragStartX = pos.x;
-        this.dragStartY = pos.y;
-        this.playerStartX = this.playerX;
-        this.playerStartY = this.playerY;
+
+        // Set joystick center at touch position
+        this.joystickActive = true;
+        this.joystickCenterX = pos.x;
+        this.joystickCenterY = pos.y;
+
+        // Show joystick visual at touch position
+        this.joystickContainer.visible = true;
+        this.joystickContainer.position.set(pos.x, pos.y);
+        this.joystickKnob.position.set(0, 0);
+
+        // Reset input
+        this.inputDirX = 0;
+        this.inputDirY = 0;
+        this.inputMagnitude = 0;
     }
 
     private onPointerMove(e: FederatedPointerEvent): void {
-        if (!this.isDragging || this.gameState !== 'playing') return;
+        if (!this.joystickActive || this.gameState !== 'playing') return;
 
         const pos = e.getLocalPosition(this.gameContainer);
-        // 1:1 position mapping - move player exactly as much as finger moved
-        const dx = pos.x - this.dragStartX;
-        const dy = pos.y - this.dragStartY;
 
-        this.playerX = this.playerStartX + dx;
-        this.playerY = this.playerStartY + dy;
+        // Calculate offset from joystick center
+        const dx = pos.x - this.joystickCenterX;
+        const dy = pos.y - this.joystickCenterY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Keep in bounds
-        const margin = 30;
-        this.playerX = Math.max(margin, Math.min(this.width - margin, this.playerX));
-        this.playerY = Math.max(margin, Math.min(this.height - margin, this.playerY));
+        // Calculate input magnitude (0-1)
+        this.inputMagnitude = Math.min(1, dist / this.joystickMaxRadius);
 
-        // Update player position immediately
-        this.player?.position.set(this.playerX, this.playerY);
+        // Calculate normalized direction
+        if (dist > 0.1) {
+            this.inputDirX = dx / dist;
+            this.inputDirY = dy / dist;
+        } else {
+            this.inputDirX = 0;
+            this.inputDirY = 0;
+        }
+
+        // Update joystick knob position (clamped to max radius)
+        const clampedDist = Math.min(dist, this.joystickMaxRadius);
+        if (dist > 0) {
+            this.joystickKnob.position.set(
+                (dx / dist) * clampedDist,
+                (dy / dist) * clampedDist
+            );
+        }
     }
 
     private onPointerUp(_e: FederatedPointerEvent): void {
-        this.isDragging = false;
+        this.joystickActive = false;
+        this.joystickContainer.visible = false;
+
+        // Clear input direction (player will decelerate naturally)
+        this.inputDirX = 0;
+        this.inputDirY = 0;
+        this.inputMagnitude = 0;
     }
 
     private setupUI(): void {
@@ -1046,290 +923,43 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     private fireProjectile(): void {
-        // Find nearest enemy for auto-aim
-        let targetX = this.playerX + 1;
-        let targetY = this.playerY;
-        let nearestDist = Infinity;
-
-        for (const enemy of this.enemies) {
-            const dx = enemy.x - this.playerX;
-            const dy = enemy.y - this.playerY;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < nearestDist) {
-                nearestDist = dist;
-                targetX = enemy.x;
-                targetY = enemy.y;
-            }
-        }
-
-        // Calculate direction
-        const dx = targetX - this.playerX;
-        const dy = targetY - this.playerY;
-        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        const dirX = dx / dist;
-        const dirY = dy / dist;
-
-        // Apply perk stats to projectile properties
-        const size = this.projectileSize * this.stats.projectileSizeMultiplier;
-        const speed = this.projectileSpeed * this.stats.projectileSpeedMultiplier;
-        const damage = 10 * this.stats.damageMultiplier;
-        const maxBounces = this.stats.bounceCount;
-
-        // Create projectile
-        const projectile = new Graphics();
-        projectile.circle(0, 0, size);
-        projectile.fill(0xf5b041);
-        projectile.circle(0, 0, size * 0.6);
-        projectile.stroke({ color: 0xffffff, width: 2 });
-
-        projectile.position.set(this.playerX, this.playerY);
-        this.projectileContainer.addChild(projectile);
-
-        const proj: Projectile = {
-            graphics: projectile,
-            x: this.playerX,
-            y: this.playerY,
-            vx: dirX * speed,
-            vy: dirY * speed,
-            mass: 1,
-            damage,
-            bounces: 0,
-            maxBounces,
-        };
-
-        this.projectiles.push(proj);
-    }
-
-    private spawnEnemy(): void {
-        // Spawn from random edge
-        const side = Math.floor(Math.random() * 4);
-        let x: number, y: number;
-
-        switch (side) {
-            case 0: // top
-                x = Math.random() * this.width;
-                y = -this.enemySize;
-                break;
-            case 1: // right
-                x = this.width + this.enemySize;
-                y = Math.random() * this.height;
-                break;
-            case 2: // bottom
-                x = Math.random() * this.width;
-                y = this.height + this.enemySize;
-                break;
-            default: // left
-                x = -this.enemySize;
-                y = Math.random() * this.height;
-                break;
-        }
-
-        // Scale difficulty with time
-        const difficultyMult = 1 + this.gameTime / 60;
-        const health = 20 * difficultyMult;
-        const speed = this.enemySpeed * (0.8 + Math.random() * 0.4);
-
-        // Create Shadow Wobble enemy
-        const wobble = new Wobble({
-            size: this.enemySize,
-            color: 0x1a1a1a,
-            shape: 'shadow',
-            expression: 'angry',
-            showShadow: false,
-        });
-        wobble.position.set(x, y);
-        this.enemyContainer.addChild(wobble);
-
-        const enemy: Enemy = {
-            graphics: wobble,
-            wobble,
-            x, y,
-            vx: 0, vy: 0,
-            health,
-            maxHealth: health,
-            speed,
-            mass: 2,
-            size: this.enemySize,
-        };
-
-        this.enemies.push(enemy);
+        this.projectileSystem.fire(
+            this.playerX,
+            this.playerY,
+            this.enemySystem.enemies,
+            this.stats
+        );
     }
 
     private updateProjectiles(delta: number): void {
-        for (let i = this.projectiles.length - 1; i >= 0; i--) {
-            const proj = this.projectiles[i];
-
-            // Move
-            proj.x += proj.vx * delta;
-            proj.y += proj.vy * delta;
-
-            // Bounce off walls if projectile has bounces available (from perk)
-            if (proj.bounces < proj.maxBounces) {
-                if (proj.x < 0 || proj.x > this.width) {
-                    proj.vx *= -0.8;
-                    proj.x = Math.max(0, Math.min(this.width, proj.x));
-                    proj.bounces++;
-                }
-                if (proj.y < 0 || proj.y > this.height) {
-                    proj.vy *= -0.8;
-                    proj.y = Math.max(0, Math.min(this.height, proj.y));
-                    proj.bounces++;
-                }
-            }
-
-            proj.graphics.position.set(proj.x, proj.y);
-
-            // Remove if out of bounds
-            const margin = 50;
-            if (proj.x < -margin || proj.x > this.width + margin ||
-                proj.y < -margin || proj.y > this.height + margin) {
-                this.projectileContainer.removeChild(proj.graphics);
-                proj.graphics.destroy();
-                this.projectiles.splice(i, 1);
-            }
-        }
+        this.projectileSystem.update(delta);
+        this.projectileSystem.checkCollisions(
+            this.enemySystem.enemies,
+            this.stats,
+            this.hitEffects,
+            () => {
+                this.score += 10;
+                useCollectionStore.getState().unlockWobble('shadow');
+            },
+            (x, y) => this.createExplosion(x, y)
+        );
     }
 
-    private updateEnemies(delta: number): void {
-        for (const enemy of this.enemies) {
-            // Move towards player
-            const dx = this.playerX - enemy.x;
-            const dy = this.playerY - enemy.y;
-            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-
-            // Add velocity towards player
-            const accel = 0.1 * delta;
-            enemy.vx += (dx / dist) * accel * enemy.speed;
-            enemy.vy += (dy / dist) * accel * enemy.speed;
-
-            // Limit speed
-            const speed = Math.sqrt(enemy.vx * enemy.vx + enemy.vy * enemy.vy);
-            if (speed > enemy.speed) {
-                enemy.vx = (enemy.vx / speed) * enemy.speed;
-                enemy.vy = (enemy.vy / speed) * enemy.speed;
-            }
-
-            // Apply velocity
-            enemy.x += enemy.vx * delta;
-            enemy.y += enemy.vy * delta;
-
-            // Friction on velocity from knockback
-            enemy.vx *= 0.98;
-            enemy.vy *= 0.98;
-
-            enemy.graphics.position.set(enemy.x, enemy.y);
-
-            // Animate wobble phase for Shadow enemies
-            if (enemy.wobble) {
-                enemy.wobble.updateOptions({
-                    wobblePhase: this.animPhase,
-                    lookDirection: { x: dx / dist, y: dy / dist },
-                });
-            }
-        }
+    private updateEnemiesAndMerges(delta: number, deltaSeconds: number): void {
+        this.enemySystem.update(delta, this.playerX, this.playerY, this.animPhase);
+        this.enemySystem.checkCollisions(deltaSeconds, this.hitEffects);
+        this.enemySystem.updateMerges(this.gameTime, this.hitEffects);
+        this.enemySystem.cleanupOverlapTracker();
+        this.score += this.enemySystem.cleanupDead();
     }
 
-    private checkCollisions(): void {
-        // Projectile vs Enemy
-        for (let pi = this.projectiles.length - 1; pi >= 0; pi--) {
-            const proj = this.projectiles[pi];
+    private spawnEnemy(): void {
+        this.enemySystem.spawnAtEdge(this.gameTime);
+    }
 
-            for (let ei = this.enemies.length - 1; ei >= 0; ei--) {
-                const enemy = this.enemies[ei];
-
-                const dx = proj.x - enemy.x;
-                const dy = proj.y - enemy.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                const minDist = this.projectileSize * this.stats.projectileSizeMultiplier + enemy.size / 2;
-
-                if (dist < minDist) {
-                    // Hit!
-                    enemy.health -= proj.damage;
-
-                    // Knockback (always apply, scaled by knockback stat)
-                    const knockback = (proj.mass * Math.sqrt(proj.vx * proj.vx + proj.vy * proj.vy)) / enemy.mass;
-                    const nx = dx / (dist || 1);
-                    const ny = dy / (dist || 1);
-                    enemy.vx += nx * knockback * 0.5 * this.stats.knockbackMultiplier;
-                    enemy.vy += ny * knockback * 0.5 * this.stats.knockbackMultiplier;
-
-                    // Hit effect
-                    this.createHitEffect(proj.x, proj.y);
-
-                    // Explosion effect if has explosionRadius
-                    if (this.stats.explosionRadius > 0) {
-                        this.createExplosion(proj.x, proj.y);
-                    }
-
-                    // Remove projectile (unless has bounces left)
-                    if (proj.bounces >= proj.maxBounces) {
-                        this.projectileContainer.removeChild(proj.graphics);
-                        proj.graphics.destroy();
-                        this.projectiles.splice(pi, 1);
-                    } else {
-                        // Bounce off enemy
-                        proj.vx = nx * Math.abs(proj.vx) + nx * 2;
-                        proj.vy = ny * Math.abs(proj.vy) + ny * 2;
-                        proj.bounces++;
-                    }
-
-                    // Check if enemy died
-                    if (enemy.health <= 0) {
-                        this.enemyContainer.removeChild(enemy.graphics);
-                        enemy.graphics.destroy();
-                        this.enemies.splice(ei, 1);
-                        this.score += 10;
-
-                        // Unlock shadow wobble on first enemy kill
-                        useCollectionStore.getState().unlockWobble('shadow');
-                    }
-
-                    break;
-                }
-            }
-        }
-
-        // Enemy vs Enemy (always check for separation)
-        for (let i = 0; i < this.enemies.length; i++) {
-            for (let j = i + 1; j < this.enemies.length; j++) {
-                const e1 = this.enemies[i];
-                const e2 = this.enemies[j];
-
-                const dx = e2.x - e1.x;
-                const dy = e2.y - e1.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                const minDist = e1.size / 2 + e2.size / 2;
-
-                if (dist < minDist && dist > 0) {
-                    // Separate overlapping enemies
-                    const nx = dx / dist;
-                    const ny = dy / dist;
-
-                    // Relative velocity
-                    const dvx = e1.vx - e2.vx;
-                    const dvy = e1.vy - e2.vy;
-                    const dvn = dvx * nx + dvy * ny;
-
-                    if (dvn > 0) {
-                        // Elastic collision
-                        e1.vx -= dvn * nx;
-                        e1.vy -= dvn * ny;
-                        e2.vx += dvn * nx;
-                        e2.vy += dvn * ny;
-                    }
-
-                    // Separate
-                    const overlap = minDist - dist;
-                    e1.x -= overlap * nx * 0.5;
-                    e1.y -= overlap * ny * 0.5;
-                    e2.x += overlap * nx * 0.5;
-                    e2.y += overlap * ny * 0.5;
-                }
-            }
-        }
-
-        // Enemy vs Player
-        for (const enemy of this.enemies) {
+    // Check collisions between enemies and player
+    private checkPlayerCollisions(): void {
+        for (const enemy of this.enemySystem.enemies) {
             const dx = enemy.x - this.playerX;
             const dy = enemy.y - this.playerY;
             const dist = Math.sqrt(dx * dx + dy * dy);
@@ -1364,13 +994,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.effectContainer.addChild(explosion);
 
         // Damage enemies in radius
-        for (const enemy of this.enemies) {
+        for (const enemy of this.enemySystem.enemies) {
             const dx = enemy.x - x;
             const dy = enemy.y - y;
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist < radius + enemy.size / 2) {
                 enemy.health -= damage;
-                // Push enemies away
                 const nx = dx / (dist || 1);
                 const ny = dy / (dist || 1);
                 enemy.vx += nx * 5;
@@ -1378,26 +1007,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
             }
         }
 
-        // Fade out explosion
-        this.hitEffects.push({
-            x, y,
-            timer: 0.3,
-            graphics: explosion,
-        });
-    }
-
-    private createHitEffect(x: number, y: number): void {
-        const effect = new Graphics();
-        effect.circle(0, 0, 15);
-        effect.fill({ color: 0xffffff, alpha: 0.8 });
-        effect.position.set(x, y);
-        this.effectContainer.addChild(effect);
-
-        this.hitEffects.push({
-            x, y,
-            timer: 0.2,
-            graphics: effect,
-        });
+        this.hitEffects.push({ x, y, timer: 0.3, graphics: explosion });
     }
 
     private updateEffects(delta: number): void {
@@ -1434,23 +1044,55 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     private updatePlayer(delta: number): void {
-        // Player position is updated directly in onPointerMove (1:1 mapping)
-        // Here we only handle recoil effects
+        // Calculate target velocity from joystick input
+        const speed = this.playerBaseSpeed * this.stats.moveSpeedMultiplier;
+        const targetVx = this.inputDirX * this.inputMagnitude * speed;
+        const targetVy = this.inputDirY * this.inputMagnitude * speed;
 
-        // Apply recoil velocity
+        // Smooth acceleration towards target velocity
+        const accel = 0.15;
+        const friction = 0.85;
+
+        if (this.inputMagnitude > 0.1) {
+            // Accelerate towards target
+            this.playerVx += (targetVx - this.playerVx) * accel * delta;
+            this.playerVy += (targetVy - this.playerVy) * accel * delta;
+        } else {
+            // Apply friction when no input
+            this.playerVx *= friction;
+            this.playerVy *= friction;
+        }
+
+        // Apply velocity to position
         this.playerX += this.playerVx * delta;
         this.playerY += this.playerVy * delta;
 
-        // Decay recoil
-        this.playerVx *= this.recoilDecay;
-        this.playerVy *= this.recoilDecay;
-
         // Keep in bounds
         const margin = 30;
-        this.playerX = Math.max(margin, Math.min(this.width - margin, this.playerX));
-        this.playerY = Math.max(margin, Math.min(this.height - margin, this.playerY));
+        if (this.playerX < margin) {
+            this.playerX = margin;
+            this.playerVx = 0;
+        } else if (this.playerX > this.width - margin) {
+            this.playerX = this.width - margin;
+            this.playerVx = 0;
+        }
+        if (this.playerY < margin) {
+            this.playerY = margin;
+            this.playerVy = 0;
+        } else if (this.playerY > this.height - margin) {
+            this.playerY = this.height - margin;
+            this.playerVy = 0;
+        }
 
         this.player.position.set(this.playerX, this.playerY);
+
+        // Update player look direction based on velocity
+        const velMag = Math.sqrt(this.playerVx * this.playerVx + this.playerVy * this.playerVy);
+        if (velMag > 0.5) {
+            this.player.updateOptions({
+                lookDirection: { x: this.playerVx / velMag, y: this.playerVy / velMag }
+            });
+        }
     }
 
     private gameOver(): void {
@@ -1463,26 +1105,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
         }, 1500);
     }
 
-    // Remove dead enemies
-    private cleanupDeadEnemies(): void {
-        for (let i = this.enemies.length - 1; i >= 0; i--) {
-            if (this.enemies[i].health <= 0) {
-                const enemy = this.enemies[i];
-                this.enemyContainer.removeChild(enemy.graphics);
-                enemy.graphics.destroy();
-                this.enemies.splice(i, 1);
-                this.score += 10;
-            }
-        }
-    }
-
     protected animateIdle(ticker: Ticker): void {
         const delta = ticker.deltaMS / 16.67;
         const deltaSeconds = ticker.deltaMS / 1000;
         this.animPhase += deltaSeconds;
 
         // Update background effects even in idle
-        this.updateBackground(delta);
+        this.backgroundSystem.update(delta, this.activePerks.length);
 
         // Update perk card animations
         if (this.gameState === 'perk-selection') {
@@ -1520,7 +1149,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.roundTime += deltaSeconds;
 
         // Update background effects (corruption/restoration)
-        this.updateBackground(delta);
+        this.backgroundSystem.update(delta, this.activePerks.length);
 
         // Check round completion
         this.checkRoundComplete();
@@ -1528,7 +1157,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Fire projectiles (apply fireRate stat)
         this.fireTimer += deltaSeconds;
         const effectiveFireRate = this.fireRate * this.stats.fireRateMultiplier;
-        if (this.fireTimer >= effectiveFireRate && this.enemies.length > 0) {
+        if (this.fireTimer >= effectiveFireRate && this.enemySystem.enemies.length > 0) {
             this.fireProjectile();
             this.fireTimer = 0;
         }
@@ -1544,21 +1173,34 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Update game objects (apply moveSpeed stat)
         this.updatePlayer(delta);
         this.updateProjectiles(delta);
-        this.updateEnemies(delta);
-        this.checkCollisions();
-        this.cleanupDeadEnemies();
+        this.updateEnemiesAndMerges(delta, deltaSeconds);
+        this.checkPlayerCollisions();
         this.updateEffects(delta);
 
         // Update UI
         this.updateUI();
 
-        // Player animation
+        // Player animation with HP-based expression
         const breathe = Math.sin(this.animPhase * 3) * 0.02;
+        const healthPercent = this.playerHealth / this.maxPlayerHealth;
+
+        // Expression changes based on HP
+        let expression: 'happy' | 'neutral' | 'effort' | 'worried' | 'struggle' | 'dizzy' = 'happy';
+        if (healthPercent <= 0.15) {
+            expression = 'dizzy';
+        } else if (healthPercent <= 0.30) {
+            expression = 'struggle';
+        } else if (healthPercent <= 0.50) {
+            expression = 'worried';
+        } else if (healthPercent <= 0.70) {
+            expression = 'effort';
+        }
+
         this.player?.updateOptions({
             wobblePhase: this.animPhase,
             scaleX: 1 + breathe,
             scaleY: 1 - breathe,
-            expression: this.playerHealth < 30 ? 'worried' : 'happy',
+            expression,
         });
     }
 
@@ -1599,19 +1241,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     protected onReset(): void {
-        // Clear projectiles
-        for (const proj of this.projectiles) {
-            this.projectileContainer.removeChild(proj.graphics);
-            proj.graphics.destroy();
-        }
-        this.projectiles = [];
-
-        // Clear enemies
-        for (const enemy of this.enemies) {
-            this.enemyContainer.removeChild(enemy.graphics);
-            enemy.graphics.destroy();
-        }
-        this.enemies = [];
+        // Reset systems
+        this.projectileSystem.reset();
+        this.enemySystem.reset();
+        this.backgroundSystem.reset();
 
         // Clear effects
         for (const effect of this.hitEffects) {
@@ -1645,7 +1278,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.playerY = this.centerY;
         this.playerVx = 0;
         this.playerVy = 0;
-        this.isDragging = false;
+
+        // Reset joystick state
+        this.joystickActive = false;
+        this.joystickContainer.visible = false;
+        this.inputDirX = 0;
+        this.inputDirY = 0;
+        this.inputMagnitude = 0;
 
         this.player?.position.set(this.playerX, this.playerY);
         this.player?.updateOptions({ expression: 'happy' });
