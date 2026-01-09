@@ -260,6 +260,11 @@ export class EnemySystem {
         }
     }
 
+    // Get dead enemies (call before cleanupDead to know what was killed)
+    getDeadEnemies(): Enemy[] {
+        return this.enemies.filter(e => e.health <= 0);
+    }
+
     // Remove dead enemies
     cleanupDead(): number {
         let score = 0;
