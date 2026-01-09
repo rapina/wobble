@@ -1,7 +1,7 @@
 import { Application, Container, Graphics, Text, TextStyle, Ticker, FederatedPointerEvent } from 'pixi.js';
 import { AdventureScene, AdventureSceneOptions } from './AdventureScene';
-import { Wobble } from '../Wobble';
-import { Perk, getRandomPerks, formatPerkEffect } from './perks';
+import { Wobble, WobbleShape, WOBBLE_CHARACTERS } from '../Wobble';
+import { Perk, getRandomPerks, formatPerkEffect, perkDefinitions } from './perks';
 import { BalatroFilter } from '../filters/BalatroFilter';
 import { useCollectionStore } from '@/stores/collectionStore';
 import {
@@ -10,6 +10,12 @@ import {
     DEFAULT_PLAYER_STATS,
     TextEffect,
     HitEffect,
+    SurvivorRank,
+    RANK_CONFIGS,
+    getRankFromTime,
+    WobbleStats,
+    WOBBLE_STATS,
+    PLAYABLE_CHARACTERS,
 } from './survivor';
 import { EnemySystem } from './survivor/EnemySystem';
 import { ProjectileSystem } from './survivor/ProjectileSystem';
@@ -108,6 +114,32 @@ export class PhysicsSurvivorScene extends AdventureScene {
     // Background container
     declare private bgContainer: Container;
 
+    // Result screen
+    declare private resultContainer: Container;
+    private resultAnimTime = 0;
+    private resultAnimStep = 0;
+    private resultDisplayedTime = 0;
+    private resultDisplayedKills = 0;
+    private resultRankRevealed = false;
+    declare private resultTimeText: Text;
+    declare private resultKillsText: Text;
+    declare private resultWaveText: Text;
+    declare private resultRankText: Text;
+    declare private resultRankCard: Container;
+    declare private resultMessageText: Text;
+    declare private resultButtons: Container;
+
+    // Character selection screen
+    declare private characterSelectContainer: Container;
+    private selectedCharacter: WobbleShape = 'circle';
+    private characterWobbles: Map<WobbleShape, Wobble> = new Map();
+    declare private characterNameText: Text;
+    declare private characterDescText: Text;
+    declare private characterStatsContainer: Container;
+    declare private perkPreviewContainer: Container;
+    declare private startButton: Container;
+    private readonly baseMaxHealth = 100;
+
     constructor(app: Application, options?: AdventureSceneOptions) {
         super(app, options);
         // Store studied formulas from options
@@ -141,6 +173,16 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.perkContainer = new Container();
         this.perkContainer.visible = false;
         this.container.addChild(this.perkContainer);
+
+        // Result screen container (above perk container)
+        this.resultContainer = new Container();
+        this.resultContainer.visible = false;
+        this.container.addChild(this.resultContainer);
+
+        // Character selection container (above result container)
+        this.characterSelectContainer = new Container();
+        this.characterSelectContainer.visible = false;
+        this.container.addChild(this.characterSelectContainer);
 
         // Initialize systems
         this.backgroundSystem = new BackgroundSystem({
@@ -1097,12 +1139,731 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
     private gameOver(): void {
         this.gameState = 'game-over';
-        this.player.updateOptions({ expression: 'worried' });
+        this.player.updateOptions({ expression: 'dizzy' });
 
-        // Notify completion (game over counts as "success" - user survived as long as they could)
+        // Short delay before showing result screen
         setTimeout(() => {
+            this.showResult();
+        }, 800);
+    }
+
+    private showResult(): void {
+        this.gameState = 'result';
+        this.resultAnimTime = 0;
+        this.resultAnimStep = 0;
+        this.resultDisplayedTime = 0;
+        this.resultDisplayedKills = 0;
+        this.resultRankRevealed = false;
+
+        this.createResultUI();
+        this.resultContainer.visible = true;
+    }
+
+    private createResultUI(): void {
+        // Clear previous result UI
+        this.resultContainer.removeChildren();
+
+        const centerX = this.width / 2;
+
+        // Semi-transparent background
+        const bg = new Graphics();
+        bg.rect(0, 0, this.width, this.height);
+        bg.fill({ color: 0x0a0a14, alpha: 0.95 });
+        this.resultContainer.addChild(bg);
+
+        // Title
+        const titleStyle = new TextStyle({
+            fontFamily: 'Arial, sans-serif',
+            fontSize: 32,
+            fontWeight: 'bold',
+            fill: 0xffffff,
+            dropShadow: {
+                color: 0x000000,
+                blur: 8,
+                distance: 2,
+            },
+        });
+        const title = new Text({ text: 'SURVIVED!', style: titleStyle });
+        title.anchor.set(0.5);
+        title.position.set(centerX, 60);
+        title.alpha = 0;
+        this.resultContainer.addChild(title);
+
+        // Stats container
+        const statsY = 130;
+        const statGap = 55;
+
+        // Time stat
+        const timeLabel = this.createStatLabel('생존 시간', centerX, statsY);
+        this.resultContainer.addChild(timeLabel);
+
+        this.resultTimeText = new Text({
+            text: '00:00',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 28,
+                fontWeight: 'bold',
+                fill: 0xf5b041,
+            }),
+        });
+        this.resultTimeText.anchor.set(0.5);
+        this.resultTimeText.position.set(centerX, statsY + 28);
+        this.resultTimeText.alpha = 0;
+        this.resultContainer.addChild(this.resultTimeText);
+
+        // Kills stat
+        const killsLabel = this.createStatLabel('처치한 적', centerX, statsY + statGap);
+        this.resultContainer.addChild(killsLabel);
+
+        this.resultKillsText = new Text({
+            text: '0',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 28,
+                fontWeight: 'bold',
+                fill: 0xe74c3c,
+            }),
+        });
+        this.resultKillsText.anchor.set(0.5);
+        this.resultKillsText.position.set(centerX, statsY + statGap + 28);
+        this.resultKillsText.alpha = 0;
+        this.resultContainer.addChild(this.resultKillsText);
+
+        // Wave stat
+        const waveLabel = this.createStatLabel('도달 웨이브', centerX, statsY + statGap * 2);
+        this.resultContainer.addChild(waveLabel);
+
+        this.resultWaveText = new Text({
+            text: `Wave ${this.currentRound}`,
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 28,
+                fontWeight: 'bold',
+                fill: 0x3498db,
+            }),
+        });
+        this.resultWaveText.anchor.set(0.5);
+        this.resultWaveText.position.set(centerX, statsY + statGap * 2 + 28);
+        this.resultWaveText.alpha = 0;
+        this.resultContainer.addChild(this.resultWaveText);
+
+        // Perk icons row
+        const perkY = statsY + statGap * 3 + 10;
+        if (this.activePerks.length > 0) {
+            const perkLabel = this.createStatLabel('획득한 물리 법칙', centerX, perkY);
+            this.resultContainer.addChild(perkLabel);
+
+            const iconSize = 32;
+            const iconGap = 8;
+            const totalWidth = this.activePerks.length * iconSize + (this.activePerks.length - 1) * iconGap;
+            const startX = centerX - totalWidth / 2;
+
+            this.activePerks.forEach((perk, i) => {
+                const iconContainer = new Container();
+                iconContainer.position.set(startX + i * (iconSize + iconGap) + iconSize / 2, perkY + 35);
+                iconContainer.alpha = 0;
+                iconContainer.scale.set(0);
+
+                const iconBg = new Graphics();
+                iconBg.roundRect(-iconSize / 2, -iconSize / 2, iconSize, iconSize, 6);
+                iconBg.fill({ color: 0x1a1a1a, alpha: 0.9 });
+                iconBg.stroke({ color: perk.definition.color, width: 2 });
+                iconContainer.addChild(iconBg);
+
+                const iconText = new Text({
+                    text: perk.definition.icon,
+                    style: new TextStyle({ fontSize: 18 }),
+                });
+                iconText.anchor.set(0.5);
+                iconContainer.addChild(iconText);
+
+                this.resultContainer.addChild(iconContainer);
+            });
+        }
+
+        // Rank card (positioned below perk icons with enough spacing)
+        const rankY = this.activePerks.length > 0 ? perkY + 160 : statsY + statGap * 3 + 20;
+        this.resultRankCard = new Container();
+        this.resultRankCard.position.set(centerX, rankY);
+        this.resultRankCard.scale.set(0);
+        this.resultContainer.addChild(this.resultRankCard);
+
+        const rank = getRankFromTime(this.gameTime);
+        const rankConfig = RANK_CONFIGS[rank];
+
+        // Rank card background
+        const cardWidth = 120;
+        const cardHeight = 140;
+        const rankCardBg = new Graphics();
+        rankCardBg.roundRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 16);
+        rankCardBg.fill(0x1a1a2e);
+        rankCardBg.roundRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 16);
+        rankCardBg.stroke({ color: rankConfig.color, width: 4 });
+        this.resultRankCard.addChild(rankCardBg);
+
+        // Rank letter
+        this.resultRankText = new Text({
+            text: rank,
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 72,
+                fontWeight: 'bold',
+                fill: rankConfig.color,
+                dropShadow: {
+                    color: rankConfig.color,
+                    blur: 20,
+                    distance: 0,
+                    alpha: 0.5,
+                },
+            }),
+        });
+        this.resultRankText.anchor.set(0.5);
+        this.resultRankText.position.set(0, -10);
+        this.resultRankCard.addChild(this.resultRankText);
+
+        // Rank message
+        this.resultMessageText = new Text({
+            text: rankConfig.message,
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 14,
+                fontWeight: 'bold',
+                fill: 0xffffff,
+            }),
+        });
+        this.resultMessageText.anchor.set(0.5);
+        this.resultMessageText.position.set(0, 45);
+        this.resultRankCard.addChild(this.resultMessageText);
+
+        // Action buttons
+        this.resultButtons = new Container();
+        this.resultButtons.position.set(centerX, this.height - 80);
+        this.resultButtons.alpha = 0;
+        this.resultContainer.addChild(this.resultButtons);
+
+        // Retry button
+        const retryBtn = this.createResultButton('다시 하기', -70, 0x3498db, () => {
+            this.resultContainer.visible = false;
+            this.reset();
+            this.play();
+        });
+        this.resultButtons.addChild(retryBtn);
+
+        // Menu button
+        const menuBtn = this.createResultButton('메뉴로', 70, 0x2c3e50, () => {
             this.onPlayComplete?.('success');
-        }, 1500);
+        });
+        this.resultButtons.addChild(menuBtn);
+    }
+
+    private createStatLabel(text: string, x: number, y: number): Text {
+        const label = new Text({
+            text,
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 14,
+                fill: 0x888888,
+            }),
+        });
+        label.anchor.set(0.5);
+        label.position.set(x, y);
+        return label;
+    }
+
+    private createResultButton(text: string, offsetX: number, color: number, onClick: () => void): Container {
+        const btn = new Container();
+        btn.position.set(offsetX, 0);
+        btn.eventMode = 'static';
+        btn.cursor = 'pointer';
+
+        const bg = new Graphics();
+        bg.roundRect(-60, -22, 120, 44, 12);
+        bg.fill(color);
+        btn.addChild(bg);
+
+        const label = new Text({
+            text,
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 16,
+                fontWeight: 'bold',
+                fill: 0xffffff,
+            }),
+        });
+        label.anchor.set(0.5);
+        btn.addChild(label);
+
+        btn.on('pointerdown', onClick);
+
+        return btn;
+    }
+
+    private animateResult(deltaSeconds: number): void {
+        this.resultAnimTime += deltaSeconds;
+
+        const children = this.resultContainer.children;
+
+        // Step 0: Fade in title (0.0s - 0.3s)
+        if (this.resultAnimTime >= 0 && this.resultAnimStep === 0) {
+            const title = children[1] as Text;
+            title.alpha = Math.min(1, this.resultAnimTime / 0.3);
+            if (this.resultAnimTime >= 0.3) this.resultAnimStep = 1;
+        }
+
+        // Step 1: Count up time (0.3s - 0.8s)
+        if (this.resultAnimTime >= 0.3 && this.resultAnimStep === 1) {
+            this.resultTimeText.alpha = 1;
+            const progress = Math.min(1, (this.resultAnimTime - 0.3) / 0.5);
+            this.resultDisplayedTime = this.gameTime * this.easeOutQuad(progress);
+            const mins = Math.floor(this.resultDisplayedTime / 60);
+            const secs = Math.floor(this.resultDisplayedTime % 60);
+            this.resultTimeText.text = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            if (progress >= 1) this.resultAnimStep = 2;
+        }
+
+        // Step 2: Count up kills (0.8s - 1.2s)
+        if (this.resultAnimTime >= 0.8 && this.resultAnimStep === 2) {
+            this.resultKillsText.alpha = 1;
+            const progress = Math.min(1, (this.resultAnimTime - 0.8) / 0.4);
+            const totalKills = Math.floor(this.score / 10);
+            this.resultDisplayedKills = Math.floor(totalKills * this.easeOutQuad(progress));
+            this.resultKillsText.text = this.resultDisplayedKills.toString();
+            if (progress >= 1) this.resultAnimStep = 3;
+        }
+
+        // Step 3: Show wave (1.2s - 1.4s)
+        if (this.resultAnimTime >= 1.2 && this.resultAnimStep === 3) {
+            this.resultWaveText.alpha = Math.min(1, (this.resultAnimTime - 1.2) / 0.2);
+            if (this.resultAnimTime >= 1.4) this.resultAnimStep = 4;
+        }
+
+        // Step 4: Pop in perk icons (1.4s - 2.0s)
+        if (this.resultAnimTime >= 1.4 && this.resultAnimStep === 4) {
+            const perkStartIndex = this.activePerks.length > 0 ? 8 : -1; // After labels and texts
+            if (perkStartIndex > 0) {
+                for (let i = 0; i < this.activePerks.length; i++) {
+                    const iconTime = 1.4 + i * 0.1;
+                    if (this.resultAnimTime >= iconTime) {
+                        const icon = children[perkStartIndex + i] as Container;
+                        if (icon) {
+                            const progress = Math.min(1, (this.resultAnimTime - iconTime) / 0.15);
+                            icon.alpha = progress;
+                            icon.scale.set(this.easeOutBack(progress));
+                        }
+                    }
+                }
+            }
+            if (this.resultAnimTime >= 1.4 + this.activePerks.length * 0.1 + 0.2) {
+                this.resultAnimStep = 5;
+            }
+        }
+
+        // Step 5: Reveal rank card (2.0s - 2.5s)
+        if (this.resultAnimTime >= 2.0 && this.resultAnimStep === 5) {
+            const progress = Math.min(1, (this.resultAnimTime - 2.0) / 0.4);
+            this.resultRankCard.scale.set(this.easeOutBack(progress));
+
+            // Add glow pulse effect
+            if (progress >= 1 && !this.resultRankRevealed) {
+                this.resultRankRevealed = true;
+            }
+            if (this.resultAnimTime >= 2.4) this.resultAnimStep = 6;
+        }
+
+        // Step 6: Show buttons (2.4s+)
+        if (this.resultAnimTime >= 2.4 && this.resultAnimStep === 6) {
+            const progress = Math.min(1, (this.resultAnimTime - 2.4) / 0.3);
+            this.resultButtons.alpha = progress;
+            if (progress >= 1) this.resultAnimStep = 7;
+        }
+
+        // Rank card pulse animation
+        if (this.resultRankRevealed) {
+            const pulse = 1 + Math.sin(this.resultAnimTime * 4) * 0.03;
+            this.resultRankCard.scale.set(pulse);
+        }
+    }
+
+    private easeOutQuad(t: number): number {
+        return 1 - (1 - t) * (1 - t);
+    }
+
+    private easeOutBack(t: number): number {
+        const c1 = 1.70158;
+        const c3 = c1 + 1;
+        return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    }
+
+    // === Character Selection Screen ===
+    private showCharacterSelect(): void {
+        this.gameState = 'character-select';
+        this.createCharacterSelectUI();
+        this.characterSelectContainer.visible = true;
+    }
+
+    private createCharacterSelectUI(): void {
+        // Clear previous UI
+        this.characterSelectContainer.removeChildren();
+        this.characterWobbles.clear();
+
+        const centerX = this.width / 2;
+
+        // Background
+        const bg = new Graphics();
+        bg.rect(0, 0, this.width, this.height);
+        bg.fill({ color: 0x0d0a14, alpha: 0.98 });
+        this.characterSelectContainer.addChild(bg);
+
+        // Title
+        const titleStyle = new TextStyle({
+            fontFamily: 'Arial, sans-serif',
+            fontSize: 24,
+            fontWeight: 'bold',
+            fill: 0xffffff,
+            dropShadow: {
+                color: 0x000000,
+                blur: 4,
+                distance: 2,
+            },
+        });
+        const title = new Text({ text: '캐릭터 선택', style: titleStyle });
+        title.anchor.set(0.5);
+        title.position.set(centerX, 40);
+        this.characterSelectContainer.addChild(title);
+
+        // Character selection row
+        const charY = 100;
+        const charSize = 45;
+        const charGap = 8;
+        const totalWidth = PLAYABLE_CHARACTERS.length * charSize + (PLAYABLE_CHARACTERS.length - 1) * charGap;
+        const startX = centerX - totalWidth / 2;
+
+        PLAYABLE_CHARACTERS.forEach((shape, index) => {
+            const charContainer = new Container();
+            const x = startX + index * (charSize + charGap) + charSize / 2;
+            charContainer.position.set(x, charY);
+            charContainer.eventMode = 'static';
+            charContainer.cursor = 'pointer';
+
+            // Character wobble
+            const character = WOBBLE_CHARACTERS[shape];
+            const wobble = new Wobble({
+                size: charSize,
+                shape: shape,
+                expression: 'happy',
+                color: character.color,
+                showShadow: false,
+            });
+            charContainer.addChild(wobble);
+            this.characterWobbles.set(shape, wobble);
+
+            // Selection indicator
+            const selectionRing = new Graphics();
+            selectionRing.circle(0, 0, charSize / 2 + 6);
+            selectionRing.stroke({ color: 0xffd700, width: 3 });
+            selectionRing.visible = shape === this.selectedCharacter;
+            charContainer.addChildAt(selectionRing, 0);
+
+            // Click handler
+            charContainer.on('pointerdown', () => {
+                this.selectCharacter(shape);
+            });
+
+            this.characterSelectContainer.addChild(charContainer);
+        });
+
+        // Character info section
+        const infoY = 170;
+
+        // Character name
+        this.characterNameText = new Text({
+            text: '',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 20,
+                fontWeight: 'bold',
+                fill: 0xffffff,
+            }),
+        });
+        this.characterNameText.anchor.set(0.5);
+        this.characterNameText.position.set(centerX, infoY);
+        this.characterSelectContainer.addChild(this.characterNameText);
+
+        // Character description
+        this.characterDescText = new Text({
+            text: '',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 12,
+                fill: 0xaaaaaa,
+            }),
+        });
+        this.characterDescText.anchor.set(0.5);
+        this.characterDescText.position.set(centerX, infoY + 25);
+        this.characterSelectContainer.addChild(this.characterDescText);
+
+        // Stats container
+        this.characterStatsContainer = new Container();
+        this.characterStatsContainer.position.set(centerX, infoY + 60);
+        this.characterSelectContainer.addChild(this.characterStatsContainer);
+
+        // Perk preview section
+        const perkY = infoY + 130;
+        const perkLabel = new Text({
+            text: '등장 가능한 물리 법칙',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 14,
+                fontWeight: 'bold',
+                fill: 0xcccccc,
+            }),
+        });
+        perkLabel.anchor.set(0.5);
+        perkLabel.position.set(centerX, perkY);
+        this.characterSelectContainer.addChild(perkLabel);
+
+        this.perkPreviewContainer = new Container();
+        this.perkPreviewContainer.position.set(centerX, perkY + 35);
+        this.characterSelectContainer.addChild(this.perkPreviewContainer);
+
+        // Start button
+        this.startButton = this.createStartButton(centerX, this.height - 70);
+        this.characterSelectContainer.addChild(this.startButton);
+
+        // Initial update
+        this.updateCharacterSelection();
+        this.createPerkPreview();
+    }
+
+    private selectCharacter(shape: WobbleShape): void {
+        if (this.selectedCharacter === shape) return;
+
+        this.selectedCharacter = shape;
+        this.updateCharacterSelection();
+    }
+
+    private updateCharacterSelection(): void {
+        const character = WOBBLE_CHARACTERS[this.selectedCharacter];
+        const stats = WOBBLE_STATS[this.selectedCharacter];
+
+        // Update selection rings
+        let index = 0;
+        for (const [shape, wobble] of this.characterWobbles) {
+            const container = wobble.parent as Container;
+            const ring = container.children[0] as Graphics;
+            const isSelected = shape === this.selectedCharacter;
+
+            ring.visible = isSelected;
+
+            // Scale animation
+            const scale = isSelected ? 1.15 : 0.85;
+            wobble.scale.set(scale);
+            wobble.alpha = isSelected ? 1 : 0.6;
+
+            index++;
+        }
+
+        // Update character info
+        this.characterNameText.text = `${character.nameKo} (${character.name})`;
+        this.characterNameText.style.fill = character.color;
+        this.characterDescText.text = character.personalityKo;
+
+        // Update stats display
+        this.updateStatsDisplay(stats, character.color);
+    }
+
+    private updateStatsDisplay(stats: WobbleStats, color: number): void {
+        this.characterStatsContainer.removeChildren();
+
+        const statItems = [
+            { icon: '❤️', label: '체력', value: stats.healthMultiplier },
+            { icon: '⚔️', label: '데미지', value: stats.damageMultiplier },
+            { icon: '🔫', label: '발사속도', value: stats.fireRateMultiplier },
+            { icon: '👟', label: '이동속도', value: stats.moveSpeedMultiplier },
+        ];
+
+        const itemWidth = 70;
+        const totalWidth = statItems.length * itemWidth;
+        const startX = -totalWidth / 2;
+
+        statItems.forEach((item, index) => {
+            const x = startX + index * itemWidth + itemWidth / 2;
+
+            // Icon
+            const icon = new Text({
+                text: item.icon,
+                style: new TextStyle({ fontSize: 16 }),
+            });
+            icon.anchor.set(0.5);
+            icon.position.set(x, 0);
+            this.characterStatsContainer.addChild(icon);
+
+            // Value
+            const percent = Math.round(item.value * 100);
+            const valueColor = percent > 100 ? 0x2ecc71 : percent < 100 ? 0xe74c3c : 0xffffff;
+            const value = new Text({
+                text: `${percent}%`,
+                style: new TextStyle({
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 14,
+                    fontWeight: 'bold',
+                    fill: valueColor,
+                }),
+            });
+            value.anchor.set(0.5);
+            value.position.set(x, 22);
+            this.characterStatsContainer.addChild(value);
+
+            // Label
+            const label = new Text({
+                text: item.label,
+                style: new TextStyle({
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 9,
+                    fill: 0x888888,
+                }),
+            });
+            label.anchor.set(0.5);
+            label.position.set(x, 38);
+            this.characterStatsContainer.addChild(label);
+        });
+    }
+
+    private createPerkPreview(): void {
+        this.perkPreviewContainer.removeChildren();
+
+        const iconSize = 28;
+        const iconGap = 6;
+        const maxPerRow = 6;
+        const perks = perkDefinitions;
+
+        const rows = Math.ceil(perks.length / maxPerRow);
+
+        perks.forEach((perk, index) => {
+            const row = Math.floor(index / maxPerRow);
+            const col = index % maxPerRow;
+            const perksInRow = Math.min(maxPerRow, perks.length - row * maxPerRow);
+            const rowWidth = perksInRow * iconSize + (perksInRow - 1) * iconGap;
+            const rowStartX = -rowWidth / 2;
+
+            const x = rowStartX + col * (iconSize + iconGap) + iconSize / 2;
+            const y = row * (iconSize + iconGap + 5);
+
+            const isUnlocked = this.studiedFormulas.has(perk.formulaId);
+
+            const iconContainer = new Container();
+            iconContainer.position.set(x, y);
+
+            // Background
+            const bg = new Graphics();
+            bg.roundRect(-iconSize / 2, -iconSize / 2, iconSize, iconSize, 6);
+            if (isUnlocked) {
+                bg.fill({ color: perk.color, alpha: 0.2 });
+                bg.stroke({ color: perk.color, width: 2 });
+            } else {
+                bg.fill({ color: 0x333333, alpha: 0.5 });
+                bg.stroke({ color: 0x555555, width: 1 });
+            }
+            iconContainer.addChild(bg);
+
+            // Icon or question mark
+            const iconText = new Text({
+                text: isUnlocked ? perk.icon : '?',
+                style: new TextStyle({
+                    fontSize: isUnlocked ? 14 : 16,
+                    fontWeight: isUnlocked ? 'normal' : 'bold',
+                    fill: isUnlocked ? 0xffffff : 0x666666,
+                }),
+            });
+            iconText.anchor.set(0.5);
+            iconContainer.addChild(iconText);
+
+            this.perkPreviewContainer.addChild(iconContainer);
+        });
+    }
+
+    private createStartButton(x: number, y: number): Container {
+        const btn = new Container();
+        btn.position.set(x, y);
+        btn.eventMode = 'static';
+        btn.cursor = 'pointer';
+
+        // Button background with glow effect
+        const glow = new Graphics();
+        glow.roundRect(-85, -27, 170, 54, 16);
+        glow.fill({ color: 0x3498db, alpha: 0.3 });
+        btn.addChild(glow);
+
+        const bg = new Graphics();
+        bg.roundRect(-80, -24, 160, 48, 14);
+        bg.fill(0x3498db);
+        btn.addChild(bg);
+
+        const border = new Graphics();
+        border.roundRect(-80, -24, 160, 48, 14);
+        border.stroke({ color: 0x5dade2, width: 2 });
+        btn.addChild(border);
+
+        // Button text
+        const label = new Text({
+            text: '🎮 시작하기',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 18,
+                fontWeight: 'bold',
+                fill: 0xffffff,
+            }),
+        });
+        label.anchor.set(0.5);
+        btn.addChild(label);
+
+        // Click handler
+        btn.on('pointerdown', () => {
+            this.startGameFromCharacterSelect();
+        });
+
+        return btn;
+    }
+
+    private startGameFromCharacterSelect(): void {
+        // Hide character select screen
+        this.characterSelectContainer.visible = false;
+
+        // Apply character stats
+        this.applyCharacterStats();
+
+        // Update player appearance
+        const character = WOBBLE_CHARACTERS[this.selectedCharacter];
+        this.player.updateOptions({
+            shape: this.selectedCharacter,
+            color: character.color,
+            expression: 'happy',
+        });
+
+        // Start the game
+        this.gameTime = 0;
+        this.score = 0;
+        this.currentRound = 1;
+        this.roundTime = 0;
+        this.gameState = 'playing';
+        this.updateHealthBar();
+        this.updateUI();
+    }
+
+    private applyCharacterStats(): void {
+        const wobbleStats = WOBBLE_STATS[this.selectedCharacter];
+
+        // Apply health multiplier
+        this.maxPlayerHealth = Math.round(this.baseMaxHealth * wobbleStats.healthMultiplier);
+        this.playerHealth = this.maxPlayerHealth;
+
+        // Apply other stats to base stats
+        this.stats = {
+            ...DEFAULT_PLAYER_STATS,
+            damageMultiplier: wobbleStats.damageMultiplier,
+            fireRateMultiplier: 1 / wobbleStats.fireRateMultiplier, // Inverse for fire rate (higher = faster)
+            moveSpeedMultiplier: wobbleStats.moveSpeedMultiplier,
+        };
     }
 
     protected animateIdle(ticker: Ticker): void {
@@ -1122,6 +1883,30 @@ export class PhysicsSurvivorScene extends AdventureScene {
             // Card back Balatro filter animations
             if (this.cardBackFilters.length > 0) {
                 this.updateCardBackAnimations(delta);
+            }
+        }
+
+        // Update result screen animations
+        if (this.gameState === 'result') {
+            this.animateResult(deltaSeconds);
+        }
+
+        // Update character select screen animations
+        if (this.gameState === 'character-select') {
+            for (const [shape, wobble] of this.characterWobbles) {
+                const isSelected = shape === this.selectedCharacter;
+                const breathe = Math.sin(this.animPhase * 2 + (isSelected ? 0 : Math.PI / 2)) * (isSelected ? 0.05 : 0.02);
+                wobble.updateOptions({
+                    wobblePhase: this.animPhase,
+                    scaleX: (isSelected ? 1.15 : 0.85) * (1 + breathe),
+                    scaleY: (isSelected ? 1.15 : 0.85) * (1 - breathe),
+                });
+            }
+
+            // Pulse animation for start button
+            if (this.startButton) {
+                const pulse = 1 + Math.sin(this.animPhase * 3) * 0.03;
+                this.startButton.scale.set(pulse);
             }
         }
 
@@ -1213,17 +1998,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     protected onPlayStart(): void {
-        this.gameTime = 0;
-        this.score = 0;
-        this.currentRound = 1;
-        this.roundTime = 0;
-        this.playerHealth = this.maxPlayerHealth;
-        this.gameState = 'playing';
+        // Reset game state
         this.activePerks = [];
         this.perkChoices = [];
         this.resetStats();
-        this.updateHealthBar();
-        this.updateUI();
+
+        // Show character selection screen instead of starting immediately
+        this.showCharacterSelect();
     }
 
     private resetStats(): void {
@@ -1262,11 +2043,24 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Hide perk container
         this.perkContainer.visible = false;
 
+        // Hide result container
+        this.resultContainer.visible = false;
+        this.resultAnimTime = 0;
+        this.resultAnimStep = 0;
+        this.resultRankRevealed = false;
+
+        // Hide character select container
+        this.characterSelectContainer.visible = false;
+
+        // Reset selected character to default
+        this.selectedCharacter = 'circle';
+
         // Reset state
         this.gameTime = 0;
         this.score = 0;
         this.currentRound = 1;
         this.roundTime = 0;
+        this.maxPlayerHealth = this.baseMaxHealth;
         this.playerHealth = this.maxPlayerHealth;
         this.gameState = 'playing';
         this.activePerks = [];

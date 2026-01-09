@@ -1,8 +1,54 @@
 import { Container, Graphics, Text } from 'pixi.js';
-import { Wobble } from '../../Wobble';
+import { Wobble, WobbleShape } from '../../Wobble';
 
 // Game state type
-export type GameState = 'playing' | 'perk-selection' | 'game-over';
+export type GameState = 'character-select' | 'playing' | 'perk-selection' | 'game-over' | 'result';
+
+// Wobble character stats (Brotato-style)
+export interface WobbleStats {
+    healthMultiplier: number;
+    damageMultiplier: number;
+    fireRateMultiplier: number;
+    moveSpeedMultiplier: number;
+}
+
+export const WOBBLE_STATS: Record<WobbleShape, WobbleStats> = {
+    circle: { healthMultiplier: 1.0, damageMultiplier: 1.0, fireRateMultiplier: 1.0, moveSpeedMultiplier: 1.0 },
+    square: { healthMultiplier: 1.3, damageMultiplier: 0.8, fireRateMultiplier: 0.9, moveSpeedMultiplier: 0.9 },
+    triangle: { healthMultiplier: 0.8, damageMultiplier: 1.3, fireRateMultiplier: 1.1, moveSpeedMultiplier: 1.1 },
+    star: { healthMultiplier: 0.9, damageMultiplier: 0.9, fireRateMultiplier: 0.9, moveSpeedMultiplier: 1.2 },
+    diamond: { healthMultiplier: 1.0, damageMultiplier: 1.1, fireRateMultiplier: 1.1, moveSpeedMultiplier: 0.8 },
+    pentagon: { healthMultiplier: 1.2, damageMultiplier: 0.9, fireRateMultiplier: 0.8, moveSpeedMultiplier: 1.0 },
+    shadow: { healthMultiplier: 1.0, damageMultiplier: 1.0, fireRateMultiplier: 1.0, moveSpeedMultiplier: 1.0 },
+};
+
+// Playable characters (exclude shadow - it's for enemies)
+export const PLAYABLE_CHARACTERS: WobbleShape[] = ['circle', 'square', 'triangle', 'star', 'diamond', 'pentagon'];
+
+// Rank system for result screen
+export type SurvivorRank = 'S' | 'A' | 'B' | 'C' | 'D';
+
+export interface RankConfig {
+    minTime: number;  // seconds
+    color: number;
+    message: string;
+}
+
+export const RANK_CONFIGS: Record<SurvivorRank, RankConfig> = {
+    S: { minTime: 300, color: 0xffd700, message: '물리학의 신!' },
+    A: { minTime: 180, color: 0x9b59b6, message: '훌륭해요!' },
+    B: { minTime: 120, color: 0x3498db, message: '잘했어요!' },
+    C: { minTime: 60, color: 0x2ecc71, message: '좋은 시작!' },
+    D: { minTime: 0, color: 0x95a5a6, message: '다시 도전!' },
+};
+
+export function getRankFromTime(time: number): SurvivorRank {
+    if (time >= 300) return 'S';
+    if (time >= 180) return 'A';
+    if (time >= 120) return 'B';
+    if (time >= 60) return 'C';
+    return 'D';
+}
 
 // Enemy tier system for merging
 export type EnemyTier = 'small' | 'medium' | 'large' | 'boss';
