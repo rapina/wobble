@@ -65,6 +65,18 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private cardBackFilters: BalatroFilter[] = []
     private cardAnimTime = 0
 
+    // Card entrance animation (slot machine style)
+    private cardEntranceAnimations: {
+        wrapper: Container
+        targetY: number
+        startY: number
+        delay: number
+        progress: number
+        landed: boolean
+    }[] = []
+    private cardWrappers: Container[] = []
+    private levelUpBanner: Container | null = null
+
     // Accumulated stats from perks
     private stats: PlayerStats = { ...DEFAULT_PLAYER_STATS }
 
@@ -592,83 +604,77 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.flipAnimations = []
         this.cardBackFilters = []
         this.cardAnimTime = 0
+        this.cardEntranceAnimations = []
+        this.cardWrappers = []
 
         // Get 3 random perks (always returns exactly 3)
         this.perkChoices = getRandomPerks(this.studiedFormulas, 3)
 
-        // Dark background matching hexagonal theme
+        // Semi-transparent dark overlay (game still visible behind)
         const bg = new Graphics()
         bg.rect(0, 0, this.width, this.height)
-        bg.fill(0x1a1520)
+        bg.fill({ color: 0x000000, alpha: 0.6 })
         this.perkContainer.addChild(bg)
 
-        // Hexagonal pattern overlay
-        const pattern = new Graphics()
-        for (let row = 0; row < 15; row++) {
-            for (let col = 0; col < 10; col++) {
-                const px = col * 45 + (row % 2) * 22
-                const py = row * 40
-                this.drawUIHexagon(pattern, px, py, 18, undefined, 0x2a2030, 1)
-            }
-        }
-        pattern.alpha = 0.25
-        this.perkContainer.addChild(pattern)
+        // Level up banner at top - pops in with scale
+        this.levelUpBanner = new Container()
+        this.levelUpBanner.position.set(this.centerX, 50)
+        this.levelUpBanner.scale.set(0)
+        this.perkContainer.addChild(this.levelUpBanner)
 
-        // Title banner - elongated hexagon
-        const bannerY = 55
-        const banner = new Graphics()
-        banner.moveTo(this.centerX - 100, bannerY)
-        banner.lineTo(this.centerX - 85, bannerY - 25)
-        banner.lineTo(this.centerX + 85, bannerY - 25)
-        banner.lineTo(this.centerX + 100, bannerY)
-        banner.lineTo(this.centerX + 85, bannerY + 25)
-        banner.lineTo(this.centerX - 85, bannerY + 25)
-        banner.closePath()
-        banner.fill(0x1a1520)
-        banner.stroke({ color: 0x9b59b6, width: 3 })
-        this.perkContainer.addChild(banner)
+        // Banner background - glowing hexagon
+        const bannerBg = new Graphics()
+        const bannerW = 140
+        const bannerH = 40
+        bannerBg.moveTo(-bannerW / 2, 0)
+        bannerBg.lineTo(-bannerW / 2 + 15, -bannerH / 2)
+        bannerBg.lineTo(bannerW / 2 - 15, -bannerH / 2)
+        bannerBg.lineTo(bannerW / 2, 0)
+        bannerBg.lineTo(bannerW / 2 - 15, bannerH / 2)
+        bannerBg.lineTo(-bannerW / 2 + 15, bannerH / 2)
+        bannerBg.closePath()
+        bannerBg.fill(0x1a1520)
+        bannerBg.stroke({ color: 0xffd700, width: 3 })
+        this.levelUpBanner.addChild(bannerBg)
 
-        // Title
-        const titleStyle = new TextStyle({
-            fontFamily: 'Arial, sans-serif',
-            fontSize: 16,
-            fontWeight: 'bold',
-            fill: 0x9b59b6,
-            letterSpacing: 2,
-        })
-        const title = new Text({ text: 'LEVEL UP', style: titleStyle })
-        title.anchor.set(0.5)
-        title.position.set(this.centerX, bannerY)
-        this.perkContainer.addChild(title)
-
-        // Subtitle below banner
-        const subtitle = new Text({
-            text: '카드를 탭하여 확인',
+        // Level up text with glow effect
+        const levelText = new Text({
+            text: `LEVEL ${this.playerProgress.level}!`,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 11,
-                fill: 0x6a5a7a,
+                fontSize: 18,
+                fontWeight: 'bold',
+                fill: 0xffd700,
+                letterSpacing: 3,
+                dropShadow: {
+                    color: 0xffd700,
+                    blur: 8,
+                    distance: 0,
+                    alpha: 0.8,
+                },
             }),
         })
-        subtitle.anchor.set(0.5)
-        subtitle.position.set(this.centerX, bannerY + 38)
-        this.perkContainer.addChild(subtitle)
+        levelText.anchor.set(0.5)
+        this.levelUpBanner.addChild(levelText)
 
-        // Perk cards - narrower and taller for mobile
-        const cardWidth = 100
-        const cardHeight = 240
-        const cardGap = 14
+        // Perk cards - positioned at bottom half of screen
+        const cardWidth = 90
+        const cardHeight = 180
+        const cardGap = 20
         const totalWidth =
             this.perkChoices.length * cardWidth + (this.perkChoices.length - 1) * cardGap
         const startX = (this.width - totalWidth) / 2
-        const cardY = this.centerY - cardHeight / 2 + 20
+        const targetCardY = this.height - cardHeight / 2 - 60 // Bottom area
+        const startCardY = this.height + cardHeight // Start below screen
 
         this.perkChoices.forEach((perk, index) => {
             const cardCenterX = startX + index * (cardWidth + cardGap) + cardWidth / 2
 
             // Create card wrapper container for flip animation
             const cardWrapper = new Container()
-            cardWrapper.position.set(cardCenterX, cardY + cardHeight / 2)
+            cardWrapper.position.set(cardCenterX, startCardY) // Start below screen
+            cardWrapper.scale.set(0.8) // Start slightly smaller
+            cardWrapper.alpha = 0
             this.perkContainer.addChild(cardWrapper)
 
             // Create back container (shown initially)
@@ -689,8 +695,21 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 backContainer,
             })
 
-            // Make wrapper interactive for click handling
-            cardWrapper.eventMode = 'static'
+            // Store wrapper for animation
+            this.cardWrappers.push(cardWrapper)
+
+            // Setup entrance animation with staggered delay
+            this.cardEntranceAnimations.push({
+                wrapper: cardWrapper,
+                targetY: targetCardY,
+                startY: startCardY,
+                delay: 0.15 + index * 0.12, // Staggered: 0.15s, 0.27s, 0.39s
+                progress: 0,
+                landed: false,
+            })
+
+            // Make wrapper interactive for click handling (disabled until landed)
+            cardWrapper.eventMode = 'none' // Will enable after landing
             cardWrapper.cursor = 'pointer'
             cardWrapper.hitArea = {
                 contains: (x: number, y: number) => {
@@ -707,19 +726,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.perkButtons.push({ graphics: backContainer as unknown as Graphics, perk, index })
         })
 
-        // Bottom hint
-        const hintStyle = new TextStyle({
-            fontFamily: 'Arial, sans-serif',
-            fontSize: 11,
-            fill: 0x7a9a7a,
-        })
-        const hint = new Text({
-            text: '카드를 탭하여 뒤집기',
-            style: hintStyle,
-        })
-        hint.anchor.set(0.5)
-        hint.position.set(this.centerX, this.height - 40)
-        this.perkContainer.addChild(hint)
+        // Trigger screen flash and shake for impact
+        this.impactSystem.trigger(this.centerX, this.centerY, 'combo')
     }
 
     private createCardBack(cardWidth: number, cardHeight: number, index: number): Container {
@@ -941,13 +949,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
         card.roundRect(-cardWidth / 2 + 4, -cardHeight / 2 + 6, cardWidth, cardHeight, 14)
         card.fill({ color: 0x000000, alpha: 0.5 })
 
-        // Card background - solid color
+        // Card background - warm dark tone
         card.roundRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 14)
-        card.fill(0x1e2a30)
+        card.fill(0x1a1215)
 
-        // Card inner area
+        // Card inner area - slightly lighter warm tone
         card.roundRect(-cardWidth / 2 + 4, -cardHeight / 2 + 4, cardWidth - 8, cardHeight - 8, 11)
-        card.fill(0x2d3e44)
+        card.fill(0x2a2025)
 
         // Card border with perk color
         card.roundRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 14)
@@ -957,23 +965,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         card.roundRect(-cardWidth / 2 + 8, -cardHeight / 2 + 8, cardWidth - 16, 4, 2)
         card.fill(perk.definition.color)
 
-        // Icon background circle with glow
-        card.circle(0, -cardHeight / 2 + 55, 28)
-        card.fill({ color: perk.definition.color, alpha: 0.15 })
-        card.circle(0, -cardHeight / 2 + 55, 24)
-        card.fill({ color: perk.definition.color, alpha: 0.1 })
-
         container.addChild(card)
-
-        // Icon
-        const iconStyle = new TextStyle({
-            fontFamily: 'Arial, sans-serif',
-            fontSize: 32,
-        })
-        const icon = new Text({ text: perk.definition.icon, style: iconStyle })
-        icon.anchor.set(0.5)
-        icon.position.set(0, -cardHeight / 2 + 55)
-        container.addChild(icon)
 
         // Name (formula name)
         const nameStyle = new TextStyle({
@@ -987,14 +979,14 @@ export class PhysicsSurvivorScene extends AdventureScene {
         })
         const name = new Text({ text: perk.definition.nameKo, style: nameStyle })
         name.anchor.set(0.5, 0)
-        name.position.set(0, -cardHeight / 2 + 88)
+        name.position.set(0, -cardHeight / 2 + 20)
         container.addChild(name)
 
-        // Description
+        // Description - warmer gray
         const descStyle = new TextStyle({
             fontFamily: 'Arial, sans-serif',
             fontSize: 9,
-            fill: 0x90a4ae,
+            fill: 0xb0a0a0,
             wordWrap: true,
             wordWrapWidth: cardWidth - 16,
             align: 'center',
@@ -1002,22 +994,22 @@ export class PhysicsSurvivorScene extends AdventureScene {
         })
         const desc = new Text({ text: perk.definition.descriptionKo, style: descStyle })
         desc.anchor.set(0.5, 0)
-        desc.position.set(0, -cardHeight / 2 + 112)
+        desc.position.set(0, -cardHeight / 2 + 45)
         container.addChild(desc)
 
-        // Divider line
+        // Divider line - warmer color
         const divider = new Graphics()
-        divider.moveTo(-cardWidth / 2 + 10, -cardHeight / 2 + 155)
-        divider.lineTo(cardWidth / 2 - 10, -cardHeight / 2 + 155)
-        divider.stroke({ color: 0x4a5a60, width: 1 })
+        divider.moveTo(-cardWidth / 2 + 10, -cardHeight / 2 + 95)
+        divider.lineTo(cardWidth / 2 - 10, -cardHeight / 2 + 95)
+        divider.stroke({ color: 0x4a3a3a, width: 1 })
         container.addChild(divider)
 
-        // Effects
+        // Effects - brighter green
         const effectStyle = new TextStyle({
             fontFamily: 'Arial, sans-serif',
             fontSize: 11,
             fontWeight: 'bold',
-            fill: 0x81c784,
+            fill: 0x7dcea0,
             wordWrap: true,
             wordWrapWidth: cardWidth - 16,
             align: 'center',
@@ -1026,7 +1018,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         const effectTexts = perk.rolledEffects.map((e) => formatPerkEffect(e, true)).join('\n')
         const effects = new Text({ text: effectTexts, style: effectStyle })
         effects.anchor.set(0.5, 0)
-        effects.position.set(0, -cardHeight / 2 + 165)
+        effects.position.set(0, -cardHeight / 2 + 105)
         container.addChild(effects)
 
         // "Select" hint at bottom with glow effect
@@ -1073,6 +1065,73 @@ export class PhysicsSurvivorScene extends AdventureScene {
             progress: 0,
             direction,
         })
+    }
+
+    private updateCardEntranceAnimations(deltaSeconds: number): void {
+        this.cardAnimTime += deltaSeconds
+
+        // Animate level up banner (pop in with overshoot)
+        if (this.levelUpBanner) {
+            const bannerDelay = 0
+            const bannerDuration = 0.3
+            const bannerProgress = Math.max(0, (this.cardAnimTime - bannerDelay) / bannerDuration)
+
+            if (bannerProgress < 1) {
+                // Elastic overshoot
+                const elastic = this.easeOutBack(Math.min(1, bannerProgress))
+                this.levelUpBanner.scale.set(elastic)
+            } else {
+                this.levelUpBanner.scale.set(1)
+                // Subtle pulse after landing
+                const pulse = 1 + Math.sin(this.cardAnimTime * 8) * 0.03
+                this.levelUpBanner.scale.set(pulse)
+            }
+        }
+
+        // Animate each card entrance
+        for (const anim of this.cardEntranceAnimations) {
+            if (anim.landed) continue
+
+            // Wait for delay
+            if (this.cardAnimTime < anim.delay) {
+                continue
+            }
+
+            // Calculate animation progress
+            const animDuration = 0.35
+            const elapsed = this.cardAnimTime - anim.delay
+            anim.progress = Math.min(1, elapsed / animDuration)
+
+            // Ease out back for bouncy pop effect
+            const easedProgress = this.easeOutBack(anim.progress)
+
+            // Update position (slide up from bottom)
+            const y = anim.startY + (anim.targetY - anim.startY) * easedProgress
+            anim.wrapper.position.y = y
+
+            // Scale pop effect
+            const scale = 0.5 + 0.5 * easedProgress
+            anim.wrapper.scale.set(Math.min(1.1, scale * 1.1))
+
+            // Fade in
+            anim.wrapper.alpha = Math.min(1, anim.progress * 2)
+
+            // Landing effects
+            if (anim.progress >= 1 && !anim.landed) {
+                anim.landed = true
+                anim.wrapper.scale.set(1)
+                anim.wrapper.position.y = anim.targetY
+
+                // Enable interaction
+                anim.wrapper.eventMode = 'static'
+
+                // Pop effect - brief scale overshoot then settle
+                this.impactSystem.addScalePunch(anim.wrapper, 0.15, 0.2)
+
+                // Screen shake on each card landing (subtle)
+                this.triggerShake(2, 0.05)
+            }
+        }
     }
 
     private updateFlipAnimations(delta: number): void {
@@ -1400,24 +1459,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Get joystick input
         const input = this.joystick.getInput()
 
-        // Calculate target velocity from joystick input
+        // Calculate velocity directly from joystick input (no inertia)
         const speed = this.playerBaseSpeed * this.stats.moveSpeedMultiplier
-        const targetVx = input.dirX * input.magnitude * speed
-        const targetVy = input.dirY * input.magnitude * speed
-
-        // Smooth acceleration towards target velocity (higher = more responsive)
-        const accel = 0.6
-        const friction = 0.5
-
-        if (input.magnitude > 0.1) {
-            // Accelerate towards target
-            this.playerVx += (targetVx - this.playerVx) * accel * delta
-            this.playerVy += (targetVy - this.playerVy) * accel * delta
-        } else {
-            // Apply friction when no input
-            this.playerVx *= friction
-            this.playerVy *= friction
-        }
+        this.playerVx = input.dirX * input.magnitude * speed
+        this.playerVy = input.dirY * input.magnitude * speed
 
         // Apply velocity to position
         this.playerX += this.playerVx * delta
@@ -2390,6 +2435,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         // Update perk card animations
         if (this.gameState === 'perk-selection') {
+            // Card entrance animations (slot machine style)
+            this.updateCardEntranceAnimations(deltaSeconds)
+
             // Flip animations
             if (this.flipAnimations.length > 0) {
                 this.updateFlipAnimations(delta)
