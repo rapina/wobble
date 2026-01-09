@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Play, Lock } from 'lucide-react';
-import Balatro from '@/components/Balatro';
-import { WobbleDisplay } from '@/components/canvas/WobbleDisplay';
-import { cn } from '@/lib/utils';
+import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { ArrowLeft, Play, Lock } from 'lucide-react'
+import Balatro from '@/components/Balatro'
+import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
+import { cn } from '@/lib/utils'
 
 // Balatro theme
 const theme = {
@@ -13,15 +13,15 @@ const theme = {
     border: '#1a1a1a',
     gold: '#c9a227',
     accent: '#FF6B9D',
-};
+}
 
 interface Adventure {
-    id: string;
-    titleKey: string;
-    episodeKey?: string;
-    descKey: string;
-    available: boolean;
-    color: string;
+    id: string
+    titleKey: string
+    episodeKey?: string
+    descKey: string
+    available: boolean
+    color: string
 }
 
 const ADVENTURES: Adventure[] = [
@@ -40,21 +40,21 @@ const ADVENTURES: Adventure[] = [
         available: false,
         color: '#666666',
     },
-];
+]
 
 interface AdventureSelectScreenProps {
-    onBack: () => void;
-    onSelectAdventure: (adventureId: string) => void;
+    onBack: () => void
+    onSelectAdventure: (adventureId: string) => void
 }
 
 export function AdventureSelectScreen({ onBack, onSelectAdventure }: AdventureSelectScreenProps) {
-    const { t } = useTranslation();
-    const [mounted, setMounted] = useState(false);
+    const { t } = useTranslation()
+    const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
-        const timer = setTimeout(() => setMounted(true), 100);
-        return () => clearTimeout(timer);
-    }, []);
+        const timer = setTimeout(() => setMounted(true), 100)
+        return () => clearTimeout(timer)
+    }, [])
 
     return (
         <div className="relative w-full h-full overflow-hidden bg-[#0a0a12]">
@@ -103,10 +103,7 @@ export function AdventureSelectScreen({ onBack, onSelectAdventure }: AdventureSe
                 </button>
 
                 {/* Title */}
-                <h1
-                    className="text-xl font-black"
-                    style={{ color: theme.accent }}
-                >
+                <h1 className="text-xl font-black" style={{ color: theme.accent }}>
                     {t('game.selectAdventure')}
                 </h1>
 
@@ -132,11 +129,11 @@ export function AdventureSelectScreen({ onBack, onSelectAdventure }: AdventureSe
                             onClick={() => adventure.available && onSelectAdventure(adventure.id)}
                             disabled={!adventure.available}
                             className={cn(
-                                "w-full rounded-2xl transition-all duration-300 overflow-hidden",
-                                mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
+                                'w-full rounded-2xl transition-all duration-300 overflow-hidden',
+                                mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4',
                                 adventure.available
-                                    ? "active:scale-[0.98] hover:scale-[1.01]"
-                                    : "cursor-not-allowed"
+                                    ? 'active:scale-[0.98] hover:scale-[1.01]'
+                                    : 'cursor-not-allowed'
                             )}
                             style={{
                                 transitionDelay: `${index * 100}ms`,
@@ -195,11 +192,17 @@ export function AdventureSelectScreen({ onBack, onSelectAdventure }: AdventureSe
                                                 boxShadow: '0 3px 8px rgba(0,0,0,0.4)',
                                             }}
                                         >
-                                            <Play className="w-5 h-5 text-white ml-0.5" fill="white" />
+                                            <Play
+                                                className="w-5 h-5 text-white ml-0.5"
+                                                fill="white"
+                                            />
                                         </div>
                                     </>
                                 ) : (
-                                    <Lock className="w-12 h-12" style={{ color: adventure.color }} />
+                                    <Lock
+                                        className="w-12 h-12"
+                                        style={{ color: adventure.color }}
+                                    />
                                 )}
                             </div>
 
@@ -222,5 +225,5 @@ export function AdventureSelectScreen({ onBack, onSelectAdventure }: AdventureSe
                 </div>
             </div>
         </div>
-    );
+    )
 }

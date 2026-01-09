@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const coulomb: Formula = {
     id: 'coulomb',
@@ -80,28 +80,28 @@ export const coulomb: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const q1 = inputs['q₁'] ?? 10;
-        const q2 = inputs['q₂'] ?? 10;
-        const r = inputs.r ?? 10;
-        const k = 8.99e9; // Coulomb's constant
+        const q1 = inputs['q₁'] ?? 10
+        const q2 = inputs['q₂'] ?? 10
+        const r = inputs.r ?? 10
+        const k = 8.99e9 // Coulomb's constant
         // Convert μC to C (1e-6) and cm to m (1e-2)
-        const q1_C = q1 * 1e-6;
-        const q2_C = q2 * 1e-6;
-        const r_m = r * 1e-2;
+        const q1_C = q1 * 1e-6
+        const q2_C = q2 * 1e-6
+        const r_m = r * 1e-2
         return {
             F: (k * q1_C * q2_C) / (r_m * r_m),
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const q1 = inputs['q₁'] ?? 10;
-        const q2 = inputs['q₂'] ?? 10;
-        const r = inputs.r ?? 10;
-        const k = 8.99e9;
-        const q1_C = q1 * 1e-6;
-        const q2_C = q2 * 1e-6;
-        const r_m = r * 1e-2;
-        const F = (k * q1_C * q2_C) / (r_m * r_m);
-        return `F = k × ${q1.toFixed(0)} × ${q2.toFixed(0)} ÷ ${r.toFixed(0)}² = ${F.toFixed(1)}`;
+        const q1 = inputs['q₁'] ?? 10
+        const q2 = inputs['q₂'] ?? 10
+        const r = inputs.r ?? 10
+        const k = 8.99e9
+        const q1_C = q1 * 1e-6
+        const q2_C = q2 * 1e-6
+        const r_m = r * 1e-2
+        const F = (k * q1_C * q2_C) / (r_m * r_m)
+        return `F = k × ${q1.toFixed(0)} × ${q2.toFixed(0)} ÷ ${r.toFixed(0)}² = ${F.toFixed(1)}`
     },
     layout: {
         type: 'orbital',
@@ -126,4 +126,4 @@ export const coulomb: Formula = {
             },
         ],
     },
-};
+}

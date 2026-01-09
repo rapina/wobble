@@ -1,0 +1,6 @@
+dist
+node_modules
+android
+.capacitor
+*.min.js
+package-lock.json

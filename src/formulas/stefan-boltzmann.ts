@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const stefanBoltzmann: Formula = {
     id: 'stefan-boltzmann',
@@ -15,10 +15,10 @@ export const stefanBoltzmann: Formula = {
         '지구의 열균형과 기후 모델링',
     ],
     applicationsEn: [
-        'Measuring the Sun\'s surface temperature',
+        "Measuring the Sun's surface temperature",
         'How infrared thermometers work',
         'Calculating star brightness and size relationships',
-        'Earth\'s thermal equilibrium and climate modeling',
+        "Earth's thermal equilibrium and climate modeling",
     ],
     category: 'thermodynamics',
     variables: [
@@ -66,19 +66,19 @@ export const stefanBoltzmann: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const A = inputs.A ?? 1;
-        const T = inputs.T ?? 500;
-        const sigma = 5.67e-8; // Stefan-Boltzmann constant
+        const A = inputs.A ?? 1
+        const T = inputs.T ?? 500
+        const sigma = 5.67e-8 // Stefan-Boltzmann constant
         return {
             P: sigma * A * Math.pow(T, 4),
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const A = inputs.A ?? 1;
-        const T = inputs.T ?? 500;
-        const sigma = 5.67e-8;
-        const P = sigma * A * Math.pow(T, 4);
-        return `P = σ × ${A.toFixed(1)} × ${T.toFixed(0)}⁴ = ${P.toFixed(0)}`;
+        const A = inputs.A ?? 1
+        const T = inputs.T ?? 500
+        const sigma = 5.67e-8
+        const P = sigma * A * Math.pow(T, 4)
+        return `P = σ × ${A.toFixed(1)} × ${T.toFixed(0)}⁴ = ${P.toFixed(0)}`
     },
     layout: {
         type: 'explosion',
@@ -97,4 +97,4 @@ export const stefanBoltzmann: Formula = {
             { type: 'text', value: '²' },
         ],
     },
-};
+}

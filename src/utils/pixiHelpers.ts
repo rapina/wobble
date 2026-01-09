@@ -3,19 +3,19 @@
  */
 export function cssToHex(css: string): number {
     if (css.startsWith('#')) {
-        return parseInt(css.slice(1), 16);
+        return parseInt(css.slice(1), 16)
     }
     // Handle rgb/rgba
     if (css.startsWith('rgb')) {
-        const match = css.match(/\d+/g);
+        const match = css.match(/\d+/g)
         if (match && match.length >= 3) {
-            const r = parseInt(match[0]);
-            const g = parseInt(match[1]);
-            const b = parseInt(match[2]);
-            return (r << 16) + (g << 8) + b;
+            const r = parseInt(match[0])
+            const g = parseInt(match[1])
+            const b = parseInt(match[2])
+            return (r << 16) + (g << 8) + b
         }
     }
-    return 0x000000;
+    return 0x000000
 }
 
 /**
@@ -62,18 +62,18 @@ export const pixiColors = {
     // Common colors
     white: 0xffffff,
     black: 0x000000,
-} as const;
+} as const
 
 /**
  * Lerp between two values
  */
 export function lerp(start: number, end: number, t: number): number {
-    return start + (end - start) * t;
+    return start + (end - start) * t
 }
 
 /**
  * Clamp a value between min and max
  */
 export function clamp(value: number, min: number, max: number): number {
-    return Math.min(Math.max(value, min), max);
+    return Math.min(Math.max(value, min), max)
 }

@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const gravity: Formula = {
     id: 'gravity',
@@ -80,22 +80,22 @@ export const gravity: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const m1 = inputs.m1 ?? 60;
-        const m2 = inputs.m2 ?? 7;
-        const r = inputs.r ?? 4;
+        const m1 = inputs.m1 ?? 60
+        const m2 = inputs.m2 ?? 7
+        const r = inputs.r ?? 4
         // Simplified: G = 6.67 × 10^-11, scaled for display
-        const G = 6.67;
+        const G = 6.67
         return {
             F: (G * m1 * m2) / (r * r),
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const m1 = inputs.m1 ?? 60;
-        const m2 = inputs.m2 ?? 7;
-        const r = inputs.r ?? 4;
-        const G = 6.67;
-        const F = (G * m1 * m2) / (r * r);
-        return `F = G × ${m1.toFixed(0)} × ${m2.toFixed(0)} ÷ ${r.toFixed(1)}² = ${F.toFixed(1)}`;
+        const m1 = inputs.m1 ?? 60
+        const m2 = inputs.m2 ?? 7
+        const r = inputs.r ?? 4
+        const G = 6.67
+        const F = (G * m1 * m2) / (r * r)
+        return `F = G × ${m1.toFixed(0)} × ${m2.toFixed(0)} ÷ ${r.toFixed(1)}² = ${F.toFixed(1)}`
     },
     layout: {
         type: 'orbital',
@@ -119,4 +119,4 @@ export const gravity: Formula = {
             },
         ],
     },
-};
+}

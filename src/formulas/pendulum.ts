@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const pendulum: Formula = {
     id: 'pendulum',
@@ -66,17 +66,17 @@ export const pendulum: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const L = inputs.L ?? 2;
-        const g = inputs.g ?? 9.8;
+        const L = inputs.L ?? 2
+        const g = inputs.g ?? 9.8
         return {
             T: 2 * Math.PI * Math.sqrt(L / g),
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const L = inputs.L ?? 2;
-        const g = inputs.g ?? 9.8;
-        const T = 2 * Math.PI * Math.sqrt(L / g);
-        return `T = 2π × √(${L.toFixed(1)} ÷ ${g.toFixed(1)}) = ${T.toFixed(2)}`;
+        const L = inputs.L ?? 2
+        const g = inputs.g ?? 9.8
+        const T = 2 * Math.PI * Math.sqrt(L / g)
+        return `T = 2π × √(${L.toFixed(1)} ÷ ${g.toFixed(1)}) = ${T.toFixed(2)}`
     },
     layout: {
         type: 'pendulum',
@@ -91,13 +91,16 @@ export const pendulum: Formula = {
         expression: [
             { type: 'text', value: '2π' },
             { type: 'text', value: '√' },
-            { type: 'group', items: [
-                {
-                    type: 'fraction',
-                    numerator: [{ type: 'var', symbol: 'L' }],
-                    denominator: [{ type: 'var', symbol: 'g' }],
-                },
-            ]},
+            {
+                type: 'group',
+                items: [
+                    {
+                        type: 'fraction',
+                        numerator: [{ type: 'var', symbol: 'L' }],
+                        denominator: [{ type: 'var', symbol: 'g' }],
+                    },
+                ],
+            },
         ],
     },
-};
+}

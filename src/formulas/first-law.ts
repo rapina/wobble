@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const firstLaw: Formula = {
     id: 'first-law',
@@ -66,17 +66,17 @@ export const firstLaw: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const Q = inputs.Q ?? 500;
-        const W = inputs.W ?? 200;
+        const Q = inputs.Q ?? 500
+        const W = inputs.W ?? 200
         return {
-            'ΔU': Q - W,
-        };
+            ΔU: Q - W,
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const Q = inputs.Q ?? 500;
-        const W = inputs.W ?? 200;
-        const dU = Q - W;
-        return `ΔU = ${Q.toFixed(0)} - ${W.toFixed(0)} = ${dU.toFixed(0)}`;
+        const Q = inputs.Q ?? 500
+        const W = inputs.W ?? 200
+        const dU = Q - W
+        return `ΔU = ${Q.toFixed(0)} - ${W.toFixed(0)} = ${dU.toFixed(0)}`
     },
     layout: {
         type: 'container',
@@ -94,4 +94,4 @@ export const firstLaw: Formula = {
             { type: 'var', symbol: 'W' },
         ],
     },
-};
+}

@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const hooke: Formula = {
     id: 'hooke',
@@ -66,17 +66,17 @@ export const hooke: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const k = inputs.k ?? 50;
-        const x = inputs.x ?? 0.5;
+        const k = inputs.k ?? 50
+        const x = inputs.x ?? 0.5
         return {
             F: k * x,
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const k = inputs.k ?? 50;
-        const x = inputs.x ?? 0.5;
-        const F = k * x;
-        return `F = ${k.toFixed(0)} × ${x.toFixed(2)} = ${F.toFixed(1)}`;
+        const k = inputs.k ?? 50
+        const x = inputs.x ?? 0.5
+        const F = k * x
+        return `F = ${k.toFixed(0)} × ${x.toFixed(2)} = ${F.toFixed(1)}`
     },
     layout: {
         type: 'spring',
@@ -90,4 +90,4 @@ export const hooke: Formula = {
         output: 'F',
         numerator: ['k', 'x'],
     },
-};
+}

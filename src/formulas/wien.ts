@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const wien: Formula = {
     id: 'wien',
@@ -7,7 +7,8 @@ export const wien: Formula = {
     nameEn: "Wien's Displacement Law",
     expression: 'λmax = b/T',
     description: '흑체 복사의 최대 파장은 온도에 반비례한다',
-    descriptionEn: 'Peak wavelength of blackbody radiation is inversely proportional to temperature',
+    descriptionEn:
+        'Peak wavelength of blackbody radiation is inversely proportional to temperature',
     applications: [
         '별의 색깔로 표면 온도 측정',
         '적외선 열화상 카메라 설계',
@@ -52,24 +53,22 @@ export const wien: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const T = inputs.T ?? 5800;
+        const T = inputs.T ?? 5800
         // Wien's constant b = 2.898 × 10⁻³ m·K = 2898000 nm·K
-        const b = 2898000;
+        const b = 2898000
         return {
-            'λmax': b / T,
-        };
+            λmax: b / T,
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const T = inputs.T ?? 5800;
-        const b = 2898000;
-        const lambdaMax = b / T;
-        return `λmax = 2898000 ÷ ${T.toFixed(0)} = ${lambdaMax.toFixed(0)}`;
+        const T = inputs.T ?? 5800
+        const b = 2898000
+        const lambdaMax = b / T
+        return `λmax = 2898000 ÷ ${T.toFixed(0)} = ${lambdaMax.toFixed(0)}`
     },
     layout: {
         type: 'linear',
-        connections: [
-            { from: 'T', to: 'λmax', operator: '=' },
-        ],
+        connections: [{ from: 'T', to: 'λmax', operator: '=' }],
     },
     displayLayout: {
         type: 'custom',
@@ -82,4 +81,4 @@ export const wien: Formula = {
             },
         ],
     },
-};
+}

@@ -1,28 +1,23 @@
-import { useState, useEffect } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { useState, useEffect } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 
 interface RotatingTextProps {
-    texts: string[];
-    interval?: number;
-    className?: string;
-    style?: React.CSSProperties;
+    texts: string[]
+    interval?: number
+    className?: string
+    style?: React.CSSProperties
 }
 
-export function RotatingText({
-    texts,
-    interval = 3000,
-    className = '',
-    style,
-}: RotatingTextProps) {
-    const [index, setIndex] = useState(0);
+export function RotatingText({ texts, interval = 3000, className = '', style }: RotatingTextProps) {
+    const [index, setIndex] = useState(0)
 
     useEffect(() => {
         const timer = setInterval(() => {
-            setIndex((prev) => (prev + 1) % texts.length);
-        }, interval);
+            setIndex((prev) => (prev + 1) % texts.length)
+        }, interval)
 
-        return () => clearInterval(timer);
-    }, [texts.length, interval]);
+        return () => clearInterval(timer)
+    }, [texts.length, interval])
 
     return (
         <span className={`inline-block relative ${className}`} style={style}>
@@ -42,5 +37,5 @@ export function RotatingText({
                 </motion.span>
             </AnimatePresence>
         </span>
-    );
+    )
 }

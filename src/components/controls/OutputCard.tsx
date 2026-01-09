@@ -1,29 +1,25 @@
 const theme = {
     bgPanel: '#374244',
     border: '#1a1a1a',
-};
+}
 
 interface OutputVariable {
-    symbol: string;
-    name: string;
-    unit: string;
-    color: string;
+    symbol: string
+    name: string
+    unit: string
+    color: string
 }
 
 interface OutputCardProps {
-    variables: OutputVariable[];
-    values: Record<string, number>;
-    compact?: boolean;
+    variables: OutputVariable[]
+    values: Record<string, number>
+    compact?: boolean
 }
 
-export function OutputCard({
-    variables,
-    values,
-    compact = false,
-}: OutputCardProps) {
-    if (variables.length === 0) return null;
+export function OutputCard({ variables, values, compact = false }: OutputCardProps) {
+    if (variables.length === 0) return null
 
-    const v = variables[0];
+    const v = variables[0]
 
     if (compact) {
         return (
@@ -42,9 +38,7 @@ export function OutputCard({
                         borderBottom: `1px solid ${theme.border}`,
                     }}
                 >
-                    <div className="text-[10px] font-black text-black leading-none">
-                        {v.symbol}
-                    </div>
+                    <div className="text-[10px] font-black text-black leading-none">{v.symbol}</div>
                 </div>
                 <div className="p-0.5">
                     <div
@@ -58,7 +52,7 @@ export function OutputCard({
                     </div>
                 </div>
             </div>
-        );
+        )
     }
 
     return (
@@ -78,9 +72,7 @@ export function OutputCard({
                     borderBottom: `2px solid ${theme.border}`,
                 }}
             >
-                <div className="text-sm font-black text-black leading-none">
-                    {v.symbol}
-                </div>
+                <div className="text-sm font-black text-black leading-none">{v.symbol}</div>
             </div>
 
             {/* Content */}
@@ -98,5 +90,5 @@ export function OutputCard({
                 </div>
             </div>
         </div>
-    );
+    )
 }

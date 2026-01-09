@@ -1,21 +1,21 @@
-import * as SliderPrimitive from '@radix-ui/react-slider';
+import * as SliderPrimitive from '@radix-ui/react-slider'
 
 const theme = {
     bgPanel: '#374244',
     bgTrack: '#2a3032',
     border: '#1a1a1a',
-};
+}
 
 interface ParameterControlProps {
-    symbol: string;
-    name: string;
-    description?: string;
-    value: number;
-    min: number;
-    max: number;
-    unit: string;
-    color: string;
-    onChange: (value: number) => void;
+    symbol: string
+    name: string
+    description?: string
+    value: number
+    min: number
+    max: number
+    unit: string
+    color: string
+    onChange: (value: number) => void
 }
 
 export function ParameterControl({
@@ -29,7 +29,7 @@ export function ParameterControl({
     color,
     onChange,
 }: ParameterControlProps) {
-    const step = (max - min) / 100;
+    const step = (max - min) / 100
 
     return (
         <div
@@ -66,9 +66,7 @@ export function ParameterControl({
             <div className="p-4">
                 {/* Description */}
                 {description && (
-                    <p className="text-xs text-white/60 mb-3 leading-relaxed">
-                        {description}
-                    </p>
+                    <p className="text-xs text-white/60 mb-3 leading-relaxed">{description}</p>
                 )}
 
                 {/* Slider */}
@@ -109,5 +107,5 @@ export function ParameterControl({
                 </div>
             </div>
         </div>
-    );
+    )
 }

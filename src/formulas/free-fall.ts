@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const freeFall: Formula = {
     id: 'free-fall',
@@ -17,7 +17,7 @@ export const freeFall: Formula = {
     applicationsEn: [
         'Calculating skydiver fall time',
         'Designing amusement park drop towers',
-        'Galileo\'s Leaning Tower of Pisa experiment',
+        "Galileo's Leaning Tower of Pisa experiment",
         'Measuring planetary surface gravity',
     ],
     category: 'gravity',
@@ -66,17 +66,17 @@ export const freeFall: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const g = inputs.g ?? 9.8;
-        const t = inputs.t ?? 3;
+        const g = inputs.g ?? 9.8
+        const t = inputs.t ?? 3
         return {
             h: 0.5 * g * t * t,
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const g = inputs.g ?? 9.8;
-        const t = inputs.t ?? 3;
-        const h = 0.5 * g * t * t;
-        return `h = ½ × ${g.toFixed(1)} × ${t.toFixed(1)}² = ${h.toFixed(1)}`;
+        const g = inputs.g ?? 9.8
+        const t = inputs.t ?? 3
+        const h = 0.5 * g * t * t
+        return `h = ½ × ${g.toFixed(1)} × ${t.toFixed(1)}² = ${h.toFixed(1)}`
     },
     layout: {
         type: 'linear',
@@ -94,4 +94,4 @@ export const freeFall: Formula = {
             { type: 'var', symbol: 't', square: true },
         ],
     },
-};
+}

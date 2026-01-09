@@ -1,24 +1,24 @@
-import { Application, Container, Ticker, Graphics, Text, TextStyle } from 'pixi.js';
-import { pixiColors } from '@/utils/pixiHelpers';
-import { Wobble, WobbleShape, WobbleExpression } from '../Wobble';
+import { Application, Container, Ticker, Graphics, Text, TextStyle } from 'pixi.js'
+import { pixiColors } from '@/utils/pixiHelpers'
+import { Wobble, WobbleShape, WobbleExpression } from '../Wobble'
 
-export type PlayResult = 'success' | 'failure' | 'playing';
-export type ScenePhase = 'narration' | 'idle' | 'playing';
+export type PlayResult = 'success' | 'failure' | 'playing'
+export type ScenePhase = 'narration' | 'idle' | 'playing'
 
 export interface NarrationData {
-    blobShape: WobbleShape;
-    blobExpression: WobbleExpression;
-    text: string;
+    blobShape: WobbleShape
+    blobExpression: WobbleExpression
+    text: string
 }
 
 export interface AdventureSceneOptions {
-    onPlayComplete?: (result: PlayResult) => void;
-    onNarrationComplete?: () => void;
-    narrations?: NarrationData[];
-    studiedFormulas?: Set<string>;
+    onPlayComplete?: (result: PlayResult) => void
+    onNarrationComplete?: () => void
+    narrations?: NarrationData[]
+    studiedFormulas?: Set<string>
 }
 
-let adventureSceneIdCounter = 0;
+let adventureSceneIdCounter = 0
 
 /**
  * Base class for adventure/puzzle mode scenes.
@@ -28,159 +28,159 @@ let adventureSceneIdCounter = 0;
  * - Return success/failure result after animation
  */
 export abstract class AdventureScene {
-    protected app: Application;
-    public container: Container;
-    protected ticker: Ticker;
-    protected width: number;
-    protected height: number;
-    protected background: Graphics;
-    protected gridOverlay: Graphics;
-    protected variables: Record<string, number> = {};
-    protected targetValues: Record<string, number> = {};
+    protected app: Application
+    public container: Container
+    protected ticker: Ticker
+    protected width: number
+    protected height: number
+    protected background: Graphics
+    protected gridOverlay: Graphics
+    protected variables: Record<string, number> = {}
+    protected targetValues: Record<string, number> = {}
 
     // Grid animation state
-    private gridOffsetX = 0;
-    private gridOffsetY = 0;
-    private gridSpeed = 0.15;
-    private gridSize = 40;
-    private gridColor = 0x2d3748;
-    private gridAlpha = 0.12;
+    private gridOffsetX = 0
+    private gridOffsetY = 0
+    private gridSpeed = 0.15
+    private gridSize = 40
+    private gridColor = 0x2d3748
+    private gridAlpha = 0.12
 
-    private boundAnimate: (ticker: Ticker) => void;
-    protected sceneId: string;
-    private _destroyed = false;
-    private baseDrawComplete = false;
+    private boundAnimate: (ticker: Ticker) => void
+    protected sceneId: string
+    private _destroyed = false
+    private baseDrawComplete = false
 
     // Phase state
-    protected phase: ScenePhase = 'idle';
-    protected isPlaying = false;
-    protected playProgress = 0;
-    protected onPlayComplete?: (result: PlayResult) => void;
+    protected phase: ScenePhase = 'idle'
+    protected isPlaying = false
+    protected playProgress = 0
+    protected onPlayComplete?: (result: PlayResult) => void
 
     // Narration state
-    protected narrations: NarrationData[] = [];
-    protected narrationIndex = 0;
-    protected onNarrationComplete?: () => void;
-    private narratorContainer!: Container;
-    private narrator!: Wobble | null;
-    private speechBubble!: Graphics;
-    private speechText!: Text;
-    private tapHint!: Text;
-    private narrationPhase = 0;
+    protected narrations: NarrationData[] = []
+    protected narrationIndex = 0
+    protected onNarrationComplete?: () => void
+    private narratorContainer!: Container
+    private narrator!: Wobble | null
+    private speechBubble!: Graphics
+    private speechText!: Text
+    private tapHint!: Text
+    private narrationPhase = 0
 
     constructor(app: Application, options?: AdventureSceneOptions) {
-        const counter = ++adventureSceneIdCounter;
-        const instanceId = Math.random().toString(36).substring(2, 6);
-        this.sceneId = `adv-${counter}-${instanceId}`;
+        const counter = ++adventureSceneIdCounter
+        const instanceId = Math.random().toString(36).substring(2, 6)
+        this.sceneId = `adv-${counter}-${instanceId}`
 
-        this.app = app;
-        this.container = new Container();
-        this.ticker = app.ticker;
-        this.width = app.screen.width;
-        this.height = app.screen.height;
-        this.onPlayComplete = options?.onPlayComplete;
-        this.onNarrationComplete = options?.onNarrationComplete;
-        this.narrations = options?.narrations || [];
+        this.app = app
+        this.container = new Container()
+        this.ticker = app.ticker
+        this.width = app.screen.width
+        this.height = app.screen.height
+        this.onPlayComplete = options?.onPlayComplete
+        this.onNarrationComplete = options?.onNarrationComplete
+        this.narrations = options?.narrations || []
 
         // Set initial phase based on narrations
         if (this.narrations.length > 0) {
-            this.phase = 'narration';
-            this.narrationIndex = 0;
+            this.phase = 'narration'
+            this.narrationIndex = 0
         }
 
         // Create background (defer drawing to first animate frame)
-        this.background = new Graphics();
-        this.container.addChild(this.background);
+        this.background = new Graphics()
+        this.container.addChild(this.background)
 
         // Create grid overlay (defer drawing to first animate frame)
-        this.gridOverlay = new Graphics();
-        this.container.addChild(this.gridOverlay);
+        this.gridOverlay = new Graphics()
+        this.container.addChild(this.gridOverlay)
 
         // Bind animate function
         this.boundAnimate = (ticker: Ticker) => {
             if (this._destroyed) {
                 try {
-                    this.ticker.remove(this.boundAnimate);
+                    this.ticker.remove(this.boundAnimate)
                 } catch {
                     // Ticker may already be destroyed
                 }
-                return;
+                return
             }
 
             // Initial drawing on first frame (after Graphics context is ready)
             if (!this.baseDrawComplete) {
-                this.drawBackground();
-                this.drawGrid();
-                this.onInitialDraw(); // Hook for subclasses
-                this.setupNarrator();
-                this.baseDrawComplete = true;
+                this.drawBackground()
+                this.drawGrid()
+                this.onInitialDraw() // Hook for subclasses
+                this.setupNarrator()
+                this.baseDrawComplete = true
             }
 
-            this.updateGrid(ticker);
+            this.updateGrid(ticker)
 
             // Phase-based animation
             if (this.phase === 'narration') {
-                this.animateNarration(ticker);
+                this.animateNarration(ticker)
             } else if (this.isPlaying) {
-                this.animatePlay(ticker);
+                this.animatePlay(ticker)
             } else {
-                this.animateIdle(ticker);
+                this.animateIdle(ticker)
             }
-        };
+        }
 
         // Setup scene
-        this.setup();
+        this.setup()
 
         // Start animation loop
-        this.ticker.add(this.boundAnimate);
+        this.ticker.add(this.boundAnimate)
 
         // Force start ticker if not already started
         if (!this.ticker.started) {
-            this.ticker.start();
+            this.ticker.start()
         }
     }
 
     protected drawBackground(): void {
-        this.background.clear();
-        this.background.rect(0, 0, this.width, this.height);
-        this.background.fill(pixiColors.backgroundDark);
+        this.background.clear()
+        this.background.rect(0, 0, this.width, this.height)
+        this.background.fill(pixiColors.backgroundDark)
     }
 
     private updateGrid(ticker: Ticker): void {
-        if (!this.baseDrawComplete) return;
+        if (!this.baseDrawComplete) return
 
-        const delta = ticker.deltaMS / 16.67;
-        const speed = this.gridSpeed * delta;
+        const delta = ticker.deltaMS / 16.67
+        const speed = this.gridSpeed * delta
 
-        this.gridOffsetX += speed;
-        this.gridOffsetY += speed;
+        this.gridOffsetX += speed
+        this.gridOffsetY += speed
 
-        this.gridOffsetX = this.gridOffsetX % this.gridSize;
-        this.gridOffsetY = this.gridOffsetY % this.gridSize;
+        this.gridOffsetX = this.gridOffsetX % this.gridSize
+        this.gridOffsetY = this.gridOffsetY % this.gridSize
 
-        this.drawGrid();
+        this.drawGrid()
     }
 
     private drawGrid(): void {
-        const g = this.gridOverlay;
-        g.clear();
+        const g = this.gridOverlay
+        g.clear()
 
-        const size = this.gridSize;
-        const startX = -size + (this.gridOffsetX % size);
-        const startY = -size + (this.gridOffsetY % size);
+        const size = this.gridSize
+        const startX = -size + (this.gridOffsetX % size)
+        const startY = -size + (this.gridOffsetY % size)
 
         // Draw vertical lines
         for (let x = startX; x <= this.width + size; x += size) {
-            g.moveTo(x, 0);
-            g.lineTo(x, this.height);
-            g.stroke({ color: this.gridColor, width: 1, alpha: this.gridAlpha });
+            g.moveTo(x, 0)
+            g.lineTo(x, this.height)
+            g.stroke({ color: this.gridColor, width: 1, alpha: this.gridAlpha })
         }
 
         // Draw horizontal lines
         for (let y = startY; y <= this.height + size; y += size) {
-            g.moveTo(0, y);
-            g.lineTo(this.width, y);
-            g.stroke({ color: this.gridColor, width: 1, alpha: this.gridAlpha });
+            g.moveTo(0, y)
+            g.lineTo(this.width, y)
+            g.stroke({ color: this.gridColor, width: 1, alpha: this.gridAlpha })
         }
     }
 
@@ -189,19 +189,19 @@ export abstract class AdventureScene {
      */
     private setupNarrator(): void {
         // Create narrator container (on top of everything)
-        this.narratorContainer = new Container();
-        this.narratorContainer.visible = this.phase === 'narration';
-        this.container.addChild(this.narratorContainer);
+        this.narratorContainer = new Container()
+        this.narratorContainer.visible = this.phase === 'narration'
+        this.container.addChild(this.narratorContainer)
 
         // Dramatic dark overlay with gradient
-        const overlay = new Graphics();
-        overlay.rect(0, 0, this.width, this.height);
-        overlay.fill({ color: 0x0a0a12, alpha: 0.92 });
-        this.narratorContainer.addChild(overlay);
+        const overlay = new Graphics()
+        overlay.rect(0, 0, this.width, this.height)
+        overlay.fill({ color: 0x0a0a12, alpha: 0.92 })
+        this.narratorContainer.addChild(overlay)
 
         // Speech bubble (comic style with thick border)
-        this.speechBubble = new Graphics();
-        this.narratorContainer.addChild(this.speechBubble);
+        this.speechBubble = new Graphics()
+        this.narratorContainer.addChild(this.speechBubble)
 
         // Speech text - bold comic style
         const textStyle = new TextStyle({
@@ -213,9 +213,9 @@ export abstract class AdventureScene {
             align: 'center',
             lineHeight: 30,
             fontWeight: 'bold',
-        });
-        this.speechText = new Text({ text: '', style: textStyle });
-        this.narratorContainer.addChild(this.speechText);
+        })
+        this.speechText = new Text({ text: '', style: textStyle })
+        this.narratorContainer.addChild(this.speechText)
 
         // Tap hint - more stylized
         const hintStyle = new TextStyle({
@@ -223,40 +223,40 @@ export abstract class AdventureScene {
             fontSize: 14,
             fill: 0x888888,
             fontStyle: 'italic',
-        });
-        this.tapHint = new Text({ text: 'Tap to continue', style: hintStyle });
-        this.narratorContainer.addChild(this.tapHint);
+        })
+        this.tapHint = new Text({ text: 'Tap to continue', style: hintStyle })
+        this.narratorContainer.addChild(this.tapHint)
 
         // Initialize with first narration if exists
         if (this.narrations.length > 0) {
-            this.updateNarrator();
+            this.updateNarrator()
         }
 
         // Make container interactive for tap
-        this.narratorContainer.eventMode = 'static';
-        this.narratorContainer.cursor = 'pointer';
-        this.narratorContainer.on('pointerdown', () => this.advanceNarration());
+        this.narratorContainer.eventMode = 'static'
+        this.narratorContainer.cursor = 'pointer'
+        this.narratorContainer.on('pointerdown', () => this.advanceNarration())
     }
 
     /**
      * Update narrator - Cartoon Network episode card style
      */
     private updateNarrator(): void {
-        if (!this.narratorContainer || this.narrationIndex >= this.narrations.length) return;
+        if (!this.narratorContainer || this.narrationIndex >= this.narrations.length) return
 
-        const narration = this.narrations[this.narrationIndex];
-        const isShadow = narration.blobShape === 'shadow';
+        const narration = this.narrations[this.narrationIndex]
+        const isShadow = narration.blobShape === 'shadow'
 
         // Remove old narrator wobble
         if (this.narrator) {
-            this.narratorContainer.removeChild(this.narrator);
-            this.narrator.destroy();
-            this.narrator = null;
+            this.narratorContainer.removeChild(this.narrator)
+            this.narrator.destroy()
+            this.narrator = null
         }
 
         // Character size varies - bigger for dramatic moments
-        const characterSize = isShadow ? 120 : 100;
-        const characterY = this.height * 0.35;
+        const characterSize = isShadow ? 120 : 100
+        const characterY = this.height * 0.35
 
         // Create narrator wobble - larger and more prominent
         this.narrator = new Wobble({
@@ -266,59 +266,59 @@ export abstract class AdventureScene {
             color: this.getShapeColor(narration.blobShape),
             showShadow: true,
             shadowOffsetY: 12,
-        });
-        this.narrator.position.set(this.width / 2, characterY);
-        this.narratorContainer.addChild(this.narrator);
+        })
+        this.narrator.position.set(this.width / 2, characterY)
+        this.narratorContainer.addChild(this.narrator)
 
         // Speech bubble - comic book style
-        this.speechBubble.clear();
+        this.speechBubble.clear()
 
-        const bubbleY = characterY + characterSize / 2 + 30;
-        const bubbleWidth = Math.min(this.width - 32, 360);
-        const bubbleX = (this.width - bubbleWidth) / 2;
-        const bubblePadding = 16;
+        const bubbleY = characterY + characterSize / 2 + 30
+        const bubbleWidth = Math.min(this.width - 32, 360)
+        const bubbleX = (this.width - bubbleWidth) / 2
+        const bubblePadding = 16
 
         // Update speech text
-        this.speechText.text = narration.text;
-        this.speechText.anchor.set(0.5, 0);
-        const textHeight = this.speechText.height + bubblePadding * 2;
+        this.speechText.text = narration.text
+        this.speechText.anchor.set(0.5, 0)
+        const textHeight = this.speechText.height + bubblePadding * 2
 
         // Bubble color based on character
-        const bubbleColor = isShadow ? 0x2a2a3a : 0x1a1a2e;
-        const borderColor = isShadow ? 0x8B0000 : 0xFF6B9D;
+        const bubbleColor = isShadow ? 0x2a2a3a : 0x1a1a2e
+        const borderColor = isShadow ? 0x8b0000 : 0xff6b9d
 
         // Draw comic-style speech bubble with thick border
         // Outer border
-        this.speechBubble.roundRect(bubbleX - 3, bubbleY - 3, bubbleWidth + 6, textHeight + 6, 20);
-        this.speechBubble.fill({ color: borderColor });
+        this.speechBubble.roundRect(bubbleX - 3, bubbleY - 3, bubbleWidth + 6, textHeight + 6, 20)
+        this.speechBubble.fill({ color: borderColor })
 
         // Inner bubble
-        this.speechBubble.roundRect(bubbleX, bubbleY, bubbleWidth, textHeight, 18);
-        this.speechBubble.fill({ color: bubbleColor });
+        this.speechBubble.roundRect(bubbleX, bubbleY, bubbleWidth, textHeight, 18)
+        this.speechBubble.fill({ color: bubbleColor })
 
         // Speech tail/arrow pointing up to character
-        const tailX = this.width / 2;
-        this.speechBubble.moveTo(tailX - 15, bubbleY);
-        this.speechBubble.lineTo(tailX, bubbleY - 18);
-        this.speechBubble.lineTo(tailX + 15, bubbleY);
-        this.speechBubble.closePath();
-        this.speechBubble.fill({ color: borderColor });
+        const tailX = this.width / 2
+        this.speechBubble.moveTo(tailX - 15, bubbleY)
+        this.speechBubble.lineTo(tailX, bubbleY - 18)
+        this.speechBubble.lineTo(tailX + 15, bubbleY)
+        this.speechBubble.closePath()
+        this.speechBubble.fill({ color: borderColor })
 
-        this.speechBubble.moveTo(tailX - 10, bubbleY);
-        this.speechBubble.lineTo(tailX, bubbleY - 12);
-        this.speechBubble.lineTo(tailX + 10, bubbleY);
-        this.speechBubble.closePath();
-        this.speechBubble.fill({ color: bubbleColor });
+        this.speechBubble.moveTo(tailX - 10, bubbleY)
+        this.speechBubble.lineTo(tailX, bubbleY - 12)
+        this.speechBubble.lineTo(tailX + 10, bubbleY)
+        this.speechBubble.closePath()
+        this.speechBubble.fill({ color: bubbleColor })
 
         // Position text
-        this.speechText.position.set(this.width / 2, bubbleY + bubblePadding);
+        this.speechText.position.set(this.width / 2, bubbleY + bubblePadding)
 
         // Tap hint at bottom
-        const isLastNarration = this.narrationIndex >= this.narrations.length - 1;
-        this.tapHint.text = isLastNarration ? '▶ TAP TO START' : 'TAP TO CONTINUE ▶';
-        this.tapHint.style.fill = isLastNarration ? 0xFF6B9D : 0x666666;
-        this.tapHint.anchor.set(0.5, 0);
-        this.tapHint.position.set(this.width / 2, this.height - 60);
+        const isLastNarration = this.narrationIndex >= this.narrations.length - 1
+        this.tapHint.text = isLastNarration ? '▶ TAP TO START' : 'TAP TO CONTINUE ▶'
+        this.tapHint.style.fill = isLastNarration ? 0xff6b9d : 0x666666
+        this.tapHint.anchor.set(0.5, 0)
+        this.tapHint.position.set(this.width / 2, this.height - 60)
     }
 
     private getShapeColor(shape: WobbleShape): number {
@@ -330,16 +330,16 @@ export abstract class AdventureScene {
             diamond: 0xbb8fce,
             pentagon: 0x82e0aa,
             shadow: 0x1a1a1a,
-        };
-        return colors[shape] || 0xf5b041;
+        }
+        return colors[shape] || 0xf5b041
     }
 
     /**
      * Animate narration (wobble breathing, hint pulsing)
      */
     private animateNarration(ticker: Ticker): void {
-        const delta = ticker.deltaMS / 1000;
-        this.narrationPhase += delta;
+        const delta = ticker.deltaMS / 1000
+        this.narrationPhase += delta
 
         // Animate narrator wobble
         if (this.narrator) {
@@ -347,12 +347,12 @@ export abstract class AdventureScene {
                 wobblePhase: this.narrationPhase * 2,
                 scaleX: 1 + Math.sin(this.narrationPhase * 3) * 0.02,
                 scaleY: 1 - Math.sin(this.narrationPhase * 3) * 0.02,
-            });
+            })
         }
 
         // Animate tap hint (pulsing alpha)
         if (this.tapHint) {
-            this.tapHint.alpha = 0.5 + Math.sin(this.narrationPhase * 4) * 0.3;
+            this.tapHint.alpha = 0.5 + Math.sin(this.narrationPhase * 4) * 0.3
         }
     }
 
@@ -360,56 +360,56 @@ export abstract class AdventureScene {
      * Advance to next narration or complete
      */
     public advanceNarration(): void {
-        if (this.phase !== 'narration') return;
+        if (this.phase !== 'narration') return
 
-        this.narrationIndex++;
+        this.narrationIndex++
 
         if (this.narrationIndex >= this.narrations.length) {
             // Narration complete
-            this.phase = 'idle';
-            this.narratorContainer.visible = false;
-            this.onNarrationComplete?.();
+            this.phase = 'idle'
+            this.narratorContainer.visible = false
+            this.onNarrationComplete?.()
         } else {
             // Show next narration
-            this.updateNarrator();
+            this.updateNarrator()
         }
     }
 
     /**
      * Initialize scene elements (called once)
      */
-    protected abstract setup(): void;
+    protected abstract setup(): void
 
     /**
      * Idle animation (when not playing)
      * Used for subtle movements, breathing effects, etc.
      */
-    protected abstract animateIdle(ticker: Ticker): void;
+    protected abstract animateIdle(ticker: Ticker): void
 
     /**
      * Play animation (when play() is called)
      * Should update playProgress and call completePlay() when done
      */
-    protected abstract animatePlay(ticker: Ticker): void;
+    protected abstract animatePlay(ticker: Ticker): void
 
     /**
      * Update preview based on current input values
      * Called when variables change (before play)
      */
-    protected abstract updatePreview(): void;
+    protected abstract updatePreview(): void
 
     /**
      * Check if current values meet the target
      */
-    protected abstract checkSuccess(): boolean;
+    protected abstract checkSuccess(): boolean
 
     /**
      * Update scene with new variable values
      */
     public update(variables: Record<string, number>): void {
-        this.variables = { ...variables };
+        this.variables = { ...variables }
         if (!this.isPlaying) {
-            this.updatePreview();
+            this.updatePreview()
         }
     }
 
@@ -417,18 +417,18 @@ export abstract class AdventureScene {
      * Set target values for success check
      */
     public setTargets(targets: Record<string, number>): void {
-        this.targetValues = { ...targets };
+        this.targetValues = { ...targets }
     }
 
     /**
      * Start playing the animation
      */
     public play(): void {
-        if (this.isPlaying) return;
+        if (this.isPlaying) return
 
-        this.isPlaying = true;
-        this.playProgress = 0;
-        this.onPlayStart();
+        this.isPlaying = true
+        this.playProgress = 0
+        this.onPlayStart()
     }
 
     /**
@@ -442,19 +442,19 @@ export abstract class AdventureScene {
      * Called by subclass when animation is complete
      */
     protected completePlay(): void {
-        this.isPlaying = false;
-        const result = this.checkSuccess() ? 'success' : 'failure';
-        this.onPlayComplete?.(result);
+        this.isPlaying = false
+        const result = this.checkSuccess() ? 'success' : 'failure'
+        this.onPlayComplete?.(result)
     }
 
     /**
      * Reset scene to initial state
      */
     public reset(): void {
-        this.isPlaying = false;
-        this.playProgress = 0;
-        this.onReset();
-        this.updatePreview();
+        this.isPlaying = false
+        this.playProgress = 0
+        this.onReset()
+        this.updatePreview()
     }
 
     /**
@@ -475,13 +475,13 @@ export abstract class AdventureScene {
      * Handle resize
      */
     public resize(): void {
-        this.width = this.app.screen.width;
-        this.height = this.app.screen.height;
+        this.width = this.app.screen.width
+        this.height = this.app.screen.height
         if (this.baseDrawComplete) {
-            this.drawBackground();
-            this.drawGrid();
+            this.drawBackground()
+            this.drawGrid()
         }
-        this.onResize();
+        this.onResize()
     }
 
     /**
@@ -495,12 +495,12 @@ export abstract class AdventureScene {
      * Cleanup scene
      */
     public destroy(): void {
-        this._destroyed = true;
+        this._destroyed = true
 
         // Remove ticker callback first
         try {
             if (this.ticker && this.boundAnimate) {
-                this.ticker.remove(this.boundAnimate);
+                this.ticker.remove(this.boundAnimate)
             }
         } catch {
             // Ticker may already be destroyed
@@ -508,29 +508,29 @@ export abstract class AdventureScene {
 
         // Hide container immediately to prevent render errors
         try {
-            this.container.visible = false;
-            this.container.renderable = false;
+            this.container.visible = false
+            this.container.renderable = false
         } catch {
             // Container may already be destroyed
         }
 
         // Call subclass cleanup first (before destroying children)
-        this.onDestroy();
+        this.onDestroy()
 
         // Clear narrator references
         if (this.narrator) {
             try {
-                this.narrator.destroy();
+                this.narrator.destroy()
             } catch {
                 // Already destroyed
             }
-            this.narrator = null;
+            this.narrator = null
         }
 
         // Remove container from parent
         try {
             if (this.container.parent) {
-                this.container.parent.removeChild(this.container);
+                this.container.parent.removeChild(this.container)
             }
         } catch {
             // Parent may already be destroyed
@@ -539,11 +539,11 @@ export abstract class AdventureScene {
         // Use requestAnimationFrame to ensure we're not in a render cycle
         requestAnimationFrame(() => {
             try {
-                this.container.destroy({ children: true });
+                this.container.destroy({ children: true })
             } catch {
                 // Container may already be destroyed
             }
-        });
+        })
     }
 
     /**
@@ -554,10 +554,10 @@ export abstract class AdventureScene {
     }
 
     protected get centerX(): number {
-        return this.width / 2;
+        return this.width / 2
     }
 
     protected get centerY(): number {
-        return this.height / 2;
+        return this.height / 2
     }
 }

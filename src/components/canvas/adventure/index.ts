@@ -4,10 +4,10 @@ export {
     type ScenePhase,
     type NarrationData,
     type AdventureSceneOptions,
-} from './AdventureScene';
-export { PhysicsSurvivorScene } from './PhysicsSurvivorScene';
+} from './AdventureScene'
+export { PhysicsSurvivorScene } from './PhysicsSurvivorScene'
 export {
     getAdventureSceneClass,
     createAdventureScene,
     hasAdventureScene,
-} from './AdventureSceneManager';
+} from './AdventureSceneManager'

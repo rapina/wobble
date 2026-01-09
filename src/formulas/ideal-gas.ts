@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const idealGas: Formula = {
     id: 'ideal-gas',
@@ -80,23 +80,23 @@ export const idealGas: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const n = inputs.n ?? 2;
-        const T = inputs.T ?? 300;
-        const V = inputs.V ?? 50;
-        const R = 8.314; // J/(mol·K)
+        const n = inputs.n ?? 2
+        const T = inputs.T ?? 300
+        const V = inputs.V ?? 50
+        const R = 8.314 // J/(mol·K)
         // P = nRT/V, convert to kPa (divide by 1000) and L to m³ (divide by 1000)
         // So P(kPa) = nRT / V where V is in L
         return {
             P: (n * R * T) / V,
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const n = inputs.n ?? 2;
-        const T = inputs.T ?? 300;
-        const V = inputs.V ?? 50;
-        const R = 8.314;
-        const P = (n * R * T) / V;
-        return `P = ${n.toFixed(1)} × R × ${T.toFixed(0)} ÷ ${V.toFixed(0)} = ${P.toFixed(1)}`;
+        const n = inputs.n ?? 2
+        const T = inputs.T ?? 300
+        const V = inputs.V ?? 50
+        const R = 8.314
+        const P = (n * R * T) / V
+        return `P = ${n.toFixed(1)} × R × ${T.toFixed(0)} ÷ ${V.toFixed(0)} = ${P.toFixed(1)}`
     },
     layout: {
         type: 'container',
@@ -121,4 +121,4 @@ export const idealGas: Formula = {
             },
         ],
     },
-};
+}

@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const projectile: Formula = {
     id: 'projectile',
@@ -80,20 +80,20 @@ export const projectile: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const v = inputs.v ?? 20;
-        const theta = inputs['θ'] ?? 45;
-        const g = inputs.g ?? 9.8;
-        const thetaRad = (theta * Math.PI) / 180;
-        const R = (v * v * Math.sin(2 * thetaRad)) / g;
-        return { R };
+        const v = inputs.v ?? 20
+        const theta = inputs['θ'] ?? 45
+        const g = inputs.g ?? 9.8
+        const thetaRad = (theta * Math.PI) / 180
+        const R = (v * v * Math.sin(2 * thetaRad)) / g
+        return { R }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const v = inputs.v ?? 20;
-        const theta = inputs['θ'] ?? 45;
-        const g = inputs.g ?? 9.8;
-        const thetaRad = (theta * Math.PI) / 180;
-        const R = (v * v * Math.sin(2 * thetaRad)) / g;
-        return `R = ${v.toFixed(0)}² × sin(${(2 * theta).toFixed(0)}°) ÷ ${g.toFixed(1)} = ${R.toFixed(1)}`;
+        const v = inputs.v ?? 20
+        const theta = inputs['θ'] ?? 45
+        const g = inputs.g ?? 9.8
+        const thetaRad = (theta * Math.PI) / 180
+        const R = (v * v * Math.sin(2 * thetaRad)) / g
+        return `R = ${v.toFixed(0)}² × sin(${(2 * theta).toFixed(0)}°) ÷ ${g.toFixed(1)} = ${R.toFixed(1)}`
     },
     layout: {
         type: 'linear',
@@ -118,4 +118,4 @@ export const projectile: Formula = {
             },
         ],
     },
-};
+}

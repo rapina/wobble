@@ -1,23 +1,23 @@
-import * as React from 'react';
-import * as SliderPrimitive from '@radix-ui/react-slider';
-import { cn } from '@/lib/utils';
+import * as React from 'react'
+import * as SliderPrimitive from '@radix-ui/react-slider'
+import { cn } from '@/lib/utils'
 
 // Balatro theme
 const theme = {
     bg: '#374244',
     bgTrack: '#2a3032',
     border: '#1a1a1a',
-};
+}
 
 interface PhysicsSliderProps {
-    value: number;
-    min: number;
-    max: number;
-    step?: number;
-    color?: string;
-    onChange: (value: number) => void;
-    label?: string;
-    unit?: string;
+    value: number
+    min: number
+    max: number
+    step?: number
+    color?: string
+    onChange: (value: number) => void
+    label?: string
+    unit?: string
 }
 
 export function PhysicsSlider({
@@ -30,20 +30,18 @@ export function PhysicsSlider({
     label,
     unit,
 }: PhysicsSliderProps) {
-    const calculatedStep = step ?? (max - min) / 100;
-    const [isDragging, setIsDragging] = React.useState(false);
+    const calculatedStep = step ?? (max - min) / 100
+    const [isDragging, setIsDragging] = React.useState(false)
 
     return (
         <div className="w-full">
             {label && (
                 <div className="flex justify-between items-center mb-3">
-                    <span className="text-sm text-white/70 font-bold">
-                        {label}
-                    </span>
+                    <span className="text-sm text-white/70 font-bold">{label}</span>
                     <span
                         className={cn(
-                            "text-sm font-mono font-black px-3 py-1.5 rounded-lg transition-all duration-150",
-                            isDragging && "scale-105"
+                            'text-sm font-mono font-black px-3 py-1.5 rounded-lg transition-all duration-150',
+                            isDragging && 'scale-105'
                         )}
                         style={{
                             color: '#fff',
@@ -82,9 +80,9 @@ export function PhysicsSlider({
                 </SliderPrimitive.Track>
                 <SliderPrimitive.Thumb
                     className={cn(
-                        "block w-7 h-9 rounded-lg transition-all duration-150",
-                        "focus-visible:outline-none",
-                        isDragging && "scale-110"
+                        'block w-7 h-9 rounded-lg transition-all duration-150',
+                        'focus-visible:outline-none',
+                        isDragging && 'scale-110'
                     )}
                     style={{
                         background: color,
@@ -94,5 +92,5 @@ export function PhysicsSlider({
                 />
             </SliderPrimitive.Root>
         </div>
-    );
+    )
 }

@@ -1,13 +1,13 @@
-import { VisualProperty } from '../formulas/types';
+import { VisualProperty } from '../formulas/types'
 
 export interface BlobVisuals {
-    size: number;
-    stretchX: number;
-    stretchY: number;
-    glowIntensity: number;
-    shakeAmplitude: number;
-    oscillateSpeed: number;
-    speed: number;
+    size: number
+    stretchX: number
+    stretchY: number
+    glowIntensity: number
+    shakeAmplitude: number
+    oscillateSpeed: number
+    speed: number
 }
 
 export const defaultVisuals: BlobVisuals = {
@@ -18,61 +18,61 @@ export const defaultVisuals: BlobVisuals = {
     shakeAmplitude: 0,
     oscillateSpeed: 1,
     speed: 0,
-};
+}
 
 export function applyVisualProperty(
     visuals: BlobVisuals,
     property: VisualProperty,
     scaledValue: number
 ): BlobVisuals {
-    const updated = { ...visuals };
+    const updated = { ...visuals }
 
     switch (property) {
         case 'size':
-            updated.size = scaledValue;
-            break;
+            updated.size = scaledValue
+            break
         case 'stretch':
-            updated.stretchX = scaledValue;
-            updated.stretchY = 2 - scaledValue; // Inverse for squash effect
-            break;
+            updated.stretchX = scaledValue
+            updated.stretchY = 2 - scaledValue // Inverse for squash effect
+            break
         case 'glow':
-            updated.glowIntensity = scaledValue;
-            break;
+            updated.glowIntensity = scaledValue
+            break
         case 'shake':
-            updated.shakeAmplitude = scaledValue;
-            break;
+            updated.shakeAmplitude = scaledValue
+            break
         case 'oscillate':
-            updated.oscillateSpeed = scaledValue;
-            break;
+            updated.oscillateSpeed = scaledValue
+            break
         case 'speed':
-            updated.speed = scaledValue;
-            break;
+            updated.speed = scaledValue
+            break
         case 'distance':
             // Distance is handled separately in layout
-            break;
+            break
     }
 
-    return updated;
+    return updated
 }
 
 export function calculateBlobVisuals(
     variables: Record<string, number>,
     formulaVariables: {
-        symbol: string;
-        visual: { property: VisualProperty; scale: (v: number) => number };
+        symbol: string
+        visual: { property: VisualProperty; scale: (v: number) => number }
     }[]
 ): Record<string, BlobVisuals> {
-    const blobVisuals: Record<string, BlobVisuals> = {};
+    const blobVisuals: Record<string, BlobVisuals> = {}
 
     for (const varDef of formulaVariables) {
-        const value = variables[varDef.symbol] ?? 0;
-        const scaledValue = varDef.visual.scale(value);
+        const value = variables[varDef.symbol] ?? 0
+        const scaledValue = varDef.visual.scale(value)
 
-        let visuals = { ...defaultVisuals };
-        visuals = applyVisualProperty(visuals, varDef.visual.property, scaledValue);
+        let visuals = { ...defaultVisuals }
+        visuals = applyVisualProperty(visuals, varDef.visual.property, scaledValue)
 
-        blobVisuals[varDef.symbol] = visuals;
+        blobVisuals[varDef.symbol] = visuals
     }
 
-    return blobVisuals;
+    return blobVisuals
 }

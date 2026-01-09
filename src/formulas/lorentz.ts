@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const lorentz: Formula = {
     id: 'lorentz',
@@ -80,21 +80,21 @@ export const lorentz: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const q = inputs.q ?? 10; // μC
-        const v = inputs.v ?? 5; // m/s
-        const B = inputs.B ?? 0.5; // T
+        const q = inputs.q ?? 10 // μC
+        const v = inputs.v ?? 5 // m/s
+        const B = inputs.B ?? 0.5 // T
         // F = qvB (q in μC → multiply by 1e-6 for C, result in N → multiply by 1e3 for mN)
         // F(mN) = q(μC) × v(m/s) × B(T) × 1e-6 × 1e3 = q × v × B × 1e-3
         return {
             F: q * v * B,
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const q = inputs.q ?? 10;
-        const v = inputs.v ?? 5;
-        const B = inputs.B ?? 0.5;
-        const F = q * v * B;
-        return `F = ${q.toFixed(0)} × ${v.toFixed(1)} × ${B.toFixed(2)} = ${F.toFixed(1)}`;
+        const q = inputs.q ?? 10
+        const v = inputs.v ?? 5
+        const B = inputs.B ?? 0.5
+        const F = q * v * B
+        return `F = ${q.toFixed(0)} × ${v.toFixed(1)} × ${B.toFixed(2)} = ${F.toFixed(1)}`
     },
     layout: {
         type: 'circular',
@@ -109,4 +109,4 @@ export const lorentz: Formula = {
         output: 'F',
         numerator: ['q', 'v', 'B'],
     },
-};
+}

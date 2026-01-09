@@ -1,105 +1,108 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { AdventureCanvas, AdventureCanvasHandle } from '@/components/canvas/AdventureCanvas';
-import { PlayResult, NarrationData } from '@/components/canvas/adventure';
-import { useProgressStore } from '@/stores/progressStore';
-import { ArrowLeft, RotateCcw } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import Balatro from '@/components/Balatro';
-import { FormulaExplanation } from '@/components/puzzle/FormulaExplanation';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import { AdventureCanvas, AdventureCanvasHandle } from '@/components/canvas/AdventureCanvas'
+import { PlayResult, NarrationData } from '@/components/canvas/adventure'
+import { useProgressStore } from '@/stores/progressStore'
+import { ArrowLeft, RotateCcw } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import Balatro from '@/components/Balatro'
+import { FormulaExplanation } from '@/components/puzzle/FormulaExplanation'
 
 const theme = {
     bgPanel: '#374244',
     border: '#1a1a1a',
-};
+}
 
-type GamePhase = 'narration' | 'playing' | 'formula-explanation';
+type GamePhase = 'narration' | 'playing' | 'formula-explanation'
 
 interface MinigameScreenProps {
-    onBack: () => void;
+    onBack: () => void
 }
 
 export function MinigameScreen({ onBack }: MinigameScreenProps) {
-    const { i18n } = useTranslation();
-    const isKorean = i18n.language === 'ko';
-    const [mounted, setMounted] = useState(false);
-    const [phase, setPhase] = useState<GamePhase>('narration');
-    const [playResult, setPlayResult] = useState<PlayResult | null>(null);
+    const { i18n } = useTranslation()
+    const isKorean = i18n.language === 'ko'
+    const [mounted, setMounted] = useState(false)
+    const [phase, setPhase] = useState<GamePhase>('narration')
+    const [playResult, setPlayResult] = useState<PlayResult | null>(null)
 
-    const canvasRef = useRef<AdventureCanvasHandle>(null);
-    const { studiedFormulas } = useProgressStore();
+    const canvasRef = useRef<AdventureCanvasHandle>(null)
+    const { studiedFormulas } = useProgressStore()
 
     // Narration data - Cartoon Network style episode intro
-    const narrations: NarrationData[] = useMemo(() => [
-        {
-            blobShape: 'circle' as const,
-            blobExpression: 'surprised' as const,
-            text: isKorean
-                ? '평화로운 워블 행성에 어둠이 찾아왔다...'
-                : "Darkness has come to the peaceful Planet Wobble...",
-        },
-        {
-            blobShape: 'shadow' as const,
-            blobExpression: 'angry' as const,
-            text: isKorean
-                ? '크크크... 이 세계의 규칙을 모두 파괴해주지!'
-                : "Hehehe... I will destroy all the rules of this world!",
-        },
-        {
-            blobShape: 'circle' as const,
-            blobExpression: 'effort' as const,
-            text: isKorean
-                ? '안 돼! 내가 워블 행성을 지킬 거야!'
-                : "No way! I will protect Planet Wobble!",
-        },
-        {
-            blobShape: 'circle' as const,
-            blobExpression: 'excited' as const,
-            text: isKorean
-                ? '세계의 규칙을 되찾아... 섀도우를 물리쳐라!'
-                : "Restore the rules of the world... defeat the Shadows!",
-        },
-    ], [isKorean]);
+    const narrations: NarrationData[] = useMemo(
+        () => [
+            {
+                blobShape: 'circle' as const,
+                blobExpression: 'surprised' as const,
+                text: isKorean
+                    ? '평화로운 워블 행성에 어둠이 찾아왔다...'
+                    : 'Darkness has come to the peaceful Planet Wobble...',
+            },
+            {
+                blobShape: 'shadow' as const,
+                blobExpression: 'angry' as const,
+                text: isKorean
+                    ? '크크크... 이 세계의 규칙을 모두 파괴해주지!'
+                    : 'Hehehe... I will destroy all the rules of this world!',
+            },
+            {
+                blobShape: 'circle' as const,
+                blobExpression: 'effort' as const,
+                text: isKorean
+                    ? '안 돼! 내가 워블 행성을 지킬 거야!'
+                    : 'No way! I will protect Planet Wobble!',
+            },
+            {
+                blobShape: 'circle' as const,
+                blobExpression: 'excited' as const,
+                text: isKorean
+                    ? '세계의 규칙을 되찾아... 섀도우를 물리쳐라!'
+                    : 'Restore the rules of the world... defeat the Shadows!',
+            },
+        ],
+        [isKorean]
+    )
 
     // Mount animation
     useEffect(() => {
-        setMounted(false);
-        setPlayResult(null);
-        setPhase('narration');
-        const timer = setTimeout(() => setMounted(true), 50);
-        return () => clearTimeout(timer);
-    }, []);
+        setMounted(false)
+        setPlayResult(null)
+        setPhase('narration')
+        const timer = setTimeout(() => setMounted(true), 50)
+        return () => clearTimeout(timer)
+    }, [])
 
     // Handle narration complete
     const handleNarrationComplete = useCallback(() => {
-        setPhase('playing');
+        setPhase('playing')
         // Start the game scene
-        canvasRef.current?.play();
-    }, []);
+        canvasRef.current?.play()
+    }, [])
 
     // Handle play complete
     const handlePlayComplete = useCallback((result: PlayResult) => {
-        setPlayResult(result);
+        setPlayResult(result)
 
         if (result === 'success') {
             setTimeout(() => {
-                setPhase('formula-explanation');
-            }, 800);
+                setPhase('formula-explanation')
+            }, 800)
         }
-    }, []);
+    }, [])
 
     // Handle reset
     const handleReset = () => {
-        setPlayResult(null);
-        canvasRef.current?.reset();
-    };
+        setPlayResult(null)
+        canvasRef.current?.reset()
+    }
 
     // Handle play again
     const handlePlayAgain = () => {
-        setPlayResult(null);
-        setPhase('narration');
-        canvasRef.current?.reset();
-    };
+        setPlayResult(null)
+        setPhase('narration')
+        canvasRef.current?.reset()
+    }
 
     // Memoized Balatro background
     const balatroBackground = useMemo(
@@ -119,8 +122,7 @@ export function MinigameScreen({ onBack }: MinigameScreenProps) {
             </div>
         ),
         []
-    );
-
+    )
 
     return (
         <div
@@ -247,5 +249,5 @@ export function MinigameScreen({ onBack }: MinigameScreenProps) {
                 />
             )}
         </div>
-    );
+    )
 }

@@ -1,13 +1,21 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Sparkles } from 'lucide-react';
-import Balatro from '@/components/Balatro';
-import { WobbleDisplay } from '@/components/canvas/WobbleDisplay';
-import { useCollectionStore } from '@/stores/collectionStore';
-import { WOBBLE_CHARACTERS, WobbleShape, WobbleExpression } from '@/components/canvas/Wobble';
-import { cn } from '@/lib/utils';
+import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { ArrowLeft, Sparkles } from 'lucide-react'
+import Balatro from '@/components/Balatro'
+import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
+import { useCollectionStore } from '@/stores/collectionStore'
+import { WOBBLE_CHARACTERS, WobbleShape, WobbleExpression } from '@/components/canvas/Wobble'
+import { cn } from '@/lib/utils'
 
-const ALL_SHAPES: WobbleShape[] = ['circle', 'square', 'triangle', 'star', 'diamond', 'pentagon', 'shadow'];
+const ALL_SHAPES: WobbleShape[] = [
+    'circle',
+    'square',
+    'triangle',
+    'star',
+    'diamond',
+    'pentagon',
+    'shadow',
+]
 
 // Balatro theme
 const theme = {
@@ -16,53 +24,54 @@ const theme = {
     bgPanelLight: '#4a5658',
     border: '#1a1a1a',
     gold: '#c9a227',
-};
+}
 
 interface CollectionScreenProps {
-    onBack: () => void;
+    onBack: () => void
 }
 
 export function CollectionScreen({ onBack }: CollectionScreenProps) {
-    const { t, i18n } = useTranslation();
-    const isKorean = i18n.language === 'ko';
-    const { unlockedWobbles, getProgress } = useCollectionStore();
-    const progress = getProgress();
-    const [mounted, setMounted] = useState(false);
-    const [selectedWobble, setSelectedWobble] = useState<WobbleShape | null>(null);
-    const [demoExpression, setDemoExpression] = useState<WobbleExpression>('happy');
+    const { t, i18n } = useTranslation()
+    const isKorean = i18n.language === 'ko'
+    const { unlockedWobbles, getProgress } = useCollectionStore()
+    const progress = getProgress()
+    const [mounted, setMounted] = useState(false)
+    const [selectedWobble, setSelectedWobble] = useState<WobbleShape | null>(null)
+    const [demoExpression, setDemoExpression] = useState<WobbleExpression>('happy')
 
     useEffect(() => {
-        const timer = setTimeout(() => setMounted(true), 100);
-        return () => clearTimeout(timer);
-    }, []);
+        const timer = setTimeout(() => setMounted(true), 100)
+        return () => clearTimeout(timer)
+    }, [])
 
     // Cycle through expressions when a wobble is selected
     useEffect(() => {
-        if (!selectedWobble) return;
+        if (!selectedWobble) return
 
         // Shadow has different expressions (angry-focused)
-        const expressions: WobbleExpression[] = selectedWobble === 'shadow'
-            ? ['angry', 'worried', 'effort', 'angry', 'struggle']
-            : ['happy', 'excited', 'surprised', 'worried', 'sleepy'];
-        let index = 0;
-        setDemoExpression(expressions[0]);
+        const expressions: WobbleExpression[] =
+            selectedWobble === 'shadow'
+                ? ['angry', 'worried', 'effort', 'angry', 'struggle']
+                : ['happy', 'excited', 'surprised', 'worried', 'sleepy']
+        let index = 0
+        setDemoExpression(expressions[0])
 
         const interval = setInterval(() => {
-            index = (index + 1) % expressions.length;
-            setDemoExpression(expressions[index]);
-        }, 1500);
+            index = (index + 1) % expressions.length
+            setDemoExpression(expressions[index])
+        }, 1500)
 
-        return () => clearInterval(interval);
-    }, [selectedWobble]);
+        return () => clearInterval(interval)
+    }, [selectedWobble])
 
-    const isUnlocked = (shape: WobbleShape) => unlockedWobbles.includes(shape);
+    const isUnlocked = (shape: WobbleShape) => unlockedWobbles.includes(shape)
 
     const handleCardClick = (shape: WobbleShape) => {
         if (isUnlocked(shape)) {
-            setSelectedWobble(selectedWobble === shape ? null : shape);
-            setDemoExpression('happy');
+            setSelectedWobble(selectedWobble === shape ? null : shape)
+            setDemoExpression('happy')
         }
-    };
+    }
 
     return (
         <div className="relative w-full h-full overflow-hidden bg-[#0a0a12]">
@@ -111,10 +120,7 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                 </button>
 
                 {/* Title */}
-                <h1
-                    className="text-xl font-black"
-                    style={{ color: theme.gold }}
-                >
+                <h1 className="text-xl font-black" style={{ color: theme.gold }}>
                     {isKorean ? '워블 도감' : 'Wobble Collection'}
                 </h1>
 
@@ -145,27 +151,31 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                 {/* Subtitle */}
                 <p
                     className={cn(
-                        "text-center text-white/60 text-sm mb-4",
-                        "transition-all duration-500",
-                        mounted ? "opacity-100" : "opacity-0"
+                        'text-center text-white/60 text-sm mb-4',
+                        'transition-all duration-500',
+                        mounted ? 'opacity-100' : 'opacity-0'
                     )}
                 >
-                    {isKorean ? '워블 행성의 주민들을 만나보세요' : 'Meet the residents of Planet Wobble'}
+                    {isKorean
+                        ? '워블 행성의 주민들을 만나보세요'
+                        : 'Meet the residents of Planet Wobble'}
                 </p>
 
                 {/* Wobble Grid */}
                 <div className="grid grid-cols-2 gap-4">
                     {ALL_SHAPES.map((shape, index) => {
-                        const character = WOBBLE_CHARACTERS[shape];
-                        const unlocked = isUnlocked(shape);
-                        const isSelected = selectedWobble === shape;
+                        const character = WOBBLE_CHARACTERS[shape]
+                        const unlocked = isUnlocked(shape)
+                        const isSelected = selectedWobble === shape
 
                         return (
                             <div
                                 key={shape}
                                 className={cn(
-                                    "transition-all duration-300",
-                                    mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                                    'transition-all duration-300',
+                                    mounted
+                                        ? 'opacity-100 translate-y-0'
+                                        : 'opacity-0 translate-y-4'
                                 )}
                                 style={{ transitionDelay: `${index * 100}ms` }}
                             >
@@ -173,9 +183,9 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                                     onClick={() => handleCardClick(shape)}
                                     disabled={!unlocked}
                                     className={cn(
-                                        "w-full rounded-xl transition-all",
-                                        unlocked ? "active:scale-[0.98]" : "cursor-not-allowed",
-                                        isSelected && "-translate-y-2"
+                                        'w-full rounded-xl transition-all',
+                                        unlocked ? 'active:scale-[0.98]' : 'cursor-not-allowed',
+                                        isSelected && '-translate-y-2'
                                     )}
                                     style={{
                                         background: unlocked ? theme.bgPanel : theme.bgPanelLight,
@@ -192,7 +202,13 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                                             size={60}
                                             shape={shape}
                                             color={unlocked ? character.color : 0x1a1a1a}
-                                            expression={unlocked ? (isSelected ? demoExpression : 'happy') : 'none'}
+                                            expression={
+                                                unlocked
+                                                    ? isSelected
+                                                        ? demoExpression
+                                                        : 'happy'
+                                                    : 'none'
+                                            }
                                         />
                                     </div>
 
@@ -200,19 +216,33 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                                     <div className="px-3 pb-3 text-center">
                                         <h3
                                             className="text-lg font-black mb-1"
-                                            style={{ color: unlocked ? theme.gold : 'rgba(255,255,255,0.3)' }}
+                                            style={{
+                                                color: unlocked
+                                                    ? theme.gold
+                                                    : 'rgba(255,255,255,0.3)',
+                                            }}
                                         >
                                             {unlocked
-                                                ? (isKorean ? character.nameKo : character.name)
+                                                ? isKorean
+                                                    ? character.nameKo
+                                                    : character.name
                                                 : '???'}
                                         </h3>
                                         <p
                                             className="text-xs leading-tight"
-                                            style={{ color: unlocked ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.2)' }}
+                                            style={{
+                                                color: unlocked
+                                                    ? 'rgba(255,255,255,0.6)'
+                                                    : 'rgba(255,255,255,0.2)',
+                                            }}
                                         >
                                             {unlocked
-                                                ? (isKorean ? character.personalityKo : character.personality)
-                                                : (isKorean ? '아직 만나지 못했어요' : 'Not yet discovered')}
+                                                ? isKorean
+                                                    ? character.personalityKo
+                                                    : character.personality
+                                                : isKorean
+                                                  ? '아직 만나지 못했어요'
+                                                  : 'Not yet discovered'}
                                         </p>
                                     </div>
 
@@ -227,7 +257,7 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                                     )}
                                 </button>
                             </div>
-                        );
+                        )
                     })}
                 </div>
 
@@ -235,9 +265,9 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                 {progress.unlocked < progress.total && (
                     <p
                         className={cn(
-                            "text-center text-white/40 text-xs mt-6",
-                            "transition-all duration-500 delay-700",
-                            mounted ? "opacity-100" : "opacity-0"
+                            'text-center text-white/40 text-xs mt-6',
+                            'transition-all duration-500 delay-700',
+                            mounted ? 'opacity-100' : 'opacity-0'
                         )}
                     >
                         {isKorean
@@ -247,5 +277,5 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                 )}
             </div>
         </div>
-    );
+    )
 }

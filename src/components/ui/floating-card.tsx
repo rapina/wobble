@@ -1,19 +1,19 @@
-import { ReactNode, useRef, useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
+import { ReactNode, useRef, useState, useEffect } from 'react'
+import { cn } from '@/lib/utils'
 
 // Balatro theme
 const theme = {
     bgPanel: '#374244',
     border: '#1a1a1a',
-};
+}
 
 interface FloatingCardProps {
-    children: ReactNode;
-    initialX?: number;
-    initialY?: number;
-    color?: string;
-    className?: string;
-    onPositionChange?: (x: number, y: number) => void;
+    children: ReactNode
+    initialX?: number
+    initialY?: number
+    color?: string
+    className?: string
+    onPositionChange?: (x: number, y: number) => void
 }
 
 export function FloatingCard({
@@ -24,73 +24,69 @@ export function FloatingCard({
     className,
     onPositionChange,
 }: FloatingCardProps) {
-    const cardRef = useRef<HTMLDivElement>(null);
-    const [position, setPosition] = useState({ x: initialX, y: initialY });
-    const [isDragging, setIsDragging] = useState(false);
-    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+    const cardRef = useRef<HTMLDivElement>(null)
+    const [position, setPosition] = useState({ x: initialX, y: initialY })
+    const [isDragging, setIsDragging] = useState(false)
+    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
 
     const handleDragStart = (clientX: number, clientY: number) => {
-        if (!cardRef.current) return;
-        const rect = cardRef.current.getBoundingClientRect();
+        if (!cardRef.current) return
+        const rect = cardRef.current.getBoundingClientRect()
         setDragOffset({
             x: clientX - rect.left,
             y: clientY - rect.top,
-        });
-        setIsDragging(true);
-    };
+        })
+        setIsDragging(true)
+    }
 
     const handleDragMove = (clientX: number, clientY: number) => {
-        if (!isDragging) return;
+        if (!isDragging) return
 
-        const newX = clientX - dragOffset.x;
-        const newY = clientY - dragOffset.y;
+        const newX = clientX - dragOffset.x
+        const newY = clientY - dragOffset.y
 
         // 화면 경계 내로 제한
-        const maxX = window.innerWidth - (cardRef.current?.offsetWidth || 0) - 10;
-        const maxY = window.innerHeight - (cardRef.current?.offsetHeight || 0) - 10;
+        const maxX = window.innerWidth - (cardRef.current?.offsetWidth || 0) - 10
+        const maxY = window.innerHeight - (cardRef.current?.offsetHeight || 0) - 10
 
-        const clampedX = Math.max(10, Math.min(maxX, newX));
-        const clampedY = Math.max(10, Math.min(maxY, newY));
+        const clampedX = Math.max(10, Math.min(maxX, newX))
+        const clampedY = Math.max(10, Math.min(maxY, newY))
 
-        setPosition({ x: clampedX, y: clampedY });
-        onPositionChange?.(clampedX, clampedY);
-    };
+        setPosition({ x: clampedX, y: clampedY })
+        onPositionChange?.(clampedX, clampedY)
+    }
 
     const handleDragEnd = () => {
-        setIsDragging(false);
-    };
+        setIsDragging(false)
+    }
 
     useEffect(() => {
-        if (!isDragging) return;
+        if (!isDragging) return
 
-        const handleMouseMove = (e: MouseEvent) => handleDragMove(e.clientX, e.clientY);
+        const handleMouseMove = (e: MouseEvent) => handleDragMove(e.clientX, e.clientY)
         const handleTouchMove = (e: TouchEvent) => {
             if (e.touches.length > 0) {
-                handleDragMove(e.touches[0].clientX, e.touches[0].clientY);
+                handleDragMove(e.touches[0].clientX, e.touches[0].clientY)
             }
-        };
+        }
 
-        window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mouseup', handleDragEnd);
-        window.addEventListener('touchmove', handleTouchMove, { passive: true });
-        window.addEventListener('touchend', handleDragEnd);
+        window.addEventListener('mousemove', handleMouseMove)
+        window.addEventListener('mouseup', handleDragEnd)
+        window.addEventListener('touchmove', handleTouchMove, { passive: true })
+        window.addEventListener('touchend', handleDragEnd)
 
         return () => {
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleDragEnd);
-            window.removeEventListener('touchmove', handleTouchMove);
-            window.removeEventListener('touchend', handleDragEnd);
-        };
-    }, [isDragging, dragOffset]);
+            window.removeEventListener('mousemove', handleMouseMove)
+            window.removeEventListener('mouseup', handleDragEnd)
+            window.removeEventListener('touchmove', handleTouchMove)
+            window.removeEventListener('touchend', handleDragEnd)
+        }
+    }, [isDragging, dragOffset])
 
     return (
         <div
             ref={cardRef}
-            className={cn(
-                "absolute rounded-2xl select-none",
-                isDragging && "z-50",
-                className
-            )}
+            className={cn('absolute rounded-2xl select-none', isDragging && 'z-50', className)}
             style={{
                 left: position.x,
                 top: position.y,
@@ -112,20 +108,18 @@ export function FloatingCard({
                     borderRadius: '12px 12px 0 0',
                 }}
                 onMouseDown={(e) => {
-                    e.preventDefault();
-                    handleDragStart(e.clientX, e.clientY);
+                    e.preventDefault()
+                    handleDragStart(e.clientX, e.clientY)
                 }}
                 onTouchStart={(e) => {
-                    handleDragStart(e.touches[0].clientX, e.touches[0].clientY);
+                    handleDragStart(e.touches[0].clientX, e.touches[0].clientY)
                 }}
             >
                 <div className="w-10 h-1 rounded-full bg-black/30" />
             </div>
 
             {/* Content */}
-            <div className="p-4">
-                {children}
-            </div>
+            <div className="p-4">{children}</div>
         </div>
-    );
+    )
 }

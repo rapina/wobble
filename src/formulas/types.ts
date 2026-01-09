@@ -5,29 +5,29 @@ export type VisualProperty =
     | 'stretch'
     | 'distance'
     | 'oscillate'
-    | 'shake';
+    | 'shake'
 
 export interface VisualMapping {
-    property: VisualProperty;
-    scale: (value: number) => number;
-    color: string;
+    property: VisualProperty
+    scale: (value: number) => number
+    color: string
 }
 
 export interface Variable {
-    symbol: string;
-    name: string;
-    nameEn?: string;
-    role: 'input' | 'output';
-    unit: string;
-    range: [number, number];
-    default: number;
-    visual: VisualMapping;
+    symbol: string
+    name: string
+    nameEn?: string
+    role: 'input' | 'output'
+    unit: string
+    range: [number, number]
+    default: number
+    visual: VisualMapping
 }
 
 export interface Connection {
-    from: string;
-    to: string;
-    operator: '×' | '÷' | '=' | '+' | '-' | '²' | '÷r²' | '√';
+    from: string
+    to: string
+    operator: '×' | '÷' | '=' | '+' | '-' | '²' | '÷r²' | '√'
 }
 
 export type LayoutType =
@@ -40,11 +40,11 @@ export type LayoutType =
     | 'container'
     | 'flow'
     | 'explosion'
-    | 'float';
+    | 'float'
 
 export interface LayoutConfig {
-    type: LayoutType;
-    connections: Connection[];
+    type: LayoutType
+    connections: Connection[]
 }
 
 export type FormulaCategory =
@@ -53,10 +53,10 @@ export type FormulaCategory =
     | 'gravity'
     | 'thermodynamics'
     | 'electricity'
-    | 'special';
+    | 'special'
 
 // Display layout for formula visualization
-export type DisplayLayoutType = 'linear' | 'fraction' | 'fraction-square' | 'custom';
+export type DisplayLayoutType = 'linear' | 'fraction' | 'fraction-square' | 'custom'
 
 // Expression element types for custom layout
 export type ExpressionElement =
@@ -64,35 +64,35 @@ export type ExpressionElement =
     | { type: 'op'; value: string }
     | { type: 'text'; value: string }
     | { type: 'group'; items: ExpressionElement[] }
-    | { type: 'fraction'; numerator: ExpressionElement[]; denominator: ExpressionElement[] };
+    | { type: 'fraction'; numerator: ExpressionElement[]; denominator: ExpressionElement[] }
 
 export interface DisplayLayout {
-    type: DisplayLayoutType;
-    output: string; // output variable symbol
+    type: DisplayLayoutType
+    output: string // output variable symbol
     // For linear: items in order
     // For fraction: numerator / denominator
-    numerator?: string[]; // symbols in numerator (or left side for linear)
-    denominator?: string[]; // symbols in denominator
-    coefficient?: string; // e.g., "½" for kinetic energy
-    squares?: string[]; // symbols that should show ² superscript
+    numerator?: string[] // symbols in numerator (or left side for linear)
+    denominator?: string[] // symbols in denominator
+    coefficient?: string // e.g., "½" for kinetic energy
+    squares?: string[] // symbols that should show ² superscript
     // For custom: expression array
-    expression?: ExpressionElement[];
+    expression?: ExpressionElement[]
 }
 
 export interface Formula {
-    id: string;
-    name: string;
-    nameEn?: string;
-    expression: string;
-    description: string;
-    descriptionEn?: string;
+    id: string
+    name: string
+    nameEn?: string
+    expression: string
+    description: string
+    descriptionEn?: string
     /** 실생활에서 이 공식이 사용되는 예시들 */
-    applications?: string[];
-    applicationsEn?: string[];
-    category: FormulaCategory;
-    variables: Variable[];
-    calculate: (inputs: Record<string, number>) => Record<string, number>;
-    formatCalculation: (inputs: Record<string, number>) => string;
-    layout: LayoutConfig;
-    displayLayout?: DisplayLayout;
+    applications?: string[]
+    applicationsEn?: string[]
+    category: FormulaCategory
+    variables: Variable[]
+    calculate: (inputs: Record<string, number>) => Record<string, number>
+    formatCalculation: (inputs: Record<string, number>) => string
+    layout: LayoutConfig
+    displayLayout?: DisplayLayout
 }

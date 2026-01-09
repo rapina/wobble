@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const keplerThird: Formula = {
     id: 'kepler-third',
@@ -17,7 +17,7 @@ export const keplerThird: Formula = {
     applicationsEn: [
         'Calculating satellite orbital periods',
         'Detecting exoplanets via stellar wobble',
-        'Estimating Earth\'s mass from Moon\'s orbit',
+        "Estimating Earth's mass from Moon's orbit",
         'Precise GPS satellite orbit design',
     ],
     category: 'gravity',
@@ -66,27 +66,27 @@ export const keplerThird: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const M = inputs.M ?? 5.97; // ×10²⁴ kg
-        const r = inputs.r ?? 384; // ×10⁶ m
-        const G = 6.674e-11;
-        const M_kg = M * 1e24;
-        const r_m = r * 1e6;
+        const M = inputs.M ?? 5.97 // ×10²⁴ kg
+        const r = inputs.r ?? 384 // ×10⁶ m
+        const G = 6.674e-11
+        const M_kg = M * 1e24
+        const r_m = r * 1e6
         // T² = (4π²/GM)r³
-        const T_squared = (4 * Math.PI * Math.PI * Math.pow(r_m, 3)) / (G * M_kg);
-        const T_seconds = Math.sqrt(T_squared);
-        const T_days = T_seconds / (24 * 3600);
-        return { T: T_days };
+        const T_squared = (4 * Math.PI * Math.PI * Math.pow(r_m, 3)) / (G * M_kg)
+        const T_seconds = Math.sqrt(T_squared)
+        const T_days = T_seconds / (24 * 3600)
+        return { T: T_days }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const M = inputs.M ?? 5.97;
-        const r = inputs.r ?? 384;
-        const G = 6.674e-11;
-        const M_kg = M * 1e24;
-        const r_m = r * 1e6;
-        const T_squared = (4 * Math.PI * Math.PI * Math.pow(r_m, 3)) / (G * M_kg);
-        const T_seconds = Math.sqrt(T_squared);
-        const T_days = T_seconds / (24 * 3600);
-        return `T = √(4π²r³/GM) = ${T_days.toFixed(1)} 일`;
+        const M = inputs.M ?? 5.97
+        const r = inputs.r ?? 384
+        const G = 6.674e-11
+        const M_kg = M * 1e24
+        const r_m = r * 1e6
+        const T_squared = (4 * Math.PI * Math.PI * Math.pow(r_m, 3)) / (G * M_kg)
+        const T_seconds = Math.sqrt(T_squared)
+        const T_days = T_seconds / (24 * 3600)
+        return `T = √(4π²r³/GM) = ${T_days.toFixed(1)} 일`
     },
     layout: {
         type: 'orbital',
@@ -100,20 +100,23 @@ export const keplerThird: Formula = {
         output: 'T',
         expression: [
             { type: 'text', value: '√' },
-            { type: 'group', items: [
-                {
-                    type: 'fraction',
-                    numerator: [
-                        { type: 'text', value: '4π²' },
-                        { type: 'var', symbol: 'r', square: true },
-                        { type: 'text', value: 'r' },
-                    ],
-                    denominator: [
-                        { type: 'text', value: 'G' },
-                        { type: 'var', symbol: 'M' },
-                    ],
-                },
-            ]},
+            {
+                type: 'group',
+                items: [
+                    {
+                        type: 'fraction',
+                        numerator: [
+                            { type: 'text', value: '4π²' },
+                            { type: 'var', symbol: 'r', square: true },
+                            { type: 'text', value: 'r' },
+                        ],
+                        denominator: [
+                            { type: 'text', value: 'G' },
+                            { type: 'var', symbol: 'M' },
+                        ],
+                    },
+                ],
+            },
         ],
     },
-};
+}

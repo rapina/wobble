@@ -1,12 +1,12 @@
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next'
 
 export function LanguageToggle() {
-    const { i18n } = useTranslation();
+    const { i18n } = useTranslation()
 
     const toggleLanguage = () => {
-        const newLang = i18n.language === 'ko' ? 'en' : 'ko';
-        i18n.changeLanguage(newLang);
-    };
+        const newLang = i18n.language === 'ko' ? 'en' : 'ko'
+        i18n.changeLanguage(newLang)
+    }
 
     return (
         <button
@@ -30,5 +30,5 @@ export function LanguageToggle() {
                 {i18n.language.toUpperCase()}
             </span>
         </button>
-    );
+    )
 }

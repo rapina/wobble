@@ -1,46 +1,54 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { X, Sparkles } from 'lucide-react';
-import { WOBBLE_CHARACTERS, WobbleShape } from '@/components/canvas/Wobble';
-import { cn } from '@/lib/utils';
+import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { X, Sparkles } from 'lucide-react'
+import { WOBBLE_CHARACTERS, WobbleShape } from '@/components/canvas/Wobble'
+import { cn } from '@/lib/utils'
 
 const theme = {
     bg: '#0a0a12',
     bgPanel: '#374244',
     border: '#1a1a1a',
     gold: '#c9a227',
-};
+}
 
 // Simple CSS-based wobble display (to avoid PixiJS conflicts)
-function SimpleWobble({ shape, color, size = 80 }: { shape: WobbleShape; color: number; size?: number }) {
-    const colorHex = `#${color.toString(16).padStart(6, '0')}`;
-    const eyeSize = size * 0.12;
-    const eyeY = -size * 0.08;
-    const eyeSpacing = size * 0.18;
+function SimpleWobble({
+    shape,
+    color,
+    size = 80,
+}: {
+    shape: WobbleShape
+    color: number
+    size?: number
+}) {
+    const colorHex = `#${color.toString(16).padStart(6, '0')}`
+    const eyeSize = size * 0.12
+    const eyeY = -size * 0.08
+    const eyeSpacing = size * 0.18
 
     const getShapePath = () => {
-        const r = size * 0.4;
+        const r = size * 0.4
         switch (shape) {
             case 'circle':
-                return null; // Use border-radius
+                return null // Use border-radius
             case 'square':
-                return null; // Use border-radius with less rounding
+                return null // Use border-radius with less rounding
             case 'triangle':
-                return `polygon(50% 10%, 90% 85%, 10% 85%)`;
+                return `polygon(50% 10%, 90% 85%, 10% 85%)`
             case 'star':
-                return `polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)`;
+                return `polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)`
             case 'diamond':
-                return `polygon(50% 5%, 90% 50%, 50% 95%, 10% 50%)`;
+                return `polygon(50% 5%, 90% 50%, 50% 95%, 10% 50%)`
             case 'pentagon':
-                return `polygon(50% 5%, 95% 38%, 79% 91%, 21% 91%, 5% 38%)`;
+                return `polygon(50% 5%, 95% 38%, 79% 91%, 21% 91%, 5% 38%)`
             default:
-                return null;
+                return null
         }
-    };
+    }
 
-    const clipPath = getShapePath();
-    const isRounded = shape === 'circle' || shape === 'square';
-    const borderRadius = shape === 'circle' ? '50%' : shape === 'square' ? '20%' : '0';
+    const clipPath = getShapePath()
+    const isRounded = shape === 'circle' || shape === 'square'
+    const borderRadius = shape === 'circle' ? '50%' : shape === 'square' ? '20%' : '0'
 
     return (
         <div
@@ -123,58 +131,58 @@ function SimpleWobble({ shape, color, size = 80 }: { shape: WobbleShape; color: 
                 }
             `}</style>
         </div>
-    );
+    )
 }
 
 interface NewWobbleAlertProps {
-    shapes: WobbleShape[];
-    onClose: () => void;
+    shapes: WobbleShape[]
+    onClose: () => void
 }
 
 export function NewWobbleAlert({ shapes, onClose }: NewWobbleAlertProps) {
-    const { i18n } = useTranslation();
-    const isKorean = i18n.language === 'ko';
-    const [visible, setVisible] = useState(false);
-    const [currentIndex, setCurrentIndex] = useState(0);
+    const { i18n } = useTranslation()
+    const isKorean = i18n.language === 'ko'
+    const [visible, setVisible] = useState(false)
+    const [currentIndex, setCurrentIndex] = useState(0)
 
-    const currentShape = shapes[currentIndex];
-    const character = currentShape ? WOBBLE_CHARACTERS[currentShape] : null;
+    const currentShape = shapes[currentIndex]
+    const character = currentShape ? WOBBLE_CHARACTERS[currentShape] : null
 
     useEffect(() => {
         // Animate in
-        const timer = setTimeout(() => setVisible(true), 50);
-        return () => clearTimeout(timer);
-    }, []);
+        const timer = setTimeout(() => setVisible(true), 50)
+        return () => clearTimeout(timer)
+    }, [])
 
     const handleNext = () => {
         if (currentIndex < shapes.length - 1) {
-            setCurrentIndex(currentIndex + 1);
+            setCurrentIndex(currentIndex + 1)
         } else {
-            handleClose();
+            handleClose()
         }
-    };
+    }
 
     const handleClose = () => {
-        setVisible(false);
-        setTimeout(onClose, 200);
-    };
+        setVisible(false)
+        setTimeout(onClose, 200)
+    }
 
-    if (!character) return null;
+    if (!character) return null
 
     return (
         <div
             className={cn(
-                "fixed inset-0 z-50 flex items-center justify-center",
-                "transition-all duration-200",
-                visible ? "bg-black/70" : "bg-black/0"
+                'fixed inset-0 z-50 flex items-center justify-center',
+                'transition-all duration-200',
+                visible ? 'bg-black/70' : 'bg-black/0'
             )}
             onClick={handleClose}
         >
             <div
                 className={cn(
-                    "relative w-[280px] rounded-2xl p-6",
-                    "transition-all duration-300",
-                    visible ? "opacity-100 scale-100" : "opacity-0 scale-90"
+                    'relative w-[280px] rounded-2xl p-6',
+                    'transition-all duration-300',
+                    visible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
                 )}
                 style={{
                     background: theme.bgPanel,
@@ -205,10 +213,7 @@ export function NewWobbleAlert({ shapes, onClose }: NewWobbleAlertProps) {
                     <p className="text-white/60 text-sm mb-1">
                         {isKorean ? '새로운 주민 발견!' : 'New Resident Found!'}
                     </p>
-                    <h2
-                        className="text-2xl font-black"
-                        style={{ color: theme.gold }}
-                    >
+                    <h2 className="text-2xl font-black" style={{ color: theme.gold }}>
                         {isKorean ? character.nameKo : character.name}
                     </h2>
                 </div>
@@ -222,11 +227,7 @@ export function NewWobbleAlert({ shapes, onClose }: NewWobbleAlertProps) {
                             border: `2px solid ${theme.border}`,
                         }}
                     >
-                        <SimpleWobble
-                            size={80}
-                            shape={currentShape}
-                            color={character.color}
-                        />
+                        <SimpleWobble size={80} shape={currentShape} color={character.color} />
                     </div>
                 </div>
 
@@ -245,10 +246,14 @@ export function NewWobbleAlert({ shapes, onClose }: NewWobbleAlertProps) {
                     }}
                 >
                     {shapes.length > 1 && currentIndex < shapes.length - 1
-                        ? (isKorean ? `다음 (${currentIndex + 1}/${shapes.length})` : `Next (${currentIndex + 1}/${shapes.length})`)
-                        : (isKorean ? '반가워!' : 'Nice to meet you!')}
+                        ? isKorean
+                            ? `다음 (${currentIndex + 1}/${shapes.length})`
+                            : `Next (${currentIndex + 1}/${shapes.length})`
+                        : isKorean
+                          ? '반가워!'
+                          : 'Nice to meet you!'}
                 </button>
             </div>
         </div>
-    );
+    )
 }

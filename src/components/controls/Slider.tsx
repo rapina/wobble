@@ -1,14 +1,14 @@
-import { CSSProperties, useState } from 'react';
+import { CSSProperties, useState } from 'react'
 
 interface SliderProps {
-    value: number;
-    min: number;
-    max: number;
-    step?: number;
-    color?: string;
-    onChange: (value: number) => void;
-    label?: string;
-    unit?: string;
+    value: number
+    min: number
+    max: number
+    step?: number
+    color?: string
+    onChange: (value: number) => void
+    label?: string
+    unit?: string
 }
 
 export function Slider({
@@ -21,21 +21,23 @@ export function Slider({
     label,
     unit,
 }: SliderProps) {
-    const [isDragging, setIsDragging] = useState(false);
-    const calculatedStep = step ?? (max - min) / 100;
-    const fillPercent = ((value - min) / (max - min)) * 100;
+    const [isDragging, setIsDragging] = useState(false)
+    const calculatedStep = step ?? (max - min) / 100
+    const fillPercent = ((value - min) / (max - min)) * 100
 
     return (
         <div style={styles.container}>
             {label && (
                 <div style={styles.labelRow}>
                     <span style={styles.label}>{label}</span>
-                    <span style={{
-                        ...styles.value,
-                        color,
-                        transform: isDragging ? 'scale(1.1)' : 'scale(1)',
-                        transition: 'transform 0.1s ease',
-                    }}>
+                    <span
+                        style={{
+                            ...styles.value,
+                            color,
+                            transform: isDragging ? 'scale(1.1)' : 'scale(1)',
+                            transition: 'transform 0.1s ease',
+                        }}
+                    >
                         {value.toFixed(2)} {unit}
                     </span>
                 </div>
@@ -77,7 +79,7 @@ export function Slider({
                 />
             </div>
         </div>
-    );
+    )
 }
 
 const styles: Record<string, CSSProperties> = {
@@ -124,4 +126,4 @@ const styles: Record<string, CSSProperties> = {
         filter: 'blur(10px)',
         transition: 'opacity 0.2s ease, transform 0.2s ease',
     },
-};
+}

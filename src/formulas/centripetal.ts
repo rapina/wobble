@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const centripetal: Formula = {
     id: 'centripetal',
@@ -80,19 +80,19 @@ export const centripetal: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const m = inputs.m ?? 5;
-        const v = inputs.v ?? 4;
-        const r = inputs.r ?? 3;
+        const m = inputs.m ?? 5
+        const v = inputs.v ?? 4
+        const r = inputs.r ?? 3
         return {
             F: (m * v * v) / r,
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const m = inputs.m ?? 5;
-        const v = inputs.v ?? 4;
-        const r = inputs.r ?? 3;
-        const F = (m * v * v) / r;
-        return `F = ${m.toFixed(1)} × ${v.toFixed(1)}² ÷ ${r.toFixed(1)} = ${F.toFixed(1)}`;
+        const m = inputs.m ?? 5
+        const v = inputs.v ?? 4
+        const r = inputs.r ?? 3
+        const F = (m * v * v) / r
+        return `F = ${m.toFixed(1)} × ${v.toFixed(1)}² ÷ ${r.toFixed(1)} = ${F.toFixed(1)}`
     },
     layout: {
         type: 'circular',
@@ -116,4 +116,4 @@ export const centripetal: Formula = {
             },
         ],
     },
-};
+}

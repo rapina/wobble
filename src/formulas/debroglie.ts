@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const debroglie: Formula = {
     id: 'debroglie',
@@ -7,7 +7,8 @@ export const debroglie: Formula = {
     nameEn: 'De Broglie Wavelength',
     expression: 'λ = h/p',
     description: '모든 물질은 파동성을 가지며, 그 파장은 운동량에 반비례한다',
-    descriptionEn: 'All matter has wave properties, with wavelength inversely proportional to momentum',
+    descriptionEn:
+        'All matter has wave properties, with wavelength inversely proportional to momentum',
     applications: [
         '전자현미경의 초고해상도 원리',
         '반도체 칩의 나노 구조 설계',
@@ -66,20 +67,20 @@ export const debroglie: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const m = inputs.m ?? 9.1; // ×10⁻³¹ kg
-        const v = inputs.v ?? 1; // ×10⁶ m/s
+        const m = inputs.m ?? 9.1 // ×10⁻³¹ kg
+        const v = inputs.v ?? 1 // ×10⁶ m/s
         // h = 6.626 × 10⁻³⁴ J·s
         // p = mv = m × 10⁻³¹ × v × 10⁶ = mv × 10⁻²⁵ kg·m/s
         // λ = h/p = 6.626 × 10⁻³⁴ / (mv × 10⁻²⁵) = 6.626 / (mv) × 10⁻⁹ m = 0.6626 / (mv) nm
-        const lambda = 0.6626 / (m * v);
-        return { λ: lambda };
+        const lambda = 0.6626 / (m * v)
+        return { λ: lambda }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const m = inputs.m ?? 9.1;
-        const v = inputs.v ?? 1;
-        const p = m * v;
-        const lambda = 0.6626 / p;
-        return `λ = h ÷ (${m.toFixed(1)} × ${v.toFixed(1)}) = ${lambda.toFixed(3)}`;
+        const m = inputs.m ?? 9.1
+        const v = inputs.v ?? 1
+        const p = m * v
+        const lambda = 0.6626 / p
+        return `λ = h ÷ (${m.toFixed(1)} × ${v.toFixed(1)}) = ${lambda.toFixed(3)}`
     },
     layout: {
         type: 'wave',
@@ -103,4 +104,4 @@ export const debroglie: Formula = {
             },
         ],
     },
-};
+}

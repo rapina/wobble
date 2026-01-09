@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const escapeVelocity: Formula = {
     id: 'escape-velocity',
@@ -7,7 +7,7 @@ export const escapeVelocity: Formula = {
     nameEn: 'Escape Velocity',
     expression: 'v = √(2GM/r)',
     description: '행성의 중력을 벗어나기 위한 최소 속도',
-    descriptionEn: 'The minimum velocity needed to escape a planet\'s gravity',
+    descriptionEn: "The minimum velocity needed to escape a planet's gravity",
     applications: [
         '로켓 발사 속도 계산',
         '블랙홀의 사건 지평선 이해',
@@ -66,25 +66,25 @@ export const escapeVelocity: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const M = inputs.M ?? 5.97; // ×10²⁴ kg
-        const r = inputs.r ?? 6.37; // ×10⁶ m
-        const G = 6.674e-11;
+        const M = inputs.M ?? 5.97 // ×10²⁴ kg
+        const r = inputs.r ?? 6.37 // ×10⁶ m
+        const G = 6.674e-11
         // M in 10^24 kg, r in 10^6 m
-        const M_kg = M * 1e24;
-        const r_m = r * 1e6;
-        const v_ms = Math.sqrt((2 * G * M_kg) / r_m);
-        const v_kms = v_ms / 1000;
-        return { v: v_kms };
+        const M_kg = M * 1e24
+        const r_m = r * 1e6
+        const v_ms = Math.sqrt((2 * G * M_kg) / r_m)
+        const v_kms = v_ms / 1000
+        return { v: v_kms }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const M = inputs.M ?? 5.97;
-        const r = inputs.r ?? 6.37;
-        const G = 6.674e-11;
-        const M_kg = M * 1e24;
-        const r_m = r * 1e6;
-        const v_ms = Math.sqrt((2 * G * M_kg) / r_m);
-        const v_kms = v_ms / 1000;
-        return `v = √(2G × ${M.toFixed(2)} ÷ ${r.toFixed(2)}) = ${v_kms.toFixed(1)} km/s`;
+        const M = inputs.M ?? 5.97
+        const r = inputs.r ?? 6.37
+        const G = 6.674e-11
+        const M_kg = M * 1e24
+        const r_m = r * 1e6
+        const v_ms = Math.sqrt((2 * G * M_kg) / r_m)
+        const v_kms = v_ms / 1000
+        return `v = √(2G × ${M.toFixed(2)} ÷ ${r.toFixed(2)}) = ${v_kms.toFixed(1)} km/s`
     },
     layout: {
         type: 'orbital',
@@ -98,16 +98,19 @@ export const escapeVelocity: Formula = {
         output: 'v',
         expression: [
             { type: 'text', value: '√' },
-            { type: 'group', items: [
-                {
-                    type: 'fraction',
-                    numerator: [
-                        { type: 'text', value: '2G' },
-                        { type: 'var', symbol: 'M' },
-                    ],
-                    denominator: [{ type: 'var', symbol: 'r' }],
-                },
-            ]},
+            {
+                type: 'group',
+                items: [
+                    {
+                        type: 'fraction',
+                        numerator: [
+                            { type: 'text', value: '2G' },
+                            { type: 'var', symbol: 'M' },
+                        ],
+                        denominator: [{ type: 'var', symbol: 'r' }],
+                    },
+                ],
+            },
         ],
     },
-};
+}

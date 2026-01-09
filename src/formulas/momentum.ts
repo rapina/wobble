@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const momentum: Formula = {
     id: 'momentum',
@@ -66,17 +66,17 @@ export const momentum: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const m = inputs.m ?? 10;
-        const v = inputs.v ?? 5;
+        const m = inputs.m ?? 10
+        const v = inputs.v ?? 5
         return {
             p: m * v,
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const m = inputs.m ?? 10;
-        const v = inputs.v ?? 5;
-        const p = m * v;
-        return `p = ${m.toFixed(0)} × ${v.toFixed(1)} = ${p.toFixed(1)}`;
+        const m = inputs.m ?? 10
+        const v = inputs.v ?? 5
+        const p = m * v
+        return `p = ${m.toFixed(0)} × ${v.toFixed(1)} = ${p.toFixed(1)}`
     },
     layout: {
         type: 'linear',
@@ -90,4 +90,4 @@ export const momentum: Formula = {
         output: 'p',
         numerator: ['m', 'v'],
     },
-};
+}

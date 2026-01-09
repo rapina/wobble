@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const ohm: Formula = {
     id: 'ohm',
@@ -66,17 +66,17 @@ export const ohm: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const I = inputs.I ?? 2;
-        const R = inputs.R ?? 10;
+        const I = inputs.I ?? 2
+        const R = inputs.R ?? 10
         return {
             V: I * R,
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const I = inputs.I ?? 2;
-        const R = inputs.R ?? 10;
-        const V = I * R;
-        return `V = ${I.toFixed(1)} × ${R.toFixed(0)} = ${V.toFixed(0)}`;
+        const I = inputs.I ?? 2
+        const R = inputs.R ?? 10
+        const V = I * R
+        return `V = ${I.toFixed(1)} × ${R.toFixed(0)} = ${V.toFixed(0)}`
     },
     layout: {
         type: 'flow',
@@ -90,4 +90,4 @@ export const ohm: Formula = {
         output: 'V',
         numerator: ['I', 'R'],
     },
-};
+}

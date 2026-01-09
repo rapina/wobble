@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const heat: Formula = {
     id: 'heat',
@@ -7,7 +7,7 @@ export const heat: Formula = {
     nameEn: 'Heat Transfer',
     expression: 'Q = mcΔT',
     description: '물체의 온도를 변화시키는 데 필요한 열에너지',
-    descriptionEn: 'The heat energy required to change an object\'s temperature',
+    descriptionEn: "The heat energy required to change an object's temperature",
     applications: [
         '물을 끓이는 데 필요한 에너지 계산',
         '냉난방 시스템 용량 설계',
@@ -80,19 +80,19 @@ export const heat: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const m = inputs.m ?? 2;
-        const c = inputs.c ?? 4186;
-        const deltaT = inputs['ΔT'] ?? 10;
+        const m = inputs.m ?? 2
+        const c = inputs.c ?? 4186
+        const deltaT = inputs['ΔT'] ?? 10
         return {
             Q: (m * c * deltaT) / 1000, // Convert to kJ
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const m = inputs.m ?? 2;
-        const c = inputs.c ?? 4186;
-        const deltaT = inputs['ΔT'] ?? 10;
-        const Q = (m * c * deltaT) / 1000;
-        return `Q = ${m.toFixed(1)} × ${c.toFixed(0)} × ${deltaT.toFixed(0)} ÷ 1000 = ${Q.toFixed(1)}`;
+        const m = inputs.m ?? 2
+        const c = inputs.c ?? 4186
+        const deltaT = inputs['ΔT'] ?? 10
+        const Q = (m * c * deltaT) / 1000
+        return `Q = ${m.toFixed(1)} × ${c.toFixed(0)} × ${deltaT.toFixed(0)} ÷ 1000 = ${Q.toFixed(1)}`
     },
     layout: {
         type: 'linear',
@@ -107,4 +107,4 @@ export const heat: Formula = {
         output: 'Q',
         numerator: ['m', 'c', 'ΔT'],
     },
-};
+}

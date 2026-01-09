@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const buoyancy: Formula = {
     id: 'buoyancy',
@@ -80,20 +80,20 @@ export const buoyancy: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const rho = inputs['ρ'] ?? 1000;
-        const V = inputs.V ?? 10;
-        const g = inputs.g ?? 9.8;
+        const rho = inputs['ρ'] ?? 1000
+        const V = inputs.V ?? 10
+        const g = inputs.g ?? 9.8
         // V in L = 0.001 m³
         return {
             F: rho * (V / 1000) * g,
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const rho = inputs['ρ'] ?? 1000;
-        const V = inputs.V ?? 10;
-        const g = inputs.g ?? 9.8;
-        const F = rho * (V / 1000) * g;
-        return `F = ${rho.toFixed(0)} × ${(V / 1000).toFixed(3)} × ${g.toFixed(1)} = ${F.toFixed(1)}`;
+        const rho = inputs['ρ'] ?? 1000
+        const V = inputs.V ?? 10
+        const g = inputs.g ?? 9.8
+        const F = rho * (V / 1000) * g
+        return `F = ${rho.toFixed(0)} × ${(V / 1000).toFixed(3)} × ${g.toFixed(1)} = ${F.toFixed(1)}`
     },
     layout: {
         type: 'float',
@@ -108,4 +108,4 @@ export const buoyancy: Formula = {
         output: 'F',
         numerator: ['ρ', 'V', 'g'],
     },
-};
+}

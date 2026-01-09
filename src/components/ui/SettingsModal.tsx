@@ -1,23 +1,23 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { X, Check, RefreshCw, Loader2, Trash2, AlertTriangle } from 'lucide-react';
-import { useInAppPurchase } from '@/hooks/useInAppPurchase';
-import { usePurchaseStore } from '@/stores/purchaseStore';
-import { useCollectionStore } from '@/stores/collectionStore';
-import { IS_AD_TESTING } from '@/hooks/useAdMob';
-import { cn } from '@/lib/utils';
+import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { X, Check, RefreshCw, Loader2, Trash2, AlertTriangle } from 'lucide-react'
+import { useInAppPurchase } from '@/hooks/useInAppPurchase'
+import { usePurchaseStore } from '@/stores/purchaseStore'
+import { useCollectionStore } from '@/stores/collectionStore'
+import { IS_AD_TESTING } from '@/hooks/useAdMob'
+import { cn } from '@/lib/utils'
 
 interface SettingsModalProps {
-    isOpen: boolean;
-    onClose: () => void;
+    isOpen: boolean
+    onClose: () => void
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-    const { t, i18n } = useTranslation();
-    const isKorean = i18n.language === 'ko';
-    const { isAdFree, setAdFree, reset: resetPurchase } = usePurchaseStore();
-    const { resetCollection } = useCollectionStore();
-    const [showResetConfirm, setShowResetConfirm] = useState(false);
+    const { t, i18n } = useTranslation()
+    const isKorean = i18n.language === 'ko'
+    const { isAdFree, setAdFree, reset: resetPurchase } = usePurchaseStore()
+    const { resetCollection } = useCollectionStore()
+    const [showResetConfirm, setShowResetConfirm] = useState(false)
     const {
         isNative,
         product,
@@ -26,59 +26,56 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         loadProduct,
         purchaseRemoveAds,
         restorePurchases,
-    } = useInAppPurchase();
+    } = useInAppPurchase()
 
     const handleResetAllData = () => {
         // Clear all localStorage
-        localStorage.clear();
+        localStorage.clear()
 
         // Reset zustand stores
-        resetCollection();
-        resetPurchase();
+        resetCollection()
+        resetPurchase()
 
         // Close modal and refresh
-        setShowResetConfirm(false);
-        onClose();
+        setShowResetConfirm(false)
+        onClose()
 
         // Reload to ensure clean state
-        window.location.reload();
-    };
+        window.location.reload()
+    }
 
     useEffect(() => {
         // 개발 모드에서도 상품 정보 로드 (가격 표시용)
         if (isOpen && isNative && !isAdFree) {
-            loadProduct();
+            loadProduct()
         }
-    }, [isOpen, isNative, isAdFree, loadProduct]);
+    }, [isOpen, isNative, isAdFree, loadProduct])
 
-    if (!isOpen) return null;
+    if (!isOpen) return null
 
     const handlePurchase = async () => {
         // 실제 IAP 진행 (프로덕션/개발 모두)
-        const success = await purchaseRemoveAds();
+        const success = await purchaseRemoveAds()
         if (success) {
-            onClose();
+            onClose()
         }
-    };
+    }
 
     const handleRestore = async () => {
-        await restorePurchases();
-    };
+        await restorePurchases()
+    }
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-6"
-            onClick={onClose}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6" onClick={onClose}>
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
             {/* Modal */}
             <div
                 className={cn(
-                    "relative w-full max-w-sm",
-                    "rounded-2xl border-4 border-[#F5B041]",
-                    "overflow-hidden"
+                    'relative w-full max-w-sm',
+                    'rounded-2xl border-4 border-[#F5B041]',
+                    'overflow-hidden'
                 )}
                 style={{
                     background: 'linear-gradient(180deg, #2a2a4a 0%, #1a1a2e 100%)',
@@ -88,10 +85,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             >
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-                    <h2
-                        className="text-xl font-bold"
-                        style={{ color: '#F5B041' }}
-                    >
+                    <h2 className="text-xl font-bold" style={{ color: '#F5B041' }}>
                         {t('settings.title', 'Settings')}
                     </h2>
                     <button
@@ -111,7 +105,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                             background: isAdFree
                                 ? 'linear-gradient(135deg, rgba(46, 204, 113, 0.2) 0%, rgba(39, 174, 96, 0.1) 100%)'
                                 : 'rgba(255,255,255,0.05)',
-                            border: isAdFree ? '2px solid rgba(46, 204, 113, 0.5)' : '2px solid rgba(255,255,255,0.1)',
+                            border: isAdFree
+                                ? '2px solid rgba(46, 204, 113, 0.5)'
+                                : '2px solid rgba(255,255,255,0.1)',
                         }}
                     >
                         <div className="flex items-center gap-3">
@@ -121,9 +117,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                 </div>
                             ) : (
                                 <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
-                                    <span className="text-lg">
-                                        {t('settings.adIcon', '📺')}
-                                    </span>
+                                    <span className="text-lg">{t('settings.adIcon', '📺')}</span>
                                 </div>
                             )}
                             <div className="flex-1">
@@ -147,10 +141,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                             onClick={handlePurchase}
                             disabled={isLoading || !product}
                             className={cn(
-                                "w-full py-4 rounded-xl font-bold text-lg",
-                                "transition-all duration-200",
-                                "hover:scale-[1.02] active:scale-[0.98]",
-                                "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                'w-full py-4 rounded-xl font-bold text-lg',
+                                'transition-all duration-200',
+                                'hover:scale-[1.02] active:scale-[0.98]',
+                                'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100'
                             )}
                             style={{
                                 background: 'linear-gradient(135deg, #F5B041 0%, #E67E22 100%)',
@@ -177,13 +171,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     {!isAdFree && IS_AD_TESTING && (
                         <button
                             onClick={() => {
-                                setAdFree(true);
-                                onClose();
+                                setAdFree(true)
+                                onClose()
                             }}
                             className={cn(
-                                "w-full py-3 rounded-xl font-bold text-sm",
-                                "transition-all duration-200",
-                                "hover:scale-[1.02] active:scale-[0.98]"
+                                'w-full py-3 rounded-xl font-bold text-sm',
+                                'transition-all duration-200',
+                                'hover:scale-[1.02] active:scale-[0.98]'
                             )}
                             style={{
                                 background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
@@ -210,10 +204,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                             onClick={handleRestore}
                             disabled={isLoading}
                             className={cn(
-                                "w-full py-3 rounded-xl font-medium",
-                                "transition-all duration-200",
-                                "hover:bg-white/10 active:scale-[0.98]",
-                                "disabled:opacity-50 disabled:cursor-not-allowed"
+                                'w-full py-3 rounded-xl font-medium',
+                                'transition-all duration-200',
+                                'hover:bg-white/10 active:scale-[0.98]',
+                                'disabled:opacity-50 disabled:cursor-not-allowed'
                             )}
                             style={{
                                 background: 'rgba(255,255,255,0.05)',
@@ -222,18 +216,14 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                             }}
                         >
                             <span className="flex items-center justify-center gap-2">
-                                <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
+                                <RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
                                 {t('settings.restore', 'Restore Purchases')}
                             </span>
                         </button>
                     )}
 
                     {/* Error Message */}
-                    {error && (
-                        <p className="text-sm text-red-400 text-center">
-                            {error}
-                        </p>
-                    )}
+                    {error && <p className="text-sm text-red-400 text-center">{error}</p>}
 
                     {/* Divider */}
                     <div className="border-t border-white/10 pt-4 mt-4">
@@ -242,9 +232,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                             <button
                                 onClick={() => setShowResetConfirm(true)}
                                 className={cn(
-                                    "w-full py-3 rounded-xl font-medium",
-                                    "transition-all duration-200",
-                                    "hover:bg-red-500/20 active:scale-[0.98]"
+                                    'w-full py-3 rounded-xl font-medium',
+                                    'transition-all duration-200',
+                                    'hover:bg-red-500/20 active:scale-[0.98]'
                                 )}
                                 style={{
                                     background: 'rgba(255,255,255,0.05)',
@@ -269,7 +259,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                     <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                                     <div>
                                         <p className="text-sm font-medium text-red-400">
-                                            {isKorean ? '정말 초기화하시겠습니까?' : 'Are you sure?'}
+                                            {isKorean
+                                                ? '정말 초기화하시겠습니까?'
+                                                : 'Are you sure?'}
                                         </p>
                                         <p className="text-xs text-white/50 mt-1">
                                             {isKorean
@@ -298,5 +290,5 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 </div>
             </div>
         </div>
-    );
+    )
 }

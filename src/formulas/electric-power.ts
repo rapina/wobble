@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const electricPower: Formula = {
     id: 'electric-power',
@@ -66,17 +66,17 @@ export const electricPower: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const V = inputs.V ?? 220;
-        const I = inputs.I ?? 5;
+        const V = inputs.V ?? 220
+        const I = inputs.I ?? 5
         return {
             P: V * I,
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const V = inputs.V ?? 220;
-        const I = inputs.I ?? 5;
-        const P = V * I;
-        return `P = ${V.toFixed(0)} × ${I.toFixed(1)} = ${P.toFixed(0)}`;
+        const V = inputs.V ?? 220
+        const I = inputs.I ?? 5
+        const P = V * I
+        return `P = ${V.toFixed(0)} × ${I.toFixed(1)} = ${P.toFixed(0)}`
     },
     layout: {
         type: 'flow',
@@ -90,4 +90,4 @@ export const electricPower: Formula = {
         output: 'P',
         numerator: ['V', 'I'],
     },
-};
+}

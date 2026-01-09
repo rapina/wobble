@@ -1,22 +1,22 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { PixiCanvas, PixiCanvasHandle } from '../canvas/PixiCanvas';
-import { ParameterControl } from '../controls/ParameterControl';
-import { FormulaLayout } from '../controls/FormulaLayout';
-import { useSimulation } from '../../hooks/useSimulation';
-import { useAdMob } from '../../hooks/useAdMob';
-import { useLocalizedFormula, useLocalizedVariables } from '../../hooks/useLocalizedFormula';
-import { useTutorial } from '../../hooks/useTutorial';
-import { usePurchaseStore } from '@/stores/purchaseStore';
-import { useCollectionStore } from '@/stores/collectionStore';
-import { useProgressStore } from '@/stores/progressStore';
-import { TutorialOverlay } from '../tutorial/TutorialOverlay';
-import { SettingsModal } from '../ui/SettingsModal';
-import { ArrowLeft, List, X, Info, ChevronDown, HelpCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Formula, FormulaCategory } from '../../formulas/types';
-import { WobbleShape } from '../canvas/Wobble';
-import Balatro from '@/components/Balatro';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import { PixiCanvas, PixiCanvasHandle } from '../canvas/PixiCanvas'
+import { ParameterControl } from '../controls/ParameterControl'
+import { FormulaLayout } from '../controls/FormulaLayout'
+import { useSimulation } from '../../hooks/useSimulation'
+import { useAdMob } from '../../hooks/useAdMob'
+import { useLocalizedFormula, useLocalizedVariables } from '../../hooks/useLocalizedFormula'
+import { useTutorial } from '../../hooks/useTutorial'
+import { usePurchaseStore } from '@/stores/purchaseStore'
+import { useCollectionStore } from '@/stores/collectionStore'
+import { useProgressStore } from '@/stores/progressStore'
+import { TutorialOverlay } from '../tutorial/TutorialOverlay'
+import { SettingsModal } from '../ui/SettingsModal'
+import { ArrowLeft, List, X, Info, ChevronDown, HelpCircle } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Formula, FormulaCategory } from '../../formulas/types'
+import { WobbleShape } from '../canvas/Wobble'
+import Balatro from '@/components/Balatro'
 
 // Balatro-inspired color palette
 const categoryColors: Record<FormulaCategory, string> = {
@@ -26,7 +26,7 @@ const categoryColors: Record<FormulaCategory, string> = {
     thermodynamics: '#ff6b6b',
     electricity: '#69f0ae',
     special: '#ffd700',
-};
+}
 
 // Balatro theme
 const theme = {
@@ -37,13 +37,13 @@ const theme = {
     gold: '#c9a227',
     red: '#e85d4c',
     blue: '#4a9eff',
-};
+}
 
 interface SimulationScreenProps {
-    formulaId: string;
-    formulas: Formula[];
-    onFormulaChange: (formula: Formula) => void;
-    onBack: () => void;
+    formulaId: string
+    formulas: Formula[]
+    onFormulaChange: (formula: Formula) => void
+    onBack: () => void
 }
 
 export function SimulationScreen({
@@ -52,256 +52,299 @@ export function SimulationScreen({
     onFormulaChange,
     onBack,
 }: SimulationScreenProps) {
-    const { t, i18n } = useTranslation();
-    const { formula, variables, inputVariables, setVariable } = useSimulation(formulaId);
-    const { isInitialized, isBannerVisible, showBanner, hideBanner, isNative } = useAdMob();
-    const { isAdFree } = usePurchaseStore();
-    const { unlockByFormula, getNewUnlocksForFormula } = useCollectionStore();
-    const { studyFormula } = useProgressStore();
-    const localizedFormula = useLocalizedFormula(formula);
-    const localizedVariables = useLocalizedVariables(formula?.variables ?? []);
-    const [mounted, setMounted] = useState(false);
-    const [showFormulaList, setShowFormulaList] = useState(false);
-    const [showSettingsModal, setShowSettingsModal] = useState(false);
-    const [selectedCard, setSelectedCard] = useState<string | null>(null);
-    const [showInfoPopup, setShowInfoPopup] = useState(false);
-    const [selectedCategory, setSelectedCategory] = useState<FormulaCategory | 'all'>('all');
+    const { t, i18n } = useTranslation()
+    const { formula, variables, inputVariables, setVariable } = useSimulation(formulaId)
+    const { isInitialized, isBannerVisible, showBanner, hideBanner, isNative } = useAdMob()
+    const { isAdFree } = usePurchaseStore()
+    const { unlockByFormula, getNewUnlocksForFormula } = useCollectionStore()
+    const { studyFormula } = useProgressStore()
+    const localizedFormula = useLocalizedFormula(formula)
+    const localizedVariables = useLocalizedVariables(formula?.variables ?? [])
+    const [mounted, setMounted] = useState(false)
+    const [showFormulaList, setShowFormulaList] = useState(false)
+    const [showSettingsModal, setShowSettingsModal] = useState(false)
+    const [selectedCard, setSelectedCard] = useState<string | null>(null)
+    const [showInfoPopup, setShowInfoPopup] = useState(false)
+    const [selectedCategory, setSelectedCategory] = useState<FormulaCategory | 'all'>('all')
     const [seenFormulas, setSeenFormulas] = useState<Set<string>>(() => {
-        const saved = localStorage.getItem('wobble-seen-formulas');
-        return saved ? new Set(JSON.parse(saved)) : new Set();
-    });
+        const saved = localStorage.getItem('wobble-seen-formulas')
+        return saved ? new Set(JSON.parse(saved)) : new Set()
+    })
     const [dontShowInfoFormulas, setDontShowInfoFormulas] = useState<Set<string>>(() => {
-        const saved = localStorage.getItem('wobble-dont-show-info-formulas');
-        return saved ? new Set(JSON.parse(saved)) : new Set();
-    });
-    const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-    const [sliderRect, setSliderRect] = useState<DOMRect | null>(null);
-    const [pendingNewWobbles, setPendingNewWobbles] = useState<WobbleShape[]>([]);
-    const [tutorialShownThisSession, setTutorialShownThisSession] = useState(false);
-    const [discoveryShownThisSession, setDiscoveryShownThisSession] = useState(false);
-    const canvasRef = useRef<PixiCanvasHandle>(null);
+        const saved = localStorage.getItem('wobble-dont-show-info-formulas')
+        return saved ? new Set(JSON.parse(saved)) : new Set()
+    })
+    const [targetRect, setTargetRect] = useState<DOMRect | null>(null)
+    const [sliderRect, setSliderRect] = useState<DOMRect | null>(null)
+    const [pendingNewWobbles, setPendingNewWobbles] = useState<WobbleShape[]>([])
+    const [tutorialShownThisSession, setTutorialShownThisSession] = useState(false)
+    const [discoveryShownThisSession, setDiscoveryShownThisSession] = useState(false)
+    const canvasRef = useRef<PixiCanvasHandle>(null)
 
     // Tutorial hook
     const tutorial = useTutorial({
         formulaId,
         variables: formula?.variables ?? [],
         onSelectCard: setSelectedCard,
-    });
+    })
 
     // Update target rect when tutorial step changes
     useEffect(() => {
         if (!tutorial.isActive || !tutorial.currentTargetSymbol) {
-            setTargetRect(null);
-            setSliderRect(null);
-            return;
+            setTargetRect(null)
+            setSliderRect(null)
+            return
         }
 
         // Small delay to let DOM update
         const timer = setTimeout(() => {
             const cardEl = document.querySelector(
                 `[data-tutorial-symbol="${tutorial.currentTargetSymbol}"]`
-            );
+            )
             const sliderEl = document.querySelector(
                 `[data-tutorial-slider="${tutorial.currentTargetSymbol}"]`
-            );
+            )
 
             if (cardEl) {
-                setTargetRect(cardEl.getBoundingClientRect());
+                setTargetRect(cardEl.getBoundingClientRect())
             }
             if (sliderEl) {
-                setSliderRect(sliderEl.getBoundingClientRect());
+                setSliderRect(sliderEl.getBoundingClientRect())
             }
-        }, 100);
+        }, 100)
 
-        return () => clearTimeout(timer);
-    }, [tutorial.isActive, tutorial.currentTargetSymbol, selectedCard]);
+        return () => clearTimeout(timer)
+    }, [tutorial.isActive, tutorial.currentTargetSymbol, selectedCard])
 
     // Track if info popup was shown for this formula
-    const [infoPopupShownOnce, setInfoPopupShownOnce] = useState(false);
+    const [infoPopupShownOnce, setInfoPopupShownOnce] = useState(false)
 
     // Reset info popup tracking when formula changes
     useEffect(() => {
-        setInfoPopupShownOnce(false);
-    }, [formulaId]);
+        setInfoPopupShownOnce(false)
+    }, [formulaId])
 
     // Track when info popup is shown
     useEffect(() => {
         if (showInfoPopup) {
-            setInfoPopupShownOnce(true);
+            setInfoPopupShownOnce(true)
         }
-    }, [showInfoPopup]);
+    }, [showInfoPopup])
 
     // Track when tutorial becomes active (to prevent auto-restart)
     useEffect(() => {
         if (tutorial.isActive) {
-            setTutorialShownThisSession(true);
+            setTutorialShownThisSession(true)
         }
-    }, [tutorial.isActive]);
+    }, [tutorial.isActive])
 
     // Auto-start tutorial for first-time users (after info popup is closed)
     useEffect(() => {
         // Check if info popup needs to be shown for this formula
-        const needsInfoPopup = formula?.applications && formula.applications.length > 0 && !dontShowInfoFormulas.has(formulaId);
+        const needsInfoPopup =
+            formula?.applications &&
+            formula.applications.length > 0 &&
+            !dontShowInfoFormulas.has(formulaId)
 
         // Don't start if tutorial already completed globally, active, or shown this session
-        if (!formula || tutorial.hasCompletedTutorial || tutorial.isActive || tutorialShownThisSession) return;
+        if (
+            !formula ||
+            tutorial.hasCompletedTutorial ||
+            tutorial.isActive ||
+            tutorialShownThisSession
+        )
+            return
 
         // Don't start if info popup is currently showing
-        if (showInfoPopup) return;
+        if (showInfoPopup) return
 
         // If info popup was needed but hasn't been shown yet, wait
-        if (needsInfoPopup && !infoPopupShownOnce) return;
+        if (needsInfoPopup && !infoPopupShownOnce) return
 
         const timer = setTimeout(() => {
-            tutorial.startTutorial();
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [formula, formulaId, showInfoPopup, infoPopupShownOnce, dontShowInfoFormulas, tutorial.hasCompletedTutorial, tutorial.isActive, tutorialShownThisSession]);
+            tutorial.startTutorial()
+        }, 500)
+        return () => clearTimeout(timer)
+    }, [
+        formula,
+        formulaId,
+        showInfoPopup,
+        infoPopupShownOnce,
+        dontShowInfoFormulas,
+        tutorial.hasCompletedTutorial,
+        tutorial.isActive,
+        tutorialShownThisSession,
+    ])
 
     // Get unique categories from formulas
     const categories = useMemo(() => {
-        const cats = [...new Set(formulas.map(f => f.category))];
-        return cats.sort();
-    }, [formulas]);
+        const cats = [...new Set(formulas.map((f) => f.category))]
+        return cats.sort()
+    }, [formulas])
 
     // Filter formulas by category
     const filteredFormulas = useMemo(() => {
-        if (selectedCategory === 'all') return formulas;
-        return formulas.filter(f => f.category === selectedCategory);
-    }, [formulas, selectedCategory]);
+        if (selectedCategory === 'all') return formulas
+        return formulas.filter((f) => f.category === selectedCategory)
+    }, [formulas, selectedCategory])
 
     // Show AdMob banner when initialized (unless ad-free)
     useEffect(() => {
         if (isInitialized && !isBannerVisible && !isAdFree) {
-            showBanner();
+            showBanner()
         }
         return () => {
             if (isBannerVisible) {
-                hideBanner();
+                hideBanner()
             }
-        };
-    }, [isInitialized, isAdFree]);
+        }
+    }, [isInitialized, isAdFree])
 
     // Memoize Balatro background to prevent re-render on variable changes
-    const balatroBackground = useMemo(() => (
-        <div className="absolute inset-0 opacity-60">
-            <Balatro
-                color1="#c9a227"
-                color2="#4a9eff"
-                color3="#1a1a2e"
-                spinSpeed={2}
-                spinRotation={-1}
-                contrast={2.5}
-                lighting={0.3}
-                spinAmount={0.15}
-                pixelFilter={800}
-                isRotate={true}
-                mouseInteraction={false}
-            />
-        </div>
-    ), []);
+    const balatroBackground = useMemo(
+        () => (
+            <div className="absolute inset-0 opacity-60">
+                <Balatro
+                    color1="#c9a227"
+                    color2="#4a9eff"
+                    color3="#1a1a2e"
+                    spinSpeed={2}
+                    spinRotation={-1}
+                    contrast={2.5}
+                    lighting={0.3}
+                    spinAmount={0.15}
+                    pixelFilter={800}
+                    isRotate={true}
+                    mouseInteraction={false}
+                />
+            </div>
+        ),
+        []
+    )
 
     useEffect(() => {
-        setMounted(false);
-        const timer = setTimeout(() => setMounted(true), 50);
-        return () => clearTimeout(timer);
-    }, [formulaId]);
+        setMounted(false)
+        const timer = setTimeout(() => setMounted(true), 50)
+        return () => clearTimeout(timer)
+    }, [formulaId])
 
     // Check for new wobbles and unlock when formula is used
     useEffect(() => {
         if (formulaId) {
-            const newWobbles = getNewUnlocksForFormula(formulaId);
+            const newWobbles = getNewUnlocksForFormula(formulaId)
             if (newWobbles.length > 0) {
-                setPendingNewWobbles(newWobbles);
-                unlockByFormula(formulaId);
+                setPendingNewWobbles(newWobbles)
+                unlockByFormula(formulaId)
             }
         }
-    }, [formulaId, unlockByFormula, getNewUnlocksForFormula]);
+    }, [formulaId, unlockByFormula, getNewUnlocksForFormula])
 
     // Show new wobble discovery in scene after tutorial completes
     useEffect(() => {
         // Don't show if no pending wobbles or already shown
-        if (pendingNewWobbles.length === 0 || discoveryShownThisSession) return;
+        if (pendingNewWobbles.length === 0 || discoveryShownThisSession) return
 
         // Don't show if info popup is currently showing
-        if (showInfoPopup) return;
+        if (showInfoPopup) return
 
         // Don't show if tutorial is active
-        if (tutorial.isActive) return;
+        if (tutorial.isActive) return
 
         // Check if info popup needs to be shown
-        const needsInfoPopup = formula?.applications && formula.applications.length > 0 && !dontShowInfoFormulas.has(formulaId);
-        if (needsInfoPopup && !infoPopupShownOnce) return;
+        const needsInfoPopup =
+            formula?.applications &&
+            formula.applications.length > 0 &&
+            !dontShowInfoFormulas.has(formulaId)
+        if (needsInfoPopup && !infoPopupShownOnce) return
 
         // Check if tutorial has been handled (either completed globally or shown this session)
-        const tutorialHandled = tutorial.hasCompletedTutorial || tutorialShownThisSession;
+        const tutorialHandled = tutorial.hasCompletedTutorial || tutorialShownThisSession
         // If tutorial still needs to run and not currently active, wait
-        if (!tutorialHandled && !tutorial.isActive) return;
+        if (!tutorialHandled && !tutorial.isActive) return
 
         // All conditions met - show discovery in scene
         const timer = setTimeout(() => {
             if (canvasRef.current) {
-                setDiscoveryShownThisSession(true);
+                setDiscoveryShownThisSession(true)
                 canvasRef.current.showNewWobbleDiscovery(
                     pendingNewWobbles,
                     i18n.language === 'ko',
                     () => setPendingNewWobbles([])
-                );
+                )
             }
-        }, 300);
-        return () => clearTimeout(timer);
-    }, [pendingNewWobbles, discoveryShownThisSession, showInfoPopup, tutorial.isActive, tutorial.hasCompletedTutorial, tutorialShownThisSession, infoPopupShownOnce, dontShowInfoFormulas, formulaId, formula?.applications, i18n.language]);
+        }, 300)
+        return () => clearTimeout(timer)
+    }, [
+        pendingNewWobbles,
+        discoveryShownThisSession,
+        showInfoPopup,
+        tutorial.isActive,
+        tutorial.hasCompletedTutorial,
+        tutorialShownThisSession,
+        infoPopupShownOnce,
+        dontShowInfoFormulas,
+        formulaId,
+        formula?.applications,
+        i18n.language,
+    ])
 
     // Auto-show info popup for formulas where user hasn't clicked "don't show again"
     useEffect(() => {
-        if (formula?.applications && formula.applications.length > 0 && !dontShowInfoFormulas.has(formulaId)) {
-            const timer = setTimeout(() => setShowInfoPopup(true), 300);
-            return () => clearTimeout(timer);
+        if (
+            formula?.applications &&
+            formula.applications.length > 0 &&
+            !dontShowInfoFormulas.has(formulaId)
+        ) {
+            const timer = setTimeout(() => setShowInfoPopup(true), 300)
+            return () => clearTimeout(timer)
         }
-    }, [formula, formulaId, dontShowInfoFormulas]);
+    }, [formula, formulaId, dontShowInfoFormulas])
 
     // Mark formula as seen and studied when viewed
     useEffect(() => {
         if (formulaId && !seenFormulas.has(formulaId)) {
             // Small delay to ensure it's intentionally viewed
             const timer = setTimeout(() => {
-                markAsSeen(formulaId);
-                studyFormula(formulaId); // Record as studied for minigame unlocks
-            }, 1500);
-            return () => clearTimeout(timer);
+                markAsSeen(formulaId)
+                studyFormula(formulaId) // Record as studied for minigame unlocks
+            }, 1500)
+            return () => clearTimeout(timer)
         }
-    }, [formulaId, studyFormula]);
+    }, [formulaId, studyFormula])
 
     // Mark formula as seen (for NEW badge)
     const markAsSeen = (id: string) => {
-        const newSeen = new Set(seenFormulas);
-        newSeen.add(id);
-        setSeenFormulas(newSeen);
-        localStorage.setItem('wobble-seen-formulas', JSON.stringify([...newSeen]));
-    };
+        const newSeen = new Set(seenFormulas)
+        newSeen.add(id)
+        setSeenFormulas(newSeen)
+        localStorage.setItem('wobble-seen-formulas', JSON.stringify([...newSeen]))
+    }
 
     // Mark formula as "don't show info popup again"
     const markAsDontShowInfo = (id: string) => {
-        const newSet = new Set(dontShowInfoFormulas);
-        newSet.add(id);
-        setDontShowInfoFormulas(newSet);
-        localStorage.setItem('wobble-dont-show-info-formulas', JSON.stringify([...newSet]));
-    };
+        const newSet = new Set(dontShowInfoFormulas)
+        newSet.add(id)
+        setDontShowInfoFormulas(newSet)
+        localStorage.setItem('wobble-dont-show-info-formulas', JSON.stringify([...newSet]))
+    }
 
     if (!formula) {
         return (
-            <div className="flex justify-center items-center h-full" style={{ background: theme.bg }}>
+            <div
+                className="flex justify-center items-center h-full"
+                style={{ background: theme.bg }}
+            >
                 <div className="animate-pulse text-white/50">{t('simulation.loading')}</div>
             </div>
-        );
+        )
     }
 
     return (
         <div
             className={cn(
-                "relative w-full h-full overflow-hidden",
-                "transition-opacity duration-300",
-                mounted ? "opacity-100" : "opacity-0"
+                'relative w-full h-full overflow-hidden',
+                'transition-opacity duration-300',
+                mounted ? 'opacity-100' : 'opacity-0'
             )}
             style={{ background: '#0a0a12' }}
         >
@@ -411,7 +454,9 @@ export function SimulationScreen({
                         </button>
                         {/* Unseen formulas indicator */}
                         {(() => {
-                            const totalUnseen = formulas.filter(f => !seenFormulas.has(f.id)).length;
+                            const totalUnseen = formulas.filter(
+                                (f) => !seenFormulas.has(f.id)
+                            ).length
                             return totalUnseen > 0 ? (
                                 <span
                                     className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-black rounded-full"
@@ -423,7 +468,7 @@ export function SimulationScreen({
                                 >
                                     {totalUnseen}
                                 </span>
-                            ) : null;
+                            ) : null
                         })()}
                     </div>
                 </div>
@@ -437,23 +482,26 @@ export function SimulationScreen({
                 }}
             >
                 {/* Shared Parameter Control - appears when card selected */}
-                {selectedCard && (() => {
-                    const selectedVar = formula.variables.find(v => v.symbol === selectedCard);
-                    const localizedVar = localizedVariables.find(v => v.symbol === selectedCard);
-                    if (!selectedVar || selectedVar.role === 'output') return null;
-                    return (
-                        <ParameterControl
-                            symbol={selectedVar.symbol}
-                            name={localizedVar?.localizedName ?? selectedVar.name}
-                            value={variables[selectedVar.symbol] ?? selectedVar.default}
-                            min={selectedVar.range[0]}
-                            max={selectedVar.range[1]}
-                            unit={selectedVar.unit}
-                            color={selectedVar.visual.color}
-                            onChange={(value) => setVariable(selectedVar.symbol, value)}
-                        />
-                    );
-                })()}
+                {selectedCard &&
+                    (() => {
+                        const selectedVar = formula.variables.find((v) => v.symbol === selectedCard)
+                        const localizedVar = localizedVariables.find(
+                            (v) => v.symbol === selectedCard
+                        )
+                        if (!selectedVar || selectedVar.role === 'output') return null
+                        return (
+                            <ParameterControl
+                                symbol={selectedVar.symbol}
+                                name={localizedVar?.localizedName ?? selectedVar.name}
+                                value={variables[selectedVar.symbol] ?? selectedVar.default}
+                                min={selectedVar.range[0]}
+                                max={selectedVar.range[1]}
+                                unit={selectedVar.unit}
+                                color={selectedVar.visual.color}
+                                onChange={(value) => setVariable(selectedVar.symbol, value)}
+                            />
+                        )
+                    })()}
 
                 {/* Formula Layout */}
                 {formula.displayLayout ? (
@@ -515,10 +563,7 @@ export function SimulationScreen({
             )}
 
             {/* Settings Modal */}
-            <SettingsModal
-                isOpen={showSettingsModal}
-                onClose={() => setShowSettingsModal(false)}
-            />
+            <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
 
             {/* Formula List Dropdown (Top-down) */}
             {showFormulaList && (
@@ -558,7 +603,9 @@ export function SimulationScreen({
                                     <ChevronDown className="h-5 w-5 text-white/50" />
                                     {/* Unseen count badge */}
                                     {(() => {
-                                        const unseenCount = filteredFormulas.filter(f => !seenFormulas.has(f.id)).length;
+                                        const unseenCount = filteredFormulas.filter(
+                                            (f) => !seenFormulas.has(f.id)
+                                        ).length
                                         return unseenCount > 0 ? (
                                             <span
                                                 className="px-2 py-0.5 text-xs font-bold rounded-full"
@@ -570,7 +617,7 @@ export function SimulationScreen({
                                             >
                                                 {unseenCount} NEW
                                             </span>
-                                        ) : null;
+                                        ) : null
                                     })()}
                                 </div>
                                 <button
@@ -595,7 +642,10 @@ export function SimulationScreen({
                                     onClick={() => setSelectedCategory('all')}
                                     className="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-bold transition-all active:scale-95"
                                     style={{
-                                        background: selectedCategory === 'all' ? theme.gold : theme.bgPanelLight,
+                                        background:
+                                            selectedCategory === 'all'
+                                                ? theme.gold
+                                                : theme.bgPanelLight,
                                         color: selectedCategory === 'all' ? '#000' : '#fff',
                                         border: `2px solid ${theme.border}`,
                                         boxShadow: `0 2px 0 ${theme.border}`,
@@ -604,8 +654,8 @@ export function SimulationScreen({
                                     {t('simulation.categories.all')}
                                 </button>
                                 {categories.map((cat) => {
-                                    const color = categoryColors[cat];
-                                    const isActive = selectedCategory === cat;
+                                    const color = categoryColors[cat]
+                                    const isActive = selectedCategory === cat
                                     return (
                                         <button
                                             key={cat}
@@ -620,7 +670,7 @@ export function SimulationScreen({
                                         >
                                             {t(`simulation.categories.${cat}`)}
                                         </button>
-                                    );
+                                    )
                                 })}
                             </div>
 
@@ -631,20 +681,23 @@ export function SimulationScreen({
                             >
                                 <div className="grid grid-cols-2 gap-3">
                                     {filteredFormulas.map((f) => {
-                                        const fColor = categoryColors[f.category];
-                                        const isSelected = f.id === formulaId;
-                                        const fName = i18n.language === 'en' && f.nameEn ? f.nameEn : f.name;
-                                        const isNew = !seenFormulas.has(f.id);
+                                        const fColor = categoryColors[f.category]
+                                        const isSelected = f.id === formulaId
+                                        const fName =
+                                            i18n.language === 'en' && f.nameEn ? f.nameEn : f.name
+                                        const isNew = !seenFormulas.has(f.id)
                                         return (
                                             <button
                                                 key={f.id}
                                                 onClick={() => {
-                                                    onFormulaChange(f);
-                                                    setShowFormulaList(false);
+                                                    onFormulaChange(f)
+                                                    setShowFormulaList(false)
                                                 }}
                                                 className="relative text-left px-4 py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                                                 style={{
-                                                    background: isSelected ? fColor : theme.bgPanelLight,
+                                                    background: isSelected
+                                                        ? fColor
+                                                        : theme.bgPanelLight,
                                                     border: `2px solid ${theme.border}`,
                                                     boxShadow: `0 3px 0 ${theme.border}`,
                                                 }}
@@ -678,7 +731,7 @@ export function SimulationScreen({
                                                     </span>
                                                 </div>
                                             </button>
-                                        );
+                                        )
                                     })}
                                 </div>
 
@@ -741,7 +794,10 @@ export function SimulationScreen({
                         </div>
 
                         {/* Formula Info */}
-                        <div className="px-5 py-4" style={{ borderBottom: `2px solid ${theme.border}` }}>
+                        <div
+                            className="px-5 py-4"
+                            style={{ borderBottom: `2px solid ${theme.border}` }}
+                        >
                             <div
                                 className="inline-block px-3 py-1.5 rounded-lg mb-2"
                                 style={{
@@ -753,9 +809,7 @@ export function SimulationScreen({
                                     {localizedFormula?.name}
                                 </span>
                             </div>
-                            <p className="text-white/70 text-sm">
-                                {localizedFormula?.description}
-                            </p>
+                            <p className="text-white/70 text-sm">{localizedFormula?.description}</p>
                         </div>
 
                         {/* Applications List */}
@@ -801,8 +855,8 @@ export function SimulationScreen({
                             >
                                 <button
                                     onClick={() => {
-                                        markAsDontShowInfo(formulaId);
-                                        setShowInfoPopup(false);
+                                        markAsDontShowInfo(formulaId)
+                                        setShowInfoPopup(false)
                                     }}
                                     className="w-full py-2 rounded-lg text-white/50 text-xs transition-all active:scale-95 hover:text-white/70"
                                     style={{
@@ -830,7 +884,6 @@ export function SimulationScreen({
                     sliderRect={sliderRect}
                 />
             )}
-
         </div>
-    );
+    )
 }

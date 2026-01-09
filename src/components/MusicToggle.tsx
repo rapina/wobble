@@ -1,8 +1,8 @@
-import { Volume2, VolumeX } from 'lucide-react';
-import { useMusic } from '../hooks/useMusic';
+import { Volume2, VolumeX } from 'lucide-react'
+import { useMusic } from '../hooks/useMusic'
 
 export function MusicToggle() {
-    const { isMusicEnabled, toggleMusic } = useMusic();
+    const { isMusicEnabled, toggleMusic } = useMusic()
 
     return (
         <button
@@ -21,5 +21,5 @@ export function MusicToggle() {
                 <VolumeX className="w-5 h-5 text-white/50" />
             )}
         </button>
-    );
+    )
 }

@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const reflection: Formula = {
     id: 'reflection',
@@ -7,7 +7,8 @@ export const reflection: Formula = {
     nameEn: 'Law of Reflection',
     expression: 'θᵢ = θᵣ',
     description: '빛이 표면에서 반사될 때 입사각과 반사각은 같다',
-    descriptionEn: 'When light reflects off a surface, angle of incidence equals angle of reflection',
+    descriptionEn:
+        'When light reflects off a surface, angle of incidence equals angle of reflection',
     applications: [
         '거울에 비친 내 모습',
         '자동차 백미러와 사이드미러',
@@ -52,14 +53,14 @@ export const reflection: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const thetaI = inputs['θᵢ'] ?? 45;
+        const thetaI = inputs['θᵢ'] ?? 45
         return {
-            'θᵣ': thetaI,
-        };
+            θᵣ: thetaI,
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const thetaI = inputs['θᵢ'] ?? 45;
-        return `θᵣ = θᵢ = ${thetaI.toFixed(1)}°`;
+        const thetaI = inputs['θᵢ'] ?? 45
+        return `θᵣ = θᵢ = ${thetaI.toFixed(1)}°`
     },
     layout: {
         type: 'linear',
@@ -70,4 +71,4 @@ export const reflection: Formula = {
         output: 'θᵣ',
         expression: [{ type: 'var', symbol: 'θᵢ' }],
     },
-};
+}

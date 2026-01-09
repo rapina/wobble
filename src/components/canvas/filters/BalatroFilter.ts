@@ -1,4 +1,4 @@
-import { Filter, GlProgram, GpuProgram } from 'pixi.js';
+import { Filter, GlProgram, GpuProgram } from 'pixi.js'
 
 const vertex = `
 in vec2 aPosition;
@@ -26,7 +26,7 @@ void main(void)
     gl_Position = filterVertexPosition();
     vTextureCoord = filterTextureCoord();
 }
-`;
+`
 
 const fragment = `
 precision highp float;
@@ -89,7 +89,7 @@ void main() {
     vec2 screen_coords = vTextureCoord * uDimensions;
     finalColor = effect(uDimensions, screen_coords);
 }
-`;
+`
 
 // WebGPU shader (WGSL)
 const source = `
@@ -154,55 +154,55 @@ fn main(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
 
     return color;
 }
-`;
+`
 
 export interface BalatroFilterOptions {
-    color1?: [number, number, number, number];
-    color2?: [number, number, number, number];
-    color3?: [number, number, number, number];
-    spinSpeed?: number;
-    contrast?: number;
-    lighting?: number;
-    spinAmount?: number;
-    pixelFilter?: number;
-    spinEase?: number;
+    color1?: [number, number, number, number]
+    color2?: [number, number, number, number]
+    color3?: [number, number, number, number]
+    spinSpeed?: number
+    contrast?: number
+    lighting?: number
+    spinAmount?: number
+    pixelFilter?: number
+    spinEase?: number
 }
 
 export class BalatroFilter extends Filter {
     public uniforms: {
-        uTime: number;
-        uDimensions: Float32Array;
-        uColor1: Float32Array;
-        uColor2: Float32Array;
-        uColor3: Float32Array;
-        uSpinSpeed: number;
-        uContrast: number;
-        uLighting: number;
-        uSpinAmount: number;
-        uPixelFilter: number;
-        uSpinEase: number;
-    };
+        uTime: number
+        uDimensions: Float32Array
+        uColor1: Float32Array
+        uColor2: Float32Array
+        uColor3: Float32Array
+        uSpinSpeed: number
+        uContrast: number
+        uLighting: number
+        uSpinAmount: number
+        uPixelFilter: number
+        uSpinEase: number
+    }
 
     constructor(options: BalatroFilterOptions = {}) {
         const {
-            color1 = [0.87, 0.27, 0.23, 1.0],  // #DE443B - Red
-            color2 = [0.0, 0.42, 0.71, 1.0],   // #006BB4 - Blue
-            color3 = [0.09, 0.14, 0.15, 1.0],  // #162325 - Dark
+            color1 = [0.87, 0.27, 0.23, 1.0], // #DE443B - Red
+            color2 = [0.0, 0.42, 0.71, 1.0], // #006BB4 - Blue
+            color3 = [0.09, 0.14, 0.15, 1.0], // #162325 - Dark
             spinSpeed = 7.0,
             contrast = 3.5,
             lighting = 0.4,
             spinAmount = 0.25,
             pixelFilter = 400.0,
             spinEase = 1.0,
-        } = options;
+        } = options
 
         const glProgram = GlProgram.from({
             vertex,
             fragment,
             name: 'balatro-filter',
-        });
+        })
 
-        let gpuProgram: GpuProgram | undefined;
+        let gpuProgram: GpuProgram | undefined
         try {
             gpuProgram = GpuProgram.from({
                 vertex: {
@@ -213,7 +213,7 @@ export class BalatroFilter extends Filter {
                     source,
                     entryPoint: 'main',
                 },
-            });
+            })
         } catch {
             // WebGPU not available
         }
@@ -236,21 +236,21 @@ export class BalatroFilter extends Filter {
                     uSpinEase: { value: spinEase, type: 'f32' },
                 },
             },
-        });
+        })
 
-        this.uniforms = this.resources.balatroUniforms.uniforms;
+        this.uniforms = this.resources.balatroUniforms.uniforms
     }
 
     get time(): number {
-        return this.uniforms.uTime;
+        return this.uniforms.uTime
     }
 
     set time(value: number) {
-        this.uniforms.uTime = value;
+        this.uniforms.uTime = value
     }
 
     setDimensions(width: number, height: number): void {
-        this.uniforms.uDimensions[0] = width;
-        this.uniforms.uDimensions[1] = height;
+        this.uniforms.uDimensions[0] = width
+        this.uniforms.uDimensions[1] = height
     }
 }

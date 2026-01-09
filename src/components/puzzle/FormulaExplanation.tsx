@@ -1,27 +1,25 @@
-import { useTranslation } from 'react-i18next';
-import { BookOpen, Home, RotateCcw } from 'lucide-react';
-import { getFormula } from '@/formulas/registry';
-import { WobbleDisplay } from '@/components/canvas/WobbleDisplay';
-import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next'
+import { BookOpen, Home, RotateCcw } from 'lucide-react'
+import { getFormula } from '@/formulas/registry'
+import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
+import { cn } from '@/lib/utils'
 
 interface FormulaExplanationProps {
-    formulaIds: string[];
-    onBack: () => void;
-    onPlayAgain: () => void;
+    formulaIds: string[]
+    onBack: () => void
+    onPlayAgain: () => void
 }
 
 export function FormulaExplanation({ formulaIds, onBack, onPlayAgain }: FormulaExplanationProps) {
-    const { i18n } = useTranslation();
-    const isKorean = i18n.language === 'ko';
+    const { i18n } = useTranslation()
+    const isKorean = i18n.language === 'ko'
 
-    const formulas = formulaIds
-        .map((id) => getFormula(id))
-        .filter((f) => f !== undefined);
+    const formulas = formulaIds.map((id) => getFormula(id)).filter((f) => f !== undefined)
 
     if (formulas.length === 0) {
         // No formulas to show, go back
-        onBack();
-        return null;
+        onBack()
+        return null
     }
 
     return (
@@ -98,7 +96,8 @@ export function FormulaExplanation({ formulaIds, onBack, onPlayAgain }: FormulaE
                                     <p className="text-white/60 text-sm">
                                         {isKorean
                                             ? formula.applications[0]
-                                            : formula.applicationsEn?.[0] || formula.applications[0]}
+                                            : formula.applicationsEn?.[0] ||
+                                              formula.applications[0]}
                                     </p>
                                 </div>
                             )}
@@ -139,5 +138,5 @@ export function FormulaExplanation({ formulaIds, onBack, onPlayAgain }: FormulaE
                 </div>
             </div>
         </div>
-    );
+    )
 }

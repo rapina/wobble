@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const thermalConduction: Formula = {
     id: 'thermal-conduction',
@@ -94,26 +94,26 @@ export const thermalConduction: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const k = inputs.k ?? 50;
-        const A = inputs.A ?? 25;
-        const dT = inputs['ΔT'] ?? 50;
-        const L = inputs.L ?? 10;
+        const k = inputs.k ?? 50
+        const A = inputs.A ?? 25
+        const dT = inputs['ΔT'] ?? 50
+        const L = inputs.L ?? 10
         // A in cm², L in cm, convert to m² and m
-        const A_m2 = A * 1e-4;
-        const L_m = L * 1e-2;
+        const A_m2 = A * 1e-4
+        const L_m = L * 1e-2
         return {
             Q: (k * A_m2 * dT) / L_m,
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const k = inputs.k ?? 50;
-        const A = inputs.A ?? 25;
-        const dT = inputs['ΔT'] ?? 50;
-        const L = inputs.L ?? 10;
-        const A_m2 = A * 1e-4;
-        const L_m = L * 1e-2;
-        const Q = (k * A_m2 * dT) / L_m;
-        return `Q = ${k.toFixed(0)} × ${A.toFixed(0)} × ${dT.toFixed(0)} ÷ ${L.toFixed(0)} = ${Q.toFixed(1)}`;
+        const k = inputs.k ?? 50
+        const A = inputs.A ?? 25
+        const dT = inputs['ΔT'] ?? 50
+        const L = inputs.L ?? 10
+        const A_m2 = A * 1e-4
+        const L_m = L * 1e-2
+        const Q = (k * A_m2 * dT) / L_m
+        return `Q = ${k.toFixed(0)} × ${A.toFixed(0)} × ${dT.toFixed(0)} ÷ ${L.toFixed(0)} = ${Q.toFixed(1)}`
     },
     layout: {
         type: 'flow',
@@ -139,4 +139,4 @@ export const thermalConduction: Formula = {
             },
         ],
     },
-};
+}

@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const timeDilation: Formula = {
     id: 'time-dilation',
@@ -66,19 +66,19 @@ export const timeDilation: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const t0 = inputs['t₀'] ?? 1;
-        const v = inputs['v'] ?? 0.5;
+        const t0 = inputs['t₀'] ?? 1
+        const v = inputs['v'] ?? 0.5
         // t = t₀ / √(1 - v²/c²), where v is already in units of c
-        const gamma = 1 / Math.sqrt(1 - v * v);
-        const t = t0 * gamma;
-        return { t };
+        const gamma = 1 / Math.sqrt(1 - v * v)
+        const t = t0 * gamma
+        return { t }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const t0 = inputs['t₀'] ?? 1;
-        const v = inputs['v'] ?? 0.5;
-        const gamma = 1 / Math.sqrt(1 - v * v);
-        const t = t0 * gamma;
-        return `t = ${t0.toFixed(1)} / √(1 - ${v.toFixed(2)}²) = ${t.toFixed(2)} s`;
+        const t0 = inputs['t₀'] ?? 1
+        const v = inputs['v'] ?? 0.5
+        const gamma = 1 / Math.sqrt(1 - v * v)
+        const t = t0 * gamma
+        return `t = ${t0.toFixed(1)} / √(1 - ${v.toFixed(2)}²) = ${t.toFixed(2)} s`
     },
     layout: {
         type: 'linear',
@@ -99,4 +99,4 @@ export const timeDilation: Formula = {
             },
         ],
     },
-};
+}

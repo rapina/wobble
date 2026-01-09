@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const photoelectric: Formula = {
     id: 'photoelectric',
@@ -66,24 +66,24 @@ export const photoelectric: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const f = inputs.f ?? 7; // ×10¹⁴ Hz
-        const W = inputs.W ?? 2.3; // eV
+        const f = inputs.f ?? 7 // ×10¹⁴ Hz
+        const W = inputs.W ?? 2.3 // eV
         // h = 4.136 × 10⁻¹⁵ eV·s
         // E = hf = 4.136 × 10⁻¹⁵ × f × 10¹⁴ = 0.4136 × f eV
-        const h = 0.4136; // eV per 10¹⁴ Hz
-        const Ek = Math.max(0, h * f - W);
-        return { Ek };
+        const h = 0.4136 // eV per 10¹⁴ Hz
+        const Ek = Math.max(0, h * f - W)
+        return { Ek }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const f = inputs.f ?? 7;
-        const W = inputs.W ?? 2.3;
-        const h = 0.4136;
-        const hf = h * f;
-        const Ek = Math.max(0, hf - W);
+        const f = inputs.f ?? 7
+        const W = inputs.W ?? 2.3
+        const h = 0.4136
+        const hf = h * f
+        const Ek = Math.max(0, hf - W)
         if (hf < W) {
-            return `Ek = ${hf.toFixed(2)} - ${W.toFixed(1)} < 0 → 방출 불가`;
+            return `Ek = ${hf.toFixed(2)} - ${W.toFixed(1)} < 0 → 방출 불가`
         }
-        return `Ek = ${hf.toFixed(2)} - ${W.toFixed(1)} = ${Ek.toFixed(2)}`;
+        return `Ek = ${hf.toFixed(2)} - ${W.toFixed(1)} = ${Ek.toFixed(2)}`
     },
     layout: {
         type: 'linear',
@@ -102,4 +102,4 @@ export const photoelectric: Formula = {
             { type: 'var', symbol: 'W' },
         ],
     },
-};
+}

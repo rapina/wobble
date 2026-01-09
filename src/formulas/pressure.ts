@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const pressure: Formula = {
     id: 'pressure',
@@ -16,7 +16,7 @@ export const pressure: Formula = {
     ],
     applicationsEn: [
         'Why thumbtacks pierce easily',
-        'Why skis don\'t sink in snow',
+        "Why skis don't sink in snow",
         'How pressure washers work',
         'Why sharper knives cut better',
     ],
@@ -66,18 +66,18 @@ export const pressure: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const F = inputs.F ?? 100;
-        const A = inputs.A ?? 10;
+        const F = inputs.F ?? 100
+        const A = inputs.A ?? 10
         // P = F/A, convert to kPa (F in N, A in cm² → multiply by 10)
         return {
             P: (F * 10) / A,
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const F = inputs.F ?? 100;
-        const A = inputs.A ?? 10;
-        const P = (F * 10) / A;
-        return `P = ${F.toFixed(0)} ÷ ${A.toFixed(1)} = ${P.toFixed(0)}`;
+        const F = inputs.F ?? 100
+        const A = inputs.A ?? 10
+        const P = (F * 10) / A
+        return `P = ${F.toFixed(0)} ÷ ${A.toFixed(1)} = ${P.toFixed(0)}`
     },
     layout: {
         type: 'linear',
@@ -97,4 +97,4 @@ export const pressure: Formula = {
             },
         ],
     },
-};
+}

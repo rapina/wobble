@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const lens: Formula = {
     id: 'lens',
@@ -66,17 +66,17 @@ export const lens: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const a = inputs.a ?? 30;
-        const b = inputs.b ?? 15;
+        const a = inputs.a ?? 30
+        const b = inputs.b ?? 15
         // 1/f = 1/a + 1/b => f = ab/(a+b)
-        const f = (a * b) / (a + b);
-        return { f };
+        const f = (a * b) / (a + b)
+        return { f }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const a = inputs.a ?? 30;
-        const b = inputs.b ?? 15;
-        const f = (a * b) / (a + b);
-        return `1/f = 1/${a.toFixed(0)} + 1/${b.toFixed(0)} → f = ${f.toFixed(1)}`;
+        const a = inputs.a ?? 30
+        const b = inputs.b ?? 15
+        const f = (a * b) / (a + b)
+        return `1/f = 1/${a.toFixed(0)} + 1/${b.toFixed(0)} → f = ${f.toFixed(1)}`
     },
     layout: {
         type: 'linear',
@@ -102,4 +102,4 @@ export const lens: Formula = {
             },
         ],
     },
-};
+}

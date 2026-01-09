@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const wave: Formula = {
     id: 'wave',
@@ -66,17 +66,17 @@ export const wave: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const f = inputs.f ?? 2;
-        const lambda = inputs['λ'] ?? 3;
+        const f = inputs.f ?? 2
+        const lambda = inputs['λ'] ?? 3
         return {
             v: f * lambda,
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const f = inputs.f ?? 2;
-        const lambda = inputs['λ'] ?? 3;
-        const v = f * lambda;
-        return `v = ${f.toFixed(1)} × ${lambda.toFixed(1)} = ${v.toFixed(1)}`;
+        const f = inputs.f ?? 2
+        const lambda = inputs['λ'] ?? 3
+        const v = f * lambda
+        return `v = ${f.toFixed(1)} × ${lambda.toFixed(1)} = ${v.toFixed(1)}`
     },
     layout: {
         type: 'wave',
@@ -90,4 +90,4 @@ export const wave: Formula = {
         output: 'v',
         numerator: ['f', 'λ'],
     },
-};
+}

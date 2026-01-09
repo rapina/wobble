@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const torque: Formula = {
     id: 'torque',
@@ -80,21 +80,21 @@ export const torque: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const r = inputs.r ?? 0.5;
-        const F = inputs.F ?? 50;
-        const theta = inputs['θ'] ?? 90;
-        const thetaRad = (theta * Math.PI) / 180;
+        const r = inputs.r ?? 0.5
+        const F = inputs.F ?? 50
+        const theta = inputs['θ'] ?? 90
+        const thetaRad = (theta * Math.PI) / 180
         return {
-            'τ': r * F * Math.sin(thetaRad),
-        };
+            τ: r * F * Math.sin(thetaRad),
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const r = inputs.r ?? 0.5;
-        const F = inputs.F ?? 50;
-        const theta = inputs['θ'] ?? 90;
-        const thetaRad = (theta * Math.PI) / 180;
-        const tau = r * F * Math.sin(thetaRad);
-        return `τ = ${r.toFixed(2)} × ${F.toFixed(0)} × sin(${theta.toFixed(0)}°) = ${tau.toFixed(2)}`;
+        const r = inputs.r ?? 0.5
+        const F = inputs.F ?? 50
+        const theta = inputs['θ'] ?? 90
+        const thetaRad = (theta * Math.PI) / 180
+        const tau = r * F * Math.sin(thetaRad)
+        return `τ = ${r.toFixed(2)} × ${F.toFixed(0)} × sin(${theta.toFixed(0)}°) = ${tau.toFixed(2)}`
     },
     layout: {
         type: 'circular',
@@ -114,4 +114,4 @@ export const torque: Formula = {
             { type: 'var', symbol: 'θ' },
         ],
     },
-};
+}

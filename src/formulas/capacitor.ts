@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const capacitor: Formula = {
     id: 'capacitor',
@@ -66,19 +66,19 @@ export const capacitor: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const C = inputs.C ?? 4; // mF
-        const V = inputs.V ?? 5; // kV
+        const C = inputs.C ?? 4 // mF
+        const V = inputs.V ?? 5 // kV
         // E = 0.5 * C * V^2, with C in mF and V in kV → result in kJ
         // 0.5 * C(mF) * V(kV)² = 0.5 * C * V² kJ
         return {
             E: 0.5 * C * V * V,
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const C = inputs.C ?? 4;
-        const V = inputs.V ?? 5;
-        const E = 0.5 * C * V * V;
-        return `E = ½ × ${C.toFixed(0)}mF × ${V.toFixed(0)}kV² = ${E.toFixed(1)} kJ`;
+        const C = inputs.C ?? 4
+        const V = inputs.V ?? 5
+        const E = 0.5 * C * V * V
+        return `E = ½ × ${C.toFixed(0)}mF × ${V.toFixed(0)}kV² = ${E.toFixed(1)} kJ`
     },
     layout: {
         type: 'flow',
@@ -94,4 +94,4 @@ export const capacitor: Formula = {
         numerator: ['C', 'V'],
         squares: ['V'],
     },
-};
+}

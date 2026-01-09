@@ -1,5 +1,5 @@
-import { ReactNode, useRef, useState, useEffect, useCallback } from 'react';
-import { cn } from '@/lib/utils';
+import { ReactNode, useRef, useState, useEffect, useCallback } from 'react'
+import { cn } from '@/lib/utils'
 
 // Balatro theme
 const theme = {
@@ -7,22 +7,22 @@ const theme = {
     bgPanel: '#374244',
     border: '#1a1a1a',
     gold: '#c9a227',
-};
+}
 
-export type SheetSnapPoint = 'collapsed' | 'half' | 'expanded';
+export type SheetSnapPoint = 'collapsed' | 'half' | 'expanded'
 
 interface BottomSheetProps {
-    children: ReactNode;
+    children: ReactNode
     snapPoints?: {
-        collapsed: number;
-        half: number;
-        expanded: number;
-    };
-    defaultSnap?: SheetSnapPoint;
-    onSnapChange?: (snap: SheetSnapPoint) => void;
-    header?: ReactNode;
-    className?: string;
-    accentColor?: string;
+        collapsed: number
+        half: number
+        expanded: number
+    }
+    defaultSnap?: SheetSnapPoint
+    onSnapChange?: (snap: SheetSnapPoint) => void
+    header?: ReactNode
+    className?: string
+    accentColor?: string
 }
 
 export function BottomSheet({
@@ -34,100 +34,109 @@ export function BottomSheet({
     className,
     accentColor = '#F5B041',
 }: BottomSheetProps) {
-    const sheetRef = useRef<HTMLDivElement>(null);
-    const [currentHeight, setCurrentHeight] = useState(snapPoints[defaultSnap]);
-    const [isDragging, setIsDragging] = useState(false);
-    const [startY, setStartY] = useState(0);
-    const [startHeight, setStartHeight] = useState(0);
+    const sheetRef = useRef<HTMLDivElement>(null)
+    const [currentHeight, setCurrentHeight] = useState(snapPoints[defaultSnap])
+    const [isDragging, setIsDragging] = useState(false)
+    const [startY, setStartY] = useState(0)
+    const [startHeight, setStartHeight] = useState(0)
 
-    const getSnapPoint = useCallback((height: number): SheetSnapPoint => {
-        const { collapsed, half, expanded } = snapPoints;
-        const midLow = (collapsed + half) / 2;
-        const midHigh = (half + expanded) / 2;
+    const getSnapPoint = useCallback(
+        (height: number): SheetSnapPoint => {
+            const { collapsed, half, expanded } = snapPoints
+            const midLow = (collapsed + half) / 2
+            const midHigh = (half + expanded) / 2
 
-        if (height < midLow) return 'collapsed';
-        if (height < midHigh) return 'half';
-        return 'expanded';
-    }, [snapPoints]);
+            if (height < midLow) return 'collapsed'
+            if (height < midHigh) return 'half'
+            return 'expanded'
+        },
+        [snapPoints]
+    )
 
-    const snapTo = useCallback((snap: SheetSnapPoint) => {
-        setCurrentHeight(snapPoints[snap]);
-        onSnapChange?.(snap);
-    }, [snapPoints, onSnapChange]);
+    const snapTo = useCallback(
+        (snap: SheetSnapPoint) => {
+            setCurrentHeight(snapPoints[snap])
+            onSnapChange?.(snap)
+        },
+        [snapPoints, onSnapChange]
+    )
 
     const handleDragStart = (clientY: number) => {
-        setIsDragging(true);
-        setStartY(clientY);
-        setStartHeight(currentHeight);
-    };
+        setIsDragging(true)
+        setStartY(clientY)
+        setStartHeight(currentHeight)
+    }
 
-    const handleDragMove = useCallback((clientY: number) => {
-        if (!isDragging) return;
-        const delta = startY - clientY;
-        const newHeight = Math.max(
-            snapPoints.collapsed,
-            Math.min(snapPoints.expanded, startHeight + delta)
-        );
-        setCurrentHeight(newHeight);
-    }, [isDragging, startY, startHeight, snapPoints]);
+    const handleDragMove = useCallback(
+        (clientY: number) => {
+            if (!isDragging) return
+            const delta = startY - clientY
+            const newHeight = Math.max(
+                snapPoints.collapsed,
+                Math.min(snapPoints.expanded, startHeight + delta)
+            )
+            setCurrentHeight(newHeight)
+        },
+        [isDragging, startY, startHeight, snapPoints]
+    )
 
     const handleDragEnd = useCallback(() => {
-        if (!isDragging) return;
-        setIsDragging(false);
-        const snap = getSnapPoint(currentHeight);
-        snapTo(snap);
-    }, [isDragging, currentHeight, getSnapPoint, snapTo]);
+        if (!isDragging) return
+        setIsDragging(false)
+        const snap = getSnapPoint(currentHeight)
+        snapTo(snap)
+    }, [isDragging, currentHeight, getSnapPoint, snapTo])
 
     const handleMouseDown = (e: React.MouseEvent) => {
-        e.preventDefault();
-        handleDragStart(e.clientY);
-    };
+        e.preventDefault()
+        handleDragStart(e.clientY)
+    }
 
     const handleTouchStart = (e: React.TouchEvent) => {
-        handleDragStart(e.touches[0].clientY);
-    };
+        handleDragStart(e.touches[0].clientY)
+    }
 
     useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => handleDragMove(e.clientY);
+        const handleMouseMove = (e: MouseEvent) => handleDragMove(e.clientY)
         const handleTouchMove = (e: TouchEvent) => {
             if (e.touches.length > 0) {
-                handleDragMove(e.touches[0].clientY);
+                handleDragMove(e.touches[0].clientY)
             }
-        };
-        const handleEnd = () => handleDragEnd();
+        }
+        const handleEnd = () => handleDragEnd()
 
         if (isDragging) {
-            window.addEventListener('mousemove', handleMouseMove);
-            window.addEventListener('mouseup', handleEnd);
-            window.addEventListener('touchmove', handleTouchMove, { passive: true });
-            window.addEventListener('touchend', handleEnd);
+            window.addEventListener('mousemove', handleMouseMove)
+            window.addEventListener('mouseup', handleEnd)
+            window.addEventListener('touchmove', handleTouchMove, { passive: true })
+            window.addEventListener('touchend', handleEnd)
         }
 
         return () => {
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleEnd);
-            window.removeEventListener('touchmove', handleTouchMove);
-            window.removeEventListener('touchend', handleEnd);
-        };
-    }, [isDragging, handleDragMove, handleDragEnd]);
-
-    const lastTapRef = useRef(0);
-    const handleDoubleTap = () => {
-        const now = Date.now();
-        if (now - lastTapRef.current < 300) {
-            const currentSnap = getSnapPoint(currentHeight);
-            snapTo(currentSnap === 'collapsed' ? 'half' : 'collapsed');
+            window.removeEventListener('mousemove', handleMouseMove)
+            window.removeEventListener('mouseup', handleEnd)
+            window.removeEventListener('touchmove', handleTouchMove)
+            window.removeEventListener('touchend', handleEnd)
         }
-        lastTapRef.current = now;
-    };
+    }, [isDragging, handleDragMove, handleDragEnd])
+
+    const lastTapRef = useRef(0)
+    const handleDoubleTap = () => {
+        const now = Date.now()
+        if (now - lastTapRef.current < 300) {
+            const currentSnap = getSnapPoint(currentHeight)
+            snapTo(currentSnap === 'collapsed' ? 'half' : 'collapsed')
+        }
+        lastTapRef.current = now
+    }
 
     return (
         <div
             ref={sheetRef}
             className={cn(
-                "absolute left-4 right-4 bottom-0 z-30",
-                "rounded-t-2xl",
-                !isDragging && "transition-[height] duration-300 ease-out",
+                'absolute left-4 right-4 bottom-0 z-30',
+                'rounded-t-2xl',
+                !isDragging && 'transition-[height] duration-300 ease-out',
                 className
             )}
             style={{
@@ -182,5 +191,5 @@ export function BottomSheet({
                 {children}
             </div>
         </div>
-    );
+    )
 }

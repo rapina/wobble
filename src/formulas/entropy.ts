@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const entropy: Formula = {
     id: 'entropy',
@@ -66,17 +66,17 @@ export const entropy: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const Q = inputs.Q ?? 500;
-        const T = inputs.T ?? 300;
+        const Q = inputs.Q ?? 500
+        const T = inputs.T ?? 300
         return {
-            'ΔS': Q / T,
-        };
+            ΔS: Q / T,
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const Q = inputs.Q ?? 500;
-        const T = inputs.T ?? 300;
-        const dS = Q / T;
-        return `ΔS = ${Q.toFixed(0)} ÷ ${T.toFixed(0)} = ${dS.toFixed(2)}`;
+        const Q = inputs.Q ?? 500
+        const T = inputs.T ?? 300
+        const dS = Q / T
+        return `ΔS = ${Q.toFixed(0)} ÷ ${T.toFixed(0)} = ${dS.toFixed(2)}`
     },
     layout: {
         type: 'container',
@@ -96,4 +96,4 @@ export const entropy: Formula = {
             },
         ],
     },
-};
+}

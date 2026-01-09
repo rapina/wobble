@@ -1,16 +1,16 @@
-import { useTranslation } from 'react-i18next';
-import { WobbleDisplay } from '@/components/canvas/WobbleDisplay';
-import { Star, ArrowRight, Home } from 'lucide-react';
-import { WobbleShape } from '@/components/canvas/Wobble';
-import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next'
+import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
+import { Star, ArrowRight, Home } from 'lucide-react'
+import { WobbleShape } from '@/components/canvas/Wobble'
+import { cn } from '@/lib/utils'
 
 interface SuccessOverlayProps {
-    levelName: string;
-    levelNameEn: string;
-    rewardWobble?: WobbleShape;
-    hasNextLevel: boolean;
-    onNextLevel: () => void;
-    onBack: () => void;
+    levelName: string
+    levelNameEn: string
+    rewardWobble?: WobbleShape
+    hasNextLevel: boolean
+    onNextLevel: () => void
+    onBack: () => void
 }
 
 export function SuccessOverlay({
@@ -21,8 +21,8 @@ export function SuccessOverlay({
     onNextLevel,
     onBack,
 }: SuccessOverlayProps) {
-    const { i18n } = useTranslation();
-    const isKorean = i18n.language === 'ko';
+    const { i18n } = useTranslation()
+    const isKorean = i18n.language === 'ko'
 
     return (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center">
@@ -110,5 +110,5 @@ export function SuccessOverlay({
                 </div>
             </div>
         </div>
-    );
+    )
 }

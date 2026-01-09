@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const elasticCollision: Formula = {
     id: 'elastic-collision',
@@ -7,7 +7,8 @@ export const elasticCollision: Formula = {
     nameEn: 'Elastic Collision',
     expression: "e = -(v₂'-v₁')/(v₂-v₁)",
     description: '충돌 전후 상대속도의 비율로 반발 계수를 나타낸다',
-    descriptionEn: 'The coefficient of restitution as the ratio of relative velocities before and after collision',
+    descriptionEn:
+        'The coefficient of restitution as the ratio of relative velocities before and after collision',
     applications: [
         '당구공 충돌 후 움직임 예측',
         '테니스 라켓과 공의 반발력 설계',
@@ -94,24 +95,24 @@ export const elasticCollision: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const m1 = inputs['m₁'] ?? 10;
-        const m2 = inputs['m₂'] ?? 5;
-        const v1 = inputs['v₁'] ?? 5;
-        const e = inputs.e ?? 0.8;
+        const m1 = inputs['m₁'] ?? 10
+        const m2 = inputs['m₂'] ?? 5
+        const v1 = inputs['v₁'] ?? 5
+        const e = inputs.e ?? 0.8
         // v2 = 0 (정지 상태)
         // v1' = (m1 - e*m2) * v1 / (m1 + m2)
-        const v1Prime = ((m1 - e * m2) * v1) / (m1 + m2);
+        const v1Prime = ((m1 - e * m2) * v1) / (m1 + m2)
         return {
             "v₁'": v1Prime,
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const m1 = inputs['m₁'] ?? 10;
-        const m2 = inputs['m₂'] ?? 5;
-        const v1 = inputs['v₁'] ?? 5;
-        const e = inputs.e ?? 0.8;
-        const v1Prime = ((m1 - e * m2) * v1) / (m1 + m2);
-        return `v₁' = (${m1.toFixed(0)} - ${e.toFixed(1)}×${m2.toFixed(0)}) × ${v1.toFixed(1)} ÷ ${(m1 + m2).toFixed(0)} = ${v1Prime.toFixed(2)}`;
+        const m1 = inputs['m₁'] ?? 10
+        const m2 = inputs['m₂'] ?? 5
+        const v1 = inputs['v₁'] ?? 5
+        const e = inputs.e ?? 0.8
+        const v1Prime = ((m1 - e * m2) * v1) / (m1 + m2)
+        return `v₁' = (${m1.toFixed(0)} - ${e.toFixed(1)}×${m2.toFixed(0)}) × ${v1.toFixed(1)} ÷ ${(m1 + m2).toFixed(0)} = ${v1Prime.toFixed(2)}`
     },
     layout: {
         type: 'linear',
@@ -127,12 +128,15 @@ export const elasticCollision: Formula = {
             {
                 type: 'fraction',
                 numerator: [
-                    { type: 'group', items: [
-                        { type: 'var', symbol: 'm₁' },
-                        { type: 'op', value: '-' },
-                        { type: 'var', symbol: 'e' },
-                        { type: 'var', symbol: 'm₂' },
-                    ]},
+                    {
+                        type: 'group',
+                        items: [
+                            { type: 'var', symbol: 'm₁' },
+                            { type: 'op', value: '-' },
+                            { type: 'var', symbol: 'e' },
+                            { type: 'var', symbol: 'm₂' },
+                        ],
+                    },
                     { type: 'var', symbol: 'v₁' },
                 ],
                 denominator: [
@@ -143,4 +147,4 @@ export const elasticCollision: Formula = {
             },
         ],
     },
-};
+}

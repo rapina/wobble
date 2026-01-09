@@ -1,27 +1,27 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
-import { X, ChevronRight, Hand } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import { X, ChevronRight, Hand } from 'lucide-react'
 
 const theme = {
     bgPanel: '#374244',
     border: '#1a1a1a',
     gold: '#c9a227',
     blue: '#4a9eff',
-};
+}
 
 export interface TutorialStep {
-    targetSymbol: string;
-    message: string;
+    targetSymbol: string
+    message: string
 }
 
 interface TutorialOverlayProps {
-    steps: TutorialStep[];
-    currentStep: number;
-    onNext: () => void;
-    onSkip: () => void;
-    onComplete: () => void;
-    targetRect: DOMRect | null;
-    sliderRect: DOMRect | null;
+    steps: TutorialStep[]
+    currentStep: number
+    onNext: () => void
+    onSkip: () => void
+    onComplete: () => void
+    targetRect: DOMRect | null
+    sliderRect: DOMRect | null
 }
 
 export function TutorialOverlay({
@@ -33,34 +33,34 @@ export function TutorialOverlay({
     targetRect,
     sliderRect,
 }: TutorialOverlayProps) {
-    const { t } = useTranslation();
-    const [isVisible, setIsVisible] = useState(false);
-    const isLastStep = currentStep === steps.length - 1;
-    const step = steps[currentStep];
+    const { t } = useTranslation()
+    const [isVisible, setIsVisible] = useState(false)
+    const isLastStep = currentStep === steps.length - 1
+    const step = steps[currentStep]
 
     useEffect(() => {
-        const timer = setTimeout(() => setIsVisible(true), 100);
-        return () => clearTimeout(timer);
-    }, []);
+        const timer = setTimeout(() => setIsVisible(true), 100)
+        return () => clearTimeout(timer)
+    }, [])
 
     // Calculate spotlight mask
     const getSpotlightStyle = useCallback(() => {
-        if (!targetRect) return {};
+        if (!targetRect) return {}
 
-        const padding = 8;
-        const x = targetRect.left - padding;
-        const y = targetRect.top - padding;
-        const w = targetRect.width + padding * 2;
-        const h = targetRect.height + padding * 2;
-        const r = 12;
+        const padding = 8
+        const x = targetRect.left - padding
+        const y = targetRect.top - padding
+        const w = targetRect.width + padding * 2
+        const h = targetRect.height + padding * 2
+        const r = 12
 
         // If slider is visible, extend the spotlight to include it
-        let sliderPath = '';
+        let sliderPath = ''
         if (sliderRect) {
-            const sx = sliderRect.left - padding;
-            const sy = sliderRect.top - padding;
-            const sw = sliderRect.width + padding * 2;
-            const sh = sliderRect.height + padding * 2;
+            const sx = sliderRect.left - padding
+            const sy = sliderRect.top - padding
+            const sw = sliderRect.width + padding * 2
+            const sh = sliderRect.height + padding * 2
             sliderPath = `M ${sx} ${sy + r}
                 Q ${sx} ${sy} ${sx + r} ${sy}
                 L ${sx + sw - r} ${sy}
@@ -69,7 +69,7 @@ export function TutorialOverlay({
                 Q ${sx + sw} ${sy + sh} ${sx + sw - r} ${sy + sh}
                 L ${sx + r} ${sy + sh}
                 Q ${sx} ${sy + sh} ${sx} ${sy + sh - r}
-                Z`;
+                Z`
         }
 
         // Create SVG path for rounded rectangle cutout
@@ -89,14 +89,14 @@ export function TutorialOverlay({
             Q ${x + w} ${y} ${x + w - r} ${y}
             Z
             ${sliderPath}
-        `;
+        `
 
         return {
             clipPath: `path('${path}')`,
-        };
-    }, [targetRect, sliderRect]);
+        }
+    }, [targetRect, sliderRect])
 
-    if (!step) return null;
+    if (!step) return null
 
     return (
         <div
@@ -140,10 +140,7 @@ export function TutorialOverlay({
                         top: targetRect.top - 48,
                     }}
                 >
-                    <Hand
-                        className="w-8 h-8 rotate-[-20deg]"
-                        style={{ color: theme.gold }}
-                    />
+                    <Hand className="w-8 h-8 rotate-[-20deg]" style={{ color: theme.gold }} />
                 </div>
             )}
 
@@ -172,8 +169,10 @@ export function TutorialOverlay({
                                         key={i}
                                         className="w-2 h-2 rounded-full transition-all"
                                         style={{
-                                            background: i === currentStep ? theme.gold : theme.border,
-                                            transform: i === currentStep ? 'scale(1.3)' : 'scale(1)',
+                                            background:
+                                                i === currentStep ? theme.gold : theme.border,
+                                            transform:
+                                                i === currentStep ? 'scale(1.3)' : 'scale(1)',
                                         }}
                                     />
                                 ))}
@@ -184,9 +183,7 @@ export function TutorialOverlay({
                         </div>
 
                         {/* Message */}
-                        <p className="text-white text-sm leading-relaxed mb-4">
-                            {step.message}
-                        </p>
+                        <p className="text-white text-sm leading-relaxed mb-4">{step.message}</p>
 
                         {/* Buttons */}
                         <div className="flex items-center justify-between gap-3">
@@ -229,5 +226,5 @@ export function TutorialOverlay({
                 <X className="w-5 h-5 text-white/70" />
             </button>
         </div>
-    );
+    )
 }

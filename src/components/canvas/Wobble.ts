@@ -1,5 +1,5 @@
-import { Container, Graphics, BlurFilter } from 'pixi.js';
-import { cssToHex, pixiColors } from '../../utils/pixiHelpers';
+import { Container, Graphics, BlurFilter } from 'pixi.js'
+import { cssToHex, pixiColors } from '../../utils/pixiHelpers'
 
 export type WobbleExpression =
     | 'happy'
@@ -14,7 +14,7 @@ export type WobbleExpression =
     | 'excited'
     | 'sleepy'
     | 'angry'
-    | 'none';
+    | 'none'
 
 /**
  * Wobble shape types - 각 shape는 고유한 역할/성격을 가짐
@@ -27,28 +27,35 @@ export type WobbleExpression =
  * - 'pentagon': Penta (펜타) - 믿음직하고 든든한 보호자
  * - 'shadow': Shadow (섀도우) - 어둡고 적대적인 적 캐릭터
  */
-export type WobbleShape = 'circle' | 'square' | 'triangle' | 'star' | 'diamond' | 'pentagon' | 'shadow';
+export type WobbleShape =
+    | 'circle'
+    | 'square'
+    | 'triangle'
+    | 'star'
+    | 'diamond'
+    | 'pentagon'
+    | 'shadow'
 
 /** Shape별 역할 정의 (씬에서 참조용) */
 export const SHAPE_ROLES = {
-    circle: 'protagonist',    // 주인공, 공격자
-    square: 'victim',         // 피해자, 당하는 역할
-    triangle: 'attacker',     // 공격자, 위협
-    star: 'bonus',            // 보너스, 파워업
-    diamond: 'goal',          // 목표, 수집 대상
-    pentagon: 'defender',     // 방어자, 지지자
-    shadow: 'enemy',          // 적, 법칙 파괴자
-} as const;
+    circle: 'protagonist', // 주인공, 공격자
+    square: 'victim', // 피해자, 당하는 역할
+    triangle: 'attacker', // 공격자, 위협
+    star: 'bonus', // 보너스, 파워업
+    diamond: 'goal', // 목표, 수집 대상
+    pentagon: 'defender', // 방어자, 지지자
+    shadow: 'enemy', // 적, 법칙 파괴자
+} as const
 
 /** 워블 캐릭터 정보 인터페이스 */
 export interface WobbleCharacter {
-    shape: WobbleShape;
-    name: string;
-    nameKo: string;
-    personality: string;
-    personalityKo: string;
-    role: string;
-    color: number;
+    shape: WobbleShape
+    name: string
+    nameKo: string
+    personality: string
+    personalityKo: string
+    role: string
+    color: number
 }
 
 /** 워블 캐릭터 메타데이터 */
@@ -60,7 +67,7 @@ export const WOBBLE_CHARACTERS: Record<WobbleShape, WobbleCharacter> = {
         personality: 'Curious and energetic protagonist',
         personalityKo: '호기심 많고 활발한 주인공',
         role: 'protagonist',
-        color: 0xF5B041,
+        color: 0xf5b041,
     },
     square: {
         shape: 'square',
@@ -69,7 +76,7 @@ export const WOBBLE_CHARACTERS: Record<WobbleShape, WobbleCharacter> = {
         personality: 'Gentle and often gets pushed around',
         personalityKo: '순하고 자주 당하는 타입',
         role: 'victim',
-        color: 0x5DADE2,
+        color: 0x5dade2,
     },
     triangle: {
         shape: 'triangle',
@@ -78,7 +85,7 @@ export const WOBBLE_CHARACTERS: Record<WobbleShape, WobbleCharacter> = {
         personality: 'Sharp and competitive challenger',
         personalityKo: '날카롭고 도전적인 성격',
         role: 'attacker',
-        color: 0xE74C3C,
+        color: 0xe74c3c,
     },
     star: {
         shape: 'star',
@@ -87,7 +94,7 @@ export const WOBBLE_CHARACTERS: Record<WobbleShape, WobbleCharacter> = {
         personality: 'Special and brings good luck',
         personalityKo: '특별하고 행운을 가져다주는 존재',
         role: 'bonus',
-        color: 0xFFD700,
+        color: 0xffd700,
     },
     diamond: {
         shape: 'diamond',
@@ -96,7 +103,7 @@ export const WOBBLE_CHARACTERS: Record<WobbleShape, WobbleCharacter> = {
         personality: 'Precious and goal-oriented',
         personalityKo: '귀하고 우아한 목표 지향적 성격',
         role: 'goal',
-        color: 0xBB8FCE,
+        color: 0xbb8fce,
     },
     pentagon: {
         shape: 'pentagon',
@@ -105,7 +112,7 @@ export const WOBBLE_CHARACTERS: Record<WobbleShape, WobbleCharacter> = {
         personality: 'Reliable protector and supporter',
         personalityKo: '믿음직하고 든든한 보호자',
         role: 'defender',
-        color: 0x82E0AA,
+        color: 0x82e0aa,
     },
     shadow: {
         shape: 'shadow',
@@ -116,85 +123,85 @@ export const WOBBLE_CHARACTERS: Record<WobbleShape, WobbleCharacter> = {
         role: 'enemy',
         color: 0x1a1a1a,
     },
-};
+}
 
 /** 공식별 등장 워블 매핑 */
 export const FORMULA_WOBBLES: Record<string, WobbleShape[]> = {
     // Mechanics
     'newton-second': ['circle', 'square'],
     'kinetic-energy': ['circle'],
-    'momentum': ['circle', 'square'],
-    'centripetal': ['circle'],
-    'hooke': ['circle'],
+    momentum: ['circle', 'square'],
+    centripetal: ['circle'],
+    hooke: ['circle'],
     'free-fall': ['circle'],
-    'projectile': ['circle'],
-    'power': ['circle', 'square'],
-    'collision': ['circle', 'square'],
-    'pendulum': ['circle', 'pentagon'],
-    'buoyancy': ['circle', 'square'],
+    projectile: ['circle'],
+    power: ['circle', 'square'],
+    collision: ['circle', 'square'],
+    pendulum: ['circle', 'pentagon'],
+    buoyancy: ['circle', 'square'],
 
     // Wave
     'wave-speed': ['circle', 'square'],
     'standing-wave': ['circle'],
-    'snell': ['circle'],
-    'reflection': ['circle'],
-    'lens': ['circle'],
+    snell: ['circle'],
+    reflection: ['circle'],
+    lens: ['circle'],
     'de-broglie': ['circle', 'diamond'],
 
     // Gravity
-    'gravity': ['circle', 'diamond'],
+    gravity: ['circle', 'diamond'],
     'kepler-third': ['circle'],
     'escape-velocity': ['circle'],
 
     // Thermodynamics
     'ideal-gas': ['circle', 'square'],
     'heat-transfer': ['circle', 'square'],
-    'entropy': ['circle', 'square', 'triangle'],
+    entropy: ['circle', 'square', 'triangle'],
     'stefan-boltzmann': ['circle'],
     'first-law': ['circle'],
     'thermal-conduction': ['circle', 'square'],
 
     // Electricity
-    'coulomb': ['circle', 'square'],
-    'ohm': ['circle', 'square'],
-    'capacitor': ['circle', 'square'],
-    'lorentz': ['circle', 'triangle'],
+    coulomb: ['circle', 'square'],
+    ohm: ['circle', 'square'],
+    capacitor: ['circle', 'square'],
+    lorentz: ['circle', 'triangle'],
 
     // Special
     'time-dilation': ['circle'],
-    'photoelectric': ['circle', 'star'],
+    photoelectric: ['circle', 'star'],
 
     // New shape-featured formulas
-    'pressure': ['triangle'],        // Spike pressing down
-    'wien': ['star'],                // Twinkle changing color with temperature
-    'torque': ['pentagon'],          // Penta pushing lever
-};
+    pressure: ['triangle'], // Spike pressing down
+    wien: ['star'], // Twinkle changing color with temperature
+    torque: ['pentagon'], // Penta pushing lever
+}
 
 export interface WobbleOptions {
-    size: number;
-    color: string | number;
-    shape?: WobbleShape;
-    expression?: WobbleExpression;
-    scaleX?: number;
-    scaleY?: number;
-    lookDirection?: { x: number; y: number };
-    showShadow?: boolean;
-    shadowOffsetY?: number;
-    showLegs?: boolean;
-    legPhase?: number;
-    showSpeedLines?: boolean;
-    speedDirection?: number;
-    showSweat?: boolean;
-    glowColor?: string | number;
-    glowIntensity?: number;
-    wobblePhase?: number;
-    opacity?: number;
+    size: number
+    color: string | number
+    shape?: WobbleShape
+    expression?: WobbleExpression
+    scaleX?: number
+    scaleY?: number
+    lookDirection?: { x: number; y: number }
+    showShadow?: boolean
+    shadowOffsetY?: number
+    showLegs?: boolean
+    legPhase?: number
+    showSpeedLines?: boolean
+    speedDirection?: number
+    showSweat?: boolean
+    glowColor?: string | number
+    glowIntensity?: number
+    wobblePhase?: number
+    opacity?: number
 }
 
 // LocoRoco-style default yellow
-const LOCOROCO_YELLOW = 0xF5B041;
-const LOCOROCO_OUTLINE = 0x2C2C2C;
-const LOCOROCO_CHEEK = 0xE87E4D;
+const LOCOROCO_YELLOW = 0xf5b041
+const LOCOROCO_OUTLINE = 0x2c2c2c
+const LOCOROCO_CHEEK = 0xe87e4d
 
 const defaultOptions: Required<WobbleOptions> = {
     size: 60,
@@ -215,165 +222,165 @@ const defaultOptions: Required<WobbleOptions> = {
     glowIntensity: 0,
     wobblePhase: 0,
     opacity: 1,
-};
+}
 
 export class Wobble extends Container {
-    private bodyGraphics: Graphics;
-    private faceGraphics: Graphics;
-    private shadowGraphics: Graphics;
-    private legsGraphics: Graphics;
-    private glowGraphics: Graphics;
-    private speedLinesGraphics: Graphics;
-    private sweatGraphics: Graphics;
-    private blurFilter: BlurFilter;
+    private bodyGraphics: Graphics
+    private faceGraphics: Graphics
+    private shadowGraphics: Graphics
+    private legsGraphics: Graphics
+    private glowGraphics: Graphics
+    private speedLinesGraphics: Graphics
+    private sweatGraphics: Graphics
+    private blurFilter: BlurFilter
 
-    private options: Required<WobbleOptions>;
+    private options: Required<WobbleOptions>
 
     constructor(options: WobbleOptions) {
-        super();
-        this.options = { ...defaultOptions, ...options };
+        super()
+        this.options = { ...defaultOptions, ...options }
 
         // Initialize graphics layers (order matters for z-index)
-        this.glowGraphics = new Graphics();
-        this.shadowGraphics = new Graphics();
-        this.speedLinesGraphics = new Graphics();
-        this.legsGraphics = new Graphics();
-        this.bodyGraphics = new Graphics();
-        this.faceGraphics = new Graphics();
-        this.sweatGraphics = new Graphics();
+        this.glowGraphics = new Graphics()
+        this.shadowGraphics = new Graphics()
+        this.speedLinesGraphics = new Graphics()
+        this.legsGraphics = new Graphics()
+        this.bodyGraphics = new Graphics()
+        this.faceGraphics = new Graphics()
+        this.sweatGraphics = new Graphics()
 
         // Setup blur filter for glow
-        this.blurFilter = new BlurFilter({ strength: 25 });
-        this.glowGraphics.filters = [this.blurFilter];
+        this.blurFilter = new BlurFilter({ strength: 25 })
+        this.glowGraphics.filters = [this.blurFilter]
 
         // Add in correct z-order
-        this.addChild(this.glowGraphics);
-        this.addChild(this.shadowGraphics);
-        this.addChild(this.speedLinesGraphics);
-        this.addChild(this.legsGraphics);
-        this.addChild(this.bodyGraphics);
-        this.addChild(this.faceGraphics);
-        this.addChild(this.sweatGraphics);
+        this.addChild(this.glowGraphics)
+        this.addChild(this.shadowGraphics)
+        this.addChild(this.speedLinesGraphics)
+        this.addChild(this.legsGraphics)
+        this.addChild(this.bodyGraphics)
+        this.addChild(this.faceGraphics)
+        this.addChild(this.sweatGraphics)
 
-        this.draw();
+        this.draw()
     }
 
     private getColor(color: string | number): number {
         if (typeof color === 'string') {
-            return cssToHex(color);
+            return cssToHex(color)
         }
-        return color;
+        return color
     }
 
     private draw(): void {
-        const { opacity } = this.options;
-        this.alpha = opacity;
+        const { opacity } = this.options
+        this.alpha = opacity
 
-        this.drawGlow();
-        this.drawShadow();
-        this.drawSpeedLines();
-        this.drawLegs();
-        this.drawBody();
-        this.drawFace();
-        this.drawSweat();
+        this.drawGlow()
+        this.drawShadow()
+        this.drawSpeedLines()
+        this.drawLegs()
+        this.drawBody()
+        this.drawFace()
+        this.drawSweat()
     }
 
     private drawGlow(): void {
-        const { size, glowColor, glowIntensity, scaleX, scaleY, wobblePhase } = this.options;
-        const g = this.glowGraphics;
-        g.clear();
+        const { size, glowColor, glowIntensity, scaleX, scaleY, wobblePhase } = this.options
+        const g = this.glowGraphics
+        g.clear()
 
-        if (glowIntensity <= 0) return;
+        if (glowIntensity <= 0) return
 
-        const color = this.getColor(glowColor);
-        g.alpha = glowIntensity * 0.5;
+        const color = this.getColor(glowColor)
+        g.alpha = glowIntensity * 0.5
 
         // Simple circular glow
-        const r = size * 0.55 * 1.3;
-        g.ellipse(0, 0, r * scaleX, r * scaleY);
-        g.fill(color);
+        const r = size * 0.55 * 1.3
+        g.ellipse(0, 0, r * scaleX, r * scaleY)
+        g.fill(color)
     }
 
     private drawShadow(): void {
-        const { size, showShadow, shadowOffsetY, scaleX, scaleY, wobblePhase } = this.options;
-        const g = this.shadowGraphics;
-        g.clear();
+        const { size, showShadow, shadowOffsetY, scaleX, scaleY, wobblePhase } = this.options
+        const g = this.shadowGraphics
+        g.clear()
 
-        if (!showShadow) return;
+        if (!showShadow) return
 
         // Simple oval shadow - LocoRoco style
-        const squashFactor = scaleX / scaleY;
-        const shadowWidth = size * scaleX * 0.6 * (1 + (squashFactor - 1) * 0.3);
-        const shadowHeight = size * 0.06;
-        const shadowY = size * 0.45 + shadowOffsetY;
+        const squashFactor = scaleX / scaleY
+        const shadowWidth = size * scaleX * 0.6 * (1 + (squashFactor - 1) * 0.3)
+        const shadowHeight = size * 0.06
+        const shadowY = size * 0.45 + shadowOffsetY
 
         // Subtle wobble
-        const wobbleOffset = Math.sin(wobblePhase * 1.5) * 1.5;
+        const wobbleOffset = Math.sin(wobblePhase * 1.5) * 1.5
 
-        g.ellipse(wobbleOffset, shadowY, shadowWidth / 2, shadowHeight);
-        g.fill({ color: 0x000000, alpha: 0.15 });
+        g.ellipse(wobbleOffset, shadowY, shadowWidth / 2, shadowHeight)
+        g.fill({ color: 0x000000, alpha: 0.15 })
     }
 
     private drawSpeedLines(): void {
-        const { size, showSpeedLines, speedDirection } = this.options;
-        const g = this.speedLinesGraphics;
-        g.clear();
+        const { size, showSpeedLines, speedDirection } = this.options
+        const g = this.speedLinesGraphics
+        g.clear()
 
-        if (!showSpeedLines) return;
+        if (!showSpeedLines) return
 
-        g.alpha = 0.4;
+        g.alpha = 0.4
 
         for (let i = 0; i < 3; i++) {
-            const lineOffset = -10 + i * 10;
-            const startDist = size * 0.55 + 15 + i * 8;
-            const lineLength = 15 + i * 5;
+            const lineOffset = -10 + i * 10
+            const startDist = size * 0.55 + 15 + i * 8
+            const lineLength = 15 + i * 5
 
-            const x1 = Math.cos(speedDirection) * startDist;
-            const y1 = Math.sin(speedDirection) * startDist + lineOffset;
-            const x2 = Math.cos(speedDirection) * (startDist + lineLength);
-            const y2 = Math.sin(speedDirection) * (startDist + lineLength) + lineOffset;
+            const x1 = Math.cos(speedDirection) * startDist
+            const y1 = Math.sin(speedDirection) * startDist + lineOffset
+            const x2 = Math.cos(speedDirection) * (startDist + lineLength)
+            const y2 = Math.sin(speedDirection) * (startDist + lineLength) + lineOffset
 
-            g.moveTo(x1, y1);
-            g.lineTo(x2, y2);
+            g.moveTo(x1, y1)
+            g.lineTo(x2, y2)
         }
 
-        g.stroke({ color: 0xffffff, width: 2.5, cap: 'round' });
+        g.stroke({ color: 0xffffff, width: 2.5, cap: 'round' })
     }
 
     private drawLegs(): void {
-        const { size, color, showLegs, legPhase, scaleX } = this.options;
-        const g = this.legsGraphics;
-        g.clear();
+        const { size, color, showLegs, legPhase, scaleX } = this.options
+        const g = this.legsGraphics
+        g.clear()
 
-        if (!showLegs) return;
+        if (!showLegs) return
 
-        const bodyColor = this.getColor(color);
+        const bodyColor = this.getColor(color)
 
-        [-1, 1].forEach((side) => {
-            const legLength = size * 0.3;
-            const legWidth = size * 0.12;
-            const legBaseY = size * 0.3;
-            const angle = Math.sin(legPhase + (side === 1 ? Math.PI : 0)) * 0.8;
+        ;[-1, 1].forEach((side) => {
+            const legLength = size * 0.3
+            const legWidth = size * 0.12
+            const legBaseY = size * 0.3
+            const angle = Math.sin(legPhase + (side === 1 ? Math.PI : 0)) * 0.8
 
-            const baseX = side * size * 0.2 * scaleX;
-            const baseY = legBaseY;
+            const baseX = side * size * 0.2 * scaleX
+            const baseY = legBaseY
 
-            const footX = baseX + Math.sin(angle) * legLength;
-            const footY = baseY + Math.abs(Math.cos(angle)) * legLength;
+            const footX = baseX + Math.sin(angle) * legLength
+            const footY = baseY + Math.abs(Math.cos(angle)) * legLength
 
             // Simple round foot - LocoRoco style
-            g.circle(footX, footY, legWidth);
-            g.fill(bodyColor);
-            g.stroke({ color: LOCOROCO_OUTLINE, width: 2 });
-        });
+            g.circle(footX, footY, legWidth)
+            g.fill(bodyColor)
+            g.stroke({ color: LOCOROCO_OUTLINE, width: 2 })
+        })
     }
 
     private drawBody(): void {
-        const { size, color, shape, scaleX, scaleY, wobblePhase } = this.options;
-        const g = this.bodyGraphics;
-        g.clear();
+        const { size, color, shape, scaleX, scaleY, wobblePhase } = this.options
+        const g = this.bodyGraphics
+        g.clear()
 
-        const bodyColor = this.getColor(color);
+        const bodyColor = this.getColor(color)
 
         // Scale up certain shapes to make room for face
         const shapeScale: Record<WobbleShape, number> = {
@@ -384,344 +391,396 @@ export class Wobble extends Container {
             diamond: 1.2,
             pentagon: 1.15,
             shadow: 1.1,
-        };
-        const scaledSize = size * (shapeScale[shape] || 1);
+        }
+        const scaledSize = size * (shapeScale[shape] || 1)
 
         // Draw body based on shape type
         switch (shape) {
             case 'square':
-                this.drawSquareBody(g, scaledSize, scaleX, scaleY, wobblePhase);
-                break;
+                this.drawSquareBody(g, scaledSize, scaleX, scaleY, wobblePhase)
+                break
             case 'triangle':
-                this.drawTriangleBody(g, scaledSize, scaleX, scaleY, wobblePhase);
-                break;
+                this.drawTriangleBody(g, scaledSize, scaleX, scaleY, wobblePhase)
+                break
             case 'star':
-                this.drawStarBody(g, scaledSize, scaleX, scaleY, wobblePhase);
-                break;
+                this.drawStarBody(g, scaledSize, scaleX, scaleY, wobblePhase)
+                break
             case 'diamond':
-                this.drawDiamondBody(g, scaledSize, scaleX, scaleY, wobblePhase);
-                break;
+                this.drawDiamondBody(g, scaledSize, scaleX, scaleY, wobblePhase)
+                break
             case 'pentagon':
-                this.drawPentagonBody(g, scaledSize, scaleX, scaleY, wobblePhase);
-                break;
+                this.drawPentagonBody(g, scaledSize, scaleX, scaleY, wobblePhase)
+                break
             case 'shadow':
-                this.drawShadowBody(g, scaledSize, scaleX, scaleY, wobblePhase);
-                break;
+                this.drawShadowBody(g, scaledSize, scaleX, scaleY, wobblePhase)
+                break
             default:
                 // 원형 워블 (기본)
-                this.drawLocoRocoBody(g, size, scaleX, scaleY, wobblePhase);
+                this.drawLocoRocoBody(g, size, scaleX, scaleY, wobblePhase)
         }
-        g.fill(bodyColor);
-        g.stroke({ color: LOCOROCO_OUTLINE, width: 3 });
+        g.fill(bodyColor)
+        g.stroke({ color: LOCOROCO_OUTLINE, width: 3 })
 
         // Simple highlight - top left
-        const highlightX = -size * 0.15 * scaleX;
-        const highlightY = -size * 0.2 * scaleY;
-        g.ellipse(highlightX, highlightY, size * 0.12, size * 0.08);
-        g.fill({ color: 0xffffff, alpha: 0.4 });
+        const highlightX = -size * 0.15 * scaleX
+        const highlightY = -size * 0.2 * scaleY
+        g.ellipse(highlightX, highlightY, size * 0.12, size * 0.08)
+        g.fill({ color: 0xffffff, alpha: 0.4 })
     }
 
-    private drawLocoRocoBody(g: Graphics, size: number, scaleX: number, scaleY: number, wobblePhase: number): void {
-        const r = size / 2;
-        const segments = 16;
-        const wobbleAmount = size * 0.04;
+    private drawLocoRocoBody(
+        g: Graphics,
+        size: number,
+        scaleX: number,
+        scaleY: number,
+        wobblePhase: number
+    ): void {
+        const r = size / 2
+        const segments = 16
+        const wobbleAmount = size * 0.04
 
         // Smooth, gentle wobble
         const getWobble = (angle: number) => {
-            const w1 = Math.sin(wobblePhase * 2.5 + angle * 2) * wobbleAmount;
-            const w2 = Math.sin(wobblePhase * 1.8 + angle * 3) * wobbleAmount * 0.4;
-            return w1 + w2;
-        };
+            const w1 = Math.sin(wobblePhase * 2.5 + angle * 2) * wobbleAmount
+            const w2 = Math.sin(wobblePhase * 1.8 + angle * 3) * wobbleAmount * 0.4
+            return w1 + w2
+        }
 
         // Generate points around the wobble
-        const points: { x: number; y: number }[] = [];
+        const points: { x: number; y: number }[] = []
         for (let i = 0; i < segments; i++) {
-            const angle = (i / segments) * Math.PI * 2 - Math.PI / 2;
-            const wobble = getWobble(angle);
+            const angle = (i / segments) * Math.PI * 2 - Math.PI / 2
+            const wobble = getWobble(angle)
 
             // Slightly squashed oval base (LocoRoco are wider than tall)
-            const baseX = Math.cos(angle) * r * scaleX * 1.05;
-            const baseY = Math.sin(angle) * r * scaleY * 0.95;
+            const baseX = Math.cos(angle) * r * scaleX * 1.05
+            const baseY = Math.sin(angle) * r * scaleY * 0.95
 
-            const nx = Math.cos(angle);
-            const ny = Math.sin(angle);
+            const nx = Math.cos(angle)
+            const ny = Math.sin(angle)
 
             points.push({
                 x: baseX + nx * wobble,
-                y: baseY + ny * wobble
-            });
+                y: baseY + ny * wobble,
+            })
         }
 
         // Draw smooth curve through points
-        g.moveTo(points[0].x, points[0].y);
+        g.moveTo(points[0].x, points[0].y)
 
         for (let i = 0; i < segments; i++) {
-            const p0 = points[(i - 1 + segments) % segments];
-            const p1 = points[i];
-            const p2 = points[(i + 1) % segments];
-            const p3 = points[(i + 2) % segments];
+            const p0 = points[(i - 1 + segments) % segments]
+            const p1 = points[i]
+            const p2 = points[(i + 1) % segments]
+            const p3 = points[(i + 2) % segments]
 
-            const tension = 0.35;
-            const cp1x = p1.x + (p2.x - p0.x) * tension;
-            const cp1y = p1.y + (p2.y - p0.y) * tension;
-            const cp2x = p2.x - (p3.x - p1.x) * tension;
-            const cp2y = p2.y - (p3.y - p1.y) * tension;
+            const tension = 0.35
+            const cp1x = p1.x + (p2.x - p0.x) * tension
+            const cp1y = p1.y + (p2.y - p0.y) * tension
+            const cp2x = p2.x - (p3.x - p1.x) * tension
+            const cp2y = p2.y - (p3.y - p1.y) * tension
 
-            g.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+            g.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y)
         }
 
-        g.closePath();
+        g.closePath()
     }
 
     /**
      * 사각형 워블 - Boxy (박시)
      * 둥근 모서리를 가진 사각형 형태로, 고통받는 표정과 잘 어울림
      */
-    private drawSquareBody(g: Graphics, size: number, scaleX: number, scaleY: number, wobblePhase: number): void {
-        const halfSize = size / 2;
-        const cornerRadius = size * 0.15;
-        const wobbleAmount = size * 0.03;
+    private drawSquareBody(
+        g: Graphics,
+        size: number,
+        scaleX: number,
+        scaleY: number,
+        wobblePhase: number
+    ): void {
+        const halfSize = size / 2
+        const cornerRadius = size * 0.15
+        const wobbleAmount = size * 0.03
 
         const getWobble = (phase: number) => {
-            return Math.sin(wobblePhase * 2 + phase) * wobbleAmount;
-        };
+            return Math.sin(wobblePhase * 2 + phase) * wobbleAmount
+        }
 
-        const topLeftX = -halfSize * scaleX + getWobble(0);
-        const topLeftY = -halfSize * scaleY + getWobble(1);
-        const topRightX = halfSize * scaleX + getWobble(2);
-        const topRightY = -halfSize * scaleY + getWobble(3);
-        const bottomRightX = halfSize * scaleX + getWobble(4);
-        const bottomRightY = halfSize * scaleY + getWobble(5);
-        const bottomLeftX = -halfSize * scaleX + getWobble(6);
-        const bottomLeftY = halfSize * scaleY + getWobble(7);
+        const topLeftX = -halfSize * scaleX + getWobble(0)
+        const topLeftY = -halfSize * scaleY + getWobble(1)
+        const topRightX = halfSize * scaleX + getWobble(2)
+        const topRightY = -halfSize * scaleY + getWobble(3)
+        const bottomRightX = halfSize * scaleX + getWobble(4)
+        const bottomRightY = halfSize * scaleY + getWobble(5)
+        const bottomLeftX = -halfSize * scaleX + getWobble(6)
+        const bottomLeftY = halfSize * scaleY + getWobble(7)
 
-        g.moveTo(topLeftX + cornerRadius, topLeftY);
+        g.moveTo(topLeftX + cornerRadius, topLeftY)
 
-        g.lineTo(topRightX - cornerRadius, topRightY);
-        g.quadraticCurveTo(topRightX, topRightY, topRightX, topRightY + cornerRadius);
+        g.lineTo(topRightX - cornerRadius, topRightY)
+        g.quadraticCurveTo(topRightX, topRightY, topRightX, topRightY + cornerRadius)
 
-        g.lineTo(bottomRightX, bottomRightY - cornerRadius);
-        g.quadraticCurveTo(bottomRightX, bottomRightY, bottomRightX - cornerRadius, bottomRightY);
+        g.lineTo(bottomRightX, bottomRightY - cornerRadius)
+        g.quadraticCurveTo(bottomRightX, bottomRightY, bottomRightX - cornerRadius, bottomRightY)
 
-        g.lineTo(bottomLeftX + cornerRadius, bottomLeftY);
-        g.quadraticCurveTo(bottomLeftX, bottomLeftY, bottomLeftX, bottomLeftY - cornerRadius);
+        g.lineTo(bottomLeftX + cornerRadius, bottomLeftY)
+        g.quadraticCurveTo(bottomLeftX, bottomLeftY, bottomLeftX, bottomLeftY - cornerRadius)
 
-        g.lineTo(topLeftX, topLeftY + cornerRadius);
-        g.quadraticCurveTo(topLeftX, topLeftY, topLeftX + cornerRadius, topLeftY);
+        g.lineTo(topLeftX, topLeftY + cornerRadius)
+        g.quadraticCurveTo(topLeftX, topLeftY, topLeftX + cornerRadius, topLeftY)
 
-        g.closePath();
+        g.closePath()
     }
 
     /**
      * 삼각형 워블 - Spike (스파이크)
      * 뾰족한 상단이 특징, 적이나 장애물 역할에 적합
      */
-    private drawTriangleBody(g: Graphics, size: number, scaleX: number, scaleY: number, wobblePhase: number): void {
-        const halfSize = size / 2;
-        const wobbleAmount = size * 0.03;
+    private drawTriangleBody(
+        g: Graphics,
+        size: number,
+        scaleX: number,
+        scaleY: number,
+        wobblePhase: number
+    ): void {
+        const halfSize = size / 2
+        const wobbleAmount = size * 0.03
 
-        const getWobble = (phase: number) => Math.sin(wobblePhase * 2.5 + phase) * wobbleAmount;
+        const getWobble = (phase: number) => Math.sin(wobblePhase * 2.5 + phase) * wobbleAmount
 
-        const topX = 0 + getWobble(0);
-        const topY = -halfSize * scaleY * 0.9 + getWobble(1);
-        const bottomLeftX = -halfSize * scaleX * 0.95 + getWobble(2);
-        const bottomLeftY = halfSize * scaleY * 0.7 + getWobble(3);
-        const bottomRightX = halfSize * scaleX * 0.95 + getWobble(4);
-        const bottomRightY = halfSize * scaleY * 0.7 + getWobble(5);
+        const topX = 0 + getWobble(0)
+        const topY = -halfSize * scaleY * 0.9 + getWobble(1)
+        const bottomLeftX = -halfSize * scaleX * 0.95 + getWobble(2)
+        const bottomLeftY = halfSize * scaleY * 0.7 + getWobble(3)
+        const bottomRightX = halfSize * scaleX * 0.95 + getWobble(4)
+        const bottomRightY = halfSize * scaleY * 0.7 + getWobble(5)
 
-        const cornerRadius = size * 0.1;
+        const cornerRadius = size * 0.1
 
-        g.moveTo(topX, topY + cornerRadius);
-        g.quadraticCurveTo(topX, topY, topX + cornerRadius * 0.5, topY + cornerRadius * 0.3);
-        g.lineTo(bottomRightX - cornerRadius, bottomRightY - cornerRadius * 0.5);
-        g.quadraticCurveTo(bottomRightX, bottomRightY, bottomRightX - cornerRadius, bottomRightY);
-        g.lineTo(bottomLeftX + cornerRadius, bottomLeftY);
-        g.quadraticCurveTo(bottomLeftX, bottomLeftY, bottomLeftX + cornerRadius * 0.5, bottomLeftY - cornerRadius * 0.5);
-        g.lineTo(topX - cornerRadius * 0.5, topY + cornerRadius * 0.3);
-        g.quadraticCurveTo(topX, topY, topX, topY + cornerRadius);
+        g.moveTo(topX, topY + cornerRadius)
+        g.quadraticCurveTo(topX, topY, topX + cornerRadius * 0.5, topY + cornerRadius * 0.3)
+        g.lineTo(bottomRightX - cornerRadius, bottomRightY - cornerRadius * 0.5)
+        g.quadraticCurveTo(bottomRightX, bottomRightY, bottomRightX - cornerRadius, bottomRightY)
+        g.lineTo(bottomLeftX + cornerRadius, bottomLeftY)
+        g.quadraticCurveTo(
+            bottomLeftX,
+            bottomLeftY,
+            bottomLeftX + cornerRadius * 0.5,
+            bottomLeftY - cornerRadius * 0.5
+        )
+        g.lineTo(topX - cornerRadius * 0.5, topY + cornerRadius * 0.3)
+        g.quadraticCurveTo(topX, topY, topX, topY + cornerRadius)
 
-        g.closePath();
+        g.closePath()
     }
 
     /**
      * 별 모양 워블 - Twinkle (트윙클)
      * 5개의 뾰족한 끝이 있는 별 모양
      */
-    private drawStarBody(g: Graphics, size: number, scaleX: number, scaleY: number, wobblePhase: number): void {
-        const outerRadius = size * 0.5;
-        const innerRadius = size * 0.25;
-        const points = 5;
-        const wobbleAmount = size * 0.025;
+    private drawStarBody(
+        g: Graphics,
+        size: number,
+        scaleX: number,
+        scaleY: number,
+        wobblePhase: number
+    ): void {
+        const outerRadius = size * 0.5
+        const innerRadius = size * 0.25
+        const points = 5
+        const wobbleAmount = size * 0.025
 
-        const getWobble = (angle: number) => Math.sin(wobblePhase * 3 + angle * 2) * wobbleAmount;
+        const getWobble = (angle: number) => Math.sin(wobblePhase * 3 + angle * 2) * wobbleAmount
 
-        const starPoints: { x: number; y: number }[] = [];
+        const starPoints: { x: number; y: number }[] = []
         for (let i = 0; i < points * 2; i++) {
-            const angle = (i * Math.PI) / points - Math.PI / 2;
-            const radius = i % 2 === 0 ? outerRadius : innerRadius;
-            const wobble = getWobble(angle);
+            const angle = (i * Math.PI) / points - Math.PI / 2
+            const radius = i % 2 === 0 ? outerRadius : innerRadius
+            const wobble = getWobble(angle)
             starPoints.push({
                 x: Math.cos(angle) * (radius + wobble) * scaleX,
                 y: Math.sin(angle) * (radius + wobble) * scaleY,
-            });
+            })
         }
 
-        g.moveTo(starPoints[0].x, starPoints[0].y);
+        g.moveTo(starPoints[0].x, starPoints[0].y)
         for (let i = 1; i < starPoints.length; i++) {
-            const prev = starPoints[i - 1];
-            const curr = starPoints[i];
-            const cpX = (prev.x + curr.x) / 2;
-            const cpY = (prev.y + curr.y) / 2;
-            g.quadraticCurveTo(cpX, cpY, curr.x, curr.y);
+            const prev = starPoints[i - 1]
+            const curr = starPoints[i]
+            const cpX = (prev.x + curr.x) / 2
+            const cpY = (prev.y + curr.y) / 2
+            g.quadraticCurveTo(cpX, cpY, curr.x, curr.y)
         }
-        const last = starPoints[starPoints.length - 1];
-        const first = starPoints[0];
-        g.quadraticCurveTo((last.x + first.x) / 2, (last.y + first.y) / 2, first.x, first.y);
+        const last = starPoints[starPoints.length - 1]
+        const first = starPoints[0]
+        g.quadraticCurveTo((last.x + first.x) / 2, (last.y + first.y) / 2, first.x, first.y)
 
-        g.closePath();
+        g.closePath()
     }
 
     /**
      * 다이아몬드 워블 - Gem (젬)
      * 세로로 긴 마름모 형태
      */
-    private drawDiamondBody(g: Graphics, size: number, scaleX: number, scaleY: number, wobblePhase: number): void {
-        const halfWidth = size * 0.4;
-        const halfHeight = size * 0.55;
-        const wobbleAmount = size * 0.03;
+    private drawDiamondBody(
+        g: Graphics,
+        size: number,
+        scaleX: number,
+        scaleY: number,
+        wobblePhase: number
+    ): void {
+        const halfWidth = size * 0.4
+        const halfHeight = size * 0.55
+        const wobbleAmount = size * 0.03
 
-        const getWobble = (phase: number) => Math.sin(wobblePhase * 2 + phase) * wobbleAmount;
+        const getWobble = (phase: number) => Math.sin(wobblePhase * 2 + phase) * wobbleAmount
 
-        const topX = 0 + getWobble(0);
-        const topY = -halfHeight * scaleY + getWobble(1);
-        const rightX = halfWidth * scaleX + getWobble(2);
-        const rightY = 0 + getWobble(3);
-        const bottomX = 0 + getWobble(4);
-        const bottomY = halfHeight * scaleY + getWobble(5);
-        const leftX = -halfWidth * scaleX + getWobble(6);
-        const leftY = 0 + getWobble(7);
+        const topX = 0 + getWobble(0)
+        const topY = -halfHeight * scaleY + getWobble(1)
+        const rightX = halfWidth * scaleX + getWobble(2)
+        const rightY = 0 + getWobble(3)
+        const bottomX = 0 + getWobble(4)
+        const bottomY = halfHeight * scaleY + getWobble(5)
+        const leftX = -halfWidth * scaleX + getWobble(6)
+        const leftY = 0 + getWobble(7)
 
-        const cornerRadius = size * 0.08;
+        const cornerRadius = size * 0.08
 
-        g.moveTo(topX, topY + cornerRadius);
-        g.quadraticCurveTo(topX, topY, topX + cornerRadius, topY + cornerRadius * 0.5);
-        g.lineTo(rightX - cornerRadius, rightY - cornerRadius * 0.5);
-        g.quadraticCurveTo(rightX, rightY, rightX - cornerRadius, rightY + cornerRadius * 0.5);
-        g.lineTo(bottomX + cornerRadius, bottomY - cornerRadius * 0.5);
-        g.quadraticCurveTo(bottomX, bottomY, bottomX - cornerRadius, bottomY - cornerRadius * 0.5);
-        g.lineTo(leftX + cornerRadius, leftY + cornerRadius * 0.5);
-        g.quadraticCurveTo(leftX, leftY, leftX + cornerRadius, leftY - cornerRadius * 0.5);
-        g.lineTo(topX - cornerRadius, topY + cornerRadius * 0.5);
-        g.quadraticCurveTo(topX, topY, topX, topY + cornerRadius);
+        g.moveTo(topX, topY + cornerRadius)
+        g.quadraticCurveTo(topX, topY, topX + cornerRadius, topY + cornerRadius * 0.5)
+        g.lineTo(rightX - cornerRadius, rightY - cornerRadius * 0.5)
+        g.quadraticCurveTo(rightX, rightY, rightX - cornerRadius, rightY + cornerRadius * 0.5)
+        g.lineTo(bottomX + cornerRadius, bottomY - cornerRadius * 0.5)
+        g.quadraticCurveTo(bottomX, bottomY, bottomX - cornerRadius, bottomY - cornerRadius * 0.5)
+        g.lineTo(leftX + cornerRadius, leftY + cornerRadius * 0.5)
+        g.quadraticCurveTo(leftX, leftY, leftX + cornerRadius, leftY - cornerRadius * 0.5)
+        g.lineTo(topX - cornerRadius, topY + cornerRadius * 0.5)
+        g.quadraticCurveTo(topX, topY, topX, topY + cornerRadius)
 
-        g.closePath();
+        g.closePath()
     }
 
     /**
      * 오각형 워블 - Penta (펜타)
      * 균형 잡힌 5각형 형태
      */
-    private drawPentagonBody(g: Graphics, size: number, scaleX: number, scaleY: number, wobblePhase: number): void {
-        const radius = size * 0.48;
-        const sides = 5;
-        const wobbleAmount = size * 0.03;
+    private drawPentagonBody(
+        g: Graphics,
+        size: number,
+        scaleX: number,
+        scaleY: number,
+        wobblePhase: number
+    ): void {
+        const radius = size * 0.48
+        const sides = 5
+        const wobbleAmount = size * 0.03
 
-        const getWobble = (angle: number) => Math.sin(wobblePhase * 2 + angle * 2) * wobbleAmount;
+        const getWobble = (angle: number) => Math.sin(wobblePhase * 2 + angle * 2) * wobbleAmount
 
-        const pentagonPoints: { x: number; y: number }[] = [];
+        const pentagonPoints: { x: number; y: number }[] = []
         for (let i = 0; i < sides; i++) {
-            const angle = (i * 2 * Math.PI) / sides - Math.PI / 2;
-            const wobble = getWobble(angle);
+            const angle = (i * 2 * Math.PI) / sides - Math.PI / 2
+            const wobble = getWobble(angle)
             pentagonPoints.push({
                 x: Math.cos(angle) * (radius + wobble) * scaleX,
                 y: Math.sin(angle) * (radius + wobble) * scaleY,
-            });
+            })
         }
 
-        const cornerRadius = size * 0.1;
+        const cornerRadius = size * 0.1
 
-        g.moveTo(pentagonPoints[0].x, pentagonPoints[0].y);
+        g.moveTo(pentagonPoints[0].x, pentagonPoints[0].y)
         for (let i = 0; i < sides; i++) {
-            const curr = pentagonPoints[i];
-            const next = pentagonPoints[(i + 1) % sides];
-            const midX = (curr.x + next.x) / 2;
-            const midY = (curr.y + next.y) / 2;
-            g.lineTo(midX, midY);
-            g.quadraticCurveTo(next.x, next.y, (next.x + pentagonPoints[(i + 2) % sides].x) / 2, (next.y + pentagonPoints[(i + 2) % sides].y) / 2);
+            const curr = pentagonPoints[i]
+            const next = pentagonPoints[(i + 1) % sides]
+            const midX = (curr.x + next.x) / 2
+            const midY = (curr.y + next.y) / 2
+            g.lineTo(midX, midY)
+            g.quadraticCurveTo(
+                next.x,
+                next.y,
+                (next.x + pentagonPoints[(i + 2) % sides].x) / 2,
+                (next.y + pentagonPoints[(i + 2) % sides].y) / 2
+            )
         }
 
-        g.closePath();
+        g.closePath()
     }
 
     /**
      * 섀도우 워블 - Shadow (섀도우)
      * 뾰족뾰족한 어두운 털이 있는 원형 - 적 캐릭터
      */
-    private drawShadowBody(g: Graphics, size: number, scaleX: number, scaleY: number, wobblePhase: number): void {
-        const r = size / 2;
-        const spikes = 24; // Number of fluffy spikes around the edge
-        const spikeDepth = size * 0.12; // How deep the spikes go
-        const wobbleAmount = size * 0.02;
+    private drawShadowBody(
+        g: Graphics,
+        size: number,
+        scaleX: number,
+        scaleY: number,
+        wobblePhase: number
+    ): void {
+        const r = size / 2
+        const spikes = 24 // Number of fluffy spikes around the edge
+        const spikeDepth = size * 0.12 // How deep the spikes go
+        const wobbleAmount = size * 0.02
 
         const getWobble = (angle: number) => {
-            return Math.sin(wobblePhase * 3 + angle * 4) * wobbleAmount;
-        };
+            return Math.sin(wobblePhase * 3 + angle * 4) * wobbleAmount
+        }
 
-        const points: { x: number; y: number }[] = [];
+        const points: { x: number; y: number }[] = []
 
         for (let i = 0; i < spikes * 2; i++) {
-            const angle = (i / (spikes * 2)) * Math.PI * 2 - Math.PI / 2;
-            const isSpike = i % 2 === 0;
-            const radius = isSpike ? r + spikeDepth : r - spikeDepth * 0.3;
-            const wobble = getWobble(angle);
+            const angle = (i / (spikes * 2)) * Math.PI * 2 - Math.PI / 2
+            const isSpike = i % 2 === 0
+            const radius = isSpike ? r + spikeDepth : r - spikeDepth * 0.3
+            const wobble = getWobble(angle)
 
             points.push({
                 x: Math.cos(angle) * (radius + wobble) * scaleX,
                 y: Math.sin(angle) * (radius + wobble) * scaleY,
-            });
+            })
         }
 
         // Draw smooth curve through spiky points
-        g.moveTo(points[0].x, points[0].y);
+        g.moveTo(points[0].x, points[0].y)
 
         for (let i = 0; i < points.length; i++) {
-            const curr = points[i];
-            const next = points[(i + 1) % points.length];
-            const cpX = (curr.x + next.x) / 2;
-            const cpY = (curr.y + next.y) / 2;
-            g.quadraticCurveTo(curr.x, curr.y, cpX, cpY);
+            const curr = points[i]
+            const next = points[(i + 1) % points.length]
+            const cpX = (curr.x + next.x) / 2
+            const cpY = (curr.y + next.y) / 2
+            g.quadraticCurveTo(curr.x, curr.y, cpX, cpY)
         }
 
-        g.closePath();
+        g.closePath()
     }
 
     private drawFace(): void {
-        const { size, expression, scaleX, scaleY, lookDirection } = this.options;
-        const g = this.faceGraphics;
-        g.clear();
+        const { size, expression, scaleX, scaleY, lookDirection } = this.options
+        const g = this.faceGraphics
+        g.clear()
 
-        if (expression === 'none') return;
+        if (expression === 'none') return
 
         // LocoRoco-style face proportions
-        const eyeSize = size * 0.09;
-        const eyeSpacing = size * 0.16;
-        const eyeY = -size * 0.05 * scaleY;
-        const lookX = lookDirection.x * 2;
-        const lookY = lookDirection.y * 2;
-        const mouthY = eyeY + eyeSize * 2.8;
+        const eyeSize = size * 0.09
+        const eyeSpacing = size * 0.16
+        const eyeY = -size * 0.05 * scaleY
+        const lookX = lookDirection.x * 2
+        const lookY = lookDirection.y * 2
+        const mouthY = eyeY + eyeSize * 2.8
 
         // Draw eyes
-        this.drawLocoRocoEyes(g, expression, eyeSpacing, eyeSize, eyeY, lookX, lookY);
+        this.drawLocoRocoEyes(g, expression, eyeSpacing, eyeSize, eyeY, lookX, lookY)
 
         // Draw mouth
-        this.drawLocoRocoMouth(g, expression, mouthY, eyeSpacing, eyeSize);
+        this.drawLocoRocoMouth(g, expression, mouthY, eyeSpacing, eyeSize)
 
         // Draw cheeks for happy/excited expressions
         if (expression === 'happy' || expression === 'excited' || expression === 'sleepy') {
-            const cheekY = eyeY + eyeSize * 1.2;
-            g.ellipse(-eyeSpacing - eyeSize * 0.3, cheekY, eyeSize * 0.55, eyeSize * 0.4);
-            g.ellipse(eyeSpacing + eyeSize * 0.3, cheekY, eyeSize * 0.55, eyeSize * 0.4);
-            g.fill({ color: LOCOROCO_CHEEK, alpha: 0.5 });
+            const cheekY = eyeY + eyeSize * 1.2
+            g.ellipse(-eyeSpacing - eyeSize * 0.3, cheekY, eyeSize * 0.55, eyeSize * 0.4)
+            g.ellipse(eyeSpacing + eyeSize * 0.3, cheekY, eyeSize * 0.55, eyeSize * 0.4)
+            g.fill({ color: LOCOROCO_CHEEK, alpha: 0.5 })
         }
     }
 
@@ -734,97 +793,105 @@ export class Wobble extends Container {
         lookX: number,
         lookY: number
     ): void {
-        const bigEyeSize = eyeSize * 1.2;
+        const bigEyeSize = eyeSize * 1.2
 
         if (expression === 'struggle' || expression === 'dizzy') {
-            const xSize = bigEyeSize * 0.6;
-            [-1, 1].forEach((side) => {
-                const cx = side * eyeSpacing;
+            const xSize = bigEyeSize * 0.6
+            ;[-1, 1].forEach((side) => {
+                const cx = side * eyeSpacing
                 if (expression === 'struggle') {
-                    g.moveTo(cx - xSize, eyeY - xSize);
-                    g.lineTo(cx + xSize, eyeY + xSize);
-                    g.moveTo(cx + xSize, eyeY - xSize);
-                    g.lineTo(cx - xSize, eyeY + xSize);
-                    g.stroke({ color: LOCOROCO_OUTLINE, width: 2.5, cap: 'round' });
+                    g.moveTo(cx - xSize, eyeY - xSize)
+                    g.lineTo(cx + xSize, eyeY + xSize)
+                    g.moveTo(cx + xSize, eyeY - xSize)
+                    g.lineTo(cx - xSize, eyeY + xSize)
+                    g.stroke({ color: LOCOROCO_OUTLINE, width: 2.5, cap: 'round' })
                 } else {
-                    g.circle(cx, eyeY, bigEyeSize * 0.7);
-                    g.stroke({ color: LOCOROCO_OUTLINE, width: 2 });
-                    g.circle(cx, eyeY, bigEyeSize * 0.35);
-                    g.stroke({ color: LOCOROCO_OUTLINE, width: 2 });
+                    g.circle(cx, eyeY, bigEyeSize * 0.7)
+                    g.stroke({ color: LOCOROCO_OUTLINE, width: 2 })
+                    g.circle(cx, eyeY, bigEyeSize * 0.35)
+                    g.stroke({ color: LOCOROCO_OUTLINE, width: 2 })
                 }
-            });
+            })
         } else if (expression === 'sleepy') {
-            [-1, 1].forEach((side) => {
-                const cx = side * eyeSpacing;
-                g.moveTo(cx - bigEyeSize * 0.7, eyeY);
-                g.quadraticCurveTo(cx, eyeY + bigEyeSize * 0.3, cx + bigEyeSize * 0.7, eyeY);
-                g.stroke({ color: LOCOROCO_OUTLINE, width: 2.5, cap: 'round' });
-            });
+            ;[-1, 1].forEach((side) => {
+                const cx = side * eyeSpacing
+                g.moveTo(cx - bigEyeSize * 0.7, eyeY)
+                g.quadraticCurveTo(cx, eyeY + bigEyeSize * 0.3, cx + bigEyeSize * 0.7, eyeY)
+                g.stroke({ color: LOCOROCO_OUTLINE, width: 2.5, cap: 'round' })
+            })
         } else if (expression === 'surprised') {
-            [-1, 1].forEach((side) => {
-                const cx = side * eyeSpacing + lookX * 0.5;
-                g.circle(cx, eyeY + lookY * 0.5, bigEyeSize);
-                g.fill(LOCOROCO_OUTLINE);
-                g.circle(cx - bigEyeSize * 0.3, eyeY - bigEyeSize * 0.3 + lookY * 0.3, bigEyeSize * 0.25);
-                g.fill(0xffffff);
-            });
+            ;[-1, 1].forEach((side) => {
+                const cx = side * eyeSpacing + lookX * 0.5
+                g.circle(cx, eyeY + lookY * 0.5, bigEyeSize)
+                g.fill(LOCOROCO_OUTLINE)
+                g.circle(
+                    cx - bigEyeSize * 0.3,
+                    eyeY - bigEyeSize * 0.3 + lookY * 0.3,
+                    bigEyeSize * 0.25
+                )
+                g.fill(0xffffff)
+            })
         } else if (expression === 'effort' || expression === 'charge') {
-            [-1, 1].forEach((side) => {
-                const cx = side * eyeSpacing + lookX * 0.5;
-                g.ellipse(cx, eyeY + lookY * 0.3, bigEyeSize * 0.8, bigEyeSize * 0.3);
-                g.fill(LOCOROCO_OUTLINE);
-            });
+            ;[-1, 1].forEach((side) => {
+                const cx = side * eyeSpacing + lookX * 0.5
+                g.ellipse(cx, eyeY + lookY * 0.3, bigEyeSize * 0.8, bigEyeSize * 0.3)
+                g.fill(LOCOROCO_OUTLINE)
+            })
         } else if (expression === 'worried') {
-            [-1, 1].forEach((side) => {
-                const cx = side * eyeSpacing + lookX * 0.5;
-                g.circle(cx, eyeY + lookY * 0.5, bigEyeSize * 0.85);
-                g.fill(LOCOROCO_OUTLINE);
-                g.circle(cx - bigEyeSize * 0.25, eyeY - bigEyeSize * 0.2, bigEyeSize * 0.2);
-                g.fill(0xffffff);
-                const browY = eyeY - bigEyeSize * 1.3;
-                g.moveTo(cx - bigEyeSize * 0.5, browY + side * bigEyeSize * 0.35);
-                g.lineTo(cx + bigEyeSize * 0.35, browY - side * bigEyeSize * 0.1);
-                g.stroke({ color: LOCOROCO_OUTLINE, width: 2.5, cap: 'round' });
-            });
+            ;[-1, 1].forEach((side) => {
+                const cx = side * eyeSpacing + lookX * 0.5
+                g.circle(cx, eyeY + lookY * 0.5, bigEyeSize * 0.85)
+                g.fill(LOCOROCO_OUTLINE)
+                g.circle(cx - bigEyeSize * 0.25, eyeY - bigEyeSize * 0.2, bigEyeSize * 0.2)
+                g.fill(0xffffff)
+                const browY = eyeY - bigEyeSize * 1.3
+                g.moveTo(cx - bigEyeSize * 0.5, browY + side * bigEyeSize * 0.35)
+                g.lineTo(cx + bigEyeSize * 0.35, browY - side * bigEyeSize * 0.1)
+                g.stroke({ color: LOCOROCO_OUTLINE, width: 2.5, cap: 'round' })
+            })
         } else if (expression === 'hot') {
-            [-1, 1].forEach((side) => {
-                const cx = side * eyeSpacing;
-                g.ellipse(cx, eyeY, bigEyeSize * 0.65, bigEyeSize * 0.45);
-                g.fill(LOCOROCO_OUTLINE);
-            });
+            ;[-1, 1].forEach((side) => {
+                const cx = side * eyeSpacing
+                g.ellipse(cx, eyeY, bigEyeSize * 0.65, bigEyeSize * 0.45)
+                g.fill(LOCOROCO_OUTLINE)
+            })
         } else if (expression === 'angry') {
             // Angry narrowed eyes with yellow/gold color (like the shadow enemy)
-            [-1, 1].forEach((side) => {
-                const cx = side * eyeSpacing + lookX * 0.5;
+            ;[-1, 1].forEach((side) => {
+                const cx = side * eyeSpacing + lookX * 0.5
                 // Yellow/gold angry eye
-                g.ellipse(cx, eyeY + lookY * 0.3, bigEyeSize * 0.9, bigEyeSize * 0.5);
-                g.fill(0xD4A017); // Gold/yellow color
-                g.ellipse(cx, eyeY + lookY * 0.3, bigEyeSize * 0.9, bigEyeSize * 0.5);
-                g.stroke({ color: LOCOROCO_OUTLINE, width: 2 });
+                g.ellipse(cx, eyeY + lookY * 0.3, bigEyeSize * 0.9, bigEyeSize * 0.5)
+                g.fill(0xd4a017) // Gold/yellow color
+                g.ellipse(cx, eyeY + lookY * 0.3, bigEyeSize * 0.9, bigEyeSize * 0.5)
+                g.stroke({ color: LOCOROCO_OUTLINE, width: 2 })
                 // Black pupil
-                g.circle(cx + lookX * 0.2, eyeY + lookY * 0.3, bigEyeSize * 0.35);
-                g.fill(LOCOROCO_OUTLINE);
+                g.circle(cx + lookX * 0.2, eyeY + lookY * 0.3, bigEyeSize * 0.35)
+                g.fill(LOCOROCO_OUTLINE)
                 // Angry eyebrow - angled inward
-                const browY = eyeY - bigEyeSize * 1.2;
-                g.moveTo(cx - side * bigEyeSize * 0.8, browY - side * bigEyeSize * 0.4);
-                g.lineTo(cx + side * bigEyeSize * 0.3, browY + side * bigEyeSize * 0.2);
-                g.stroke({ color: LOCOROCO_OUTLINE, width: 3, cap: 'round' });
-            });
+                const browY = eyeY - bigEyeSize * 1.2
+                g.moveTo(cx - side * bigEyeSize * 0.8, browY - side * bigEyeSize * 0.4)
+                g.lineTo(cx + side * bigEyeSize * 0.3, browY + side * bigEyeSize * 0.2)
+                g.stroke({ color: LOCOROCO_OUTLINE, width: 3, cap: 'round' })
+            })
         } else {
-            [-1, 1].forEach((side) => {
-                const cx = side * eyeSpacing + lookX * 0.5;
-                g.circle(cx, eyeY + lookY * 0.5, bigEyeSize * 0.9);
-                g.fill(LOCOROCO_OUTLINE);
-                g.circle(cx - bigEyeSize * 0.25, eyeY - bigEyeSize * 0.25 + lookY * 0.3, bigEyeSize * 0.25);
-                g.fill(0xffffff);
-            });
+            ;[-1, 1].forEach((side) => {
+                const cx = side * eyeSpacing + lookX * 0.5
+                g.circle(cx, eyeY + lookY * 0.5, bigEyeSize * 0.9)
+                g.fill(LOCOROCO_OUTLINE)
+                g.circle(
+                    cx - bigEyeSize * 0.25,
+                    eyeY - bigEyeSize * 0.25 + lookY * 0.3,
+                    bigEyeSize * 0.25
+                )
+                g.fill(0xffffff)
+            })
 
             if (expression === 'excited') {
-                [-1, 1].forEach((side) => {
-                    const cx = side * eyeSpacing + lookX * 0.5;
-                    g.circle(cx + bigEyeSize * 0.1, eyeY + bigEyeSize * 0.1, bigEyeSize * 0.1);
-                    g.fill(0xffffff);
-                });
+                ;[-1, 1].forEach((side) => {
+                    const cx = side * eyeSpacing + lookX * 0.5
+                    g.circle(cx + bigEyeSize * 0.1, eyeY + bigEyeSize * 0.1, bigEyeSize * 0.1)
+                    g.fill(0xffffff)
+                })
             }
         }
     }
@@ -836,104 +903,120 @@ export class Wobble extends Container {
         eyeSpacing: number,
         eyeSize: number
     ): void {
-        const mouthWidth = eyeSpacing * 0.9;
-        const mouthSize = eyeSize * 1.1;
+        const mouthWidth = eyeSpacing * 0.9
+        const mouthSize = eyeSize * 1.1
 
         if (expression === 'surprised') {
-            g.circle(0, mouthY, mouthSize * 0.8);
-            g.fill(LOCOROCO_OUTLINE);
+            g.circle(0, mouthY, mouthSize * 0.8)
+            g.fill(LOCOROCO_OUTLINE)
         } else if (expression === 'excited') {
-            g.ellipse(0, mouthY, mouthSize * 1.1, mouthSize * 0.7);
-            g.fill(LOCOROCO_OUTLINE);
-            g.ellipse(0, mouthY + mouthSize * 0.2, mouthSize * 0.5, mouthSize * 0.3);
-            g.fill(0xE87E4D);
+            g.ellipse(0, mouthY, mouthSize * 1.1, mouthSize * 0.7)
+            g.fill(LOCOROCO_OUTLINE)
+            g.ellipse(0, mouthY + mouthSize * 0.2, mouthSize * 0.5, mouthSize * 0.3)
+            g.fill(0xe87e4d)
         } else if (expression === 'struggle') {
-            g.moveTo(-mouthWidth * 0.6, mouthY);
+            g.moveTo(-mouthWidth * 0.6, mouthY)
             g.bezierCurveTo(
-                -mouthWidth * 0.3, mouthY - eyeSize * 0.3,
-                mouthWidth * 0.3, mouthY + eyeSize * 0.3,
-                mouthWidth * 0.6, mouthY
-            );
-            g.stroke({ color: LOCOROCO_OUTLINE, width: 2.5, cap: 'round' });
+                -mouthWidth * 0.3,
+                mouthY - eyeSize * 0.3,
+                mouthWidth * 0.3,
+                mouthY + eyeSize * 0.3,
+                mouthWidth * 0.6,
+                mouthY
+            )
+            g.stroke({ color: LOCOROCO_OUTLINE, width: 2.5, cap: 'round' })
         } else if (expression === 'neutral' || expression === 'sleepy') {
-            g.moveTo(-mouthWidth * 0.4, mouthY);
-            g.lineTo(mouthWidth * 0.4, mouthY);
-            g.stroke({ color: LOCOROCO_OUTLINE, width: 2.5, cap: 'round' });
+            g.moveTo(-mouthWidth * 0.4, mouthY)
+            g.lineTo(mouthWidth * 0.4, mouthY)
+            g.stroke({ color: LOCOROCO_OUTLINE, width: 2.5, cap: 'round' })
         } else if (expression === 'hot') {
-            g.ellipse(0, mouthY, mouthSize, mouthSize * 0.7);
-            g.fill(LOCOROCO_OUTLINE);
-            g.ellipse(0, mouthY + mouthSize * 0.4, mouthSize * 0.6, mouthSize * 0.4);
-            g.fill(0xE87E4D);
+            g.ellipse(0, mouthY, mouthSize, mouthSize * 0.7)
+            g.fill(LOCOROCO_OUTLINE)
+            g.ellipse(0, mouthY + mouthSize * 0.4, mouthSize * 0.6, mouthSize * 0.4)
+            g.fill(0xe87e4d)
         } else if (expression === 'charge' || expression === 'effort') {
-            g.ellipse(0, mouthY, mouthSize * 0.4, mouthSize * 0.3);
-            g.fill(LOCOROCO_OUTLINE);
+            g.ellipse(0, mouthY, mouthSize * 0.4, mouthSize * 0.3)
+            g.fill(LOCOROCO_OUTLINE)
         } else if (expression === 'worried') {
-            g.moveTo(-mouthWidth * 0.5, mouthY - mouthSize * 0.2);
-            g.quadraticCurveTo(0, mouthY + mouthSize * 0.5, mouthWidth * 0.5, mouthY - mouthSize * 0.2);
-            g.stroke({ color: LOCOROCO_OUTLINE, width: 2.5, cap: 'round' });
+            g.moveTo(-mouthWidth * 0.5, mouthY - mouthSize * 0.2)
+            g.quadraticCurveTo(
+                0,
+                mouthY + mouthSize * 0.5,
+                mouthWidth * 0.5,
+                mouthY - mouthSize * 0.2
+            )
+            g.stroke({ color: LOCOROCO_OUTLINE, width: 2.5, cap: 'round' })
         } else if (expression === 'dizzy') {
-            g.moveTo(-mouthWidth * 0.5, mouthY);
+            g.moveTo(-mouthWidth * 0.5, mouthY)
             g.bezierCurveTo(
-                -mouthWidth * 0.25, mouthY - mouthSize * 0.4,
-                mouthWidth * 0.25, mouthY + mouthSize * 0.4,
-                mouthWidth * 0.5, mouthY
-            );
-            g.stroke({ color: LOCOROCO_OUTLINE, width: 2.5, cap: 'round' });
+                -mouthWidth * 0.25,
+                mouthY - mouthSize * 0.4,
+                mouthWidth * 0.25,
+                mouthY + mouthSize * 0.4,
+                mouthWidth * 0.5,
+                mouthY
+            )
+            g.stroke({ color: LOCOROCO_OUTLINE, width: 2.5, cap: 'round' })
         } else if (expression === 'angry') {
             // Small frowning mouth
-            g.ellipse(0, mouthY, mouthSize * 0.5, mouthSize * 0.35);
-            g.fill(LOCOROCO_OUTLINE);
+            g.ellipse(0, mouthY, mouthSize * 0.5, mouthSize * 0.35)
+            g.fill(LOCOROCO_OUTLINE)
         } else {
-            g.moveTo(-mouthWidth * 0.6, mouthY - mouthSize * 0.15);
-            g.quadraticCurveTo(0, mouthY + mouthSize * 0.5, mouthWidth * 0.6, mouthY - mouthSize * 0.15);
-            g.stroke({ color: LOCOROCO_OUTLINE, width: 3, cap: 'round' });
+            g.moveTo(-mouthWidth * 0.6, mouthY - mouthSize * 0.15)
+            g.quadraticCurveTo(
+                0,
+                mouthY + mouthSize * 0.5,
+                mouthWidth * 0.6,
+                mouthY - mouthSize * 0.15
+            )
+            g.stroke({ color: LOCOROCO_OUTLINE, width: 3, cap: 'round' })
         }
     }
 
     private drawSweat(): void {
-        const { size, showSweat, scaleY } = this.options;
-        const g = this.sweatGraphics;
-        g.clear();
+        const { size, showSweat, scaleY } = this.options
+        const g = this.sweatGraphics
+        g.clear()
 
-        if (!showSweat) return;
+        if (!showSweat) return
 
-        const eyeSize = size * 0.08;
-        const eyeY = -size * 0.08 * scaleY;
-        const sweatX = size * 0.35;
-        const sweatY = eyeY - eyeSize * 1.5;
+        const eyeSize = size * 0.08
+        const eyeY = -size * 0.08 * scaleY
+        const sweatX = size * 0.35
+        const sweatY = eyeY - eyeSize * 1.5
 
-        g.moveTo(sweatX, sweatY - 6);
-        g.quadraticCurveTo(sweatX + 5, sweatY, sweatX, sweatY + 6);
-        g.quadraticCurveTo(sweatX - 5, sweatY, sweatX, sweatY - 6);
-        g.fill(0x87CEEB);
-        g.stroke({ color: 0x5DADE2, width: 1 });
+        g.moveTo(sweatX, sweatY - 6)
+        g.quadraticCurveTo(sweatX + 5, sweatY, sweatX, sweatY + 6)
+        g.quadraticCurveTo(sweatX - 5, sweatY, sweatX, sweatY - 6)
+        g.fill(0x87ceeb)
+        g.stroke({ color: 0x5dade2, width: 1 })
     }
 
     /**
      * Update wobble options and redraw
      */
     public updateOptions(options: Partial<WobbleOptions>): void {
-        this.options = { ...this.options, ...options };
-        this.draw();
+        this.options = { ...this.options, ...options }
+        this.draw()
     }
 
     /**
      * Set wobble position
      */
     public setPosition(x: number, y: number): void {
-        this.position.set(x, y);
+        this.position.set(x, y)
     }
 
     /**
      * Get current options
      */
     public getOptions(): Required<WobbleOptions> {
-        return { ...this.options };
+        return { ...this.options }
     }
 }
 
 // Backwards compatibility aliases
-export type BlobExpression = WobbleExpression;
-export type BlobShape = WobbleShape;
-export type BlobOptions = WobbleOptions;
-export const Blob = Wobble;
+export type BlobExpression = WobbleExpression
+export type BlobShape = WobbleShape
+export type BlobOptions = WobbleOptions
+export const Blob = Wobble

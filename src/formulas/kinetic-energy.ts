@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const kineticEnergy: Formula = {
     id: 'kinetic-energy',
@@ -66,17 +66,17 @@ export const kineticEnergy: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const m = inputs.m ?? 10;
-        const v = inputs.v ?? 5;
+        const m = inputs.m ?? 10
+        const v = inputs.v ?? 5
         return {
             E: 0.5 * m * v * v,
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const m = inputs.m ?? 10;
-        const v = inputs.v ?? 5;
-        const E = 0.5 * m * v * v;
-        return `E = ½ × ${m.toFixed(0)} × ${v.toFixed(1)}² = ${E.toFixed(1)}`;
+        const m = inputs.m ?? 10
+        const v = inputs.v ?? 5
+        const E = 0.5 * m * v * v
+        return `E = ½ × ${m.toFixed(0)} × ${v.toFixed(1)}² = ${E.toFixed(1)}`
     },
     layout: {
         type: 'linear',
@@ -92,4 +92,4 @@ export const kineticEnergy: Formula = {
         numerator: ['m', 'v'],
         squares: ['v'],
     },
-};
+}

@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const newtonSecond: Formula = {
     id: 'newton-second',
@@ -66,17 +66,17 @@ export const newtonSecond: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const m = inputs.m ?? 10;
-        const a = inputs.a ?? 5;
+        const m = inputs.m ?? 10
+        const a = inputs.a ?? 5
         return {
             F: m * a,
-        };
+        }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const m = inputs.m ?? 10;
-        const a = inputs.a ?? 5;
-        const F = m * a;
-        return `F = ${m.toFixed(0)} × ${a.toFixed(1)} = ${F.toFixed(1)}`;
+        const m = inputs.m ?? 10
+        const a = inputs.a ?? 5
+        const F = m * a
+        return `F = ${m.toFixed(0)} × ${a.toFixed(1)} = ${F.toFixed(1)}`
     },
     layout: {
         type: 'linear',
@@ -90,4 +90,4 @@ export const newtonSecond: Formula = {
         output: 'F',
         numerator: ['m', 'a'],
     },
-};
+}

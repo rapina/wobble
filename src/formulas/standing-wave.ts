@@ -1,5 +1,5 @@
-import { Formula } from './types';
-import { colors } from '../styles/colors';
+import { Formula } from './types'
+import { colors } from '../styles/colors'
 
 export const standingWave: Formula = {
     id: 'standing-wave',
@@ -7,7 +7,8 @@ export const standingWave: Formula = {
     nameEn: 'Standing Wave',
     expression: 'L = nλ/2',
     description: '양 끝이 고정된 줄에서 정상파가 형성될 때, 줄의 길이는 반파장의 정수배이다',
-    descriptionEn: 'For a standing wave on a fixed string, length equals integer multiples of half-wavelength',
+    descriptionEn:
+        'For a standing wave on a fixed string, length equals integer multiples of half-wavelength',
     applications: [
         '기타와 바이올린 현의 음높이',
         '관악기의 공명',
@@ -66,17 +67,17 @@ export const standingWave: Formula = {
         },
     ],
     calculate: (inputs: Record<string, number>) => {
-        const L = inputs['L'] ?? 1;
-        const n = Math.round(inputs['n'] ?? 1);
+        const L = inputs['L'] ?? 1
+        const n = Math.round(inputs['n'] ?? 1)
         // L = nλ/2 → λ = 2L/n
-        const lambda = (2 * L) / n;
-        return { 'λ': lambda };
+        const lambda = (2 * L) / n
+        return { λ: lambda }
     },
     formatCalculation: (inputs: Record<string, number>) => {
-        const L = inputs['L'] ?? 1;
-        const n = Math.round(inputs['n'] ?? 1);
-        const lambda = (2 * L) / n;
-        return `λ = 2 × ${L.toFixed(2)} ÷ ${n} = ${lambda.toFixed(2)} m`;
+        const L = inputs['L'] ?? 1
+        const n = Math.round(inputs['n'] ?? 1)
+        const lambda = (2 * L) / n
+        return `λ = 2 × ${L.toFixed(2)} ÷ ${n} = ${lambda.toFixed(2)} m`
     },
     layout: {
         type: 'linear',
@@ -96,4 +97,4 @@ export const standingWave: Formula = {
             },
         ],
     },
-};
+}

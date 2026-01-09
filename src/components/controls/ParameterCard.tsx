@@ -1,17 +1,17 @@
 const theme = {
     bgPanel: '#374244',
     border: '#1a1a1a',
-};
+}
 
 interface ParameterCardProps {
-    symbol: string;
-    name: string;
-    value: number;
-    unit: string;
-    color: string;
-    isSelected?: boolean;
-    onSelect?: () => void;
-    compact?: boolean;
+    symbol: string
+    name: string
+    value: number
+    unit: string
+    color: string
+    isSelected?: boolean
+    onSelect?: () => void
+    compact?: boolean
 }
 
 export function ParameterCard({
@@ -34,9 +34,9 @@ export function ParameterCard({
                     boxShadow: `0 2px 0 ${theme.border}`,
                 }}
                 onClick={(e) => {
-                e.stopPropagation();
-                onSelect?.();
-            }}
+                    e.stopPropagation()
+                    onSelect?.()
+                }}
             >
                 <div
                     className="px-1 py-0.5 rounded-t text-center"
@@ -45,9 +45,7 @@ export function ParameterCard({
                         borderBottom: `1px solid ${theme.border}`,
                     }}
                 >
-                    <div className="text-[10px] font-black text-black leading-none">
-                        {symbol}
-                    </div>
+                    <div className="text-[10px] font-black text-black leading-none">{symbol}</div>
                 </div>
                 <div className="p-0.5">
                     <div
@@ -61,7 +59,7 @@ export function ParameterCard({
                     </div>
                 </div>
             </div>
-        );
+        )
     }
 
     return (
@@ -78,8 +76,8 @@ export function ParameterCard({
                     : `0 3px 0 ${theme.border}`,
             }}
             onClick={(e) => {
-                e.stopPropagation();
-                onSelect?.();
+                e.stopPropagation()
+                onSelect?.()
             }}
         >
             {/* Color Header */}
@@ -90,9 +88,7 @@ export function ParameterCard({
                     borderBottom: `2px solid ${theme.border}`,
                 }}
             >
-                <div className="text-sm font-black text-black leading-none">
-                    {symbol}
-                </div>
+                <div className="text-sm font-black text-black leading-none">{symbol}</div>
             </div>
 
             {/* Value */}
@@ -110,5 +106,5 @@ export function ParameterCard({
                 </div>
             </div>
         </div>
-    );
+    )
 }

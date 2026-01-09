@@ -66,6 +66,6 @@ export const colors = {
 
     // Screen glow
     screenGlow: '#9AE6B4', // Slight green glow like old screens
-} as const;
+} as const
 
-export type ColorKey = keyof typeof colors;
+export type ColorKey = keyof typeof colors
