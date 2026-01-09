@@ -1,15 +1,7 @@
-import {
-    Application,
-    Container,
-    Graphics,
-    Text,
-    TextStyle,
-    Ticker,
-    FederatedPointerEvent,
-} from 'pixi.js'
+import { Application, Container, Graphics, Text, TextStyle, Ticker } from 'pixi.js'
 import { AdventureScene, AdventureSceneOptions } from './AdventureScene'
 import { Wobble, WobbleShape, WOBBLE_CHARACTERS } from '../Wobble'
-import { Perk, getRandomPerks, formatPerkEffect, perkDefinitions } from './perks'
+import { Perk, getRandomPerks, formatPerkEffect, perkDefinitions, PerkDefinition } from './perks'
 import { BalatroFilter } from '../filters/BalatroFilter'
 import { useCollectionStore } from '@/stores/collectionStore'
 import {
@@ -25,10 +17,17 @@ import {
     WOBBLE_STATS,
     PLAYABLE_CHARACTERS,
     EnemyTier,
+    PlayerProgress,
+    getXpForLevel,
+    getLevelFromXp,
+    EnemySystem,
+    ProjectileSystem,
+    BackgroundSystem,
+    ExperienceOrbSystem,
 } from './survivor'
-import { EnemySystem } from './survivor/EnemySystem'
-import { ProjectileSystem } from './survivor/ProjectileSystem'
-import { BackgroundSystem } from './survivor/BackgroundSystem'
+import { VirtualJoystick } from './VirtualJoystick'
+import { FloatingDamageText } from './FloatingDamageText'
+import { ImpactEffectSystem } from './ImpactEffectSystem'
 
 export class PhysicsSurvivorScene extends AdventureScene {
     // Game state
@@ -38,10 +37,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private maxPlayerHealth = 100
     private gameState: GameState = 'playing'
 
-    // Round system
-    private currentRound = 1
-    private roundTime = 0
-    private roundDuration = 30 // 30 seconds per round
+    // Experience & Level system (replaces round/wave system)
+    private playerProgress: PlayerProgress = { xp: 0, level: 1, pendingLevelUps: 0 }
+    declare private xpOrbSystem: ExperienceOrbSystem
+    declare private xpBarBg: Graphics
+    declare private xpBarFill: Graphics
+    declare private levelText: Text
 
     // Perk system
     private studiedFormulas: Set<string> = new Set()
@@ -86,6 +87,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
     declare private enemySystem: EnemySystem
     declare private projectileSystem: ProjectileSystem
     declare private backgroundSystem: BackgroundSystem
+    declare private damageTextSystem: FloatingDamageText
+    declare private impactSystem: ImpactEffectSystem
 
     // Fire system
     private fireRate = 0.5 // seconds between shots
@@ -111,20 +114,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
     // Animation
     private animPhase = 0
 
-    // Virtual joystick movement
-    private joystickActive = false
-    private joystickCenterX = 0
-    private joystickCenterY = 0
-    private inputDirX = 0 // Normalized input direction (-1 to 1)
-    private inputDirY = 0
-    private inputMagnitude = 0 // 0 to 1
-    private readonly joystickMaxRadius = 60 // Max drag distance from center
+    // Virtual joystick
+    declare private joystick: VirtualJoystick
     private readonly playerBaseSpeed = 4 // Base movement speed
-
-    // Joystick visual
-    declare private joystickContainer: Container
-    declare private joystickBase: Graphics
-    declare private joystickKnob: Graphics
 
     // Background container
     declare private bgContainer: Container
@@ -155,6 +147,14 @@ export class PhysicsSurvivorScene extends AdventureScene {
     declare private perkPreviewContainer: Container
     declare private startButton: Container
     private readonly baseMaxHealth = 100
+
+    // Perk info display in character select
+    private selectedPerkIndex: number | null = null
+    declare private perkInfoContainer: Container
+    declare private perkInfoIcon: Text
+    declare private perkInfoNameText: Text
+    declare private perkInfoDescText: Text
+    private perkIconContainers: Container[] = []
 
     // Camera shake system
     private shakeIntensity = 0
@@ -226,6 +226,37 @@ export class PhysicsSurvivorScene extends AdventureScene {
             width: this.width,
             height: this.height,
         })
+
+        // Floating damage text system with pooling
+        this.damageTextSystem = new FloatingDamageText(this.effectContainer, {
+            poolSize: 30,
+        })
+
+        // Impact effect system for arcade-style feedback
+        this.impactSystem = new ImpactEffectSystem(
+            this.container,
+            this.width,
+            this.height,
+            { particlePoolSize: 100 }
+        )
+        // Connect shake callback
+        this.impactSystem.onShake = (intensity, duration) => {
+            this.triggerShake(intensity, duration)
+        }
+
+        // Experience orb system
+        this.xpOrbSystem = new ExperienceOrbSystem(
+            {
+                container: this.effectContainer,
+                width: this.width,
+                height: this.height,
+            },
+            { poolSize: 100, magnetRadius: 80, collectRadius: 25 }
+        )
+        // Connect XP collection callback
+        this.xpOrbSystem.onXpCollected = (xp, totalXp) => {
+            this.onXpCollected(xp)
+        }
     }
 
     // Override background to create corrupted world effect
@@ -260,95 +291,18 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     private setupInteraction(): void {
-        // Make game container interactive
-        this.gameContainer.eventMode = 'static'
-        this.gameContainer.hitArea = { contains: () => true }
+        // Create virtual joystick
+        this.joystick = new VirtualJoystick({
+            maxRadius: 60,
+            baseColor: 0x000000,
+            knobColor: 0xffffff,
+            baseAlpha: 0.2,
+            knobAlpha: 0.5,
+        })
+        this.uiContainer.addChild(this.joystick)
 
-        this.gameContainer.on('pointerdown', this.onPointerDown.bind(this))
-        this.gameContainer.on('pointermove', this.onPointerMove.bind(this))
-        this.gameContainer.on('pointerup', this.onPointerUp.bind(this))
-        this.gameContainer.on('pointerupoutside', this.onPointerUp.bind(this))
-
-        // Create virtual joystick visual
-        this.joystickContainer = new Container()
-        this.joystickContainer.visible = false
-        this.uiContainer.addChild(this.joystickContainer)
-
-        // Joystick base (outer ring)
-        this.joystickBase = new Graphics()
-        this.joystickBase.circle(0, 0, this.joystickMaxRadius)
-        this.joystickBase.fill({ color: 0x000000, alpha: 0.2 })
-        this.joystickBase.circle(0, 0, this.joystickMaxRadius)
-        this.joystickBase.stroke({ color: 0xffffff, width: 2, alpha: 0.4 })
-        this.joystickContainer.addChild(this.joystickBase)
-
-        // Joystick knob (inner circle)
-        this.joystickKnob = new Graphics()
-        this.joystickKnob.circle(0, 0, 20)
-        this.joystickKnob.fill({ color: 0xffffff, alpha: 0.5 })
-        this.joystickKnob.circle(0, 0, 20)
-        this.joystickKnob.stroke({ color: 0xffffff, width: 2, alpha: 0.8 })
-        this.joystickContainer.addChild(this.joystickKnob)
-    }
-
-    private onPointerDown(e: FederatedPointerEvent): void {
-        if (this.phase === 'narration' || this.gameState !== 'playing') return
-
-        const pos = e.getLocalPosition(this.gameContainer)
-
-        // Set joystick center at touch position
-        this.joystickActive = true
-        this.joystickCenterX = pos.x
-        this.joystickCenterY = pos.y
-
-        // Show joystick visual at touch position
-        this.joystickContainer.visible = true
-        this.joystickContainer.position.set(pos.x, pos.y)
-        this.joystickKnob.position.set(0, 0)
-
-        // Reset input
-        this.inputDirX = 0
-        this.inputDirY = 0
-        this.inputMagnitude = 0
-    }
-
-    private onPointerMove(e: FederatedPointerEvent): void {
-        if (!this.joystickActive || this.gameState !== 'playing') return
-
-        const pos = e.getLocalPosition(this.gameContainer)
-
-        // Calculate offset from joystick center
-        const dx = pos.x - this.joystickCenterX
-        const dy = pos.y - this.joystickCenterY
-        const dist = Math.sqrt(dx * dx + dy * dy)
-
-        // Calculate input magnitude (0-1)
-        this.inputMagnitude = Math.min(1, dist / this.joystickMaxRadius)
-
-        // Calculate normalized direction
-        if (dist > 0.1) {
-            this.inputDirX = dx / dist
-            this.inputDirY = dy / dist
-        } else {
-            this.inputDirX = 0
-            this.inputDirY = 0
-        }
-
-        // Update joystick knob position (clamped to max radius)
-        const clampedDist = Math.min(dist, this.joystickMaxRadius)
-        if (dist > 0) {
-            this.joystickKnob.position.set((dx / dist) * clampedDist, (dy / dist) * clampedDist)
-        }
-    }
-
-    private onPointerUp(_e: FederatedPointerEvent): void {
-        this.joystickActive = false
-        this.joystickContainer.visible = false
-
-        // Clear input direction (player will decelerate naturally)
-        this.inputDirX = 0
-        this.inputDirY = 0
-        this.inputMagnitude = 0
+        // Attach joystick to game container
+        this.joystick.attachTo(this.gameContainer)
     }
 
     // UI helper: draw small hexagon for HUD elements
@@ -405,52 +359,71 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.healthText.visible = false
         this.uiContainer.addChild(this.healthText)
 
-        // === Below HP: Timer in hexagonal badge ===
-        const timerBadge = new Graphics()
-        // Elongated hexagon for timer (below HP hearts)
-        const timerX = 95
-        const timerY = 68
-        timerBadge.moveTo(timerX - 40, timerY)
-        timerBadge.lineTo(timerX - 32, timerY - 14)
-        timerBadge.lineTo(timerX + 32, timerY - 14)
-        timerBadge.lineTo(timerX + 40, timerY)
-        timerBadge.lineTo(timerX + 32, timerY + 14)
-        timerBadge.lineTo(timerX - 32, timerY + 14)
-        timerBadge.closePath()
-        timerBadge.fill(0x1a1520)
-        timerBadge.stroke({ color: 0x5dade2, width: 2 })
-        this.uiContainer.addChild(timerBadge)
+        // === Below HP: XP Bar ===
+        const xpBarX = 55
+        const xpBarY = 60
+        const xpBarWidth = 120
+        const xpBarHeight = 14
 
-        // Timer text
+        // XP bar background
+        this.xpBarBg = new Graphics()
+        this.xpBarBg.roundRect(xpBarX, xpBarY, xpBarWidth, xpBarHeight, 7)
+        this.xpBarBg.fill(0x1a1520)
+        this.xpBarBg.stroke({ color: 0x2ecc71, width: 2 })
+        this.uiContainer.addChild(this.xpBarBg)
+
+        // XP bar fill
+        this.xpBarFill = new Graphics()
+        this.xpBarFill.position.set(xpBarX + 2, xpBarY + 2)
+        this.uiContainer.addChild(this.xpBarFill)
+        this.updateXpBar()
+
+        // Timer text (now shows elapsed time)
         const timerStyle = new TextStyle({
             fontFamily: 'Arial, sans-serif',
-            fontSize: 16,
-            fontWeight: 'bold',
-            fill: 0x5dade2,
-            letterSpacing: 1,
+            fontSize: 10,
+            fill: 0x7a9a7a,
         })
-        this.timeText = new Text({ text: '00:30', style: timerStyle })
-        this.timeText.anchor.set(0.5)
-        this.timeText.position.set(timerX, timerY)
+        this.timeText = new Text({ text: '00:00', style: timerStyle })
+        this.timeText.anchor.set(0, 0.5)
+        this.timeText.position.set(xpBarX + xpBarWidth + 8, xpBarY + xpBarHeight / 2)
         this.uiContainer.addChild(this.timeText)
 
-        // === Top-right: Wave indicator ===
-        const waveX = this.width - 35
-        const waveY = 28
-        const waveBadge = new Graphics()
-        this.drawUIHexagon(waveBadge, waveX, waveY, 22, 0x1a1520, 0xf39c12, 3)
-        this.uiContainer.addChild(waveBadge)
+        // === Top-right: Level indicator ===
+        const levelX = this.width - 35
+        const levelY = 28
+        const levelBadge = new Graphics()
+        this.drawUIHexagon(levelBadge, levelX, levelY, 22, 0x1a1520, 0x2ecc71, 3)
+        this.uiContainer.addChild(levelBadge)
 
-        // Wave number
-        const waveStyle = new TextStyle({
+        // Level number
+        const levelStyle = new TextStyle({
             fontFamily: 'Arial, sans-serif',
             fontSize: 14,
             fontWeight: 'bold',
-            fill: 0xf39c12,
+            fill: 0x2ecc71,
         })
-        this.waveText = new Text({ text: '1', style: waveStyle })
-        this.waveText.anchor.set(0.5)
-        this.waveText.position.set(waveX, waveY)
+        this.levelText = new Text({ text: '1', style: levelStyle })
+        this.levelText.anchor.set(0.5)
+        this.levelText.position.set(levelX, levelY)
+        this.uiContainer.addChild(this.levelText)
+
+        // "LV" label above level
+        const lvLabel = new Text({
+            text: 'LV',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 8,
+                fill: 0x2ecc71,
+            }),
+        })
+        lvLabel.anchor.set(0.5)
+        lvLabel.position.set(levelX, levelY - 18)
+        this.uiContainer.addChild(lvLabel)
+
+        // Hidden waveText for compatibility (used in result screen)
+        this.waveText = new Text({ text: '1', style: new TextStyle({ fontSize: 1 }) })
+        this.waveText.visible = false
         this.uiContainer.addChild(this.waveText)
 
         // === Bottom-left: Perk icons ===
@@ -512,20 +485,69 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     private updateUI(): void {
-        // Timer in MM:SS format
-        const roundTimeLeft = Math.max(0, this.roundDuration - this.roundTime)
-        const minutes = Math.floor(roundTimeLeft / 60)
-        const seconds = Math.floor(roundTimeLeft % 60)
+        // Elapsed time in MM:SS format
+        const minutes = Math.floor(this.gameTime / 60)
+        const seconds = Math.floor(this.gameTime % 60)
         this.timeText.text = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
 
-        // Wave number only (not "Wave X")
-        this.waveText.text = `${this.currentRound}`
+        // Level number
+        this.levelText.text = `${this.playerProgress.level}`
+
+        // Store level for result screen (compatibility)
+        this.waveText.text = `${this.playerProgress.level}`
+
+        // Update XP bar
+        this.updateXpBar()
 
         // Update perk icons
         this.updatePerkIcons()
 
         // Update health display
         this.updateHealthBar()
+    }
+
+    private updateXpBar(): void {
+        const currentLevel = this.playerProgress.level
+        const currentLevelXp = getXpForLevel(currentLevel)
+        const nextLevelXp = getXpForLevel(currentLevel + 1)
+        const xpInLevel = this.playerProgress.xp - currentLevelXp
+        const xpNeeded = nextLevelXp - currentLevelXp
+        const progress = Math.min(1, xpInLevel / xpNeeded)
+
+        const barWidth = 116 // Total width minus padding
+        const barHeight = 10
+
+        this.xpBarFill.clear()
+        if (progress > 0) {
+            this.xpBarFill.roundRect(0, 0, barWidth * progress, barHeight, 5)
+            this.xpBarFill.fill(0x2ecc71)
+        }
+    }
+
+    private onXpCollected(xp: number): void {
+        const oldLevel = this.playerProgress.level
+        this.playerProgress.xp += xp
+
+        // Check for level up
+        const newLevel = getLevelFromXp(this.playerProgress.xp)
+        if (newLevel > oldLevel) {
+            const levelsGained = newLevel - oldLevel
+            this.playerProgress.level = newLevel
+            this.playerProgress.pendingLevelUps += levelsGained
+
+            // Show level up text
+            this.damageTextSystem.spawnCustom(
+                this.playerX,
+                this.playerY - 50,
+                `LEVEL ${newLevel}!`,
+                'combo'
+            )
+
+            // Trigger perk selection if not already in selection mode
+            if (this.gameState === 'playing') {
+                this.showPerkSelection()
+            }
+        }
     }
 
     private updatePerkIcons(): void {
@@ -700,8 +722,95 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.perkContainer.addChild(hint)
     }
 
-    private createCardBack(cardWidth: number, cardHeight: number, _index: number): Container {
+    private createCardBack(cardWidth: number, cardHeight: number, index: number): Container {
         const container = new Container()
+
+        // Color palettes for card backs - each card gets a unique color scheme
+        const colorPalettes = [
+            {
+                // Crimson / Red
+                color1: [0.91, 0.30, 0.24, 1.0], // #E84C3D
+                color2: [0.75, 0.22, 0.17, 1.0], // #C0392B
+                color3: [0.20, 0.05, 0.05, 1.0], // Dark red
+                border: 0xe74c3c,
+                borderGlow: 0xf56c5c,
+                innerGlow: 0x8a2a2a,
+                bgFill: 0x3d1a1a,
+            },
+            {
+                // Ocean / Teal
+                color1: [0.10, 0.74, 0.61, 1.0], // #1ABC9C
+                color2: [0.09, 0.56, 0.47, 1.0], // #16A085
+                color3: [0.03, 0.15, 0.12, 1.0], // Dark teal
+                border: 0x1abc9c,
+                borderGlow: 0x3adcbc,
+                innerGlow: 0x0a6a5a,
+                bgFill: 0x1a3d3d,
+            },
+            {
+                // Royal / Purple
+                color1: [0.61, 0.35, 0.71, 1.0], // #9B59B6
+                color2: [0.42, 0.23, 0.55, 1.0], // #6B3B8C
+                color3: [0.10, 0.04, 0.15, 1.0], // Dark purple
+                border: 0x9b59b6,
+                borderGlow: 0xbb79d6,
+                innerGlow: 0x6a3a8a,
+                bgFill: 0x2a1a3d,
+            },
+            {
+                // Solar / Orange
+                color1: [0.95, 0.61, 0.07, 1.0], // #F39C12
+                color2: [0.90, 0.49, 0.13, 1.0], // #E67E22
+                color3: [0.20, 0.10, 0.02, 1.0], // Dark orange
+                border: 0xf39c12,
+                borderGlow: 0xf5bc52,
+                innerGlow: 0x8a5a0a,
+                bgFill: 0x3d2a1a,
+            },
+            {
+                // Azure / Blue
+                color1: [0.20, 0.60, 0.86, 1.0], // #3498DB
+                color2: [0.16, 0.50, 0.73, 1.0], // #2980B9
+                color3: [0.04, 0.12, 0.20, 1.0], // Dark blue
+                border: 0x3498db,
+                borderGlow: 0x54b8fb,
+                innerGlow: 0x1a4a7a,
+                bgFill: 0x1a2a3d,
+            },
+            {
+                // Emerald / Green
+                color1: [0.18, 0.80, 0.44, 1.0], // #2ECC71
+                color2: [0.15, 0.68, 0.38, 1.0], // #27AE60
+                color3: [0.04, 0.18, 0.08, 1.0], // Dark green
+                border: 0x2ecc71,
+                borderGlow: 0x4eec91,
+                innerGlow: 0x1a7a3a,
+                bgFill: 0x1a3d2a,
+            },
+            {
+                // Rose / Pink
+                color1: [0.91, 0.35, 0.55, 1.0], // #E8598C
+                color2: [0.75, 0.25, 0.45, 1.0], // #BF4073
+                color3: [0.20, 0.05, 0.12, 1.0], // Dark pink
+                border: 0xe84393,
+                borderGlow: 0xf863b3,
+                innerGlow: 0x8a2a5a,
+                bgFill: 0x3d1a2a,
+            },
+            {
+                // Golden / Yellow
+                color1: [1.0, 0.84, 0.0, 1.0], // #FFD700
+                color2: [0.85, 0.65, 0.13, 1.0], // #D4A621
+                color3: [0.22, 0.17, 0.02, 1.0], // Dark gold
+                border: 0xffd700,
+                borderGlow: 0xfff740,
+                innerGlow: 0x8a7a0a,
+                bgFill: 0x3d3a1a,
+            },
+        ]
+
+        // Select palette based on index (cycle through palettes)
+        const palette = colorPalettes[index % colorPalettes.length]
 
         // Card shadow
         const shadow = new Graphics()
@@ -722,14 +831,14 @@ export class PhysicsSurvivorScene extends AdventureScene {
             cardHeight - 6,
             12
         )
-        balatroRect.fill(0x2a1a3d)
+        balatroRect.fill(palette.bgFill)
         effectContainer.addChild(balatroRect)
 
-        // Create and apply Balatro filter with purple colors
+        // Create and apply Balatro filter with palette colors
         const balatroFilter = new BalatroFilter({
-            color1: [0.61, 0.35, 0.71, 1.0], // #9B59B6 - Light purple
-            color2: [0.42, 0.23, 0.55, 1.0], // #6B3B8C - Purple
-            color3: [0.1, 0.04, 0.15, 1.0], // #1A0A26 - Dark purple
+            color1: palette.color1 as [number, number, number, number],
+            color2: palette.color2 as [number, number, number, number],
+            color3: palette.color3 as [number, number, number, number],
             spinSpeed: 5.0,
             contrast: 3.0,
             lighting: 0.3,
@@ -743,12 +852,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Store filter reference for animation
         this.cardBackFilters.push(balatroFilter)
 
-        // Card border - glowing purple with multiple layers
+        // Card border - glowing with palette colors
         const border = new Graphics()
         border.roundRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 14)
-        border.stroke({ color: 0x9b59b6, width: 3 })
+        border.stroke({ color: palette.border, width: 3 })
         border.roundRect(-cardWidth / 2 - 1, -cardHeight / 2 - 1, cardWidth + 2, cardHeight + 2, 15)
-        border.stroke({ color: 0xbb79d6, width: 1, alpha: 0.5 })
+        border.stroke({ color: palette.borderGlow, width: 1, alpha: 0.5 })
         container.addChild(border)
 
         // Inner border glow
@@ -760,7 +869,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
             cardHeight - 8,
             11
         )
-        innerGlow.stroke({ color: 0x6a3a8a, width: 2, alpha: 0.4 })
+        innerGlow.stroke({ color: palette.innerGlow, width: 2, alpha: 0.4 })
         container.addChild(innerGlow)
 
         // Central glow circle behind question mark
@@ -1025,8 +1134,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Apply perk effects to stats
         this.applyPerkEffects(perk)
 
-        // Start next round
-        this.startNextRound()
+        // Finish level up (may trigger another selection if multiple level ups pending)
+        this.finishLevelUp()
     }
 
     private applyPerkEffects(perk: Perk): void {
@@ -1065,19 +1174,23 @@ export class PhysicsSurvivorScene extends AdventureScene {
         }
     }
 
-    private startNextRound(): void {
-        this.perkContainer.visible = false
-        this.currentRound++
-        this.roundTime = 0
-        this.gameState = 'playing'
-        this.updateUI()
-    }
+    private finishLevelUp(): void {
+        // Decrement pending level ups
+        this.playerProgress.pendingLevelUps = Math.max(0, this.playerProgress.pendingLevelUps - 1)
 
-    private checkRoundComplete(): void {
-        if (this.roundTime >= this.roundDuration) {
+        // Check if there are more level ups waiting
+        if (this.playerProgress.pendingLevelUps > 0) {
+            // Show another perk selection
             this.showPerkSelection()
+        } else {
+            // Return to playing
+            this.perkContainer.visible = false
+            this.gameState = 'playing'
+            this.updateUI()
         }
     }
+
+    // Level-up perk selection is triggered by onXpCollected when player levels up
 
     private fireProjectile(): void {
         this.projectileSystem.fire(this.playerX, this.playerY, this.enemySystem.enemies, this.stats)
@@ -1093,7 +1206,28 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 this.score += 10
                 useCollectionStore.getState().unlockWobble('shadow')
             },
-            (x, y) => this.createExplosion(x, y)
+            (x, y) => this.createExplosion(x, y),
+            (x, y, damage, isCritical) => {
+                // Damage text
+                this.damageTextSystem.spawn(x, y, damage, isCritical ? 'critical' : 'normal')
+
+                // Impact effect - arcade style feedback
+                this.impactSystem.trigger(x, y, isCritical ? 'critical' : 'hit')
+
+                // Find the enemy that was hit and add scale punch
+                for (const enemy of this.enemySystem.enemies) {
+                    const dx = enemy.x - x
+                    const dy = enemy.y - (y + enemy.size / 2)
+                    if (Math.abs(dx) < enemy.size && Math.abs(dy) < enemy.size && enemy.wobble) {
+                        this.impactSystem.addScalePunch(
+                            enemy.wobble,
+                            isCritical ? 0.4 : 0.25,
+                            isCritical ? 0.2 : 0.12
+                        )
+                        break
+                    }
+                }
+            }
         )
     }
 
@@ -1103,17 +1237,26 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.enemySystem.updateMerges(this.gameTime, this.hitEffects)
         this.enemySystem.cleanupOverlapTracker()
 
-        // Trigger camera shake for dead enemies before cleanup
+        // Trigger kill effects for dead enemies before cleanup
         const deadEnemies = this.enemySystem.getDeadEnemies()
         for (const enemy of deadEnemies) {
-            const shakeConfig: Record<EnemyTier, { intensity: number; duration: number }> = {
-                small: { intensity: 3, duration: 0.1 },
-                medium: { intensity: 5, duration: 0.15 },
-                large: { intensity: 8, duration: 0.2 },
-                boss: { intensity: 12, duration: 0.3 },
+            // Kill impact with tier-based color
+            const tierColors: Record<EnemyTier, number> = {
+                small: 0xff6666,
+                medium: 0xff9944,
+                large: 0xcc44ff,
+                boss: 0xffdd00,
             }
-            const config = shakeConfig[enemy.tier]
-            this.triggerShake(config.intensity, config.duration)
+            const enemyColor = tierColors[enemy.tier]
+            this.impactSystem.triggerKill(enemy.x, enemy.y, enemyColor)
+
+            // Spawn XP orbs
+            this.xpOrbSystem.spawnFromEnemy(enemy.x, enemy.y, enemy.tier)
+
+            // Slow motion for larger enemies
+            if (enemy.tier === 'large' || enemy.tier === 'boss') {
+                this.impactSystem.triggerSlowMotion(0.2, 0.15)
+            }
         }
 
         this.score += this.enemySystem.cleanupDead()
@@ -1159,6 +1302,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
         explosion.position.set(x, y)
         this.effectContainer.addChild(explosion)
 
+        // Explosion impact effect
+        this.impactSystem.trigger(x, y, 'explosion')
+
         // Damage enemies in radius
         for (const enemy of this.enemySystem.enemies) {
             const dx = enemy.x - x
@@ -1170,6 +1316,19 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 const ny = dy / (dist || 1)
                 enemy.vx += nx * 5
                 enemy.vy += ny * 5
+
+                // Show explosion damage text
+                this.damageTextSystem.spawn(
+                    enemy.x,
+                    enemy.y - enemy.size / 2,
+                    damage,
+                    'explosion'
+                )
+
+                // Scale punch on hit enemies
+                if (enemy.wobble) {
+                    this.impactSystem.addScalePunch(enemy.wobble, 0.35, 0.15)
+                }
             }
         }
 
@@ -1238,16 +1397,19 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     private updatePlayer(delta: number): void {
+        // Get joystick input
+        const input = this.joystick.getInput()
+
         // Calculate target velocity from joystick input
         const speed = this.playerBaseSpeed * this.stats.moveSpeedMultiplier
-        const targetVx = this.inputDirX * this.inputMagnitude * speed
-        const targetVy = this.inputDirY * this.inputMagnitude * speed
+        const targetVx = input.dirX * input.magnitude * speed
+        const targetVy = input.dirY * input.magnitude * speed
 
-        // Smooth acceleration towards target velocity
-        const accel = 0.15
-        const friction = 0.85
+        // Smooth acceleration towards target velocity (higher = more responsive)
+        const accel = 0.6
+        const friction = 0.5
 
-        if (this.inputMagnitude > 0.1) {
+        if (input.magnitude > 0.1) {
             // Accelerate towards target
             this.playerVx += (targetVx - this.playerVx) * accel * delta
             this.playerVy += (targetVy - this.playerVy) * accel * delta
@@ -1399,15 +1561,15 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.resultKillsText.alpha = 0
         this.resultContainer.addChild(this.resultKillsText)
 
-        // Wave stat badge
-        this.createResultStatBadge(centerX - 70, statsY + statGap * 2, '🌊', 0xf39c12)
+        // Level stat badge
+        this.createResultStatBadge(centerX - 70, statsY + statGap * 2, '⭐', 0x2ecc71)
         this.resultWaveText = new Text({
-            text: `${this.currentRound}`,
+            text: `Lv.${this.playerProgress.level}`,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 20,
                 fontWeight: 'bold',
-                fill: 0xf39c12,
+                fill: 0x2ecc71,
             }),
         })
         this.resultWaveText.anchor.set(0, 0.5)
@@ -1894,6 +2056,50 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.perkPreviewContainer.position.set(centerX, perkY + 25)
         this.characterSelectContainer.addChild(this.perkPreviewContainer)
 
+        // Perk info panel (below perk grid)
+        const perkInfoY = perkY + 100
+        this.perkInfoContainer = new Container()
+        this.perkInfoContainer.position.set(centerX, perkInfoY)
+        this.characterSelectContainer.addChild(this.perkInfoContainer)
+
+        // Perk info icon
+        this.perkInfoIcon = new Text({
+            text: '',
+            style: new TextStyle({ fontSize: 18 }),
+        })
+        this.perkInfoIcon.anchor.set(0.5)
+        this.perkInfoIcon.position.set(-70, 0)
+        this.perkInfoContainer.addChild(this.perkInfoIcon)
+
+        // Perk info name
+        this.perkInfoNameText = new Text({
+            text: '퍼크를 탭하여 정보 보기',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 12,
+                fontWeight: 'bold',
+                fill: 0x6a5a7a,
+            }),
+        })
+        this.perkInfoNameText.anchor.set(0, 0.5)
+        this.perkInfoNameText.position.set(-50, -8)
+        this.perkInfoContainer.addChild(this.perkInfoNameText)
+
+        // Perk info description
+        this.perkInfoDescText = new Text({
+            text: '',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 10,
+                fill: 0x9a8aaa,
+                wordWrap: true,
+                wordWrapWidth: 160,
+            }),
+        })
+        this.perkInfoDescText.anchor.set(0, 0.5)
+        this.perkInfoDescText.position.set(-50, 10)
+        this.perkInfoContainer.addChild(this.perkInfoDescText)
+
         // Start button - hexagonal style
         this.startButton = this.createStartButton(centerX, this.height - 60)
         this.characterSelectContainer.addChild(this.startButton)
@@ -1997,6 +2203,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
     private createPerkPreview(): void {
         this.perkPreviewContainer.removeChildren()
+        this.perkIconContainers = []
 
         // Responsive perk grid
         const maxPerRow = Math.min(8, Math.floor((this.width - 40) / 40))
@@ -2015,13 +2222,19 @@ export class PhysicsSurvivorScene extends AdventureScene {
             const y = row * (hexSize * 2 + hexGap)
 
             const isUnlocked = this.studiedFormulas.has(perk.formulaId)
+            const isSelected = this.selectedPerkIndex === index
 
             const iconContainer = new Container()
             iconContainer.position.set(x, y)
+            iconContainer.eventMode = 'static'
+            iconContainer.cursor = 'pointer'
 
             // Hexagon background
             const hex = new Graphics()
-            if (isUnlocked) {
+            if (isSelected) {
+                // Selected state - bright highlight
+                this.drawHexagon(hex, 0, 0, hexSize + 2, 0x3a3540, 0xffd700, 3)
+            } else if (isUnlocked) {
                 this.drawHexagon(hex, 0, 0, hexSize, 0x2a2530, perk.color, 2)
             } else {
                 this.drawHexagon(hex, 0, 0, hexSize, 0x15131a, 0x3a3040, 2)
@@ -2040,8 +2253,54 @@ export class PhysicsSurvivorScene extends AdventureScene {
             iconText.anchor.set(0.5)
             iconContainer.addChild(iconText)
 
+            // Click handler
+            iconContainer.on('pointerdown', () => this.onPerkPreviewClick(index))
+
             this.perkPreviewContainer.addChild(iconContainer)
+            this.perkIconContainers.push(iconContainer)
         })
+    }
+
+    private onPerkPreviewClick(index: number): void {
+        // Toggle selection
+        if (this.selectedPerkIndex === index) {
+            this.selectedPerkIndex = null
+        } else {
+            this.selectedPerkIndex = index
+        }
+
+        // Rebuild perk preview to update highlight
+        this.createPerkPreview()
+
+        // Update info panel
+        this.updatePerkInfo()
+    }
+
+    private updatePerkInfo(): void {
+        if (!this.perkInfoContainer) return
+
+        if (this.selectedPerkIndex === null) {
+            // No perk selected - show hint
+            this.perkInfoIcon.text = ''
+            this.perkInfoNameText.text = '퍼크를 탭하여 정보 보기'
+            this.perkInfoNameText.style.fill = 0x6a5a7a
+            this.perkInfoDescText.text = ''
+        } else {
+            const perk = perkDefinitions[this.selectedPerkIndex]
+            const isUnlocked = this.studiedFormulas.has(perk.formulaId)
+
+            this.perkInfoIcon.text = isUnlocked ? perk.icon : '🔒'
+            this.perkInfoNameText.text = perk.nameKo
+            this.perkInfoNameText.style.fill = isUnlocked ? perk.color : 0x6a5a7a
+
+            if (isUnlocked) {
+                this.perkInfoDescText.text = perk.descriptionKo
+                this.perkInfoDescText.style.fill = 0x9a8aaa
+            } else {
+                this.perkInfoDescText.text = '공식을 학습하면 해금됩니다'
+                this.perkInfoDescText.style.fill = 0x5a4a6a
+            }
+        }
     }
 
     private createStartButton(x: number, y: number): Container {
@@ -2099,8 +2358,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Start the game
         this.gameTime = 0
         this.score = 0
-        this.currentRound = 1
-        this.roundTime = 0
+        this.playerProgress = { xp: 0, level: 1, pendingLevelUps: 0 }
         this.gameState = 'playing'
         this.updateHealthBar()
         this.updateUI()
@@ -2193,18 +2451,41 @@ export class PhysicsSurvivorScene extends AdventureScene {
             return
         }
 
-        const delta = ticker.deltaMS / 16.67
-        const deltaSeconds = ticker.deltaMS / 1000
+        const rawDeltaSeconds = ticker.deltaMS / 1000
+
+        // Update impact system and get adjusted delta (handles hitstop & time scale)
+        const adjustedDeltaSeconds = this.impactSystem.update(rawDeltaSeconds)
+
+        // During hitstop, still update visuals but skip game logic
+        if (this.impactSystem.isHitstopActive) {
+            // Only update visual effects during hitstop
+            this.animPhase += rawDeltaSeconds
+            this.backgroundSystem.update(rawDeltaSeconds * 60, this.activePerks.length)
+            this.damageTextSystem.update(rawDeltaSeconds)
+            this.updateShake(rawDeltaSeconds * 60)
+
+            // Player breathing animation
+            const breathe = Math.sin(this.animPhase * 3) * 0.02
+            this.player?.updateOptions({
+                wobblePhase: this.animPhase,
+                scaleX: 1 + breathe,
+                scaleY: 1 - breathe,
+            })
+            return
+        }
+
+        // Apply time scale to delta
+        const deltaSeconds = adjustedDeltaSeconds
+        const delta = deltaSeconds * 60
 
         this.animPhase += deltaSeconds
         this.gameTime += deltaSeconds
-        this.roundTime += deltaSeconds
 
         // Update background effects (corruption/restoration)
         this.backgroundSystem.update(delta, this.activePerks.length)
 
-        // Check round completion
-        this.checkRoundComplete()
+        // Update XP orbs (magnetic collection)
+        this.xpOrbSystem.update(deltaSeconds, this.playerX, this.playerY)
 
         // Fire projectiles (apply fireRate stat)
         this.fireTimer += deltaSeconds
@@ -2228,6 +2509,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.updateEnemiesAndMerges(delta, deltaSeconds)
         this.checkPlayerCollisions()
         this.updateEffects(delta)
+        this.damageTextSystem.update(deltaSeconds)
         this.updateShake(delta)
 
         // Update UI
@@ -2294,6 +2576,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.projectileSystem.reset()
         this.enemySystem.reset()
         this.backgroundSystem.reset()
+        this.damageTextSystem.reset()
+        this.impactSystem.reset()
+        this.xpOrbSystem.reset()
 
         // Clear effects
         for (const effect of this.hitEffects) {
@@ -2325,14 +2610,14 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Hide character select container
         this.characterSelectContainer.visible = false
 
-        // Reset selected character to default
+        // Reset selected character and perk to default
         this.selectedCharacter = 'circle'
+        this.selectedPerkIndex = null
 
         // Reset state
         this.gameTime = 0
         this.score = 0
-        this.currentRound = 1
-        this.roundTime = 0
+        this.playerProgress = { xp: 0, level: 1, pendingLevelUps: 0 }
         this.maxPlayerHealth = this.baseMaxHealth
         this.playerHealth = this.maxPlayerHealth
         this.gameState = 'playing'
@@ -2347,11 +2632,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.playerVy = 0
 
         // Reset joystick state
-        this.joystickActive = false
-        this.joystickContainer.visible = false
-        this.inputDirX = 0
-        this.inputDirY = 0
-        this.inputMagnitude = 0
+        this.joystick.reset()
 
         this.player?.position.set(this.playerX, this.playerY)
         this.player?.updateOptions({ expression: 'happy' })

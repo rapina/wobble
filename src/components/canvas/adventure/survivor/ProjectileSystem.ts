@@ -123,7 +123,8 @@ export class ProjectileSystem {
         stats: PlayerStats,
         hitEffects: HitEffect[],
         onEnemyKilled: () => void,
-        onCreateExplosion: (x: number, y: number) => void
+        onCreateExplosion: (x: number, y: number) => void,
+        onDamageDealt?: (x: number, y: number, damage: number, isCritical: boolean) => void
     ): void {
         for (let pi = this.projectiles.length - 1; pi >= 0; pi--) {
             const proj = this.projectiles[pi]
@@ -150,6 +151,14 @@ export class ProjectileSystem {
 
                     // Hit effect
                     this.createHitEffect(proj.x, proj.y, hitEffects)
+
+                    // Damage callback
+                    if (onDamageDealt) {
+                        // Critical hit chance (10% base)
+                        const isCritical = Math.random() < 0.1
+                        const finalDamage = isCritical ? proj.damage * 1.5 : proj.damage
+                        onDamageDealt(enemy.x, enemy.y - enemy.size / 2, finalDamage, isCritical)
+                    }
 
                     // Explosion effect
                     if (stats.explosionRadius > 0) {

@@ -200,3 +200,31 @@ export const DEFAULT_PLAYER_STATS: PlayerStats = {
     explosionRadius: 0,
     moveSpeedMultiplier: 1,
 }
+
+// Experience and Level System
+export interface LevelConfig {
+    level: number
+    xpRequired: number // Total XP needed to reach this level
+}
+
+// XP curve - each level requires more XP
+export function getXpForLevel(level: number): number {
+    // Base 10 XP, increasing by 5 per level
+    // Level 1: 0, Level 2: 10, Level 3: 25, Level 4: 45, etc.
+    if (level <= 1) return 0
+    return Math.floor(10 * (level - 1) + 5 * Math.pow(level - 1, 1.5))
+}
+
+export function getLevelFromXp(xp: number): number {
+    let level = 1
+    while (getXpForLevel(level + 1) <= xp) {
+        level++
+    }
+    return level
+}
+
+export interface PlayerProgress {
+    xp: number
+    level: number
+    pendingLevelUps: number // Number of level ups waiting to be processed
+}
