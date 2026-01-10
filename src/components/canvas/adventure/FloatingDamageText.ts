@@ -273,7 +273,7 @@ export class FloatingDamageText {
 
             // Scale pop effect at start
             const scaleProgress = Math.min(1, item.timer / 0.1)
-            const popScale = 1 + (0.3 * (1 - scaleProgress))
+            const popScale = 1 + 0.3 * (1 - scaleProgress)
             const config = DAMAGE_TEXT_CONFIGS[item.type]
             item.text.scale.set(config.scale * popScale)
 

@@ -4,13 +4,13 @@ import { Wobble, WobbleShape, WOBBLE_CHARACTERS } from '../Wobble'
 import { Perk, getRandomPerks, formatPerkEffect, perkDefinitions, PerkDefinition } from './perks'
 import { BalatroFilter } from '../filters/BalatroFilter'
 import { useCollectionStore } from '@/stores/collectionStore'
+import { useProgressStore } from '@/stores/progressStore'
 import {
     GameState,
     PlayerStats,
     DEFAULT_PLAYER_STATS,
     TextEffect,
     HitEffect,
-    SurvivorRank,
     RANK_CONFIGS,
     getRankFromTime,
     WobbleStats,
@@ -245,12 +245,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
         })
 
         // Impact effect system for arcade-style feedback
-        this.impactSystem = new ImpactEffectSystem(
-            this.container,
-            this.width,
-            this.height,
-            { particlePoolSize: 100 }
-        )
+        this.impactSystem = new ImpactEffectSystem(this.container, this.width, this.height, {
+            particlePoolSize: 100,
+        })
         // Connect shake callback
         this.impactSystem.onShake = (intensity, duration) => {
             this.triggerShake(intensity, duration)
@@ -737,9 +734,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
         const colorPalettes = [
             {
                 // Crimson / Red
-                color1: [0.91, 0.30, 0.24, 1.0], // #E84C3D
+                color1: [0.91, 0.3, 0.24, 1.0], // #E84C3D
                 color2: [0.75, 0.22, 0.17, 1.0], // #C0392B
-                color3: [0.20, 0.05, 0.05, 1.0], // Dark red
+                color3: [0.2, 0.05, 0.05, 1.0], // Dark red
                 border: 0xe74c3c,
                 borderGlow: 0xf56c5c,
                 innerGlow: 0x8a2a2a,
@@ -747,7 +744,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
             },
             {
                 // Ocean / Teal
-                color1: [0.10, 0.74, 0.61, 1.0], // #1ABC9C
+                color1: [0.1, 0.74, 0.61, 1.0], // #1ABC9C
                 color2: [0.09, 0.56, 0.47, 1.0], // #16A085
                 color3: [0.03, 0.15, 0.12, 1.0], // Dark teal
                 border: 0x1abc9c,
@@ -759,7 +756,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 // Royal / Purple
                 color1: [0.61, 0.35, 0.71, 1.0], // #9B59B6
                 color2: [0.42, 0.23, 0.55, 1.0], // #6B3B8C
-                color3: [0.10, 0.04, 0.15, 1.0], // Dark purple
+                color3: [0.1, 0.04, 0.15, 1.0], // Dark purple
                 border: 0x9b59b6,
                 borderGlow: 0xbb79d6,
                 innerGlow: 0x6a3a8a,
@@ -768,8 +765,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
             {
                 // Solar / Orange
                 color1: [0.95, 0.61, 0.07, 1.0], // #F39C12
-                color2: [0.90, 0.49, 0.13, 1.0], // #E67E22
-                color3: [0.20, 0.10, 0.02, 1.0], // Dark orange
+                color2: [0.9, 0.49, 0.13, 1.0], // #E67E22
+                color3: [0.2, 0.1, 0.02, 1.0], // Dark orange
                 border: 0xf39c12,
                 borderGlow: 0xf5bc52,
                 innerGlow: 0x8a5a0a,
@@ -777,9 +774,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
             },
             {
                 // Azure / Blue
-                color1: [0.20, 0.60, 0.86, 1.0], // #3498DB
-                color2: [0.16, 0.50, 0.73, 1.0], // #2980B9
-                color3: [0.04, 0.12, 0.20, 1.0], // Dark blue
+                color1: [0.2, 0.6, 0.86, 1.0], // #3498DB
+                color2: [0.16, 0.5, 0.73, 1.0], // #2980B9
+                color3: [0.04, 0.12, 0.2, 1.0], // Dark blue
                 border: 0x3498db,
                 borderGlow: 0x54b8fb,
                 innerGlow: 0x1a4a7a,
@@ -787,7 +784,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
             },
             {
                 // Emerald / Green
-                color1: [0.18, 0.80, 0.44, 1.0], // #2ECC71
+                color1: [0.18, 0.8, 0.44, 1.0], // #2ECC71
                 color2: [0.15, 0.68, 0.38, 1.0], // #27AE60
                 color3: [0.04, 0.18, 0.08, 1.0], // Dark green
                 border: 0x2ecc71,
@@ -799,7 +796,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 // Rose / Pink
                 color1: [0.91, 0.35, 0.55, 1.0], // #E8598C
                 color2: [0.75, 0.25, 0.45, 1.0], // #BF4073
-                color3: [0.20, 0.05, 0.12, 1.0], // Dark pink
+                color3: [0.2, 0.05, 0.12, 1.0], // Dark pink
                 border: 0xe84393,
                 borderGlow: 0xf863b3,
                 innerGlow: 0x8a2a5a,
@@ -1377,12 +1374,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 enemy.vy += ny * 5
 
                 // Show explosion damage text
-                this.damageTextSystem.spawn(
-                    enemy.x,
-                    enemy.y - enemy.size / 2,
-                    damage,
-                    'explosion'
-                )
+                this.damageTextSystem.spawn(enemy.x, enemy.y - enemy.size / 2, damage, 'explosion')
 
                 // Scale punch on hit enemies
                 if (enemy.wobble) {
@@ -1513,6 +1505,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.resultDisplayedTime = 0
         this.resultDisplayedKills = 0
         this.resultRankRevealed = false
+
+        // Record game result to progress store
+        const rank = getRankFromTime(this.gameTime)
+        const kills = Math.floor(this.score / 10)
+        useProgressStore
+            .getState()
+            .recordGameResult(this.gameTime, this.playerProgress.level, kills, rank)
 
         this.createResultUI()
         this.resultContainer.visible = true

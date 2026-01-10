@@ -239,12 +239,7 @@ export class ImpactEffectSystem {
     /**
      * Spawn particle burst at position
      */
-    private spawnParticleBurst(
-        x: number,
-        y: number,
-        config: ImpactConfig,
-        color?: number
-    ): void {
+    private spawnParticleBurst(x: number, y: number, config: ImpactConfig, color?: number): void {
         const particleColor = color ?? config.particleColor
 
         for (let i = 0; i < config.particleCount; i++) {
@@ -307,10 +302,7 @@ export class ImpactEffectSystem {
         })
 
         // Initial punch - scale up
-        target.scale.set(
-            target.scale.x * (1 + intensity),
-            target.scale.y * (1 + intensity)
-        )
+        target.scale.set(target.scale.x * (1 + intensity), target.scale.y * (1 + intensity))
     }
 
     /**

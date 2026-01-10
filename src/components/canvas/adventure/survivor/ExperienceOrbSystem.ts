@@ -214,7 +214,10 @@ export class ExperienceOrbSystem {
             if (dist < this.magnetRadius) {
                 // Accelerate towards player
                 const magnetStrength = 1 - dist / this.magnetRadius
-                orb.collectSpeed = Math.min(orb.collectSpeed + magnetStrength * 20 * deltaSeconds, 15)
+                orb.collectSpeed = Math.min(
+                    orb.collectSpeed + magnetStrength * 20 * deltaSeconds,
+                    15
+                )
 
                 const nx = dx / dist
                 const ny = dy / dist

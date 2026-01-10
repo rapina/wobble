@@ -1,9 +1,33 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+// Game statistics for survivor mode
+export interface GameStats {
+    totalGames: number
+    totalPlayTime: number // seconds
+    totalKills: number
+    bestTime: number // seconds
+    bestLevel: number
+    bestRank: string // 'S' | 'A' | 'B' | 'C' | 'D'
+    lastPlayedAt: number | null // timestamp
+}
+
+const DEFAULT_GAME_STATS: GameStats = {
+    totalGames: 0,
+    totalPlayTime: 0,
+    totalKills: 0,
+    bestTime: 0,
+    bestLevel: 0,
+    bestRank: 'D',
+    lastPlayedAt: null,
+}
+
 interface ProgressState {
     // Formulas the user has studied (viewed in simulation)
     studiedFormulas: Set<string>
+
+    // Game statistics
+    gameStats: GameStats
 
     // Mark a formula as studied
     studyFormula: (formulaId: string) => void
@@ -14,14 +38,24 @@ interface ProgressState {
     // Get all studied formulas
     getStudiedFormulas: () => string[]
 
+    // Record a game result
+    recordGameResult: (time: number, level: number, kills: number, rank: string) => void
+
+    // Get game stats
+    getGameStats: () => GameStats
+
     // Reset progress (for testing)
     resetProgress: () => void
 }
+
+// Rank priority for comparison
+const RANK_PRIORITY: Record<string, number> = { S: 5, A: 4, B: 3, C: 2, D: 1 }
 
 export const useProgressStore = create<ProgressState>()(
     persist(
         (set, get) => ({
             studiedFormulas: new Set<string>(),
+            gameStats: { ...DEFAULT_GAME_STATS },
 
             studyFormula: (formulaId: string) => {
                 set((state) => {
@@ -39,8 +73,35 @@ export const useProgressStore = create<ProgressState>()(
                 return Array.from(get().studiedFormulas)
             },
 
+            recordGameResult: (time: number, level: number, kills: number, rank: string) => {
+                set((state) => {
+                    const stats = state.gameStats
+                    const newBestRank =
+                        RANK_PRIORITY[rank] > RANK_PRIORITY[stats.bestRank] ? rank : stats.bestRank
+
+                    return {
+                        gameStats: {
+                            totalGames: stats.totalGames + 1,
+                            totalPlayTime: stats.totalPlayTime + time,
+                            totalKills: stats.totalKills + kills,
+                            bestTime: Math.max(stats.bestTime, time),
+                            bestLevel: Math.max(stats.bestLevel, level),
+                            bestRank: newBestRank,
+                            lastPlayedAt: Date.now(),
+                        },
+                    }
+                })
+            },
+
+            getGameStats: () => {
+                return get().gameStats
+            },
+
             resetProgress: () => {
-                set({ studiedFormulas: new Set<string>() })
+                set({
+                    studiedFormulas: new Set<string>(),
+                    gameStats: { ...DEFAULT_GAME_STATS },
+                })
             },
         }),
         {
@@ -56,6 +117,7 @@ export const useProgressStore = create<ProgressState>()(
                         state: {
                             ...data.state,
                             studiedFormulas: new Set(data.state.studiedFormulas || []),
+                            gameStats: data.state.gameStats || { ...DEFAULT_GAME_STATS },
                         },
                     }
                 },
@@ -65,6 +127,7 @@ export const useProgressStore = create<ProgressState>()(
                         state: {
                             ...value.state,
                             studiedFormulas: Array.from(value.state.studiedFormulas || []),
+                            gameStats: value.state.gameStats || { ...DEFAULT_GAME_STATS },
                         },
                     }
                     localStorage.setItem(name, JSON.stringify(data))

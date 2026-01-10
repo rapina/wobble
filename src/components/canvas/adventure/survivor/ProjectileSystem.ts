@@ -140,7 +140,8 @@ export class ProjectileSystem {
                 const dy = proj.y - enemy.y
                 const dist = Math.sqrt(dx * dx + dy * dy)
                 // 탄환 크기에 scale 반영
-                const minDist = this.baseSize * stats.projectileSizeMultiplier * proj.scale + enemy.size / 2
+                const minDist =
+                    this.baseSize * stats.projectileSizeMultiplier * proj.scale + enemy.size / 2
 
                 if (dist < minDist) {
                     // Hit!
