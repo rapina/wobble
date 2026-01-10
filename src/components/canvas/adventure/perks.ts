@@ -30,10 +30,7 @@ export type PerkStat =
     | 'bounce' // 튕김 횟수
     | 'piercing' // 관통 횟수
     | 'explosionRadius' // 폭발 범위
-    | 'chainDamage' // 연쇄 데미지
-    | 'healthRegen' // 체력 회복
     | 'moveSpeed' // 이동 속도
-    | 'maxHealth' // 최대 체력
 
 // Generated perk instance with rolled stats
 export interface Perk {
@@ -339,10 +336,7 @@ export function formatPerkEffect(
         bounce: { ko: '튕김', en: 'Bounce' },
         piercing: { ko: '관통', en: 'Pierce' },
         explosionRadius: { ko: '폭발 범위', en: 'Explosion' },
-        chainDamage: { ko: '연쇄 데미지', en: 'Chain Damage' },
-        healthRegen: { ko: '체력 회복', en: 'Health Regen' },
         moveSpeed: { ko: '이동 속도', en: 'Move Speed' },
-        maxHealth: { ko: '최대 체력', en: 'Max Health' },
     }
 
     const name = isKorean ? statNames[effect.stat].ko : statNames[effect.stat].en

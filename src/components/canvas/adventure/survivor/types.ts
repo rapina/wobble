@@ -144,6 +144,10 @@ export interface Projectile {
     damage: number
     bounces: number
     maxBounces: number
+    pierces: number // 현재까지 관통한 적 수
+    maxPierces: number // 최대 관통 가능 횟수
+    hitEnemyIds: Set<number> // 이미 맞춘 적 ID (중복 히트 방지)
+    scale: number // 현재 크기 배율 (튕길수록 감소)
 }
 
 export interface Enemy {

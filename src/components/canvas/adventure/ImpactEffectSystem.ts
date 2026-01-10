@@ -505,7 +505,10 @@ export class ImpactEffectSystem {
 
         // Clear scale punches
         for (const punch of this.scalePunches) {
-            punch.target.scale.set(punch.originalScaleX, punch.originalScaleY)
+            // target이 아직 유효한 경우에만 스케일 복원
+            if (punch.target && punch.target.scale && !punch.target.destroyed) {
+                punch.target.scale.set(punch.originalScaleX, punch.originalScaleY)
+            }
         }
         this.scalePunches = []
     }
