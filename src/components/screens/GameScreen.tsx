@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AdventureCanvas, AdventureCanvasHandle } from '@/components/canvas/AdventureCanvas'
-import { PlayResult, NarrationData } from '@/components/canvas/adventure'
+import { PlayResult } from '@/components/canvas/adventure'
 import { useProgressStore } from '@/stores/progressStore'
 import { ArrowLeft, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -13,7 +13,7 @@ const theme = {
     border: '#1a1a1a',
 }
 
-type GamePhase = 'narration' | 'playing' | 'formula-explanation'
+type GamePhase = 'playing' | 'formula-explanation'
 
 interface MinigameScreenProps {
     onBack: () => void
@@ -23,61 +23,23 @@ export function GameScreen({ onBack }: MinigameScreenProps) {
     const { i18n } = useTranslation()
     const isKorean = i18n.language === 'ko'
     const [mounted, setMounted] = useState(false)
-    const [phase, setPhase] = useState<GamePhase>('narration')
+    const [phase, setPhase] = useState<GamePhase>('playing')
     const [playResult, setPlayResult] = useState<PlayResult | null>(null)
 
     const canvasRef = useRef<AdventureCanvasHandle>(null)
     const { studiedFormulas } = useProgressStore()
 
-    // Narration data - Cartoon Network style episode intro
-    const narrations: NarrationData[] = useMemo(
-        () => [
-            {
-                blobShape: 'circle' as const,
-                blobExpression: 'surprised' as const,
-                text: isKorean
-                    ? '평화로운 워블 행성에 어둠이 찾아왔다...'
-                    : 'Darkness has come to the peaceful Planet Wobble...',
-            },
-            {
-                blobShape: 'shadow' as const,
-                blobExpression: 'angry' as const,
-                text: isKorean
-                    ? '크크크... 이 세계의 규칙을 모두 파괴해주지!'
-                    : 'Hehehe... I will destroy all the rules of this world!',
-            },
-            {
-                blobShape: 'circle' as const,
-                blobExpression: 'effort' as const,
-                text: isKorean
-                    ? '안 돼! 내가 워블 행성을 지킬 거야!'
-                    : 'No way! I will protect Planet Wobble!',
-            },
-            {
-                blobShape: 'circle' as const,
-                blobExpression: 'excited' as const,
-                text: isKorean
-                    ? '세계의 규칙을 되찾아... 섀도우를 물리쳐라!'
-                    : 'Restore the rules of the world... defeat the Shadows!',
-            },
-        ],
-        [isKorean]
-    )
-
-    // Mount animation
+    // Mount animation and auto-start game
     useEffect(() => {
         setMounted(false)
         setPlayResult(null)
-        setPhase('narration')
-        const timer = setTimeout(() => setMounted(true), 50)
-        return () => clearTimeout(timer)
-    }, [])
-
-    // Handle narration complete
-    const handleNarrationComplete = useCallback(() => {
         setPhase('playing')
-        // Start the game scene
-        canvasRef.current?.play()
+        const timer = setTimeout(() => {
+            setMounted(true)
+            // Auto-start the game
+            canvasRef.current?.play()
+        }, 50)
+        return () => clearTimeout(timer)
     }, [])
 
     // Handle play complete
@@ -100,8 +62,12 @@ export function GameScreen({ onBack }: MinigameScreenProps) {
     // Handle play again
     const handlePlayAgain = () => {
         setPlayResult(null)
-        setPhase('narration')
+        setPhase('playing')
         canvasRef.current?.reset()
+        // Auto-start after reset
+        setTimeout(() => {
+            canvasRef.current?.play()
+        }, 100)
     }
 
     // Memoized Balatro background
@@ -155,10 +121,8 @@ export function GameScreen({ onBack }: MinigameScreenProps) {
                     levelId="physics-survivor"
                     variables={{}}
                     targets={{}}
-                    narrations={narrations}
                     studiedFormulas={studiedFormulas}
                     onPlayComplete={handlePlayComplete}
-                    onNarrationComplete={handleNarrationComplete}
                 />
             </div>
 

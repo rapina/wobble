@@ -2,7 +2,13 @@ import { Container, Graphics, Text } from 'pixi.js'
 import { Wobble, WobbleShape } from '../../Wobble'
 
 // Game state type
-export type GameState = 'character-select' | 'playing' | 'perk-selection' | 'game-over' | 'result'
+export type GameState =
+    | 'character-select'
+    | 'opening'
+    | 'playing'
+    | 'skill-selection'
+    | 'game-over'
+    | 'result'
 
 // Wobble character stats (Brotato-style)
 export interface WobbleStats {
@@ -182,15 +188,39 @@ export interface HitEffect {
 }
 
 export interface PlayerStats {
+    // Base multipliers (from character + skills)
     damageMultiplier: number
     fireRateMultiplier: number
     projectileSpeedMultiplier: number
     projectileSizeMultiplier: number
     knockbackMultiplier: number
+    moveSpeedMultiplier: number
+
+    // Skill-derived additive stats
     bounceCount: number
     piercingCount: number
+    pierceDamageDecay: number // 0-1, damage lost per pierce
     explosionRadius: number
-    moveSpeedMultiplier: number
+
+    // Homing skill
+    homingTurnRate: number // Radians per second, 0 = no homing
+
+    // Spread shot skill
+    spreadCount: number // Number of projectiles (1 = single shot)
+    spreadAngle: number // Degrees spread
+
+    // Shockwave skill
+    shockwaveInterval: number // Seconds between pulses, 0 = disabled
+    shockwaveRadius: number
+    shockwaveKnockback: number
+
+    // Passive-derived stats
+    damageReduction: number // 0-1, damage reduction percentage
+    critChance: number // 0-1, chance to crit
+    critMultiplier: number // Crit damage multiplier (e.g., 2.5)
+    xpMultiplier: number // XP gain multiplier
+    consecutiveHitBonus: number // Current consecutive hit damage bonus
+    guardianAuraRadius: number // Guardian aura effect radius
 }
 
 export const DEFAULT_PLAYER_STATS: PlayerStats = {
@@ -199,10 +229,28 @@ export const DEFAULT_PLAYER_STATS: PlayerStats = {
     projectileSpeedMultiplier: 1,
     projectileSizeMultiplier: 1,
     knockbackMultiplier: 1,
+    moveSpeedMultiplier: 1,
+
     bounceCount: 0,
     piercingCount: 0,
+    pierceDamageDecay: 0,
     explosionRadius: 0,
-    moveSpeedMultiplier: 1,
+
+    homingTurnRate: 0,
+
+    spreadCount: 1,
+    spreadAngle: 0,
+
+    shockwaveInterval: 0,
+    shockwaveRadius: 0,
+    shockwaveKnockback: 0,
+
+    damageReduction: 0,
+    critChance: 0,
+    critMultiplier: 1.5,
+    xpMultiplier: 1,
+    consecutiveHitBonus: 0,
+    guardianAuraRadius: 0,
 }
 
 // Experience and Level System

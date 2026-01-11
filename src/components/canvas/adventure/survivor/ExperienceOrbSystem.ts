@@ -12,6 +12,7 @@ export interface ExperienceOrb {
     maxLife: number
     collected: boolean
     collectSpeed: number
+    animOffset: number // Random offset for varied animation
 }
 
 interface ExperienceOrbSystemContext {
@@ -28,19 +29,19 @@ const TIER_XP_VALUES: Record<EnemyTier, number> = {
     boss: 25,
 }
 
-// Orb colors by XP value
+// Orb colors by XP value (brighter, more saturated)
 function getOrbColor(xpValue: number): number {
     if (xpValue >= 25) return 0xffd700 // Gold for boss
-    if (xpValue >= 8) return 0x9b59b6 // Purple for large
-    if (xpValue >= 3) return 0x3498db // Blue for medium
-    return 0x2ecc71 // Green for small
+    if (xpValue >= 8) return 0xd946ef // Vibrant purple for large
+    if (xpValue >= 3) return 0x38bdf8 // Bright sky blue for medium
+    return 0x4ade80 // Bright green for small
 }
 
 function getOrbSize(xpValue: number): number {
-    if (xpValue >= 25) return 12
-    if (xpValue >= 8) return 10
-    if (xpValue >= 3) return 8
-    return 6
+    if (xpValue >= 25) return 14
+    if (xpValue >= 8) return 12
+    if (xpValue >= 3) return 10
+    return 8
 }
 
 export interface ExperienceOrbSystemOptions {
@@ -51,8 +52,8 @@ export interface ExperienceOrbSystemOptions {
 
 const DEFAULT_OPTIONS: Required<ExperienceOrbSystemOptions> = {
     poolSize: 100,
-    magnetRadius: 100, // Start attracting at this distance
-    collectRadius: 20, // Collect when this close
+    magnetRadius: 120, // Start attracting at this distance
+    collectRadius: 30, // Collect when this close
 }
 
 export class ExperienceOrbSystem {
@@ -147,18 +148,42 @@ export class ExperienceOrbSystem {
         const orbColor = color ?? getOrbColor(xpValue)
         const orbSize = size ?? getOrbSize(xpValue)
 
-        // Redraw with correct color and size
+        // Redraw with gem-like appearance
         graphics.clear()
-        graphics.moveTo(0, -orbSize)
-        graphics.lineTo(orbSize * 0.67, 0)
-        graphics.lineTo(0, orbSize)
-        graphics.lineTo(-orbSize * 0.67, 0)
-        graphics.closePath()
-        graphics.fill(orbColor)
 
-        // Add glow effect
-        graphics.circle(0, 0, orbSize * 0.5)
-        graphics.fill({ color: 0xffffff, alpha: 0.5 })
+        // Outer glow (soft halo)
+        graphics.circle(0, 0, orbSize * 1.3)
+        graphics.fill({ color: orbColor, alpha: 0.25 })
+
+        // Main gem body (hexagon for crystal look)
+        const sides = 6
+        const points: number[] = []
+        for (let i = 0; i < sides; i++) {
+            const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
+            points.push(Math.cos(angle) * orbSize)
+            points.push(Math.sin(angle) * orbSize)
+        }
+        graphics.poly(points)
+        graphics.fill(orbColor)
+        graphics.poly(points)
+        graphics.stroke({ color: 0xffffff, width: 1.5, alpha: 0.6 })
+
+        // Inner bright core (star-like sparkle)
+        const coreSize = orbSize * 0.5
+        graphics.moveTo(0, -coreSize)
+        graphics.lineTo(coreSize * 0.3, -coreSize * 0.3)
+        graphics.lineTo(coreSize, 0)
+        graphics.lineTo(coreSize * 0.3, coreSize * 0.3)
+        graphics.lineTo(0, coreSize)
+        graphics.lineTo(-coreSize * 0.3, coreSize * 0.3)
+        graphics.lineTo(-coreSize, 0)
+        graphics.lineTo(-coreSize * 0.3, -coreSize * 0.3)
+        graphics.closePath()
+        graphics.fill({ color: 0xffffff, alpha: 0.9 })
+
+        // Top highlight for 3D effect
+        graphics.circle(-orbSize * 0.3, -orbSize * 0.3, orbSize * 0.25)
+        graphics.fill({ color: 0xffffff, alpha: 0.7 })
 
         // Random burst direction
         const angle = Math.random() * Math.PI * 2
@@ -180,6 +205,7 @@ export class ExperienceOrbSystem {
             maxLife: 30,
             collected: false,
             collectSpeed: 0,
+            animOffset: Math.random() * Math.PI * 2, // Random phase for varied animation
         })
     }
 
@@ -252,16 +278,25 @@ export class ExperienceOrbSystem {
                 orb.vy *= -0.5
             }
 
-            // Update graphics
-            orb.graphics.position.set(orb.x, orb.y)
+            // Update graphics position with gentle bobbing
+            const bobAmount = Math.sin((orb.maxLife - orb.life) * 4 + orb.animOffset) * 2
+            orb.graphics.position.set(orb.x, orb.y + bobAmount)
 
-            // Pulse effect
-            const pulse = 1 + Math.sin(orb.life * 10) * 0.1
+            // Gentle rotation
+            orb.graphics.rotation = Math.sin((orb.maxLife - orb.life) * 2 + orb.animOffset) * 0.3
+
+            // Pulse effect (scale breathing)
+            const pulse = 1 + Math.sin((orb.maxLife - orb.life) * 8 + orb.animOffset) * 0.15
             orb.graphics.scale.set(pulse)
 
-            // Fade out in last 3 seconds
+            // Sparkle effect - alpha variation
+            const sparkle =
+                0.85 + Math.sin((orb.maxLife - orb.life) * 12 + orb.animOffset * 2) * 0.15
+            orb.graphics.alpha = sparkle
+
+            // Fade out in last 3 seconds (override sparkle)
             if (orb.life < 3) {
-                orb.graphics.alpha = orb.life / 3
+                orb.graphics.alpha = (orb.life / 3) * sparkle
             }
         }
     }

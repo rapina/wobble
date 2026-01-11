@@ -192,9 +192,13 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
 
             {/* Content */}
             <div
-                className="relative z-10 h-full overflow-y-auto"
+                className="absolute z-10 overflow-y-auto"
                 style={{
-                    paddingTop: 'max(env(safe-area-inset-top, 0px), 120px)',
+                    top: 'calc(max(env(safe-area-inset-top, 0px), 12px) + 110px)',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    paddingTop: 8,
                     paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), 24px) + 60px)',
                     paddingLeft: 'max(env(safe-area-inset-left, 0px), 16px)',
                     paddingRight: 'max(env(safe-area-inset-right, 0px), 16px)',
