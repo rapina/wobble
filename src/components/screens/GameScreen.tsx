@@ -6,14 +6,11 @@ import { useProgressStore } from '@/stores/progressStore'
 import { ArrowLeft, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Balatro from '@/components/Balatro'
-import { FormulaExplanation } from '@/components/puzzle/FormulaExplanation'
 
 const theme = {
     bgPanel: '#374244',
     border: '#1a1a1a',
 }
-
-type GamePhase = 'playing' | 'formula-explanation'
 
 interface MinigameScreenProps {
     onBack: () => void
@@ -23,7 +20,6 @@ export function GameScreen({ onBack }: MinigameScreenProps) {
     const { i18n } = useTranslation()
     const isKorean = i18n.language === 'ko'
     const [mounted, setMounted] = useState(false)
-    const [phase, setPhase] = useState<GamePhase>('playing')
     const [playResult, setPlayResult] = useState<PlayResult | null>(null)
 
     const canvasRef = useRef<AdventureCanvasHandle>(null)
@@ -33,7 +29,6 @@ export function GameScreen({ onBack }: MinigameScreenProps) {
     useEffect(() => {
         setMounted(false)
         setPlayResult(null)
-        setPhase('playing')
         const timer = setTimeout(() => {
             setMounted(true)
             // Auto-start the game
@@ -45,29 +40,12 @@ export function GameScreen({ onBack }: MinigameScreenProps) {
     // Handle play complete
     const handlePlayComplete = useCallback((result: PlayResult) => {
         setPlayResult(result)
-
-        if (result === 'success') {
-            setTimeout(() => {
-                setPhase('formula-explanation')
-            }, 800)
-        }
     }, [])
 
     // Handle reset
     const handleReset = () => {
         setPlayResult(null)
         canvasRef.current?.reset()
-    }
-
-    // Handle play again
-    const handlePlayAgain = () => {
-        setPlayResult(null)
-        setPhase('playing')
-        canvasRef.current?.reset()
-        // Auto-start after reset
-        setTimeout(() => {
-            canvasRef.current?.play()
-        }, 100)
     }
 
     // Memoized Balatro background
@@ -166,7 +144,7 @@ export function GameScreen({ onBack }: MinigameScreenProps) {
             </div>
 
             {/* Reset button on failure */}
-            {phase === 'playing' && playResult === 'failure' && (
+            {playResult === 'failure' && (
                 <div
                     className="absolute z-20 flex items-center justify-center px-4"
                     style={{
@@ -202,15 +180,6 @@ export function GameScreen({ onBack }: MinigameScreenProps) {
                         {isKorean ? '목표에 도달하지 못했어요!' : "Didn't reach the target!"}
                     </p>
                 </div>
-            )}
-
-            {/* Formula explanation overlay */}
-            {phase === 'formula-explanation' && (
-                <FormulaExplanation
-                    formulaIds={['newton-second']}
-                    onBack={onBack}
-                    onPlayAgain={handlePlayAgain}
-                />
             )}
         </div>
     )

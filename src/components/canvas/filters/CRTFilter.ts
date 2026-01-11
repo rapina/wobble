@@ -175,11 +175,11 @@ export class CRTFilter extends Filter {
 
     constructor(options: CRTFilterOptions = {}) {
         const {
-            scanlineIntensity = 0.15,
-            chromaticAberration = 0.3,
-            curvatureStrength = 0.02,
-            vignetteStrength = 0.3,
-            flickerIntensity = 0.01,
+            scanlineIntensity = 0.08,
+            chromaticAberration = 0.15,
+            curvatureStrength = 0.01,
+            vignetteStrength = 0.2,
+            flickerIntensity = 0.003,
         } = options
 
         const glProgram = GlProgram.from({
@@ -236,36 +236,47 @@ export class CRTFilter extends Filter {
         this.uniforms.uDimensions[1] = height
     }
 
-    // Preset for subtle effect (default)
+    // Preset for minimal effect (barely noticeable)
     static subtle(): CRTFilter {
         return new CRTFilter({
-            scanlineIntensity: 0.12,
-            chromaticAberration: 0.2,
-            curvatureStrength: 0.015,
-            vignetteStrength: 0.25,
-            flickerIntensity: 0.005,
+            scanlineIntensity: 0.04,
+            chromaticAberration: 0.08,
+            curvatureStrength: 0.005,
+            vignetteStrength: 0.12,
+            flickerIntensity: 0.002,
+        })
+    }
+
+    // Preset for light effect (noticeable but not distracting)
+    static light(): CRTFilter {
+        return new CRTFilter({
+            scanlineIntensity: 0.08,
+            chromaticAberration: 0.15,
+            curvatureStrength: 0.01,
+            vignetteStrength: 0.2,
+            flickerIntensity: 0.003,
         })
     }
 
     // Preset for medium effect
     static medium(): CRTFilter {
         return new CRTFilter({
-            scanlineIntensity: 0.25,
-            chromaticAberration: 0.5,
-            curvatureStrength: 0.03,
-            vignetteStrength: 0.4,
-            flickerIntensity: 0.015,
+            scanlineIntensity: 0.15,
+            chromaticAberration: 0.3,
+            curvatureStrength: 0.02,
+            vignetteStrength: 0.3,
+            flickerIntensity: 0.008,
         })
     }
 
     // Preset for heavy retro effect
     static heavy(): CRTFilter {
         return new CRTFilter({
-            scanlineIntensity: 0.4,
-            chromaticAberration: 1.0,
-            curvatureStrength: 0.05,
-            vignetteStrength: 0.5,
-            flickerIntensity: 0.025,
+            scanlineIntensity: 0.3,
+            chromaticAberration: 0.6,
+            curvatureStrength: 0.04,
+            vignetteStrength: 0.45,
+            flickerIntensity: 0.02,
         })
     }
 }

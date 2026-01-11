@@ -1,7 +1,7 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js'
 import { RANK_CONFIGS, getRankFromTime } from '../types'
 import { PlayerSkill, SKILL_DEFINITIONS } from '../skills'
-import { drawUIHexagon, easeOutQuad, easeOutBack } from '../utils'
+import { easeOutQuad, easeOutBack } from '../utils'
 import { shareGameResult } from '@/utils/share'
 
 export interface ResultScreenContext {
@@ -90,19 +90,28 @@ export class ResultScreen {
         this.animTime += deltaSeconds
         const children = this.screenContainer.children
 
-        // Step 0: Fade in title banner and text (0.0s - 0.3s)
+        // New structure:
+        // 0: bg, 1: pattern, 2: cardShadow, 3: card, 4: title
+        // 5: timeLabel, 6: resultTimeText
+        // 7: killsLabel, 8: resultKillsText
+        // 9: levelLabel, 10: resultWaveText
+        // 11: divider
+        // 12+: skill icons (variable count)
+        // then: resultRankCard
+        // then: resultButtons
+
+        // Step 0: Fade in card and title (0.0s - 0.3s)
         if (this.animTime >= 0 && this.animStep === 0) {
             const progress = Math.min(1, this.animTime / 0.3)
-            if (children[2]) children[2].alpha = progress
-            if (children[3]) children[3].alpha = progress
+            if (children[3]) children[3].alpha = progress // card
+            if (children[4]) children[4].alpha = progress // title
             if (this.animTime >= 0.3) this.animStep = 1
         }
 
         // Step 1: Show time stat (0.3s - 0.6s)
         if (this.animTime >= 0.3 && this.animStep === 1) {
             const progress = Math.min(1, (this.animTime - 0.3) / 0.3)
-            if (children[4]) children[4].alpha = progress
-            if (children[5]) children[5].alpha = progress
+            if (children[5]) children[5].alpha = progress // timeLabel
             this.resultTimeText.alpha = progress
             this.displayedTime = this.data.gameTime * easeOutQuad(progress)
             const mins = Math.floor(this.displayedTime / 60)
@@ -114,8 +123,7 @@ export class ResultScreen {
         // Step 2: Show kills stat (0.6s - 0.9s)
         if (this.animTime >= 0.6 && this.animStep === 2) {
             const progress = Math.min(1, (this.animTime - 0.6) / 0.3)
-            if (children[7]) children[7].alpha = progress
-            if (children[8]) children[8].alpha = progress
+            if (children[7]) children[7].alpha = progress // killsLabel
             this.resultKillsText.alpha = progress
             const totalKills = Math.floor(this.data.score / 10)
             this.displayedKills = Math.floor(totalKills * easeOutQuad(progress))
@@ -126,15 +134,14 @@ export class ResultScreen {
         // Step 3: Show level stat (0.9s - 1.1s)
         if (this.animTime >= 0.9 && this.animStep === 3) {
             const progress = Math.min(1, (this.animTime - 0.9) / 0.2)
-            if (children[10]) children[10].alpha = progress
-            if (children[11]) children[11].alpha = progress
+            if (children[9]) children[9].alpha = progress // levelLabel
             this.resultWaveText.alpha = progress
             if (progress >= 1) this.animStep = 4
         }
 
         // Step 4: Pop in skill icons (1.1s - 1.6s)
         if (this.animTime >= 1.1 && this.animStep === 4) {
-            const skillStartIndex = 13
+            const skillStartIndex = 12 // After divider
             if (this.data.skills.length > 0) {
                 for (let i = 0; i < this.data.skills.length; i++) {
                     const iconTime = 1.1 + i * 0.08
@@ -194,16 +201,14 @@ export class ResultScreen {
 
         if (!this.data) return
 
-        // Bright theme colors
-        const bgTopColor = 0x2dd4bf
-        const bgBottomColor = 0x14b8a6
-        const cardBgColor = 0xffffff
-        const cardShadowColor = 0x0d9488
-        const textDark = 0x422006
-        const accentGold = 0xfbbf24
-        const timeColor = 0x0891b2
-        const killColor = 0xdc2626
-        const levelColor = 0x059669
+        // Muted Balatro-style theme colors
+        const bgTopColor = 0x7db8b0 // soft sage
+        const bgBottomColor = 0x5a9a91 // muted teal
+        const cardBgColor = 0xf5f0e8 // warm cream
+        const cardShadowColor = 0x3d5c56
+        const textDark = 0x2d3b38
+        const textMuted = 0x5a6b66
+        const accentGold = 0xd4a574 // muted gold
 
         // Gradient background
         const bg = new Graphics()
@@ -227,122 +232,181 @@ export class ResultScreen {
         }
         this.screenContainer.addChild(bg)
 
-        // Subtle hexagonal pattern overlay
+        // Subtle dot pattern overlay (Balatro style)
         const pattern = new Graphics()
-        for (let row = 0; row < 15; row++) {
-            for (let col = 0; col < 10; col++) {
-                const px = col * 45 + (row % 2) * 22
-                const py = row * 40
-                drawUIHexagon(pattern, px, py, 18, undefined, 0xffffff, 1)
+        for (let row = 0; row < 30; row++) {
+            for (let col = 0; col < 20; col++) {
+                const px = col * 25 + (row % 2) * 12
+                const py = row * 25
+                pattern.circle(px, py, 2)
+                pattern.fill({ color: 0xffffff, alpha: 0.08 })
             }
         }
-        pattern.alpha = 0.1
         this.screenContainer.addChild(pattern)
 
-        // Title banner
-        const titleY = 50
-        const titleBanner = new Graphics()
-        titleBanner.roundRect(this.centerX - 70 + 2, titleY - 18 + 3, 140, 36, 8)
-        titleBanner.fill({ color: cardShadowColor, alpha: 0.3 })
-        titleBanner.roundRect(this.centerX - 70, titleY - 18, 140, 36, 8)
-        titleBanner.fill(cardBgColor)
-        titleBanner.roundRect(this.centerX - 70, titleY - 18, 140, 36, 8)
-        titleBanner.stroke({ color: accentGold, width: 2 })
-        titleBanner.alpha = 0
-        this.screenContainer.addChild(titleBanner)
+        // Main card container
+        const cardWidth = this.width - 40
+        const cardHeight = 360
+        const cardY = 40
+        const cardX = 20
 
+        // Card shadow
+        const cardShadow = new Graphics()
+        cardShadow.roundRect(cardX + 4, cardY + 6, cardWidth, cardHeight, 16)
+        cardShadow.fill({ color: cardShadowColor, alpha: 0.4 })
+        this.screenContainer.addChild(cardShadow)
+
+        // Main card background
+        const card = new Graphics()
+        card.roundRect(cardX, cardY, cardWidth, cardHeight, 16)
+        card.fill(cardBgColor)
+        card.roundRect(cardX, cardY, cardWidth, cardHeight, 16)
+        card.stroke({ color: accentGold, width: 3 })
+        card.alpha = 0
+        this.screenContainer.addChild(card)
+
+        // Title
         const titleStyle = new TextStyle({
             fontFamily: 'Arial, sans-serif',
-            fontSize: 18,
+            fontSize: 24,
             fontWeight: 'bold',
             fill: textDark,
-            letterSpacing: 3,
+            letterSpacing: 4,
         })
         const title = new Text({ text: 'SURVIVED', style: titleStyle })
         title.anchor.set(0.5)
-        title.position.set(this.centerX, titleY)
+        title.position.set(this.centerX, cardY + 40)
         title.alpha = 0
         this.screenContainer.addChild(title)
 
-        // Stats section
-        const statsY = 115
-        const statGap = 60
+        // Stats section - clean text layout
+        const statsY = cardY + 90
+        const statGap = 50
+        const labelX = this.centerX - 50
+        const valueX = this.centerX + 50
+
+        // Label style
+        const labelStyle = new TextStyle({
+            fontFamily: 'Arial, sans-serif',
+            fontSize: 14,
+            fontWeight: 'bold',
+            fill: textMuted,
+            letterSpacing: 2,
+        })
+
+        // Value style
+        const valueStyle = new TextStyle({
+            fontFamily: 'Arial, sans-serif',
+            fontSize: 22,
+            fontWeight: 'bold',
+            fill: textDark,
+        })
 
         // Time stat
-        this.createStatBadge(this.centerX - 70, statsY, 'time', timeColor)
-        this.resultTimeText = new Text({
-            text: '00:00',
-            style: new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 20,
-                fontWeight: 'bold',
-                fill: textDark,
-            }),
-        })
+        const timeLabel = new Text({ text: 'TIME', style: labelStyle })
+        timeLabel.anchor.set(1, 0.5)
+        timeLabel.position.set(labelX, statsY)
+        timeLabel.alpha = 0
+        this.screenContainer.addChild(timeLabel)
+
+        this.resultTimeText = new Text({ text: '00:00', style: valueStyle })
         this.resultTimeText.anchor.set(0, 0.5)
-        this.resultTimeText.position.set(this.centerX - 40, statsY)
+        this.resultTimeText.position.set(valueX, statsY)
         this.resultTimeText.alpha = 0
         this.screenContainer.addChild(this.resultTimeText)
 
         // Kills stat
-        this.createStatBadge(this.centerX - 70, statsY + statGap, 'kill', killColor)
-        this.resultKillsText = new Text({
-            text: '0',
-            style: new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 20,
-                fontWeight: 'bold',
-                fill: textDark,
-            }),
-        })
+        const killsLabel = new Text({ text: 'KILLS', style: labelStyle })
+        killsLabel.anchor.set(1, 0.5)
+        killsLabel.position.set(labelX, statsY + statGap)
+        killsLabel.alpha = 0
+        this.screenContainer.addChild(killsLabel)
+
+        this.resultKillsText = new Text({ text: '0', style: valueStyle })
         this.resultKillsText.anchor.set(0, 0.5)
-        this.resultKillsText.position.set(this.centerX - 40, statsY + statGap)
+        this.resultKillsText.position.set(valueX, statsY + statGap)
         this.resultKillsText.alpha = 0
         this.screenContainer.addChild(this.resultKillsText)
 
         // Level stat
-        this.createStatBadge(this.centerX - 70, statsY + statGap * 2, 'level', levelColor)
+        const levelLabel = new Text({ text: 'LEVEL', style: labelStyle })
+        levelLabel.anchor.set(1, 0.5)
+        levelLabel.position.set(labelX, statsY + statGap * 2)
+        levelLabel.alpha = 0
+        this.screenContainer.addChild(levelLabel)
+
         this.resultWaveText = new Text({
-            text: `Lv.${this.data.level}`,
-            style: new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 20,
-                fontWeight: 'bold',
-                fill: textDark,
-            }),
+            text: this.data.level.toString(),
+            style: valueStyle,
         })
         this.resultWaveText.anchor.set(0, 0.5)
-        this.resultWaveText.position.set(this.centerX - 40, statsY + statGap * 2)
+        this.resultWaveText.position.set(valueX, statsY + statGap * 2)
         this.resultWaveText.alpha = 0
         this.screenContainer.addChild(this.resultWaveText)
 
-        // Skill icons row
+        // Divider line
+        const divider = new Graphics()
+        divider.moveTo(cardX + 30, statsY + statGap * 2.5 + 10)
+        divider.lineTo(cardX + cardWidth - 30, statsY + statGap * 2.5 + 10)
+        divider.stroke({ color: textMuted, width: 1, alpha: 0.3 })
+        this.screenContainer.addChild(divider)
+
+        // Skill icons row - clean pill badges
         const skillY = statsY + statGap * 3
         if (this.data.skills.length > 0) {
-            const hexSize = 22
-            const iconGap = 8
-            const totalWidth =
-                this.data.skills.length * (hexSize * 2) + (this.data.skills.length - 1) * iconGap
-            const startX = this.centerX - totalWidth / 2 + hexSize
+            const pillHeight = 28
+            const pillGap = 6
+            const pillPadding = 12
+
+            // Calculate total width for centering
+            let totalWidth = 0
+            const skillWidths: number[] = []
+            this.data.skills.forEach((playerSkill) => {
+                const skillDef = SKILL_DEFINITIONS[playerSkill.skillId]
+                if (!skillDef) return
+                const text = `${skillDef.icon} Lv.${playerSkill.level}`
+                const estimatedWidth = text.length * 8 + pillPadding * 2
+                skillWidths.push(estimatedWidth)
+                totalWidth += estimatedWidth
+            })
+            totalWidth += (skillWidths.length - 1) * pillGap
+
+            let currentX = this.centerX - totalWidth / 2
 
             this.data.skills.forEach((playerSkill, i) => {
                 const skillDef = SKILL_DEFINITIONS[playerSkill.skillId]
                 if (!skillDef) return
 
                 const iconContainer = new Container()
-                iconContainer.position.set(startX + i * (hexSize * 2 + iconGap), skillY)
+                iconContainer.position.set(currentX + skillWidths[i] / 2, skillY)
                 iconContainer.alpha = 0
                 iconContainer.scale.set(0)
 
-                const iconBg = new Graphics()
-                drawUIHexagon(iconBg, 0, 0, hexSize, cardBgColor, skillDef.color, 2)
-                iconContainer.addChild(iconBg)
+                // Pill background
+                const pill = new Graphics()
+                pill.roundRect(
+                    -skillWidths[i] / 2,
+                    -pillHeight / 2,
+                    skillWidths[i],
+                    pillHeight,
+                    pillHeight / 2
+                )
+                pill.fill({ color: textMuted, alpha: 0.15 })
+                pill.roundRect(
+                    -skillWidths[i] / 2,
+                    -pillHeight / 2,
+                    skillWidths[i],
+                    pillHeight,
+                    pillHeight / 2
+                )
+                pill.stroke({ color: textMuted, width: 1, alpha: 0.3 })
+                iconContainer.addChild(pill)
 
                 const iconText = new Text({
-                    text: `${skillDef.icon}${playerSkill.level}`,
+                    text: `${skillDef.icon} Lv.${playerSkill.level}`,
                     style: new TextStyle({
                         fontFamily: 'Arial, sans-serif',
-                        fontSize: 14,
+                        fontSize: 12,
                         fontWeight: 'bold',
                         fill: textDark,
                     }),
@@ -351,11 +415,12 @@ export class ResultScreen {
                 iconContainer.addChild(iconText)
 
                 this.screenContainer.addChild(iconContainer)
+                currentX += skillWidths[i] + pillGap
             })
         }
 
-        // Rank card
-        const rankY = this.data.skills.length > 0 ? skillY + 100 : statsY + statGap * 3 + 20
+        // Rank card - clean rounded rectangle
+        const rankY = this.data.skills.length > 0 ? cardY + cardHeight - 60 : statsY + statGap * 3
         this.resultRankCard = new Container()
         this.resultRankCard.position.set(this.centerX, rankY)
         this.resultRankCard.scale.set(0)
@@ -363,25 +428,29 @@ export class ResultScreen {
 
         const rank = getRankFromTime(this.data.gameTime)
         const rankConfig = RANK_CONFIGS[rank]
-        const rankHexSize = 50
+        const rankBoxWidth = 80
+        const rankBoxHeight = 60
 
         // Rank shadow
-        const rankHexShadow = new Graphics()
-        drawUIHexagon(rankHexShadow, 2, 4, rankHexSize, cardShadowColor)
-        rankHexShadow.alpha = 0.3
-        this.resultRankCard.addChild(rankHexShadow)
+        const rankShadow = new Graphics()
+        rankShadow.roundRect(-rankBoxWidth / 2 + 3, -rankBoxHeight / 2 + 4, rankBoxWidth, rankBoxHeight, 12)
+        rankShadow.fill({ color: cardShadowColor, alpha: 0.3 })
+        this.resultRankCard.addChild(rankShadow)
 
-        // Rank badge
-        const rankHexInner = new Graphics()
-        drawUIHexagon(rankHexInner, 0, 0, rankHexSize, cardBgColor, rankConfig.color, 3)
-        this.resultRankCard.addChild(rankHexInner)
+        // Rank badge background
+        const rankBg = new Graphics()
+        rankBg.roundRect(-rankBoxWidth / 2, -rankBoxHeight / 2, rankBoxWidth, rankBoxHeight, 12)
+        rankBg.fill(cardBgColor)
+        rankBg.roundRect(-rankBoxWidth / 2, -rankBoxHeight / 2, rankBoxWidth, rankBoxHeight, 12)
+        rankBg.stroke({ color: rankConfig.color, width: 3 })
+        this.resultRankCard.addChild(rankBg)
 
         // Rank letter
         const rankText = new Text({
             text: rank,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 48,
+                fontSize: 36,
                 fontWeight: 'bold',
                 fill: rankConfig.color,
             }),
@@ -389,34 +458,34 @@ export class ResultScreen {
         rankText.anchor.set(0.5)
         this.resultRankCard.addChild(rankText)
 
-        // Rank message
+        // Rank message below card
         const messageText = new Text({
             text: rankConfig.message,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: 'bold',
-                fill: textDark,
+                fill: textMuted,
             }),
         })
         messageText.anchor.set(0.5)
-        messageText.position.set(0, 70)
+        messageText.position.set(0, rankBoxHeight / 2 + 15)
         this.resultRankCard.addChild(messageText)
 
-        // Action buttons
+        // Action buttons - Balatro-style rounded rectangle buttons
         this.resultButtons = new Container()
-        this.resultButtons.position.set(this.centerX, this.height - 70)
+        this.resultButtons.position.set(this.centerX, this.height - 60)
         this.resultButtons.alpha = 0
         this.screenContainer.addChild(this.resultButtons)
 
         // Retry button
-        const retryBtn = this.createButtonWithIcon('play', -70, levelColor, () => {
+        const retryBtn = this.createTextButton('RETRY', -55, 0x5a9a91, () => {
             this.onRetry?.()
         })
         this.resultButtons.addChild(retryBtn)
 
         // Share button
-        const shareBtn = this.createButtonWithIcon('share', 0, timeColor, () => {
+        const shareBtn = this.createTextButton('SHARE', 55, 0x8b7355, () => {
             if (!this.data) return
             const kills = Math.floor(this.data.score / 10)
             const rank = getRankFromTime(this.data.gameTime)
@@ -432,85 +501,10 @@ export class ResultScreen {
             )
         })
         this.resultButtons.addChild(shareBtn)
-
-        // Exit button
-        const exitBtn = this.createButtonWithIcon('close', 70, killColor, () => {
-            this.onExit?.()
-        })
-        this.resultButtons.addChild(exitBtn)
     }
 
-    private createStatBadge(
-        x: number,
-        y: number,
-        iconType: 'time' | 'kill' | 'level',
-        color: number
-    ): void {
-        const cardBgColor = 0xffffff
-        const cardShadowColor = 0x0d9488
-
-        // Shadow
-        const shadow = new Graphics()
-        drawUIHexagon(shadow, x + 2, y + 3, 18, cardShadowColor)
-        shadow.alpha = 0.2
-        this.screenContainer.addChild(shadow)
-
-        // Badge
-        const badge = new Graphics()
-        drawUIHexagon(badge, x, y, 18, cardBgColor, color, 2)
-        badge.alpha = 0
-        this.screenContainer.addChild(badge)
-
-        // Icon
-        const icon = new Graphics()
-        const s = 8
-
-        switch (iconType) {
-            case 'time':
-                icon.circle(x, y, s)
-                icon.stroke({ width: 2, color })
-                icon.moveTo(x, y)
-                icon.lineTo(x, y - s * 0.5)
-                icon.stroke({ width: 2, color })
-                icon.moveTo(x, y)
-                icon.lineTo(x + s * 0.6, y)
-                icon.stroke({ width: 2, color })
-                break
-
-            case 'kill':
-                icon.circle(x, y, s)
-                icon.stroke({ width: 2, color })
-                icon.circle(x, y, s * 0.4)
-                icon.fill(color)
-                icon.moveTo(x - s - 3, y)
-                icon.lineTo(x + s + 3, y)
-                icon.stroke({ width: 2, color })
-                icon.moveTo(x, y - s - 3)
-                icon.lineTo(x, y + s + 3)
-                icon.stroke({ width: 2, color })
-                break
-
-            case 'level':
-                const points = 5
-                const outerR = s + 2
-                const innerR = s * 0.4
-                icon.moveTo(x + outerR * Math.sin(0), y - outerR * Math.cos(0))
-                for (let i = 0; i < points * 2; i++) {
-                    const r = i % 2 === 0 ? outerR : innerR
-                    const angle = (Math.PI * i) / points
-                    icon.lineTo(x + r * Math.sin(angle), y - r * Math.cos(angle))
-                }
-                icon.closePath()
-                icon.fill(color)
-                break
-        }
-
-        icon.alpha = 0
-        this.screenContainer.addChild(icon)
-    }
-
-    private createButtonWithIcon(
-        iconType: 'play' | 'share' | 'close',
+    private createTextButton(
+        label: string,
         offsetX: number,
         color: number,
         onClick: () => void
@@ -520,46 +514,38 @@ export class ResultScreen {
         btn.eventMode = 'static'
         btn.cursor = 'pointer'
 
-        const hexSize = 26
-        const cardBgColor = 0xffffff
-        const cardShadowColor = 0x0d9488
+        const btnWidth = 90
+        const btnHeight = 40
+        const cardBgColor = 0xf5f0e8
+        const cardShadowColor = 0x3d5c56
 
         // Shadow
         const shadow = new Graphics()
-        drawUIHexagon(shadow, 2, 3, hexSize, cardShadowColor)
-        shadow.alpha = 0.3
+        shadow.roundRect(-btnWidth / 2 + 2, -btnHeight / 2 + 3, btnWidth, btnHeight, 10)
+        shadow.fill({ color: cardShadowColor, alpha: 0.3 })
         btn.addChild(shadow)
 
-        // Button
+        // Button background
         const bg = new Graphics()
-        drawUIHexagon(bg, 0, 0, hexSize, cardBgColor, color, 2)
+        bg.roundRect(-btnWidth / 2, -btnHeight / 2, btnWidth, btnHeight, 10)
+        bg.fill(cardBgColor)
+        bg.roundRect(-btnWidth / 2, -btnHeight / 2, btnWidth, btnHeight, 10)
+        bg.stroke({ color, width: 2 })
         btn.addChild(bg)
 
-        // Icon
-        const icon = new Graphics()
-        if (iconType === 'play') {
-            icon.moveTo(-6, -10)
-            icon.lineTo(-6, 10)
-            icon.lineTo(10, 0)
-            icon.closePath()
-            icon.fill(color)
-        } else if (iconType === 'share') {
-            icon.moveTo(-8, 8)
-            icon.lineTo(8, -8)
-            icon.stroke({ color, width: 3 })
-            icon.moveTo(0, -8)
-            icon.lineTo(8, -8)
-            icon.lineTo(8, 0)
-            icon.stroke({ color, width: 3 })
-        } else if (iconType === 'close') {
-            icon.moveTo(-7, -7)
-            icon.lineTo(7, 7)
-            icon.stroke({ color, width: 3 })
-            icon.moveTo(7, -7)
-            icon.lineTo(-7, 7)
-            icon.stroke({ color, width: 3 })
-        }
-        btn.addChild(icon)
+        // Button text
+        const text = new Text({
+            text: label,
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 14,
+                fontWeight: 'bold',
+                fill: color,
+                letterSpacing: 1,
+            }),
+        })
+        text.anchor.set(0.5)
+        btn.addChild(text)
 
         btn.on('pointerdown', onClick)
 
