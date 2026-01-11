@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Settings } from 'lucide-react'
+import { Settings, Trophy } from 'lucide-react'
 import Balatro from '@/components/Balatro'
 import ShuffleText from '@/components/ShuffleText'
 import { RotatingText } from '@/components/RotatingText'
@@ -9,10 +9,25 @@ import { LanguageToggle } from '@/components/LanguageToggle'
 import { MusicToggle } from '@/components/MusicToggle'
 import { SettingsModal } from '@/components/ui/SettingsModal'
 import { useCollectionStore } from '@/stores/collectionStore'
-import { BookOpen } from 'lucide-react'
+import { useProgressStore } from '@/stores/progressStore'
+import { useAchievementStore } from '@/stores/achievementStore'
+import { formulaList } from '@/formulas/registry'
 import { cn } from '@/lib/utils'
 
-export type GameMode = 'sandbox' | 'collection' | 'game' | 'learning'
+// Theme matching SimulationScreen
+const theme = {
+    bg: '#0a0a12',
+    bgPanel: '#374244',
+    bgPanelLight: '#4a5658',
+    border: '#1a1a1a',
+    gold: '#c9a227',
+    red: '#e85d4c',
+    blue: '#4a9eff',
+    pink: '#FF6B9D',
+    purple: '#BB8FCE',
+}
+
+export type GameMode = 'sandbox' | 'collection' | 'game' | 'learning' | 'achievements'
 
 interface HomeScreenProps {
     onSelectMode: (mode: GameMode) => void
@@ -21,10 +36,14 @@ interface HomeScreenProps {
 export function HomeScreen({ onSelectMode }: HomeScreenProps) {
     const { t } = useTranslation()
     const [mounted, setMounted] = useState(false)
-    const [hoveredButton, setHoveredButton] = useState<string | null>(null)
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
     const { getProgress } = useCollectionStore()
+    const { studiedFormulas } = useProgressStore()
+    const { getProgress: getAchievementProgress } = useAchievementStore()
     const collectionProgress = getProgress()
+    const achievementProgress = getAchievementProgress()
+    const unseenFormulaCount = formulaList.length - studiedFormulas.size
+    const remainingAchievements = achievementProgress.total - achievementProgress.unlocked
 
     useEffect(() => {
         const timer = setTimeout(() => setMounted(true), 100)
@@ -34,16 +53,16 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
     return (
         <div className="relative w-full h-full overflow-hidden bg-[#0a0a12]">
             {/* Balatro Background */}
-            <div className="absolute inset-0 opacity-70">
+            <div className="absolute inset-0 opacity-60">
                 <Balatro
-                    color1="#F5B041"
-                    color2="#5DADE2"
+                    color1="#c9a227"
+                    color2="#4a9eff"
                     color3="#1a1a2e"
-                    spinSpeed={3}
+                    spinSpeed={2}
                     spinRotation={-1}
                     contrast={2.5}
                     lighting={0.3}
-                    spinAmount={0.2}
+                    spinAmount={0.15}
                     pixelFilter={800}
                     isRotate={true}
                     mouseInteraction={false}
@@ -51,7 +70,7 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
             </div>
 
             {/* Vignette overlay */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.5)_100%)] pointer-events-none" />
 
             {/* Settings - Top Right */}
             <div
@@ -61,13 +80,42 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                     right: 'max(env(safe-area-inset-right, 0px), 16px)',
                 }}
             >
+                {/* Achievements Button */}
                 <button
-                    onClick={() => setIsSettingsOpen(true)}
+                    onClick={() => onSelectMode('achievements')}
                     className="relative h-10 w-10 rounded-lg flex items-center justify-center transition-all active:scale-95"
                     style={{
-                        background: '#374244',
-                        border: '2px solid #1a1a1a',
-                        boxShadow: '0 3px 0 #1a1a1a',
+                        background: remainingAchievements > 0 ? theme.gold : theme.bgPanel,
+                        border: `2px solid ${theme.border}`,
+                        boxShadow: `0 3px 0 ${theme.border}`,
+                    }}
+                >
+                    <Trophy
+                        className={cn(
+                            'w-5 h-5',
+                            remainingAchievements > 0 ? 'text-white' : 'text-white/60'
+                        )}
+                    />
+                    {remainingAchievements > 0 && (
+                        <span
+                            className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full text-[10px] font-bold flex items-center justify-center"
+                            style={{
+                                background: theme.red,
+                                color: 'white',
+                                border: `2px solid ${theme.border}`,
+                            }}
+                        >
+                            {remainingAchievements}
+                        </span>
+                    )}
+                </button>
+                <button
+                    onClick={() => setIsSettingsOpen(true)}
+                    className="h-10 w-10 rounded-lg flex items-center justify-center transition-all active:scale-95"
+                    style={{
+                        background: theme.bgPanel,
+                        border: `2px solid ${theme.border}`,
+                        boxShadow: `0 3px 0 ${theme.border}`,
                     }}
                 >
                     <Settings className="w-5 h-5 text-white/80" />
@@ -97,9 +145,9 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                     <h1
                         className="text-6xl font-black tracking-wider"
                         style={{
-                            color: '#F5B041',
+                            color: '#c9a227',
                             textShadow:
-                                '0 0 40px rgba(245, 176, 65, 0.8), 0 0 80px rgba(245, 176, 65, 0.4), 0 4px 0 #b8860b',
+                                '0 0 40px rgba(201, 162, 39, 0.8), 0 0 80px rgba(201, 162, 39, 0.4), 0 4px 0 #8a6d1a',
                             fontFamily: 'system-ui, -apple-system, sans-serif',
                         }}
                     >
@@ -136,74 +184,55 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                 {/* Menu Cards */}
                 <div
                     className={cn(
-                        'space-y-3',
+                        'space-y-3 mx-auto w-full',
                         'transition-all duration-1000 delay-300 ease-out',
                         mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
                     )}
+                    style={{ maxWidth: 400 }}
                 >
                     {/* Sandbox - Main Card */}
                     <button
                         onClick={() => onSelectMode('sandbox')}
-                        onMouseEnter={() => setHoveredButton('sandbox')}
-                        onMouseLeave={() => setHoveredButton(null)}
-                        className={cn(
-                            'w-full relative overflow-hidden',
-                            'rounded-xl border-3 border-[#F5B041]',
-                            'transition-all duration-200',
-                            'hover:scale-[1.02] hover:border-[#FFD700]',
-                            'active:scale-[0.98]'
-                        )}
+                        className="w-full relative overflow-hidden rounded-xl transition-all active:scale-[0.98] hover:brightness-110"
                         style={{
-                            background: 'linear-gradient(180deg, #2a2a4a 0%, #1a1a2e 100%)',
-                            boxShadow:
-                                hoveredButton === 'sandbox'
-                                    ? '0 0 30px rgba(245, 176, 65, 0.4), inset 0 0 20px rgba(245, 176, 65, 0.1)'
-                                    : '0 4px 16px rgba(0,0,0,0.4)',
-                            borderWidth: '3px',
+                            background: `linear-gradient(180deg, ${theme.gold} 0%, #a8861f 100%)`,
+                            border: `3px solid ${theme.border}`,
+                            boxShadow: `0 4px 0 ${theme.border}, inset 0 1px 0 rgba(255,255,255,0.3)`,
                         }}
                     >
-                        <div className="px-5 py-3 text-center">
-                            <span
-                                className="block text-xl font-black"
-                                style={{
-                                    color: '#F5B041',
-                                    textShadow: '0 0 10px rgba(245, 176, 65, 0.5)',
-                                }}
-                            >
+                        <div className="px-6 py-4 flex items-center justify-center">
+                            <span className="text-xl font-black text-black tracking-wide uppercase">
                                 {t('home.sandbox')}
                             </span>
-                            <span className="block text-sm text-white/60 mt-1">
-                                {t('home.sandboxDesc')}
-                            </span>
+                            {unseenFormulaCount > 0 && (
+                                <span
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 px-2 py-0.5 text-[10px] font-black rounded-md animate-pulse"
+                                    style={{
+                                        background: theme.red,
+                                        color: 'white',
+                                        border: `2px solid ${theme.border}`,
+                                        boxShadow: `0 2px 0 ${theme.border}`,
+                                    }}
+                                >
+                                    NEW
+                                </span>
+                            )}
                         </div>
                     </button>
 
                     {/* Minigame Mode Card */}
                     <button
                         onClick={() => onSelectMode('game')}
-                        onMouseEnter={() => setHoveredButton('game')}
-                        onMouseLeave={() => setHoveredButton(null)}
-                        className={cn(
-                            'w-full relative overflow-hidden',
-                            'rounded-xl border-2 border-[#FF6B9D]/60',
-                            'transition-all duration-200',
-                            'hover:scale-[1.02] hover:border-[#FF6B9D]',
-                            'active:scale-[0.98]'
-                        )}
+                        className="w-full relative overflow-hidden rounded-xl transition-all active:scale-[0.98] hover:brightness-110"
                         style={{
-                            background: 'linear-gradient(180deg, #2a2a4a 0%, #1a1a2e 100%)',
-                            boxShadow:
-                                hoveredButton === 'game'
-                                    ? '0 0 20px rgba(255, 107, 157, 0.3)'
-                                    : '0 3px 12px rgba(0,0,0,0.3)',
+                            background: `linear-gradient(180deg, ${theme.pink} 0%, #d94d7a 100%)`,
+                            border: `3px solid ${theme.border}`,
+                            boxShadow: `0 4px 0 ${theme.border}, inset 0 1px 0 rgba(255,255,255,0.3)`,
                         }}
                     >
-                        <div className="px-5 py-3 text-center">
-                            <span className="block text-lg font-bold" style={{ color: '#FF6B9D' }}>
+                        <div className="px-6 py-4 flex items-center justify-center">
+                            <span className="text-xl font-black text-black tracking-wide uppercase">
                                 {t('home.game')}
-                            </span>
-                            <span className="block text-xs text-white/60 mt-1">
-                                {t('home.gameDesc')}
                             </span>
                         </div>
                     </button>
@@ -211,35 +240,22 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                     {/* Collection - Bottom Card */}
                     <button
                         onClick={() => onSelectMode('collection')}
-                        onMouseEnter={() => setHoveredButton('collection')}
-                        onMouseLeave={() => setHoveredButton(null)}
-                        className={cn(
-                            'w-full relative overflow-hidden',
-                            'rounded-xl border-2 border-[#BB8FCE]/60',
-                            'transition-all duration-200',
-                            'hover:scale-[1.02] hover:border-[#BB8FCE]',
-                            'active:scale-[0.98]'
-                        )}
+                        className="w-full relative overflow-hidden rounded-xl transition-all active:scale-[0.98] hover:brightness-110"
                         style={{
-                            background: 'linear-gradient(180deg, #2a2a4a 0%, #1a1a2e 100%)',
-                            boxShadow:
-                                hoveredButton === 'collection'
-                                    ? '0 0 20px rgba(187, 143, 206, 0.3)'
-                                    : '0 3px 12px rgba(0,0,0,0.3)',
+                            background: `linear-gradient(180deg, ${theme.purple} 0%, #9b6fb5 100%)`,
+                            border: `3px solid ${theme.border}`,
+                            boxShadow: `0 4px 0 ${theme.border}, inset 0 1px 0 rgba(255,255,255,0.3)`,
                         }}
                     >
-                        <div className="px-5 py-2.5 text-center relative">
-                            <div className="flex items-center justify-center gap-2">
-                                <BookOpen className="w-4 h-4" style={{ color: '#BB8FCE' }} />
-                                <span className="text-lg font-bold" style={{ color: '#BB8FCE' }}>
-                                    {t('home.collection')}
-                                </span>
-                            </div>
+                        <div className="px-6 py-4 flex items-center justify-center">
+                            <span className="text-xl font-black text-black tracking-wide uppercase">
+                                {t('home.collection')}
+                            </span>
                             <span
-                                className="absolute right-5 top-1/2 -translate-y-1/2 px-2 py-1 rounded-full text-xs font-bold"
+                                className="ml-3 px-2 py-0.5 text-xs font-bold rounded-md"
                                 style={{
-                                    background: 'rgba(187, 143, 206, 0.2)',
-                                    color: '#BB8FCE',
+                                    background: 'rgba(0,0,0,0.2)',
+                                    color: 'white',
                                 }}
                             >
                                 {collectionProgress.unlocked}/{collectionProgress.total}

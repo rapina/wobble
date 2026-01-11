@@ -1,169 +1,253 @@
-import { useState, useEffect, useRef } from 'react'
-import { App } from '@capacitor/app'
-import { Capacitor } from '@capacitor/core'
-import { HomeScreen, GameMode } from './HomeScreen'
-import { SimulationScreen } from './SimulationScreen'
-import { CollectionScreen } from './CollectionScreen'
-import { MinigameScreen } from './MinigameScreen'
-import { AdventureSelectScreen } from './AdventureSelectScreen'
-import { formulaList } from '../../formulas/registry'
-import { Formula } from '../../formulas/types'
-import { useMusic } from '../../hooks/useMusic'
-import { useInAppPurchase } from '../../hooks/useInAppPurchase'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import { AdventureCanvas, AdventureCanvasHandle } from '@/components/canvas/AdventureCanvas'
+import { PlayResult, NarrationData } from '@/components/canvas/adventure'
+import { useProgressStore } from '@/stores/progressStore'
+import { ArrowLeft, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import Balatro from '@/components/Balatro'
+import { FormulaExplanation } from '@/components/puzzle/FormulaExplanation'
 
-type ScreenState = 'home' | 'sandbox' | 'collection' | 'adventure-select' | 'game' | 'learning'
+const theme = {
+    bgPanel: '#374244',
+    border: '#1a1a1a',
+}
 
-export function GameScreen() {
-    const [screenState, setScreenState] = useState<ScreenState>('home')
-    const [selectedFormula, setSelectedFormula] = useState<Formula | null>(null)
-    const [isTransitioning, setIsTransitioning] = useState(false)
-    const audioRef = useRef<HTMLAudioElement | null>(null)
-    const { isMusicEnabled } = useMusic()
-    const { restorePurchases } = useInAppPurchase()
+type GamePhase = 'narration' | 'playing' | 'formula-explanation'
 
-    // Restore purchases on app start (for reinstall support)
+interface MinigameScreenProps {
+    onBack: () => void
+}
+
+export function GameScreen({ onBack }: MinigameScreenProps) {
+    const { i18n } = useTranslation()
+    const isKorean = i18n.language === 'ko'
+    const [mounted, setMounted] = useState(false)
+    const [phase, setPhase] = useState<GamePhase>('narration')
+    const [playResult, setPlayResult] = useState<PlayResult | null>(null)
+
+    const canvasRef = useRef<AdventureCanvasHandle>(null)
+    const { studiedFormulas } = useProgressStore()
+
+    // Narration data - Cartoon Network style episode intro
+    const narrations: NarrationData[] = useMemo(
+        () => [
+            {
+                blobShape: 'circle' as const,
+                blobExpression: 'surprised' as const,
+                text: isKorean
+                    ? '평화로운 워블 행성에 어둠이 찾아왔다...'
+                    : 'Darkness has come to the peaceful Planet Wobble...',
+            },
+            {
+                blobShape: 'shadow' as const,
+                blobExpression: 'angry' as const,
+                text: isKorean
+                    ? '크크크... 이 세계의 규칙을 모두 파괴해주지!'
+                    : 'Hehehe... I will destroy all the rules of this world!',
+            },
+            {
+                blobShape: 'circle' as const,
+                blobExpression: 'effort' as const,
+                text: isKorean
+                    ? '안 돼! 내가 워블 행성을 지킬 거야!'
+                    : 'No way! I will protect Planet Wobble!',
+            },
+            {
+                blobShape: 'circle' as const,
+                blobExpression: 'excited' as const,
+                text: isKorean
+                    ? '세계의 규칙을 되찾아... 섀도우를 물리쳐라!'
+                    : 'Restore the rules of the world... defeat the Shadows!',
+            },
+        ],
+        [isKorean]
+    )
+
+    // Mount animation
     useEffect(() => {
-        if (Capacitor.isNativePlatform()) {
-            restorePurchases().catch(() => {
-                // Silently fail - user can manually restore from settings
-            })
+        setMounted(false)
+        setPlayResult(null)
+        setPhase('narration')
+        const timer = setTimeout(() => setMounted(true), 50)
+        return () => clearTimeout(timer)
+    }, [])
+
+    // Handle narration complete
+    const handleNarrationComplete = useCallback(() => {
+        setPhase('playing')
+        // Start the game scene
+        canvasRef.current?.play()
+    }, [])
+
+    // Handle play complete
+    const handlePlayComplete = useCallback((result: PlayResult) => {
+        setPlayResult(result)
+
+        if (result === 'success') {
+            setTimeout(() => {
+                setPhase('formula-explanation')
+            }, 800)
         }
     }, [])
 
-    // Initialize with first formula when entering sandbox
-    useEffect(() => {
-        if (screenState === 'sandbox' && !selectedFormula && formulaList.length > 0) {
-            setSelectedFormula(formulaList[0])
-        }
-    }, [screenState, selectedFormula])
-
-    // Background music - initialize audio element
-    useEffect(() => {
-        const audio = new Audio('/assets/bg.mp3')
-        audio.loop = true
-        audio.volume = 0.02
-        audioRef.current = audio
-
-        const handleInteraction = () => {
-            if (isMusicEnabled) {
-                audio.play().catch(() => {})
-            }
-            document.removeEventListener('click', handleInteraction)
-        }
-        document.addEventListener('click', handleInteraction)
-
-        const appStateListener = App.addListener('appStateChange', ({ isActive }) => {
-            if (isActive && isMusicEnabled) {
-                audio.play().catch(() => {})
-            } else {
-                audio.pause()
-            }
-        })
-
-        return () => {
-            audio.pause()
-            document.removeEventListener('click', handleInteraction)
-            appStateListener.then((listener) => listener.remove())
-        }
-    }, [])
-
-    // Control music based on isMusicEnabled setting
-    useEffect(() => {
-        const audio = audioRef.current
-        if (!audio) return
-
-        if (isMusicEnabled) {
-            audio.play().catch(() => {})
-        } else {
-            audio.pause()
-        }
-    }, [isMusicEnabled])
-
-    const handleSelectMode = (mode: GameMode) => {
-        if (mode === 'sandbox') {
-            setIsTransitioning(true)
-            setTimeout(() => {
-                setScreenState('sandbox')
-                if (formulaList.length > 0) {
-                    setSelectedFormula(formulaList[0])
-                }
-                setIsTransitioning(false)
-            }, 150)
-        } else if (mode === 'collection') {
-            setIsTransitioning(true)
-            setTimeout(() => {
-                setScreenState('collection')
-                setIsTransitioning(false)
-            }, 150)
-        } else if (mode === 'game') {
-            setIsTransitioning(true)
-            setTimeout(() => {
-                setScreenState('adventure-select')
-                setIsTransitioning(false)
-            }, 150)
-        }
+    // Handle reset
+    const handleReset = () => {
+        setPlayResult(null)
+        canvasRef.current?.reset()
     }
 
-    const handleSelectAdventure = (adventureId: string) => {
-        if (adventureId === 'wobble-survivor') {
-            setIsTransitioning(true)
-            setTimeout(() => {
-                setScreenState('game')
-                setIsTransitioning(false)
-            }, 150)
-        }
+    // Handle play again
+    const handlePlayAgain = () => {
+        setPlayResult(null)
+        setPhase('narration')
+        canvasRef.current?.reset()
     }
 
-    const handleBackToAdventureSelect = () => {
-        setIsTransitioning(true)
-        setTimeout(() => {
-            setScreenState('adventure-select')
-            setIsTransitioning(false)
-        }, 150)
-    }
-
-    const handleFormulaChange = (formula: Formula) => {
-        setSelectedFormula(formula)
-    }
-
-    const handleBackToHome = () => {
-        setIsTransitioning(true)
-        setTimeout(() => {
-            setScreenState('home')
-            setSelectedFormula(null)
-            setIsTransitioning(false)
-        }, 150)
-    }
+    // Memoized Balatro background
+    const balatroBackground = useMemo(
+        () => (
+            <div className="absolute inset-0 opacity-70">
+                <Balatro
+                    color1="#F5B041"
+                    color2="#5DADE2"
+                    color3="#1a1a2e"
+                    spinSpeed={3}
+                    contrast={2.5}
+                    lighting={0.3}
+                    spinAmount={0.2}
+                    pixelFilter={800}
+                    mouseInteraction={false}
+                />
+            </div>
+        ),
+        []
+    )
 
     return (
-        <div className="w-full h-full bg-background overflow-hidden">
+        <div
+            className={cn(
+                'relative w-full h-full overflow-hidden',
+                'transition-opacity duration-300',
+                mounted ? 'opacity-100' : 'opacity-0'
+            )}
+            style={{ background: '#0a0a12' }}
+        >
+            {balatroBackground}
+
+            {/* Vignette */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.5)_100%)] pointer-events-none" />
+
+            {/* Canvas Area */}
             <div
-                className={cn(
-                    'w-full h-full transition-opacity duration-150',
-                    isTransitioning ? 'opacity-0' : 'opacity-100'
-                )}
+                className="absolute z-10 rounded-xl overflow-hidden"
+                style={{
+                    top: 'calc(max(env(safe-area-inset-top, 0px), 12px) + 56px)',
+                    left: 'max(env(safe-area-inset-left, 0px), 12px)',
+                    right: 'max(env(safe-area-inset-right, 0px), 12px)',
+                    bottom: 'calc(max(env(safe-area-inset-bottom, 0px), 8px) + 60px)',
+                    border: `3px solid ${theme.border}`,
+                    boxShadow: `0 6px 0 ${theme.border}, 0 10px 30px rgba(0,0,0,0.5)`,
+                }}
             >
-                {screenState === 'home' ? (
-                    <HomeScreen onSelectMode={handleSelectMode} />
-                ) : screenState === 'sandbox' && selectedFormula ? (
-                    <SimulationScreen
-                        formulaId={selectedFormula.id}
-                        formulas={formulaList}
-                        onFormulaChange={handleFormulaChange}
-                        onBack={handleBackToHome}
-                    />
-                ) : screenState === 'collection' ? (
-                    <CollectionScreen onBack={handleBackToHome} />
-                ) : screenState === 'adventure-select' ? (
-                    <AdventureSelectScreen
-                        onBack={handleBackToHome}
-                        onSelectAdventure={handleSelectAdventure}
-                    />
-                ) : screenState === 'game' ? (
-                    <MinigameScreen onBack={handleBackToAdventureSelect} />
-                ) : null}
+                <AdventureCanvas
+                    ref={canvasRef}
+                    levelId="physics-survivor"
+                    variables={{}}
+                    targets={{}}
+                    narrations={narrations}
+                    studiedFormulas={studiedFormulas}
+                    onPlayComplete={handlePlayComplete}
+                    onNarrationComplete={handleNarrationComplete}
+                />
             </div>
+
+            {/* Top Header */}
+            <div
+                className="absolute top-0 left-0 right-0 z-20"
+                style={{
+                    paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)',
+                    paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
+                    paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
+                }}
+            >
+                <div className="flex items-center gap-3">
+                    {/* Back Button */}
+                    <button
+                        onClick={onBack}
+                        className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95"
+                        style={{
+                            background: theme.bgPanel,
+                            border: `2px solid ${theme.border}`,
+                            boxShadow: `0 3px 0 ${theme.border}`,
+                        }}
+                    >
+                        <ArrowLeft className="h-5 w-5 text-white" />
+                    </button>
+
+                    {/* Title */}
+                    <div
+                        className="flex-1 px-4 py-2 rounded-lg"
+                        style={{
+                            background: theme.bgPanel,
+                            border: `2px solid ${theme.border}`,
+                            boxShadow: `0 3px 0 ${theme.border}`,
+                        }}
+                    >
+                        <h2 className="text-white font-bold truncate">
+                            {isKorean ? '워블 어드벤처' : 'Wobble Adventures'}
+                        </h2>
+                    </div>
+                </div>
+            </div>
+
+            {/* Reset button on failure */}
+            {phase === 'playing' && playResult === 'failure' && (
+                <div
+                    className="absolute z-20 flex items-center justify-center px-4"
+                    style={{
+                        bottom: 'calc(max(env(safe-area-inset-bottom, 0px), 8px) + 120px)',
+                        left: 0,
+                        right: 0,
+                    }}
+                >
+                    <button
+                        onClick={handleReset}
+                        className={cn(
+                            'flex items-center gap-2 px-6 py-3 rounded-lg',
+                            'bg-white/20 border border-white/30',
+                            'text-white font-bold',
+                            'transition-all active:scale-95'
+                        )}
+                    >
+                        <RotateCcw className="w-5 h-5" />
+                        <span>{isKorean ? '다시 시도' : 'Try Again'}</span>
+                    </button>
+                </div>
+            )}
+
+            {/* Failure feedback */}
+            {playResult === 'failure' && (
+                <div
+                    className="absolute z-30 left-0 right-0 text-center px-4"
+                    style={{
+                        bottom: 'calc(max(env(safe-area-inset-bottom, 0px), 8px) + 180px)',
+                    }}
+                >
+                    <p className="text-red-400 text-sm animate-pulse">
+                        {isKorean ? '목표에 도달하지 못했어요!' : "Didn't reach the target!"}
+                    </p>
+                </div>
+            )}
+
+            {/* Formula explanation overlay */}
+            {phase === 'formula-explanation' && (
+                <FormulaExplanation
+                    formulaIds={['newton-second']}
+                    onBack={onBack}
+                    onPlayAgain={handlePlayAgain}
+                />
+            )}
         </div>
     )
 }

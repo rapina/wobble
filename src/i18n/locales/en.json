@@ -1,11 +1,11 @@
 {
     "home": {
         "title": "WOBBLE",
-        "sandbox": "Lab",
+        "sandbox": "Sandbox",
         "sandboxDesc": "Explore physics freely",
-        "collection": "My Progress",
+        "collection": "Collection",
         "collectionDesc": "Characters, Study, Records",
-        "game": "Adventure",
+        "game": "Game",
         "gameDesc": "New episodes now playing!",
         "soon": "SOON",
         "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
@@ -72,5 +72,15 @@
         "formulaUsed": "These formulas powered your game!",
         "realWorldUse": "Real-world use",
         "continue": "Continue"
+    },
+    "share": {
+        "title": "Share Result",
+        "button": "Share",
+        "gameResult": "Achieved {{rank}} rank in Wobble Survivor!\n\nLevel {{level}} | {{kills}} kills | {{time}} survived\n\nA survivor game powered by physics formulas!\n#Wobble #PhysicsGame #Survivor"
+    },
+    "achievements": {
+        "title": "Achievements",
+        "unlocked": "Achievement Unlocked!",
+        "progress": "{{unlocked}} of {{total}} unlocked"
     }
 }

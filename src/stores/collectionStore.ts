@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { WobbleShape, WOBBLE_CHARACTERS, FORMULA_WOBBLES } from '../components/canvas/Wobble'
+import { useAchievementStore } from './achievementStore'
 
 const STORAGE_KEY = 'wobble-collection'
 const ALL_SHAPES: WobbleShape[] = [
@@ -53,6 +54,9 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
             const updated = [...current, shape]
             saveCollection(updated)
             set({ unlockedWobbles: updated })
+
+            // Check collection achievements
+            useAchievementStore.getState().checkCollectionAchievements(updated.length)
         }
     },
 
@@ -65,6 +69,10 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
                 const updated = [...current, ...newShapes]
                 saveCollection(updated)
                 set({ unlockedWobbles: updated })
+
+                // Check collection achievements
+                useAchievementStore.getState().checkCollectionAchievements(updated.length)
+
                 return newShapes
             }
         }

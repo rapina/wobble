@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { useAchievementStore } from './achievementStore'
 
 // Game statistics for survivor mode
 export interface GameStats {
@@ -63,6 +64,10 @@ export const useProgressStore = create<ProgressState>()(
                     newSet.add(formulaId)
                     return { studiedFormulas: newSet }
                 })
+
+                // Check learning achievements
+                const count = get().studiedFormulas.size
+                useAchievementStore.getState().checkLearningAchievements(count)
             },
 
             hasStudied: (formulaId: string) => {
@@ -91,6 +96,12 @@ export const useProgressStore = create<ProgressState>()(
                         },
                     }
                 })
+
+                // Check combat and mastery achievements
+                const { totalKills, bestTime, bestRank } = get().gameStats
+                useAchievementStore
+                    .getState()
+                    .checkCombatAchievements(totalKills, bestTime, bestRank)
             },
 
             getGameStats: () => {

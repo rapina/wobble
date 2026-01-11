@@ -1,8 +1,18 @@
 import { Application, Container, Graphics, Text, TextStyle, Ticker } from 'pixi.js'
 import { AdventureScene, AdventureSceneOptions } from './AdventureScene'
 import { Wobble, WobbleShape, WOBBLE_CHARACTERS } from '../Wobble'
-import { Perk, getRandomPerks, formatPerkEffect, perkDefinitions, PerkDefinition } from './perks'
+import {
+    Perk,
+    getRandomPerks,
+    formatPerkEffect,
+    perkDefinitions,
+    PerkDefinition,
+    PhysicsTheme,
+    PHYSICS_THEMES,
+    getPerksByTheme,
+} from './perks'
 import { BalatroFilter } from '../filters/BalatroFilter'
+import { CRTFilter } from '../filters/CRTFilter'
 import { useCollectionStore } from '@/stores/collectionStore'
 import { useProgressStore } from '@/stores/progressStore'
 import {
@@ -28,6 +38,8 @@ import {
 import { VirtualJoystick } from './VirtualJoystick'
 import { FloatingDamageText } from './FloatingDamageText'
 import { ImpactEffectSystem } from './ImpactEffectSystem'
+import { shareGameResult } from '@/utils/share'
+import { WaveText } from './WaveText'
 
 export class PhysicsSurvivorScene extends AdventureScene {
     // Game state
@@ -76,6 +88,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }[] = []
     private cardWrappers: Container[] = []
     private levelUpBanner: Container | null = null
+    private levelUpWaveText: WaveText | null = null
 
     // Accumulated stats from perks
     private stats: PlayerStats = { ...DEFAULT_PLAYER_STATS }
@@ -86,6 +99,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
     declare private enemyContainer: Container
     declare private effectContainer: Container
     declare private uiContainer: Container
+
+    // CRT Filter for retro TV effect
+    declare private crtFilter: CRTFilter
 
     // Player
     declare private player: Wobble
@@ -160,6 +176,14 @@ export class PhysicsSurvivorScene extends AdventureScene {
     declare private startButton: Container
     private readonly baseMaxHealth = 100
 
+    // Character select animation
+    private charSelectAnimPhase = 0
+    private charTransitionProgress = 0
+    private charTransitionDirection: 'left' | 'right' | null = null
+    declare private characterCardContainer: Container
+    declare private leftArrowBtn: Container
+    declare private rightArrowBtn: Container
+
     // Perk info display in character select
     private selectedPerkIndex: number | null = null
     declare private perkInfoContainer: Container
@@ -167,6 +191,14 @@ export class PhysicsSurvivorScene extends AdventureScene {
     declare private perkInfoNameText: Text
     declare private perkInfoDescText: Text
     private perkIconContainers: Container[] = []
+
+    // Theme (deck) selection
+    private selectedTheme: PhysicsTheme = 'mechanics'
+    declare private themeCardContainer: Container
+    declare private themeNameText: Text
+    declare private themeDescText: Text
+    declare private leftThemeBtn: Container
+    declare private rightThemeBtn: Container
 
     // Camera shake system
     private shakeIntensity = 0
@@ -216,6 +248,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.characterSelectContainer = new Container()
         this.characterSelectContainer.visible = false
         this.container.addChild(this.characterSelectContainer)
+
+        // CRT Filter for retro TV effect (applied to entire scene)
+        this.crtFilter = CRTFilter.subtle()
+        this.crtFilter.setDimensions(this.width, this.height)
+        this.container.filters = [this.crtFilter]
 
         // Initialize systems
         this.backgroundSystem = new BackgroundSystem({
@@ -273,6 +310,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.backgroundSystem.initialize(this.background)
     }
 
+    // Update CRT filter dimensions on resize
+    protected onResize(): void {
+        if (this.crtFilter) {
+            this.crtFilter.setDimensions(this.width, this.height)
+        }
+    }
+
     protected onInitialDraw(): void {
         // Hide the default grid - we use custom background
         this.gridOverlay.visible = false
@@ -314,6 +358,16 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.joystick.attachTo(this.gameContainer)
     }
 
+    // UI helper: draw heart shape
+    private drawHeartShape(g: Graphics, x: number, y: number, size: number, color: number): void {
+        g.moveTo(x, y + size * 0.3)
+        g.bezierCurveTo(x, y - size * 0.3, x - size, y - size * 0.3, x - size, y + size * 0.1)
+        g.bezierCurveTo(x - size, y + size * 0.6, x, y + size, x, y + size)
+        g.bezierCurveTo(x, y + size, x + size, y + size * 0.6, x + size, y + size * 0.1)
+        g.bezierCurveTo(x + size, y - size * 0.3, x, y - size * 0.3, x, y + size * 0.3)
+        g.fill(color)
+    }
+
     // UI helper: draw small hexagon for HUD elements
     private drawUIHexagon(
         g: Graphics,
@@ -340,18 +394,20 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
     private setupUI(): void {
         // === Top-left: Health display as hexagonal hearts ===
+        // Health badge shadow
+        const healthShadow = new Graphics()
+        this.drawUIHexagon(healthShadow, 29, 30, 20, 0x0a0a0a)
+        healthShadow.alpha = 0.5
+        this.uiContainer.addChild(healthShadow)
+
         // Health badge container (hexagon with heart inside)
         this.healthBarBg = new Graphics()
-        this.drawUIHexagon(this.healthBarBg, 28, 28, 22, 0x1a1520, 0x4a3a5a, 3)
+        this.drawUIHexagon(this.healthBarBg, 28, 28, 20, 0x1a1520, 0x1a1a1a, 2)
         this.uiContainer.addChild(this.healthBarBg)
 
-        // Heart icon inside health badge
-        const heartIcon = new Text({
-            text: '❤',
-            style: new TextStyle({ fontSize: 16 }),
-        })
-        heartIcon.anchor.set(0.5)
-        heartIcon.position.set(28, 26)
+        // Heart icon inside health badge - draw heart shape
+        const heartIcon = new Graphics()
+        this.drawHeartShape(heartIcon, 28, 26, 8, 0xe74c3c)
         this.uiContainer.addChild(heartIcon)
 
         // Health hearts container (individual heart icons)
@@ -370,15 +426,22 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         // === Below HP: XP Bar ===
         const xpBarX = 55
-        const xpBarY = 60
+        const xpBarY = 58
         const xpBarWidth = 120
-        const xpBarHeight = 14
+        const xpBarHeight = 12
+
+        // XP bar shadow
+        const xpBarShadow = new Graphics()
+        xpBarShadow.roundRect(xpBarX + 1, xpBarY + 2, xpBarWidth, xpBarHeight, 6)
+        xpBarShadow.fill({ color: 0x0a0a0a, alpha: 0.5 })
+        this.uiContainer.addChild(xpBarShadow)
 
         // XP bar background
         this.xpBarBg = new Graphics()
-        this.xpBarBg.roundRect(xpBarX, xpBarY, xpBarWidth, xpBarHeight, 7)
+        this.xpBarBg.roundRect(xpBarX, xpBarY, xpBarWidth, xpBarHeight, 6)
         this.xpBarBg.fill(0x1a1520)
-        this.xpBarBg.stroke({ color: 0x2ecc71, width: 2 })
+        this.xpBarBg.roundRect(xpBarX, xpBarY, xpBarWidth, xpBarHeight, 6)
+        this.xpBarBg.stroke({ color: 0x1a1a1a, width: 2 })
         this.uiContainer.addChild(this.xpBarBg)
 
         // XP bar fill
@@ -401,8 +464,16 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // === Top-right: Level indicator ===
         const levelX = this.width - 35
         const levelY = 28
+
+        // Level badge shadow
+        const levelShadow = new Graphics()
+        this.drawUIHexagon(levelShadow, levelX + 1, levelY + 2, 20, 0x0a0a0a)
+        levelShadow.alpha = 0.5
+        this.uiContainer.addChild(levelShadow)
+
+        // Level badge main
         const levelBadge = new Graphics()
-        this.drawUIHexagon(levelBadge, levelX, levelY, 22, 0x1a1520, 0x2ecc71, 3)
+        this.drawUIHexagon(levelBadge, levelX, levelY, 20, 0x1a1520, 0x1a1a1a, 2)
         this.uiContainer.addChild(levelBadge)
 
         // Level number
@@ -565,7 +636,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.perkIconGraphics = []
 
         // Create hexagonal icon for each active perk
-        const hexSize = 16
+        const hexSize = 20
         const iconGap = 6
 
         this.activePerks.forEach((perk, index) => {
@@ -578,10 +649,15 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.drawUIHexagon(bg, 0, 0, hexSize, 0x1a1520, perk.definition.color, 2)
             iconContainer.addChild(bg)
 
-            // Icon emoji
+            // Formula text icon
             const iconText = new Text({
-                text: perk.definition.icon,
-                style: new TextStyle({ fontSize: 12 }),
+                text: perk.definition.nameKo,
+                style: new TextStyle({
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 9,
+                    fontWeight: 'bold',
+                    fill: perk.definition.color,
+                }),
             })
             iconText.anchor.set(0.5)
             iconContainer.addChild(iconText)
@@ -604,8 +680,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.cardEntranceAnimations = []
         this.cardWrappers = []
 
-        // Get 3 random perks (always returns exactly 3)
-        this.perkChoices = getRandomPerks(this.studiedFormulas, 3)
+        // Get 3 random perks from the selected theme (always returns exactly 3)
+        this.perkChoices = getRandomPerks(this.studiedFormulas, 3, this.selectedTheme)
 
         // Semi-transparent dark overlay (game still visible behind)
         const bg = new Graphics()
@@ -634,34 +710,36 @@ export class PhysicsSurvivorScene extends AdventureScene {
         bannerBg.stroke({ color: 0xffd700, width: 3 })
         this.levelUpBanner.addChild(bannerBg)
 
-        // Level up text with glow effect
-        const levelText = new Text({
+        // Level up text with wave animation
+        this.levelUpWaveText = new WaveText({
             text: `LEVEL ${this.playerProgress.level}!`,
-            style: new TextStyle({
+            style: {
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 18,
                 fontWeight: 'bold',
                 fill: 0xffd700,
-                letterSpacing: 3,
                 dropShadow: {
                     color: 0xffd700,
                     blur: 8,
                     distance: 0,
                     alpha: 0.8,
                 },
-            }),
+            },
+            amplitude: 3,
+            frequency: 5,
+            phaseOffset: 0.4,
+            letterSpacing: 3,
         })
-        levelText.anchor.set(0.5)
-        this.levelUpBanner.addChild(levelText)
+        this.levelUpBanner.addChild(this.levelUpWaveText)
 
-        // Perk cards - positioned at bottom half of screen
+        // Perk cards - positioned at center of screen
         const cardWidth = 90
         const cardHeight = 180
         const cardGap = 20
         const totalWidth =
             this.perkChoices.length * cardWidth + (this.perkChoices.length - 1) * cardGap
         const startX = (this.width - totalWidth) / 2
-        const targetCardY = this.height - cardHeight / 2 - 60 // Bottom area
+        const targetCardY = this.centerY // Center of screen
         const startCardY = this.height + cardHeight // Start below screen
 
         this.perkChoices.forEach((perk, index) => {
@@ -819,7 +897,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         // Card shadow
         const shadow = new Graphics()
-        shadow.roundRect(-cardWidth / 2 + 4, -cardHeight / 2 + 6, cardWidth, cardHeight, 14)
+        shadow.roundRect(-cardWidth / 2 + 2, -cardHeight / 2 + 3, cardWidth, cardHeight, 12)
         shadow.fill({ color: 0x000000, alpha: 0.5 })
         container.addChild(shadow)
 
@@ -857,25 +935,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Store filter reference for animation
         this.cardBackFilters.push(balatroFilter)
 
-        // Card border - glowing with palette colors
+        // Card border
         const border = new Graphics()
-        border.roundRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 14)
-        border.stroke({ color: palette.border, width: 3 })
-        border.roundRect(-cardWidth / 2 - 1, -cardHeight / 2 - 1, cardWidth + 2, cardHeight + 2, 15)
-        border.stroke({ color: palette.borderGlow, width: 1, alpha: 0.5 })
+        border.roundRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 12)
+        border.stroke({ color: palette.border, width: 2 })
         container.addChild(border)
-
-        // Inner border glow
-        const innerGlow = new Graphics()
-        innerGlow.roundRect(
-            -cardWidth / 2 + 4,
-            -cardHeight / 2 + 4,
-            cardWidth - 8,
-            cardHeight - 8,
-            11
-        )
-        innerGlow.stroke({ color: palette.innerGlow, width: 2, alpha: 0.4 })
-        container.addChild(innerGlow)
 
         // Central glow circle behind question mark
         const centerGlow = new Graphics()
@@ -939,102 +1003,133 @@ export class PhysicsSurvivorScene extends AdventureScene {
         _index: number
     ): Container {
         const container = new Container()
+        const perkColor = perk.definition.color
 
+        // Card shadow (deeper for Balatro feel)
+        const shadow = new Graphics()
+        shadow.roundRect(-cardWidth / 2 + 3, -cardHeight / 2 + 5, cardWidth, cardHeight, 10)
+        shadow.fill({ color: 0x000000, alpha: 0.6 })
+        container.addChild(shadow)
+
+        // Main card background with inner glow effect
         const card = new Graphics()
 
-        // Card shadow
-        card.roundRect(-cardWidth / 2 + 4, -cardHeight / 2 + 6, cardWidth, cardHeight, 14)
-        card.fill({ color: 0x000000, alpha: 0.5 })
+        // Outer card border (darker)
+        card.roundRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 10)
+        card.fill(0x0d0a12)
 
-        // Card background - warm dark tone
-        card.roundRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 14)
-        card.fill(0x1a1215)
+        // Inner card area with subtle gradient feel
+        card.roundRect(-cardWidth / 2 + 3, -cardHeight / 2 + 3, cardWidth - 6, cardHeight - 6, 8)
+        card.fill(0x1a1520)
 
-        // Card inner area - slightly lighter warm tone
-        card.roundRect(-cardWidth / 2 + 4, -cardHeight / 2 + 4, cardWidth - 8, cardHeight - 8, 11)
-        card.fill(0x2a2025)
+        // Glowing border with perk color
+        card.roundRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 10)
+        card.stroke({ color: perkColor, width: 2 })
 
-        // Card border with perk color
-        card.roundRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 14)
-        card.stroke({ color: perk.definition.color, width: 3 })
-
-        // Top accent bar
-        card.roundRect(-cardWidth / 2 + 8, -cardHeight / 2 + 8, cardWidth - 16, 4, 2)
-        card.fill(perk.definition.color)
+        // Inner subtle border
+        card.roundRect(-cardWidth / 2 + 3, -cardHeight / 2 + 3, cardWidth - 6, cardHeight - 6, 8)
+        card.stroke({ color: perkColor, width: 1, alpha: 0.3 })
 
         container.addChild(card)
 
-        // Name (formula name)
+        // Top ribbon/banner area with perk color
+        const ribbon = new Graphics()
+        ribbon.roundRect(-cardWidth / 2 + 6, -cardHeight / 2 + 6, cardWidth - 12, 32, 6)
+        ribbon.fill({ color: perkColor, alpha: 0.15 })
+        ribbon.roundRect(-cardWidth / 2 + 6, -cardHeight / 2 + 6, cardWidth - 12, 32, 6)
+        ribbon.stroke({ color: perkColor, width: 1, alpha: 0.4 })
+        container.addChild(ribbon)
+
+        // Name (formula name) - bold with glow
         const nameStyle = new TextStyle({
             fontFamily: 'Arial, sans-serif',
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: 'bold',
             fill: 0xffffff,
             wordWrap: true,
-            wordWrapWidth: cardWidth - 14,
+            wordWrapWidth: cardWidth - 18,
             align: 'center',
+            dropShadow: {
+                color: perkColor,
+                blur: 4,
+                distance: 0,
+                alpha: 0.5,
+            },
         })
         const name = new Text({ text: perk.definition.nameKo, style: nameStyle })
         name.anchor.set(0.5, 0)
-        name.position.set(0, -cardHeight / 2 + 20)
+        name.position.set(0, -cardHeight / 2 + 14)
         container.addChild(name)
 
-        // Description - warmer gray
+        // Description area with darker background
+        const descBg = new Graphics()
+        descBg.roundRect(-cardWidth / 2 + 6, -cardHeight / 2 + 44, cardWidth - 12, 48, 4)
+        descBg.fill({ color: 0x0a0810, alpha: 0.6 })
+        container.addChild(descBg)
+
+        // Description - muted but readable
         const descStyle = new TextStyle({
             fontFamily: 'Arial, sans-serif',
             fontSize: 9,
-            fill: 0xb0a0a0,
+            fill: 0x9a8a9a,
             wordWrap: true,
-            wordWrapWidth: cardWidth - 16,
+            wordWrapWidth: cardWidth - 20,
             align: 'center',
-            lineHeight: 13,
+            lineHeight: 12,
         })
         const desc = new Text({ text: perk.definition.descriptionKo, style: descStyle })
         desc.anchor.set(0.5, 0)
-        desc.position.set(0, -cardHeight / 2 + 45)
+        desc.position.set(0, -cardHeight / 2 + 50)
         container.addChild(desc)
 
-        // Divider line - warmer color
-        const divider = new Graphics()
-        divider.moveTo(-cardWidth / 2 + 10, -cardHeight / 2 + 95)
-        divider.lineTo(cardWidth / 2 - 10, -cardHeight / 2 + 95)
-        divider.stroke({ color: 0x4a3a3a, width: 1 })
-        container.addChild(divider)
+        // Effects section header - small decorative line
+        const effectHeader = new Graphics()
+        effectHeader.moveTo(-20, -cardHeight / 2 + 100)
+        effectHeader.lineTo(20, -cardHeight / 2 + 100)
+        effectHeader.stroke({ color: perkColor, width: 2, alpha: 0.6 })
+        // Small diamond in center
+        effectHeader.poly([
+            -4,
+            -cardHeight / 2 + 100,
+            0,
+            -cardHeight / 2 + 96,
+            4,
+            -cardHeight / 2 + 100,
+            0,
+            -cardHeight / 2 + 104,
+        ])
+        effectHeader.fill({ color: perkColor, alpha: 0.8 })
+        container.addChild(effectHeader)
 
-        // Effects - brighter green
+        // Effects - prominent with color coding
         const effectStyle = new TextStyle({
             fontFamily: 'Arial, sans-serif',
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: 'bold',
             fill: 0x7dcea0,
             wordWrap: true,
             wordWrapWidth: cardWidth - 16,
             align: 'center',
-            lineHeight: 15,
+            lineHeight: 16,
+            dropShadow: {
+                color: 0x2ecc71,
+                blur: 3,
+                distance: 0,
+                alpha: 0.4,
+            },
         })
         const effectTexts = perk.rolledEffects.map((e) => formatPerkEffect(e, true)).join('\n')
         const effects = new Text({ text: effectTexts, style: effectStyle })
         effects.anchor.set(0.5, 0)
-        effects.position.set(0, -cardHeight / 2 + 105)
+        effects.position.set(0, -cardHeight / 2 + 112)
         container.addChild(effects)
 
-        // "Select" hint at bottom with glow effect
-        const selectStyle = new TextStyle({
-            fontFamily: 'Arial, sans-serif',
-            fontSize: 10,
-            fontWeight: 'bold',
-            fill: 0xffd700,
-            dropShadow: {
-                color: 0xffd700,
-                blur: 6,
-                distance: 0,
-                alpha: 0.5,
-            },
-        })
-        const selectHint = new Text({ text: '탭하여 선택', style: selectStyle })
-        selectHint.anchor.set(0.5)
-        selectHint.position.set(0, cardHeight / 2 - 16)
-        container.addChild(selectHint)
+        // Bottom decorative element - subtle shine effect
+        const bottomShine = new Graphics()
+        bottomShine.moveTo(-cardWidth / 2 + 15, cardHeight / 2 - 12)
+        bottomShine.lineTo(cardWidth / 2 - 15, cardHeight / 2 - 12)
+        bottomShine.stroke({ color: perkColor, width: 1, alpha: 0.3 })
+        container.addChild(bottomShine)
 
         return container
     }
@@ -1067,6 +1162,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private updateCardEntranceAnimations(deltaSeconds: number): void {
         this.cardAnimTime += deltaSeconds
 
+        // Update wave text animation
+        if (this.levelUpWaveText) {
+            this.levelUpWaveText.update(deltaSeconds)
+        }
+
         // Animate level up banner (pop in with overshoot)
         if (this.levelUpBanner) {
             const bannerDelay = 0
@@ -1079,9 +1179,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 this.levelUpBanner.scale.set(elastic)
             } else {
                 this.levelUpBanner.scale.set(1)
-                // Subtle pulse after landing
-                const pulse = 1 + Math.sin(this.cardAnimTime * 8) * 0.03
-                this.levelUpBanner.scale.set(pulse)
             }
         }
 
@@ -1541,18 +1638,14 @@ export class PhysicsSurvivorScene extends AdventureScene {
         pattern.alpha = 0.2
         this.resultContainer.addChild(pattern)
 
-        // Title in hexagonal banner
+        // Title banner
         const titleY = 50
         const titleBanner = new Graphics()
-        titleBanner.moveTo(centerX - 80, titleY)
-        titleBanner.lineTo(centerX - 65, titleY - 22)
-        titleBanner.lineTo(centerX + 65, titleY - 22)
-        titleBanner.lineTo(centerX + 80, titleY)
-        titleBanner.lineTo(centerX + 65, titleY + 22)
-        titleBanner.lineTo(centerX - 65, titleY + 22)
-        titleBanner.closePath()
+        // Simple rounded rect
+        titleBanner.roundRect(centerX - 70, titleY - 18, 140, 36, 8)
         titleBanner.fill(0x1a1520)
-        titleBanner.stroke({ color: 0xffd700, width: 3 })
+        titleBanner.roundRect(centerX - 70, titleY - 18, 140, 36, 8)
+        titleBanner.stroke({ color: 0x1a1a1a, width: 2 })
         titleBanner.alpha = 0
         this.resultContainer.addChild(titleBanner)
 
@@ -1574,7 +1667,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         const statGap = 60
 
         // Time stat badge
-        this.createResultStatBadge(centerX - 70, statsY, '⏱', 0x5dade2)
+        this.createResultStatBadge(centerX - 70, statsY, 'time', 0x5dade2)
         this.resultTimeText = new Text({
             text: '00:00',
             style: new TextStyle({
@@ -1590,7 +1683,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.resultContainer.addChild(this.resultTimeText)
 
         // Kills stat badge
-        this.createResultStatBadge(centerX - 70, statsY + statGap, '💀', 0xe74c3c)
+        this.createResultStatBadge(centerX - 70, statsY + statGap, 'kill', 0xe74c3c)
         this.resultKillsText = new Text({
             text: '0',
             style: new TextStyle({
@@ -1606,7 +1699,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.resultContainer.addChild(this.resultKillsText)
 
         // Level stat badge
-        this.createResultStatBadge(centerX - 70, statsY + statGap * 2, '⭐', 0x2ecc71)
+        this.createResultStatBadge(centerX - 70, statsY + statGap * 2, 'level', 0x2ecc71)
         this.resultWaveText = new Text({
             text: `Lv.${this.playerProgress.level}`,
             style: new TextStyle({
@@ -1624,7 +1717,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Perk icons row (hexagonal)
         const perkY = statsY + statGap * 3
         if (this.activePerks.length > 0) {
-            const hexSize = 18
+            const hexSize = 22
             const iconGap = 8
             const totalWidth =
                 this.activePerks.length * (hexSize * 2) + (this.activePerks.length - 1) * iconGap
@@ -1641,8 +1734,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 iconContainer.addChild(iconBg)
 
                 const iconText = new Text({
-                    text: perk.definition.icon,
-                    style: new TextStyle({ fontSize: 14 }),
+                    text: perk.definition.nameKo,
+                    style: new TextStyle({
+                        fontFamily: 'Arial, sans-serif',
+                        fontSize: 10,
+                        fontWeight: 'bold',
+                        fill: perk.definition.color,
+                    }),
                 })
                 iconText.anchor.set(0.5)
                 iconContainer.addChild(iconText)
@@ -1661,14 +1759,18 @@ export class PhysicsSurvivorScene extends AdventureScene {
         const rank = getRankFromTime(this.gameTime)
         const rankConfig = RANK_CONFIGS[rank]
 
-        // Large hexagonal rank badge
-        const rankHexSize = 55
-        const rankHexBg = new Graphics()
-        this.drawUIHexagon(rankHexBg, 0, 0, rankHexSize + 5, 0x0a0a10, rankConfig.color, 4)
-        this.resultRankCard.addChild(rankHexBg)
+        // Rank badge
+        const rankHexSize = 50
 
+        // Shadow
+        const rankHexShadow = new Graphics()
+        this.drawUIHexagon(rankHexShadow, 1, 2, rankHexSize, 0x0a0a0a)
+        rankHexShadow.alpha = 0.5
+        this.resultRankCard.addChild(rankHexShadow)
+
+        // Badge with color border
         const rankHexInner = new Graphics()
-        this.drawUIHexagon(rankHexInner, 0, 0, rankHexSize, 0x1a1520, rankConfig.color, 3)
+        this.drawUIHexagon(rankHexInner, 0, 0, rankHexSize, 0x1a1520, rankConfig.color, 2)
         this.resultRankCard.addChild(rankHexInner)
 
         // Rank letter
@@ -1704,35 +1806,108 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.resultButtons.alpha = 0
         this.resultContainer.addChild(this.resultButtons)
 
-        // Retry button (hexagon)
-        const retryBtn = this.createResultButton('▶', -50, 0x2ecc71, () => {
+        // Retry button (hexagon with play triangle)
+        const retryBtn = this.createResultButtonWithIcon('play', -70, 0x2ecc71, () => {
             this.resultContainer.visible = false
             this.reset()
             this.play()
         })
         this.resultButtons.addChild(retryBtn)
 
-        // Menu button (hexagon)
-        const menuBtn = this.createResultButton('✕', 50, 0xe74c3c, () => {
+        // Share button (hexagon with arrow)
+        const shareKills = Math.floor(this.score / 10)
+        const shareRank = getRankFromTime(this.gameTime)
+        const shareBtn = this.createResultButtonWithIcon('share', 0, 0x5dade2, () => {
+            shareGameResult(
+                {
+                    score: this.score,
+                    kills: shareKills,
+                    time: this.gameTime,
+                    level: this.playerProgress.level,
+                    rank: shareRank,
+                },
+                navigator.language.startsWith('ko') ? 'ko' : 'en'
+            )
+        })
+        this.resultButtons.addChild(shareBtn)
+
+        // Menu button (hexagon with X)
+        const menuBtn = this.createResultButtonWithIcon('close', 70, 0xe74c3c, () => {
             this.onPlayComplete?.('success')
         })
         this.resultButtons.addChild(menuBtn)
     }
 
-    private createResultStatBadge(x: number, y: number, icon: string, color: number): void {
+    private createResultStatBadge(
+        x: number,
+        y: number,
+        iconType: 'time' | 'kill' | 'level',
+        color: number
+    ): void {
+        // Shadow
+        const shadow = new Graphics()
+        this.drawUIHexagon(shadow, x + 1, y + 2, 18, 0x0a0a0a)
+        shadow.alpha = 0
+        this.resultContainer.addChild(shadow)
+
+        // Badge with border
         const badge = new Graphics()
-        this.drawUIHexagon(badge, x, y, 20, 0x1a1520, color, 2)
+        this.drawUIHexagon(badge, x, y, 18, 0x1a1520, color, 2)
         badge.alpha = 0
         this.resultContainer.addChild(badge)
 
-        const iconText = new Text({
-            text: icon,
-            style: new TextStyle({ fontSize: 14 }),
-        })
-        iconText.anchor.set(0.5)
-        iconText.position.set(x, y)
-        iconText.alpha = 0
-        this.resultContainer.addChild(iconText)
+        // Draw geometric icon
+        const icon = new Graphics()
+        const s = 8 // icon size
+
+        switch (iconType) {
+            case 'time':
+                // Clock: circle with two hands
+                icon.circle(x, y, s)
+                icon.stroke({ width: 2, color })
+                // Hour hand
+                icon.moveTo(x, y)
+                icon.lineTo(x, y - s * 0.5)
+                icon.stroke({ width: 2, color })
+                // Minute hand
+                icon.moveTo(x, y)
+                icon.lineTo(x + s * 0.6, y)
+                icon.stroke({ width: 2, color })
+                break
+
+            case 'kill':
+                // Crosshair/target
+                icon.circle(x, y, s)
+                icon.stroke({ width: 2, color })
+                icon.circle(x, y, s * 0.4)
+                icon.fill(color)
+                // Cross lines
+                icon.moveTo(x - s - 3, y)
+                icon.lineTo(x + s + 3, y)
+                icon.stroke({ width: 2, color })
+                icon.moveTo(x, y - s - 3)
+                icon.lineTo(x, y + s + 3)
+                icon.stroke({ width: 2, color })
+                break
+
+            case 'level':
+                // Star shape (5-pointed)
+                const points = 5
+                const outerR = s + 2
+                const innerR = s * 0.4
+                icon.moveTo(x + outerR * Math.sin(0), y - outerR * Math.cos(0))
+                for (let i = 0; i < points * 2; i++) {
+                    const r = i % 2 === 0 ? outerR : innerR
+                    const angle = (Math.PI * i) / points
+                    icon.lineTo(x + r * Math.sin(angle), y - r * Math.cos(angle))
+                }
+                icon.closePath()
+                icon.fill(color)
+                break
+        }
+
+        icon.alpha = 0
+        this.resultContainer.addChild(icon)
     }
 
     private createStatLabel(text: string, x: number, y: number): Text {
@@ -1749,8 +1924,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
         return label
     }
 
-    private createResultButton(
-        icon: string,
+    private createResultButtonWithIcon(
+        iconType: 'play' | 'share' | 'close',
         offsetX: number,
         color: number,
         onClick: () => void
@@ -1760,23 +1935,47 @@ export class PhysicsSurvivorScene extends AdventureScene {
         btn.eventMode = 'static'
         btn.cursor = 'pointer'
 
-        // Hexagonal button
-        const hexSize = 28
+        const hexSize = 26
+
+        // Shadow
+        const shadow = new Graphics()
+        this.drawUIHexagon(shadow, 1, 2, hexSize, 0x0a0a0a)
+        shadow.alpha = 0.5
+        btn.addChild(shadow)
+
+        // Hexagonal button with border
         const bg = new Graphics()
-        this.drawUIHexagon(bg, 0, 0, hexSize, 0x1a1520, color, 3)
+        this.drawUIHexagon(bg, 0, 0, hexSize, 0x1a1520, color, 2)
         btn.addChild(bg)
 
-        const label = new Text({
-            text: icon,
-            style: new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 18,
-                fontWeight: 'bold',
-                fill: color,
-            }),
-        })
-        label.anchor.set(0.5)
-        btn.addChild(label)
+        // Draw icon shape
+        const icon = new Graphics()
+        if (iconType === 'play') {
+            // Play triangle
+            icon.moveTo(-6, -10)
+            icon.lineTo(-6, 10)
+            icon.lineTo(10, 0)
+            icon.closePath()
+            icon.fill(color)
+        } else if (iconType === 'share') {
+            // Arrow pointing up-right
+            icon.moveTo(-8, 8)
+            icon.lineTo(8, -8)
+            icon.stroke({ color, width: 3 })
+            icon.moveTo(0, -8)
+            icon.lineTo(8, -8)
+            icon.lineTo(8, 0)
+            icon.stroke({ color, width: 3 })
+        } else if (iconType === 'close') {
+            // X shape
+            icon.moveTo(-7, -7)
+            icon.lineTo(7, 7)
+            icon.stroke({ color, width: 3 })
+            icon.moveTo(7, -7)
+            icon.lineTo(-7, 7)
+            icon.stroke({ color, width: 3 })
+        }
+        btn.addChild(icon)
 
         btn.on('pointerdown', onClick)
 
@@ -1901,7 +2100,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         size: number,
         fill?: number,
         stroke?: number,
-        strokeWidth = 3
+        strokeWidth = 2
     ): void {
         const points: number[] = []
         for (let i = 0; i < 6; i++) {
@@ -1930,227 +2129,343 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         const centerX = this.width / 2
 
-        // Dark background with subtle pattern
+        // Dark background
         const bg = new Graphics()
         bg.rect(0, 0, this.width, this.height)
-        bg.fill(0x1a1520)
+        bg.fill(0x0a0a12)
         this.characterSelectContainer.addChild(bg)
 
-        // Subtle hex pattern in background
+        // Subtle grid pattern in background
         const pattern = new Graphics()
-        for (let row = 0; row < 12; row++) {
-            for (let col = 0; col < 8; col++) {
-                const px = col * 50 + (row % 2) * 25
-                const py = row * 45
-                this.drawHexagon(pattern, px, py, 20, undefined, 0x2a2030, 1)
-            }
+        const gridSize = 30
+        for (let x = 0; x < this.width; x += gridSize) {
+            pattern.moveTo(x, 0)
+            pattern.lineTo(x, this.height)
+            pattern.stroke({ color: 0x1a1a2a, width: 1, alpha: 0.3 })
         }
-        pattern.alpha = 0.3
+        for (let y = 0; y < this.height; y += gridSize) {
+            pattern.moveTo(0, y)
+            pattern.lineTo(this.width, y)
+            pattern.stroke({ color: 0x1a1a2a, width: 1, alpha: 0.3 })
+        }
         this.characterSelectContainer.addChild(pattern)
 
-        // Character selection - responsive layout (2 rows x 3 cols for narrow screens)
-        const hexSize = Math.min(28, (this.width - 60) / 8) // Responsive hex size
-        const charGap = 10
-        const charsPerRow = 3
-        const rowGap = 12
-        const charStartY = 70
+        // Vignette effect
+        const vignette = new Graphics()
+        vignette.rect(0, 0, this.width, this.height)
+        vignette.fill({ color: 0x000000, alpha: 0 })
+        this.characterSelectContainer.addChild(vignette)
 
-        PLAYABLE_CHARACTERS.forEach((shape, index) => {
-            const row = Math.floor(index / charsPerRow)
-            const col = index % charsPerRow
-
-            // Calculate row width and center it
-            const rowWidth = charsPerRow * (hexSize * 2) + (charsPerRow - 1) * charGap
-            const rowStartX = centerX - rowWidth / 2 + hexSize
-
-            const charContainer = new Container()
-            const x = rowStartX + col * (hexSize * 2 + charGap)
-            const y = charStartY + row * (hexSize * 2 + rowGap)
-            charContainer.position.set(x, y)
-            charContainer.eventMode = 'static'
-            charContainer.cursor = 'pointer'
-
-            const character = WOBBLE_CHARACTERS[shape]
-            const isSelected = shape === this.selectedCharacter
-
-            // Outer hexagon frame (selection indicator)
-            const outerHex = new Graphics()
-            this.drawHexagon(
-                outerHex,
-                0,
-                0,
-                hexSize + 6,
-                0x0a0a10,
-                isSelected ? character.color : 0x3a3040,
-                3
-            )
-            charContainer.addChild(outerHex)
-
-            // Inner hexagon background
-            const innerHex = new Graphics()
-            this.drawHexagon(
-                innerHex,
-                0,
-                0,
-                hexSize,
-                isSelected ? 0x2a2530 : 0x15131a,
-                character.color,
-                2
-            )
-            charContainer.addChild(innerHex)
-
-            // Character wobble
-            const wobbleSize = hexSize * 1.1
-            const wobble = new Wobble({
-                size: wobbleSize,
-                shape: shape,
-                expression: 'happy',
-                color: character.color,
-                showShadow: false,
-            })
-            wobble.alpha = isSelected ? 1 : 0.5
-            charContainer.addChild(wobble)
-            this.characterWobbles.set(shape, wobble)
-
-            // Click handler
-            charContainer.on('pointerdown', () => {
-                this.selectCharacter(shape)
-            })
-
-            this.characterSelectContainer.addChild(charContainer)
-        })
-
-        // Selected character info badge (hexagonal) - positioned below character grid
-        const infoY = charStartY + 2 * (hexSize * 2 + rowGap) + 35
+        // === BALATRO STYLE UI ===
         const selectedChar = WOBBLE_CHARACTERS[this.selectedCharacter]
+        const selectedThemeDef = PHYSICS_THEMES.find((t) => t.id === this.selectedTheme)!
 
-        const infoBadgeSize = 42
-        const infoBadge = new Graphics()
-        this.drawHexagon(infoBadge, centerX, infoY, infoBadgeSize, 0x1a1520, selectedChar.color, 3)
-        this.characterSelectContainer.addChild(infoBadge)
+        // --- TITLE ---
+        const titleY = 40
+        // Title shadow
+        const titleShadow = new Text({
+            text: 'SELECT CHARACTER',
+            style: new TextStyle({
+                fontFamily: 'Arial Black, sans-serif',
+                fontSize: 18,
+                fontWeight: 'bold',
+                fill: 0x000000,
+                letterSpacing: 2,
+            }),
+        })
+        titleShadow.anchor.set(0.5)
+        titleShadow.position.set(centerX + 2, titleY + 2)
+        this.characterSelectContainer.addChild(titleShadow)
 
-        // Preview wobble in center badge
+        const titleText = new Text({
+            text: 'SELECT CHARACTER',
+            style: new TextStyle({
+                fontFamily: 'Arial Black, sans-serif',
+                fontSize: 18,
+                fontWeight: 'bold',
+                fill: 0xc9a227, // Balatro gold
+                letterSpacing: 2,
+            }),
+        })
+        titleText.anchor.set(0.5)
+        titleText.position.set(centerX, titleY)
+        this.characterSelectContainer.addChild(titleText)
+
+        // --- CHARACTER SECTION ---
+        const charSectionY = 80
+        this.characterCardContainer = new Container()
+        this.characterCardContainer.position.set(centerX, charSectionY + 60)
+        this.characterSelectContainer.addChild(this.characterCardContainer)
+
+        // Character wobble (larger, centered)
         this.previewWobble = new Wobble({
-            size: infoBadgeSize * 1.3,
+            size: 70,
             shape: this.selectedCharacter,
             expression: 'happy',
             color: selectedChar.color,
-            showShadow: false,
+            showShadow: true,
+            shadowOffsetY: 8,
         })
-        this.previewWobble.position.set(centerX, infoY)
-        this.characterSelectContainer.addChild(this.previewWobble)
+        this.characterCardContainer.addChild(this.previewWobble)
+        this.characterWobbles.set(this.selectedCharacter, this.previewWobble)
 
-        // Character name below badge
+        // Character name (Balatro style with shadow)
+        const nameShadow = new Text({
+            text: selectedChar.name.toUpperCase(),
+            style: new TextStyle({
+                fontFamily: 'Arial Black, sans-serif',
+                fontSize: 16,
+                fontWeight: 'bold',
+                fill: 0x000000,
+            }),
+        })
+        nameShadow.anchor.set(0.5)
+        nameShadow.position.set(1, 56)
+        this.characterCardContainer.addChild(nameShadow)
+
         this.characterNameText = new Text({
-            text: '',
+            text: selectedChar.name.toUpperCase(),
+            style: new TextStyle({
+                fontFamily: 'Arial Black, sans-serif',
+                fontSize: 16,
+                fontWeight: 'bold',
+                fill: selectedChar.color,
+            }),
+        })
+        this.characterNameText.anchor.set(0.5)
+        this.characterNameText.position.set(0, 55)
+        this.characterCardContainer.addChild(this.characterNameText)
+
+        // Character description (smaller, softer color)
+        this.characterDescText = new Text({
+            text: selectedChar.personalityKo,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 12,
+                fontSize: 11,
+                fill: 0xaaaaaa,
+            }),
+        })
+        this.characterDescText.anchor.set(0.5)
+        this.characterDescText.position.set(0, 75)
+        this.characterSelectContainer.addChild(this.characterDescText)
+        this.characterDescText.position.set(centerX, charSectionY + 135)
+
+        // Arrow buttons (simple arcade style)
+        this.leftArrowBtn = this.createArcadeArrowButton(
+            '<',
+            centerX - 100,
+            charSectionY + 60,
+            () => {
+                this.selectPrevCharacter()
+            }
+        )
+        this.characterSelectContainer.addChild(this.leftArrowBtn)
+
+        this.rightArrowBtn = this.createArcadeArrowButton(
+            '>',
+            centerX + 100,
+            charSectionY + 60,
+            () => {
+                this.selectNextCharacter()
+            }
+        )
+        this.characterSelectContainer.addChild(this.rightArrowBtn)
+
+        // Character indicator (1/6 style - Balatro)
+        const charIndexText = new Text({
+            text: `${PLAYABLE_CHARACTERS.indexOf(this.selectedCharacter) + 1}/${PLAYABLE_CHARACTERS.length}`,
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 11,
+                fill: 0x888888,
+            }),
+        })
+        charIndexText.anchor.set(0.5)
+        charIndexText.position.set(centerX, charSectionY + 155)
+        this.characterSelectContainer.addChild(charIndexText)
+
+        // --- DIVIDER ---
+        const dividerY = charSectionY + 175
+        const divider = new Graphics()
+        divider.moveTo(centerX - 80, dividerY)
+        divider.lineTo(centerX + 80, dividerY)
+        divider.stroke({ color: 0x333333, width: 2 })
+        this.characterSelectContainer.addChild(divider)
+
+        // --- THEME SECTION ---
+        const themeSectionY = dividerY + 20
+        // Theme label shadow
+        const themeLabelShadow = new Text({
+            text: 'SELECT DECK',
+            style: new TextStyle({
+                fontFamily: 'Arial Black, sans-serif',
+                fontSize: 14,
+                fontWeight: 'bold',
+                fill: 0x000000,
+                letterSpacing: 1,
+            }),
+        })
+        themeLabelShadow.anchor.set(0.5)
+        themeLabelShadow.position.set(centerX + 1, themeSectionY + 1)
+        this.characterSelectContainer.addChild(themeLabelShadow)
+
+        const themeLabel = new Text({
+            text: 'SELECT DECK',
+            style: new TextStyle({
+                fontFamily: 'Arial Black, sans-serif',
+                fontSize: 14,
+                fontWeight: 'bold',
+                fill: 0xc9a227, // Balatro gold
+                letterSpacing: 1,
+            }),
+        })
+        themeLabel.anchor.set(0.5)
+        themeLabel.position.set(centerX, themeSectionY)
+        this.characterSelectContainer.addChild(themeLabel)
+
+        // Theme display container
+        this.themeCardContainer = new Container()
+        this.themeCardContainer.position.set(centerX, themeSectionY + 50)
+        this.characterSelectContainer.addChild(this.themeCardContainer)
+
+        // Theme card (Balatro style with shadow and rounded corners)
+        const cardSize = 60
+        const cardShadow = new Graphics()
+        cardShadow.roundRect(-cardSize / 2 + 3, -cardSize / 2 + 4, cardSize, cardSize, 8)
+        cardShadow.fill({ color: 0x000000, alpha: 0.5 })
+        this.themeCardContainer.addChild(cardShadow)
+
+        const themeBox = new Graphics()
+        themeBox.roundRect(-cardSize / 2, -cardSize / 2, cardSize, cardSize, 8)
+        themeBox.fill(selectedThemeDef.color)
+        themeBox.stroke({ color: 0x1a1a1a, width: 2 })
+        this.themeCardContainer.addChild(themeBox)
+
+        // Theme symbol
+        const themeSymbol = new Text({
+            text: this.getThemeSymbol(selectedThemeDef.icon),
+            style: new TextStyle({
+                fontFamily: 'Arial Black, sans-serif',
+                fontSize: 28,
                 fontWeight: 'bold',
                 fill: 0xffffff,
             }),
         })
-        this.characterNameText.anchor.set(0.5)
-        this.characterNameText.position.set(centerX, infoY + infoBadgeSize + 12)
-        this.characterSelectContainer.addChild(this.characterNameText)
+        themeSymbol.anchor.set(0.5)
+        this.themeCardContainer.addChild(themeSymbol)
 
-        // Hidden desc text (not used in new design but kept for compatibility)
-        this.characterDescText = new Text({
-            text: '',
-            style: new TextStyle({ fontSize: 1, fill: 0x000000 }),
+        // Theme name (Balatro style)
+        const themeNameShadow = new Text({
+            text: selectedThemeDef.nameEn.toUpperCase(),
+            style: new TextStyle({
+                fontFamily: 'Arial Black, sans-serif',
+                fontSize: 13,
+                fontWeight: 'bold',
+                fill: 0x000000,
+            }),
         })
-        this.characterDescText.visible = false
-        this.characterSelectContainer.addChild(this.characterDescText)
+        themeNameShadow.anchor.set(0.5)
+        themeNameShadow.position.set(1, 46)
+        this.themeCardContainer.addChild(themeNameShadow)
 
-        // Stats display - horizontal bar style with hexagon icons
+        this.themeNameText = new Text({
+            text: selectedThemeDef.nameEn.toUpperCase(),
+            style: new TextStyle({
+                fontFamily: 'Arial Black, sans-serif',
+                fontSize: 13,
+                fontWeight: 'bold',
+                fill: selectedThemeDef.color,
+            }),
+        })
+        this.themeNameText.anchor.set(0.5)
+        this.themeNameText.position.set(0, 45)
+        this.themeCardContainer.addChild(this.themeNameText)
+
+        // Theme description
+        this.themeDescText = new Text({
+            text: selectedThemeDef.descriptionKo,
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 10,
+                fill: 0x999999,
+            }),
+        })
+        this.themeDescText.anchor.set(0.5)
+        this.themeDescText.position.set(0, 62)
+        this.themeCardContainer.addChild(this.themeDescText)
+
+        // Theme arrow buttons
+        this.leftThemeBtn = this.createArcadeArrowButton(
+            '<',
+            centerX - 80,
+            themeSectionY + 50,
+            () => {
+                this.selectPrevTheme()
+            }
+        )
+        this.characterSelectContainer.addChild(this.leftThemeBtn)
+
+        this.rightThemeBtn = this.createArcadeArrowButton(
+            '>',
+            centerX + 80,
+            themeSectionY + 50,
+            () => {
+                this.selectNextTheme()
+            }
+        )
+        this.characterSelectContainer.addChild(this.rightThemeBtn)
+
+        // Theme indicator (Balatro style)
+        const themeIndexText = new Text({
+            text: `${PHYSICS_THEMES.findIndex((t) => t.id === this.selectedTheme) + 1}/${PHYSICS_THEMES.length}`,
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 11,
+                fill: 0x888888,
+            }),
+        })
+        themeIndexText.anchor.set(0.5)
+        themeIndexText.position.set(centerX, themeSectionY + 90)
+        this.characterSelectContainer.addChild(themeIndexText)
+
+        // Hidden containers for compatibility
         this.characterStatsContainer = new Container()
-        this.characterStatsContainer.position.set(centerX, infoY + infoBadgeSize + 40)
+        this.characterStatsContainer.visible = false
         this.characterSelectContainer.addChild(this.characterStatsContainer)
 
-        // Perk preview section with hexagonal header
-        const perkY = infoY + infoBadgeSize + 95
-        const perkHeader = new Graphics()
-        // Elongated hexagon for header
-        perkHeader.moveTo(centerX - 80, perkY - 12)
-        perkHeader.lineTo(centerX - 65, perkY - 20)
-        perkHeader.lineTo(centerX + 65, perkY - 20)
-        perkHeader.lineTo(centerX + 80, perkY - 12)
-        perkHeader.lineTo(centerX + 65, perkY - 4)
-        perkHeader.lineTo(centerX - 65, perkY - 4)
-        perkHeader.closePath()
-        perkHeader.fill(0x2a2530)
-        perkHeader.stroke({ color: 0x5a4a6a, width: 2 })
-        this.characterSelectContainer.addChild(perkHeader)
-
-        const perkLabel = new Text({
-            text: 'PERKS',
-            style: new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 10,
-                fontWeight: 'bold',
-                fill: 0x8a7a9a,
-                letterSpacing: 2,
-            }),
-        })
-        perkLabel.anchor.set(0.5)
-        perkLabel.position.set(centerX, perkY - 12)
-        this.characterSelectContainer.addChild(perkLabel)
-
         this.perkPreviewContainer = new Container()
-        this.perkPreviewContainer.position.set(centerX, perkY + 25)
+        this.perkPreviewContainer.visible = false
         this.characterSelectContainer.addChild(this.perkPreviewContainer)
 
-        // Perk info panel (below perk grid)
-        const perkInfoY = perkY + 100
         this.perkInfoContainer = new Container()
-        this.perkInfoContainer.position.set(centerX, perkInfoY)
+        this.perkInfoContainer.visible = false
         this.characterSelectContainer.addChild(this.perkInfoContainer)
 
-        // Perk info icon
-        this.perkInfoIcon = new Text({
-            text: '',
-            style: new TextStyle({ fontSize: 18 }),
-        })
-        this.perkInfoIcon.anchor.set(0.5)
-        this.perkInfoIcon.position.set(-70, 0)
-        this.perkInfoContainer.addChild(this.perkInfoIcon)
+        this.perkInfoIcon = new Text({ text: '', style: new TextStyle({ fontSize: 1 }) })
+        this.perkInfoNameText = new Text({ text: '', style: new TextStyle({ fontSize: 1 }) })
+        this.perkInfoDescText = new Text({ text: '', style: new TextStyle({ fontSize: 1 }) })
 
-        // Perk info name
-        this.perkInfoNameText = new Text({
-            text: '퍼크를 탭하여 정보 보기',
-            style: new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 12,
-                fontWeight: 'bold',
-                fill: 0x6a5a7a,
-            }),
-        })
-        this.perkInfoNameText.anchor.set(0, 0.5)
-        this.perkInfoNameText.position.set(-50, -8)
-        this.perkInfoContainer.addChild(this.perkInfoNameText)
+        // --- START BUTTON (Arcade style) ---
+        const startBtnY = themeSectionY + 130
+        this.startButton = this.createArcadeStartButton(centerX, startBtnY)
+        this.characterSelectContainer.addChild(this.startButton)
 
-        // Perk info description
-        this.perkInfoDescText = new Text({
-            text: '',
+        // --- FOOTER (Balatro style - subtle) ---
+        const footerText = new Text({
+            text: 'PHYSICS SURVIVOR',
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 10,
-                fill: 0x9a8aaa,
-                wordWrap: true,
-                wordWrapWidth: 160,
+                fill: 0x555555,
+                letterSpacing: 1,
             }),
         })
-        this.perkInfoDescText.anchor.set(0, 0.5)
-        this.perkInfoDescText.position.set(-50, 10)
-        this.perkInfoContainer.addChild(this.perkInfoDescText)
-
-        // Start button - hexagonal style
-        this.startButton = this.createStartButton(centerX, this.height - 60)
-        this.characterSelectContainer.addChild(this.startButton)
+        footerText.anchor.set(0.5)
+        footerText.position.set(centerX, this.height - 25)
+        this.characterSelectContainer.addChild(footerText)
 
         // Initial update
         this.updateCharacterSelection()
-        this.createPerkPreview()
     }
 
     private selectCharacter(shape: WobbleShape): void {
@@ -2161,87 +2476,436 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.createCharacterSelectUI() // Rebuild UI for clean selection state
     }
 
+    private selectNextCharacter(): void {
+        const currentIndex = PLAYABLE_CHARACTERS.indexOf(this.selectedCharacter)
+        const nextIndex = (currentIndex + 1) % PLAYABLE_CHARACTERS.length
+        this.selectCharacter(PLAYABLE_CHARACTERS[nextIndex])
+    }
+
+    private selectPrevCharacter(): void {
+        const currentIndex = PLAYABLE_CHARACTERS.indexOf(this.selectedCharacter)
+        const prevIndex =
+            (currentIndex - 1 + PLAYABLE_CHARACTERS.length) % PLAYABLE_CHARACTERS.length
+        this.selectCharacter(PLAYABLE_CHARACTERS[prevIndex])
+    }
+
+    // Theme selection methods
+    private selectTheme(theme: PhysicsTheme): void {
+        if (this.selectedTheme === theme) return
+        this.selectedTheme = theme
+        this.selectedPerkIndex = null // Reset perk selection
+        this.createCharacterSelectUI() // Rebuild UI
+    }
+
+    private selectNextTheme(): void {
+        const currentIndex = PHYSICS_THEMES.findIndex((t) => t.id === this.selectedTheme)
+        const nextIndex = (currentIndex + 1) % PHYSICS_THEMES.length
+        this.selectTheme(PHYSICS_THEMES[nextIndex].id)
+    }
+
+    private selectPrevTheme(): void {
+        const currentIndex = PHYSICS_THEMES.findIndex((t) => t.id === this.selectedTheme)
+        const prevIndex = (currentIndex - 1 + PHYSICS_THEMES.length) % PHYSICS_THEMES.length
+        this.selectTheme(PHYSICS_THEMES[prevIndex].id)
+    }
+
+    private getThemeSymbol(iconType: string): string {
+        switch (iconType) {
+            case 'force':
+                return 'F'
+            case 'heat':
+                return 'Q'
+            case 'wave':
+                return '~'
+            case 'gravity':
+                return 'G'
+            default:
+                return '?'
+        }
+    }
+
+    private createThemeArrowButton(
+        symbol: string,
+        x: number,
+        y: number,
+        onClick: () => void
+    ): Container {
+        const btn = new Container()
+        btn.position.set(x, y)
+        btn.eventMode = 'static'
+        btn.cursor = 'pointer'
+
+        // Smaller pill-shaped button (matches character arrows style but smaller)
+        const btnWidth = 28
+        const btnHeight = 50
+
+        // Shadow (3D depth)
+        const shadow = new Graphics()
+        shadow.roundRect(-btnWidth / 2 + 2, -btnHeight / 2 + 3, btnWidth, btnHeight, btnWidth / 2)
+        shadow.fill({ color: 0x000000, alpha: 0.4 })
+        btn.addChild(shadow)
+
+        // Main button
+        const bgDark = new Graphics()
+        bgDark.roundRect(-btnWidth / 2, -btnHeight / 2, btnWidth, btnHeight, btnWidth / 2)
+        bgDark.fill(0x3a3a5a)
+        btn.addChild(bgDark)
+
+        // Lighter top highlight
+        const bgLight = new Graphics()
+        bgLight.roundRect(
+            -btnWidth / 2 + 2,
+            -btnHeight / 2 + 2,
+            btnWidth - 4,
+            btnHeight / 2 - 2,
+            btnWidth / 2 - 2
+        )
+        bgLight.fill({ color: 0x5a5a7a, alpha: 0.6 })
+        btn.addChild(bgLight)
+
+        // Border
+        const border = new Graphics()
+        border.roundRect(-btnWidth / 2, -btnHeight / 2, btnWidth, btnHeight, btnWidth / 2)
+        border.stroke({ color: 0x2a2a3a, width: 2 })
+        btn.addChild(border)
+
+        // Symbol
+        const text = new Text({
+            text: symbol,
+            style: new TextStyle({
+                fontFamily: 'Arial Black, Arial, sans-serif',
+                fontSize: 16,
+                fontWeight: 'bold',
+                fill: 0xaaaacc,
+            }),
+        })
+        text.anchor.set(0.5)
+        btn.addChild(text)
+
+        btn.on('pointerdown', onClick)
+
+        return btn
+    }
+
+    private createArrowButton(
+        symbol: string,
+        x: number,
+        y: number,
+        onClick: () => void
+    ): Container {
+        const btn = new Container()
+        btn.position.set(x, y)
+        btn.eventMode = 'static'
+        btn.cursor = 'pointer'
+
+        // Pill-shaped button (Balatro style - compact)
+        const btnWidth = 28
+        const btnHeight = 70
+
+        // Shadow (3D depth)
+        const shadow = new Graphics()
+        shadow.roundRect(-btnWidth / 2 + 2, -btnHeight / 2 + 3, btnWidth, btnHeight, btnWidth / 2)
+        shadow.fill({ color: 0x000000, alpha: 0.5 })
+        btn.addChild(shadow)
+
+        // Main button with gradient-like effect
+        const bgDark = new Graphics()
+        bgDark.roundRect(-btnWidth / 2, -btnHeight / 2, btnWidth, btnHeight, btnWidth / 2)
+        bgDark.fill(0xc0392b) // Darker red base
+        btn.addChild(bgDark)
+
+        // Lighter top highlight
+        const bgLight = new Graphics()
+        bgLight.roundRect(
+            -btnWidth / 2 + 2,
+            -btnHeight / 2 + 2,
+            btnWidth - 4,
+            btnHeight / 2 - 2,
+            btnWidth / 2 - 2
+        )
+        bgLight.fill({ color: 0xe74c3c, alpha: 0.8 })
+        btn.addChild(bgLight)
+
+        // Border
+        const border = new Graphics()
+        border.roundRect(-btnWidth / 2, -btnHeight / 2, btnWidth, btnHeight, btnWidth / 2)
+        border.stroke({ color: 0x1a1a1a, width: 2 })
+        btn.addChild(border)
+
+        // Inner border glow
+        const innerBorder = new Graphics()
+        innerBorder.roundRect(
+            -btnWidth / 2 + 2,
+            -btnHeight / 2 + 2,
+            btnWidth - 4,
+            btnHeight - 4,
+            btnWidth / 2 - 2
+        )
+        innerBorder.stroke({ color: 0xf5a5a5, width: 1, alpha: 0.3 })
+        btn.addChild(innerBorder)
+
+        // Arrow symbol with shadow
+        const arrowShadow = new Text({
+            text: symbol,
+            style: new TextStyle({
+                fontFamily: 'Arial Black, Arial, sans-serif',
+                fontSize: 18,
+                fontWeight: 'bold',
+                fill: 0x8a2a1a,
+            }),
+        })
+        arrowShadow.anchor.set(0.5)
+        arrowShadow.position.set(1, 1)
+        btn.addChild(arrowShadow)
+
+        const arrowText = new Text({
+            text: symbol,
+            style: new TextStyle({
+                fontFamily: 'Arial Black, Arial, sans-serif',
+                fontSize: 18,
+                fontWeight: 'bold',
+                fill: 0xffffff,
+            }),
+        })
+        arrowText.anchor.set(0.5)
+        btn.addChild(arrowText)
+
+        // Click handler with visual feedback
+        btn.on('pointerdown', () => {
+            btn.scale.set(0.9)
+            onClick()
+        })
+        btn.on('pointerup', () => {
+            btn.scale.set(1)
+        })
+        btn.on('pointerupoutside', () => {
+            btn.scale.set(1)
+        })
+
+        return btn
+    }
+
+    // Balatro-style arrow button (pill shape with 3D depth)
+    private createArcadeArrowButton(
+        symbol: string,
+        x: number,
+        y: number,
+        onClick: () => void
+    ): Container {
+        const btn = new Container()
+        btn.position.set(x, y)
+        btn.eventMode = 'static'
+        btn.cursor = 'pointer'
+
+        const btnWidth = 36
+        const btnHeight = 50
+
+        // Shadow (3D depth)
+        const shadow = new Graphics()
+        shadow.roundRect(-btnWidth / 2 + 2, -btnHeight / 2 + 3, btnWidth, btnHeight, 8)
+        shadow.fill({ color: 0x000000, alpha: 0.5 })
+        btn.addChild(shadow)
+
+        // Main button background
+        const bg = new Graphics()
+        bg.roundRect(-btnWidth / 2, -btnHeight / 2, btnWidth, btnHeight, 8)
+        bg.fill(0x4a5658)
+        btn.addChild(bg)
+
+        // Highlight (top)
+        const highlight = new Graphics()
+        highlight.roundRect(
+            -btnWidth / 2 + 2,
+            -btnHeight / 2 + 2,
+            btnWidth - 4,
+            btnHeight / 2 - 2,
+            6
+        )
+        highlight.fill({ color: 0x6a7678, alpha: 0.6 })
+        btn.addChild(highlight)
+
+        // Border
+        const border = new Graphics()
+        border.roundRect(-btnWidth / 2, -btnHeight / 2, btnWidth, btnHeight, 8)
+        border.stroke({ color: 0x1a1a1a, width: 2 })
+        btn.addChild(border)
+
+        // Arrow symbol
+        const arrow = new Text({
+            text: symbol,
+            style: new TextStyle({
+                fontFamily: 'Arial Black, sans-serif',
+                fontSize: 18,
+                fontWeight: 'bold',
+                fill: 0xffffff,
+            }),
+        })
+        arrow.anchor.set(0.5)
+        btn.addChild(arrow)
+
+        // Click handler with visual feedback
+        btn.on('pointerdown', () => {
+            btn.scale.set(0.92)
+            onClick()
+        })
+        btn.on('pointerup', () => {
+            btn.scale.set(1)
+        })
+        btn.on('pointerupoutside', () => {
+            btn.scale.set(1)
+        })
+
+        return btn
+    }
+
+    // Balatro-style start button (red with gold accents)
+    private createArcadeStartButton(x: number, y: number): Container {
+        const btn = new Container()
+        btn.position.set(x, y)
+        btn.eventMode = 'static'
+        btn.cursor = 'pointer'
+
+        const width = 160
+        const height = 48
+
+        // Shadow (3D depth)
+        const shadow = new Graphics()
+        shadow.roundRect(-width / 2 + 3, -height / 2 + 4, width, height, 12)
+        shadow.fill({ color: 0x000000, alpha: 0.5 })
+        btn.addChild(shadow)
+
+        // Main button background (red)
+        const bg = new Graphics()
+        bg.roundRect(-width / 2, -height / 2, width, height, 12)
+        bg.fill(0xc0392b)
+        btn.addChild(bg)
+
+        // Highlight (top gradient effect)
+        const highlight = new Graphics()
+        highlight.roundRect(-width / 2 + 3, -height / 2 + 3, width - 6, height / 2 - 3, 10)
+        highlight.fill({ color: 0xe74c3c, alpha: 0.7 })
+        btn.addChild(highlight)
+
+        // Border
+        const border = new Graphics()
+        border.roundRect(-width / 2, -height / 2, width, height, 12)
+        border.stroke({ color: 0x1a1a1a, width: 3 })
+        btn.addChild(border)
+
+        // Inner glow
+        const innerBorder = new Graphics()
+        innerBorder.roundRect(-width / 2 + 3, -height / 2 + 3, width - 6, height - 6, 10)
+        innerBorder.stroke({ color: 0xf5a5a5, width: 1, alpha: 0.3 })
+        btn.addChild(innerBorder)
+
+        // PLAY text (Balatro style)
+        const textShadow = new Text({
+            text: 'PLAY',
+            style: new TextStyle({
+                fontFamily: 'Arial Black, sans-serif',
+                fontSize: 24,
+                fontWeight: 'bold',
+                fill: 0x8a2a1a,
+            }),
+        })
+        textShadow.anchor.set(0.5)
+        textShadow.position.set(1, 1)
+        btn.addChild(textShadow)
+
+        const startText = new Text({
+            text: 'PLAY',
+            style: new TextStyle({
+                fontFamily: 'Arial Black, sans-serif',
+                fontSize: 24,
+                fontWeight: 'bold',
+                fill: 0xffffff,
+            }),
+        })
+        startText.anchor.set(0.5)
+        btn.addChild(startText)
+
+        // Click handler
+        btn.on('pointerdown', () => {
+            btn.scale.set(0.95)
+        })
+        btn.on('pointerup', () => {
+            btn.scale.set(1)
+            this.startGameFromCharacterSelect()
+        })
+        btn.on('pointerupoutside', () => {
+            btn.scale.set(1)
+        })
+
+        return btn
+    }
+
     private updateCharacterSelection(): void {
         const character = WOBBLE_CHARACTERS[this.selectedCharacter]
         const stats = WOBBLE_STATS[this.selectedCharacter]
 
-        // Update character name
-        this.characterNameText.text = character.nameKo
+        // Update character name (arcade style - all caps)
+        this.characterNameText.text = character.name.toUpperCase()
         this.characterNameText.style.fill = character.color
 
         // Update stats display
         this.updateStatsDisplay(stats, character.color)
     }
 
-    private updateStatsDisplay(stats: WobbleStats, color: number): void {
+    private updateStatsDisplay(stats: WobbleStats, _color: number): void {
         this.characterStatsContainer.removeChildren()
 
         const statItems = [
-            { icon: '❤', color: 0xe74c3c, value: stats.healthMultiplier },
-            { icon: '⚔', color: 0xf39c12, value: stats.damageMultiplier },
-            { icon: '◈', color: 0x3498db, value: stats.fireRateMultiplier },
-            { icon: '»', color: 0x2ecc71, value: stats.moveSpeedMultiplier },
+            { label: 'HP', color: 0xe74c3c, value: stats.healthMultiplier },
+            { label: 'ATK', color: 0xf39c12, value: stats.damageMultiplier },
+            { label: 'SPD', color: 0x3498db, value: stats.fireRateMultiplier },
+            { label: 'MOV', color: 0x2ecc71, value: stats.moveSpeedMultiplier },
         ]
 
-        // Responsive gap based on screen width
-        const barWidth = Math.min(35, (this.width - 80) / 6)
-        const itemGap = barWidth + 20
+        // Balatro-style stats: colored bars with labels
+        const barWidth = 32
+        const itemGap = barWidth + 16
         const totalWidth = (statItems.length - 1) * itemGap
         const startX = -totalWidth / 2
 
         statItems.forEach((item, index) => {
             const x = startX + index * itemGap
 
-            // Hexagon icon badge
-            const badge = new Graphics()
-            this.drawHexagon(badge, x, 0, 14, 0x1a1520, item.color, 2)
-            this.characterStatsContainer.addChild(badge)
-
-            // Icon
-            const icon = new Text({
-                text: item.icon,
+            // Label
+            const labelText = new Text({
+                text: item.label,
                 style: new TextStyle({
-                    fontSize: 10,
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 9,
                     fontWeight: 'bold',
                     fill: item.color,
                 }),
             })
-            icon.anchor.set(0.5)
-            icon.position.set(x, 0)
-            this.characterStatsContainer.addChild(icon)
-
-            // Stat bar (visual representation)
-            const barHeight = 5
-            const barY = 20
-            const fillPercent = Math.min(1.3, item.value) / 1.3 // Normalize to 130% max
+            labelText.anchor.set(0.5)
+            labelText.position.set(x, -8)
+            this.characterStatsContainer.addChild(labelText)
 
             // Bar background
+            const barHeight = 6
+            const barY = 6
             const barBg = new Graphics()
-            barBg.roundRect(x - barWidth / 2, barY - barHeight / 2, barWidth, barHeight, 2)
+            barBg.roundRect(x - barWidth / 2, barY - barHeight / 2, barWidth, barHeight, 3)
             barBg.fill(0x1a1520)
-            barBg.stroke({ color: 0x3a3040, width: 1 })
+            barBg.stroke({ color: 0x0a0a0a, width: 1 })
             this.characterStatsContainer.addChild(barBg)
 
             // Bar fill
+            const fillPercent = Math.min(1.3, item.value) / 1.3
+            const fillWidth = Math.max(2, (barWidth - 2) * fillPercent)
             const barFill = new Graphics()
-            const fillWidth = barWidth * fillPercent
             barFill.roundRect(
                 x - barWidth / 2 + 1,
                 barY - barHeight / 2 + 1,
-                fillWidth - 2,
+                fillWidth,
                 barHeight - 2,
-                1
+                2
             )
             barFill.fill(item.color)
             this.characterStatsContainer.addChild(barFill)
-
-            // Notch markers at 100%
-            const notchX = x - barWidth / 2 + barWidth * (1.0 / 1.3)
-            const notch = new Graphics()
-            notch.moveTo(notchX, barY - barHeight / 2 - 2)
-            notch.lineTo(notchX, barY + barHeight / 2 + 2)
-            notch.stroke({ color: 0xffffff, width: 1, alpha: 0.5 })
-            this.characterStatsContainer.addChild(notch)
         })
     }
 
@@ -2249,11 +2913,14 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.perkPreviewContainer.removeChildren()
         this.perkIconContainers = []
 
-        // Responsive perk grid
-        const maxPerRow = Math.min(8, Math.floor((this.width - 40) / 40))
-        const hexSize = Math.min(14, (this.width - 60) / (maxPerRow * 2.5))
-        const hexGap = 4
-        const perks = perkDefinitions
+        // Get perks for the selected theme only
+        const perks = getPerksByTheme(this.selectedTheme)
+        const selectedThemeDef = PHYSICS_THEMES.find((t) => t.id === this.selectedTheme)!
+
+        // Responsive perk grid - mobile portrait optimized
+        const maxPerRow = Math.min(4, Math.floor((this.width - 40) / 70))
+        const hexSize = Math.min(28, (this.width - 60) / (maxPerRow * 2.2))
+        const hexGap = 8
 
         perks.forEach((perk, index) => {
             const row = Math.floor(index / maxPerRow)
@@ -2273,25 +2940,25 @@ export class PhysicsSurvivorScene extends AdventureScene {
             iconContainer.eventMode = 'static'
             iconContainer.cursor = 'pointer'
 
-            // Hexagon background
+            // Hexagon background with border (use theme color)
             const hex = new Graphics()
             if (isSelected) {
-                // Selected state - bright highlight
-                this.drawHexagon(hex, 0, 0, hexSize + 2, 0x3a3540, 0xffd700, 3)
+                this.drawHexagon(hex, 0, 0, hexSize, 0x2a2530, 0xffd700, 2)
             } else if (isUnlocked) {
-                this.drawHexagon(hex, 0, 0, hexSize, 0x2a2530, perk.color, 2)
+                this.drawHexagon(hex, 0, 0, hexSize, 0x1a1520, selectedThemeDef.color, 2)
             } else {
-                this.drawHexagon(hex, 0, 0, hexSize, 0x15131a, 0x3a3040, 2)
+                this.drawHexagon(hex, 0, 0, hexSize, 0x1a1520, 0x1a1a1a, 2)
             }
             iconContainer.addChild(hex)
 
-            // Icon or lock symbol
+            // Formula text or lock symbol
             const iconText = new Text({
-                text: isUnlocked ? perk.icon : '?',
+                text: isUnlocked ? perk.nameKo : '?',
                 style: new TextStyle({
-                    fontSize: isUnlocked ? 12 : 14,
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: isUnlocked ? 10 : 18,
                     fontWeight: 'bold',
-                    fill: isUnlocked ? 0xffffff : 0x4a4050,
+                    fill: isUnlocked ? selectedThemeDef.color : 0x4a4050,
                 }),
             })
             iconText.anchor.set(0.5)
@@ -2323,23 +2990,27 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private updatePerkInfo(): void {
         if (!this.perkInfoContainer) return
 
-        if (this.selectedPerkIndex === null) {
+        // Get perks for the selected theme
+        const themePerks = getPerksByTheme(this.selectedTheme)
+        const selectedThemeDef = PHYSICS_THEMES.find((t) => t.id === this.selectedTheme)!
+
+        if (this.selectedPerkIndex === null || this.selectedPerkIndex >= themePerks.length) {
             // No perk selected - show hint
             this.perkInfoIcon.text = ''
             this.perkInfoNameText.text = '퍼크를 탭하여 정보 보기'
             this.perkInfoNameText.style.fill = 0x6a5a7a
             this.perkInfoDescText.text = ''
         } else {
-            const perk = perkDefinitions[this.selectedPerkIndex]
+            const perk = themePerks[this.selectedPerkIndex]
             const isUnlocked = this.studiedFormulas.has(perk.formulaId)
 
-            this.perkInfoIcon.text = isUnlocked ? perk.icon : '🔒'
-            this.perkInfoNameText.text = perk.nameKo
-            this.perkInfoNameText.style.fill = isUnlocked ? perk.color : 0x6a5a7a
+            this.perkInfoIcon.text = isUnlocked ? perk.nameKo : '?'
+            this.perkInfoIcon.style.fill = isUnlocked ? selectedThemeDef.color : 0x4a4050
+            this.perkInfoNameText.text = perk.descriptionKo
+            this.perkInfoNameText.style.fill = isUnlocked ? selectedThemeDef.color : 0x6a5a7a
 
             if (isUnlocked) {
-                this.perkInfoDescText.text = perk.descriptionKo
-                this.perkInfoDescText.style.fill = 0x9a8aaa
+                this.perkInfoDescText.text = ''
             } else {
                 this.perkInfoDescText.text = '공식을 학습하면 해금됩니다'
                 this.perkInfoDescText.style.fill = 0x5a4a6a
@@ -2347,34 +3018,68 @@ export class PhysicsSurvivorScene extends AdventureScene {
         }
     }
 
-    private createStartButton(x: number, y: number): Container {
+    private createPlayButton(x: number, y: number): Container {
         const btn = new Container()
         btn.position.set(x, y)
         btn.eventMode = 'static'
         btn.cursor = 'pointer'
 
-        // Large hexagon button
-        const hexSize = 40
+        // Balatro style: Large rounded rectangle button
+        const btnWidth = 200
+        const btnHeight = 50
 
-        // Outer glow hexagon
-        const glow = new Graphics()
-        this.drawHexagon(glow, 0, 0, hexSize + 6, undefined, 0x4a9adb, 2)
-        glow.alpha = 0.4
-        btn.addChild(glow)
+        // Shadow
+        const shadow = new Graphics()
+        shadow.roundRect(-btnWidth / 2 + 3, -btnHeight / 2 + 4, btnWidth, btnHeight, 12)
+        shadow.fill({ color: 0x000000, alpha: 0.5 })
+        btn.addChild(shadow)
 
-        // Main hexagon
-        const mainHex = new Graphics()
-        this.drawHexagon(mainHex, 0, 0, hexSize, 0x2980b9, 0x5dade2, 4)
-        btn.addChild(mainHex)
+        // Main button background (blue like Balatro play button)
+        const mainBtn = new Graphics()
+        mainBtn.roundRect(-btnWidth / 2, -btnHeight / 2, btnWidth, btnHeight, 12)
+        mainBtn.fill(0x4a9eff)
+        btn.addChild(mainBtn)
+
+        // Inner highlight
+        const highlight = new Graphics()
+        highlight.roundRect(
+            -btnWidth / 2 + 3,
+            -btnHeight / 2 + 3,
+            btnWidth - 6,
+            btnHeight / 2 - 3,
+            8
+        )
+        highlight.fill({ color: 0xffffff, alpha: 0.15 })
+        btn.addChild(highlight)
+
+        // Border
+        const border = new Graphics()
+        border.roundRect(-btnWidth / 2, -btnHeight / 2, btnWidth, btnHeight, 12)
+        border.stroke({ color: 0x2a7ad0, width: 3 })
+        btn.addChild(border)
 
         // Play icon (triangle)
         const playIcon = new Graphics()
-        playIcon.moveTo(-8, -12)
-        playIcon.lineTo(-8, 12)
-        playIcon.lineTo(12, 0)
+        playIcon.moveTo(-60, -10)
+        playIcon.lineTo(-60, 10)
+        playIcon.lineTo(-44, 0)
         playIcon.closePath()
         playIcon.fill(0xffffff)
         btn.addChild(playIcon)
+
+        // "플레이" text
+        const playText = new Text({
+            text: '플레이',
+            style: new TextStyle({
+                fontFamily: 'Arial Black, Arial, sans-serif',
+                fontSize: 20,
+                fontWeight: 'bold',
+                fill: 0xffffff,
+            }),
+        })
+        playText.anchor.set(0.5)
+        playText.position.set(10, 0)
+        btn.addChild(playText)
 
         // Click handler
         btn.on('pointerdown', () => {
@@ -2382,6 +3087,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
         })
 
         return btn
+    }
+
+    private createStartButton(x: number, y: number): Container {
+        // Legacy method - redirects to createPlayButton
+        return this.createPlayButton(x, y)
     }
 
     private startGameFromCharacterSelect(): void {
@@ -2429,6 +3139,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
         const deltaSeconds = ticker.deltaMS / 1000
         this.animPhase += deltaSeconds
 
+        // Update CRT filter time for subtle animation
+        if (this.crtFilter) {
+            this.crtFilter.time = this.animPhase
+        }
+
         // Update background effects even in idle
         this.backgroundSystem.update(delta, this.activePerks.length)
 
@@ -2454,30 +3169,39 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         // Update character select screen animations
         if (this.gameState === 'character-select') {
-            // Animate wobbles with breathing effect
-            for (const [shape, wobble] of this.characterWobbles) {
-                const isSelected = shape === this.selectedCharacter
-                const breathe = Math.sin(this.animPhase * 2) * (isSelected ? 0.08 : 0.03)
-                wobble.updateOptions({
-                    wobblePhase: this.animPhase,
+            this.charSelectAnimPhase += deltaSeconds
+
+            // Animate preview wobble with breathing effect
+            if (this.previewWobble) {
+                const breathe = Math.sin(this.charSelectAnimPhase * 2.5) * 0.05
+                this.previewWobble.updateOptions({
+                    wobblePhase: this.charSelectAnimPhase,
                     scaleX: 1 + breathe,
                     scaleY: 1 - breathe,
                 })
             }
 
-            // Animate preview wobble
-            if (this.previewWobble) {
-                const breathe = Math.sin(this.animPhase * 2) * 0.06
-                this.previewWobble.updateOptions({
-                    wobblePhase: this.animPhase,
-                    scaleX: 1 + breathe,
-                    scaleY: 1 - breathe,
-                })
+            // Card container subtle float animation
+            if (this.characterCardContainer) {
+                const float = Math.sin(this.charSelectAnimPhase * 1.5) * 3
+                this.characterCardContainer.position.y = 130 + float
+            }
+
+            // Arrow buttons subtle pulse
+            if (this.leftArrowBtn && this.rightArrowBtn) {
+                const arrowPulse = 1 + Math.sin(this.charSelectAnimPhase * 3) * 0.03
+                // Only pulse if not pressed
+                if (this.leftArrowBtn.scale.x >= 0.95) {
+                    this.leftArrowBtn.scale.set(arrowPulse)
+                }
+                if (this.rightArrowBtn.scale.x >= 0.95) {
+                    this.rightArrowBtn.scale.set(arrowPulse)
+                }
             }
 
             // Pulse animation for start button
             if (this.startButton) {
-                const pulse = 1 + Math.sin(this.animPhase * 4) * 0.05
+                const pulse = 1 + Math.sin(this.charSelectAnimPhase * 4) * 0.05
                 this.startButton.scale.set(pulse)
             }
         }
@@ -2657,8 +3381,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Hide character select container
         this.characterSelectContainer.visible = false
 
-        // Reset selected character and perk to default
+        // Reset selected character, theme and perk to default
         this.selectedCharacter = 'circle'
+        this.selectedTheme = 'mechanics'
         this.selectedPerkIndex = null
 
         // Reset state

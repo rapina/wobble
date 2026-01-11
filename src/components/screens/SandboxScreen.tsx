@@ -46,7 +46,7 @@ interface SimulationScreenProps {
     onBack: () => void
 }
 
-export function SimulationScreen({
+export function SandboxScreen({
     formulaId,
     formulas,
     onFormulaChange,

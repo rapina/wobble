@@ -47,7 +47,7 @@ interface AdventureSelectScreenProps {
     onSelectAdventure: (adventureId: string) => void
 }
 
-export function AdventureSelectScreen({ onBack, onSelectAdventure }: AdventureSelectScreenProps) {
+export function GameSelectScreen({ onBack, onSelectAdventure }: AdventureSelectScreenProps) {
     const { t } = useTranslation()
     const [mounted, setMounted] = useState(false)
 
@@ -78,18 +78,14 @@ export function AdventureSelectScreen({ onBack, onSelectAdventure }: AdventureSe
             {/* Vignette overlay */}
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)]" />
 
-            {/* Header */}
+            {/* Header - Back button only */}
             <div
-                className="absolute z-20 flex items-center justify-between w-full"
+                className="absolute z-20"
                 style={{
                     top: 'max(env(safe-area-inset-top, 0px), 12px)',
-                    left: 0,
-                    right: 0,
-                    paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
-                    paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
+                    left: 'max(env(safe-area-inset-left, 0px), 12px)',
                 }}
             >
-                {/* Back button */}
                 <button
                     onClick={onBack}
                     className="h-10 w-10 rounded-lg flex items-center justify-center transition-all active:scale-95"
@@ -101,14 +97,6 @@ export function AdventureSelectScreen({ onBack, onSelectAdventure }: AdventureSe
                 >
                     <ArrowLeft className="w-5 h-5 text-white/80" />
                 </button>
-
-                {/* Title */}
-                <h1 className="text-xl font-black" style={{ color: theme.accent }}>
-                    {t('game.selectAdventure')}
-                </h1>
-
-                {/* Spacer for alignment */}
-                <div className="w-10" />
             </div>
 
             {/* Content */}

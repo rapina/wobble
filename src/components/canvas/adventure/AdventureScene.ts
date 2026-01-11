@@ -66,6 +66,7 @@ export abstract class AdventureScene {
     private speechBubble!: Graphics
     private speechText!: Text
     private tapHint!: Text
+    private tapHintBadge!: Graphics
     private narrationPhase = 0
 
     constructor(app: Application, options?: AdventureSceneOptions) {
@@ -217,12 +218,16 @@ export abstract class AdventureScene {
         this.speechText = new Text({ text: '', style: textStyle })
         this.narratorContainer.addChild(this.speechText)
 
-        // Tap hint - more stylized
+        // Tap hint badge background (Balatro style)
+        this.tapHintBadge = new Graphics()
+        this.narratorContainer.addChild(this.tapHintBadge)
+
+        // Tap hint text - bold for Balatro style
         const hintStyle = new TextStyle({
-            fontFamily: 'Arial, sans-serif',
-            fontSize: 14,
-            fill: 0x888888,
-            fontStyle: 'italic',
+            fontFamily: 'Arial Black, Arial, sans-serif',
+            fontSize: 12,
+            fill: 0xffffff,
+            fontWeight: 'bold',
         })
         this.tapHint = new Text({ text: 'Tap to continue', style: hintStyle })
         this.narratorContainer.addChild(this.tapHint)
@@ -287,23 +292,40 @@ export abstract class AdventureScene {
         const bubbleColor = isShadow ? 0x2a2a3a : 0x1a1a2e
         const borderColor = isShadow ? 0x8b0000 : 0xff6b9d
 
-        // Draw comic-style speech bubble with thick border
-        // Outer border
-        this.speechBubble.roundRect(bubbleX - 3, bubbleY - 3, bubbleWidth + 6, textHeight + 6, 20)
-        this.speechBubble.fill({ color: borderColor })
+        // Draw Balatro-style speech bubble with 3D shadow
+        // Shadow layer (3D depth effect)
+        this.speechBubble.roundRect(bubbleX + 2, bubbleY + 4, bubbleWidth, textHeight, 18)
+        this.speechBubble.fill({ color: 0x0a0a0a, alpha: 0.7 })
 
-        // Inner bubble
+        // Main bubble body
         this.speechBubble.roundRect(bubbleX, bubbleY, bubbleWidth, textHeight, 18)
         this.speechBubble.fill({ color: bubbleColor })
 
-        // Speech tail/arrow pointing up to character
+        // Thick outer border (Balatro-style)
+        this.speechBubble.roundRect(bubbleX, bubbleY, bubbleWidth, textHeight, 18)
+        this.speechBubble.stroke({ color: borderColor, width: 4 })
+
+        // Inner border glow
+        this.speechBubble.roundRect(bubbleX + 4, bubbleY + 4, bubbleWidth - 8, textHeight - 8, 14)
+        this.speechBubble.stroke({ color: borderColor, width: 1, alpha: 0.3 })
+
+        // Speech tail/arrow with shadow
         const tailX = this.width / 2
+        // Tail shadow
+        this.speechBubble.moveTo(tailX - 12 + 2, bubbleY + 4)
+        this.speechBubble.lineTo(tailX + 2, bubbleY - 12)
+        this.speechBubble.lineTo(tailX + 12 + 2, bubbleY + 4)
+        this.speechBubble.closePath()
+        this.speechBubble.fill({ color: 0x0a0a0a, alpha: 0.5 })
+
+        // Tail border
         this.speechBubble.moveTo(tailX - 15, bubbleY)
         this.speechBubble.lineTo(tailX, bubbleY - 18)
         this.speechBubble.lineTo(tailX + 15, bubbleY)
         this.speechBubble.closePath()
         this.speechBubble.fill({ color: borderColor })
 
+        // Tail fill
         this.speechBubble.moveTo(tailX - 10, bubbleY)
         this.speechBubble.lineTo(tailX, bubbleY - 12)
         this.speechBubble.lineTo(tailX + 10, bubbleY)
@@ -313,12 +335,30 @@ export abstract class AdventureScene {
         // Position text
         this.speechText.position.set(this.width / 2, bubbleY + bubblePadding)
 
-        // Tap hint at bottom
+        // Tap hint badge at bottom (Balatro style)
         const isLastNarration = this.narrationIndex >= this.narrations.length - 1
         this.tapHint.text = isLastNarration ? '▶ TAP TO START' : 'TAP TO CONTINUE ▶'
-        this.tapHint.style.fill = isLastNarration ? 0xff6b9d : 0x666666
-        this.tapHint.anchor.set(0.5, 0)
-        this.tapHint.position.set(this.width / 2, this.height - 60)
+
+        // Calculate badge dimensions
+        const hintWidth = this.tapHint.width + 24
+        const hintHeight = 32
+        const hintX = (this.width - hintWidth) / 2
+        const hintY = this.height - 72
+
+        // Draw tap hint badge with 3D shadow
+        this.tapHintBadge.clear()
+        // Shadow
+        this.tapHintBadge.roundRect(hintX + 2, hintY + 3, hintWidth, hintHeight, 10)
+        this.tapHintBadge.fill({ color: 0x0a0a0a, alpha: 0.6 })
+        // Badge body
+        this.tapHintBadge.roundRect(hintX, hintY, hintWidth, hintHeight, 10)
+        this.tapHintBadge.fill(isLastNarration ? 0x2980b9 : 0x374244)
+        // Border
+        this.tapHintBadge.roundRect(hintX, hintY, hintWidth, hintHeight, 10)
+        this.tapHintBadge.stroke({ color: 0x1a1a1a, width: 3 })
+
+        this.tapHint.anchor.set(0.5)
+        this.tapHint.position.set(this.width / 2, hintY + hintHeight / 2)
     }
 
     private getShapeColor(shape: WobbleShape): number {

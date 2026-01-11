@@ -86,24 +86,21 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
     const gameStats = getGameStats()
     const totalFormulas = Object.keys(formulas).length
 
-    const tabs: { id: TabType; icon: React.ReactNode; label: string; count: string }[] = [
+    const tabs: { id: TabType; icon: React.ReactNode; label: string }[] = [
         {
             id: 'characters',
             icon: <Users className="w-4 h-4" />,
             label: isKorean ? '캐릭터' : 'Characters',
-            count: `${progress.unlocked}/${progress.total}`,
         },
         {
             id: 'formulas',
             icon: <BookOpen className="w-4 h-4" />,
             label: isKorean ? '학습' : 'Study',
-            count: `${studiedFormulas.length}/${totalFormulas}`,
         },
         {
             id: 'records',
             icon: <Trophy className="w-4 h-4" />,
-            label: isKorean ? '기록' : 'Records',
-            count: gameStats.totalGames > 0 ? gameStats.bestRank : '-',
+            label: isKorean ? '기록' : 'Stats',
         },
     ]
 
@@ -129,18 +126,14 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
             {/* Vignette overlay */}
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)]" />
 
-            {/* Header */}
+            {/* Header - Back button only */}
             <div
-                className="absolute z-20 flex items-center justify-between w-full"
+                className="absolute z-20"
                 style={{
                     top: 'max(env(safe-area-inset-top, 0px), 12px)',
-                    left: 0,
-                    right: 0,
-                    paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
-                    paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
+                    left: 'max(env(safe-area-inset-left, 0px), 12px)',
                 }}
             >
-                {/* Back button */}
                 <button
                     onClick={onBack}
                     className="h-10 w-10 rounded-lg flex items-center justify-center transition-all active:scale-95"
@@ -152,14 +145,6 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                 >
                     <ArrowLeft className="w-5 h-5 text-white/80" />
                 </button>
-
-                {/* Title */}
-                <h1 className="text-xl font-black" style={{ color: theme.gold }}>
-                    {isKorean ? '내 기록' : 'My Progress'}
-                </h1>
-
-                {/* Spacer */}
-                <div className="w-10" />
             </div>
 
             {/* Tab Bar */}
@@ -176,32 +161,30 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
                         className={cn(
-                            'flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all',
-                            activeTab === tab.id ? 'scale-105' : 'opacity-70'
+                            'flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all',
+                            activeTab === tab.id ? '' : 'opacity-60',
+                            'active:scale-95'
                         )}
                         style={{
-                            background: activeTab === tab.id ? theme.bgPanel : 'transparent',
-                            border: `2px solid ${activeTab === tab.id ? theme.gold : theme.border}`,
-                            boxShadow: activeTab === tab.id ? `0 3px 0 ${theme.border}` : 'none',
+                            background: activeTab === tab.id ? theme.gold : theme.bgPanel,
+                            border: `2px solid ${theme.border}`,
+                            boxShadow: `0 3px 0 ${theme.border}`,
                         }}
                     >
-                        <span style={{ color: activeTab === tab.id ? theme.gold : 'white' }}>
+                        <span
+                            style={{
+                                color: activeTab === tab.id ? '#1a1a1a' : 'rgba(255,255,255,0.6)',
+                            }}
+                        >
                             {tab.icon}
                         </span>
                         <span
                             className="text-sm font-bold"
-                            style={{ color: activeTab === tab.id ? theme.gold : 'white' }}
-                        >
-                            {tab.label}
-                        </span>
-                        <span
-                            className="text-xs px-1.5 py-0.5 rounded"
                             style={{
-                                background: activeTab === tab.id ? theme.gold : theme.bgPanelLight,
-                                color: activeTab === tab.id ? 'black' : 'white',
+                                color: activeTab === tab.id ? '#1a1a1a' : 'rgba(255,255,255,0.7)',
                             }}
                         >
-                            {tab.count}
+                            {tab.label}
                         </span>
                     </button>
                 ))}
@@ -264,17 +247,26 @@ function CharactersTab({
 }) {
     return (
         <>
-            <p
+            {/* Progress Badge */}
+            <div
                 className={cn(
-                    'text-center text-white/60 text-sm mb-4',
+                    'flex justify-center mb-4',
                     'transition-all duration-500',
                     mounted ? 'opacity-100' : 'opacity-0'
                 )}
             >
-                {isKorean
-                    ? '워블 행성의 주민들을 만나보세요'
-                    : 'Meet the residents of Planet Wobble'}
-            </p>
+                <span
+                    className="px-4 py-1.5 rounded-full text-sm font-bold"
+                    style={{
+                        background: theme.gold,
+                        color: '#1a1a1a',
+                        border: `2px solid ${theme.border}`,
+                        boxShadow: `0 3px 0 ${theme.border}`,
+                    }}
+                >
+                    {progress.unlocked} / {progress.total}
+                </span>
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
                 {ALL_SHAPES.map((shape, index) => {
@@ -295,17 +287,16 @@ function CharactersTab({
                                 onClick={() => onCardClick(shape)}
                                 disabled={!unlocked}
                                 className={cn(
-                                    'w-full rounded-xl transition-all relative',
-                                    unlocked ? 'active:scale-[0.98]' : 'cursor-not-allowed',
-                                    isSelected && '-translate-y-2'
+                                    'w-full transition-all relative rounded-xl',
+                                    unlocked ? 'active:scale-95' : 'cursor-not-allowed'
                                 )}
                                 style={{
-                                    background: unlocked ? theme.bgPanel : theme.bgPanelLight,
-                                    border: `2px solid ${theme.border}`,
+                                    background: unlocked ? theme.bgPanelLight : theme.bgPanel,
+                                    border: `2px solid ${isSelected ? theme.gold : theme.border}`,
                                     boxShadow: isSelected
-                                        ? `0 6px 0 ${theme.border}, 0 8px 20px rgba(0,0,0,0.4)`
+                                        ? `0 3px 0 ${theme.border}, 0 0 0 2px ${theme.gold}`
                                         : `0 3px 0 ${theme.border}`,
-                                    opacity: unlocked ? 1 : 0.6,
+                                    opacity: unlocked ? 1 : 0.5,
                                 }}
                             >
                                 <div className="flex justify-center pt-4 pb-2">
@@ -325,7 +316,7 @@ function CharactersTab({
 
                                 <div className="px-3 pb-3 text-center">
                                     <h3
-                                        className="text-lg font-black mb-1"
+                                        className="text-base font-bold mb-1"
                                         style={{
                                             color: unlocked ? theme.gold : 'rgba(255,255,255,0.3)',
                                         }}
@@ -356,10 +347,14 @@ function CharactersTab({
 
                                 {isSelected && (
                                     <div
-                                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center"
-                                        style={{ background: theme.gold }}
+                                        className="absolute -top-1.5 -right-1.5 w-6 h-6 flex items-center justify-center rounded-md"
+                                        style={{
+                                            background: theme.gold,
+                                            border: `2px solid ${theme.border}`,
+                                            boxShadow: `0 2px 0 ${theme.border}`,
+                                        }}
                                     >
-                                        <Sparkles className="w-4 h-4 text-black" />
+                                        <Sparkles className="w-3.5 h-3.5 text-black" />
                                     </div>
                                 )}
                             </button>
@@ -367,20 +362,6 @@ function CharactersTab({
                     )
                 })}
             </div>
-
-            {progress.unlocked < progress.total && (
-                <p
-                    className={cn(
-                        'text-center text-white/40 text-xs mt-6',
-                        'transition-all duration-500 delay-700',
-                        mounted ? 'opacity-100' : 'opacity-0'
-                    )}
-                >
-                    {isKorean
-                        ? '물리 법칙을 탐험하며 새로운 주민을 찾아보세요!'
-                        : 'Explore the laws of physics to find new residents!'}
-                </p>
-            )}
         </>
     )
 }
@@ -465,17 +446,26 @@ function FormulasTab({
 
     return (
         <>
-            <p
+            {/* Progress Badge */}
+            <div
                 className={cn(
-                    'text-center text-white/60 text-sm mb-4',
+                    'flex justify-center mb-4',
                     'transition-all duration-500',
                     mounted ? 'opacity-100' : 'opacity-0'
                 )}
             >
-                {isKorean
-                    ? `${studiedFormulas.length}개의 물리 공식을 학습했습니다`
-                    : `You've studied ${studiedFormulas.length} physics formulas`}
-            </p>
+                <span
+                    className="px-4 py-1.5 rounded-full text-sm font-bold"
+                    style={{
+                        background: theme.blue,
+                        color: 'white',
+                        border: `2px solid ${theme.border}`,
+                        boxShadow: `0 3px 0 ${theme.border}`,
+                    }}
+                >
+                    {studiedFormulas.length} / {totalFormulas}
+                </span>
+            </div>
 
             <div className="space-y-4">
                 {categories.map((category, catIndex) => {
@@ -493,7 +483,7 @@ function FormulasTab({
                             style={{ transitionDelay: `${catIndex * 100}ms` }}
                         >
                             <div
-                                className="rounded-xl p-3"
+                                className="p-3 rounded-xl"
                                 style={{
                                     background: theme.bgPanel,
                                     border: `2px solid ${theme.border}`,
@@ -501,13 +491,21 @@ function FormulasTab({
                                 }}
                             >
                                 {/* Category Header */}
-                                <div className="flex items-center justify-between mb-2">
-                                    <h3 className="font-bold" style={{ color: category.color }}>
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3
+                                        className="font-bold text-sm"
+                                        style={{ color: category.color }}
+                                    >
                                         {category.name}
                                     </h3>
                                     <span
-                                        className="text-xs px-2 py-0.5 rounded"
-                                        style={{ background: category.color, color: 'white' }}
+                                        className="text-xs px-1.5 py-0.5 font-bold rounded"
+                                        style={{
+                                            background: category.color,
+                                            color: 'white',
+                                            border: `2px solid ${theme.border}`,
+                                            boxShadow: `0 2px 0 ${theme.border}`,
+                                        }}
                                     >
                                         {studiedInCategory}/{category.formulas.length}
                                     </span>
@@ -522,7 +520,7 @@ function FormulasTab({
                                         return (
                                             <div
                                                 key={formulaId}
-                                                className="px-2 py-1 rounded text-xs"
+                                                className="px-2 py-0.5 text-xs font-medium rounded"
                                                 style={{
                                                     background: studied
                                                         ? category.color
@@ -530,7 +528,8 @@ function FormulasTab({
                                                     color: studied
                                                         ? 'white'
                                                         : 'rgba(255,255,255,0.4)',
-                                                    opacity: studied ? 1 : 0.6,
+                                                    border: `1px solid ${studied ? category.color : theme.border}`,
+                                                    opacity: studied ? 1 : 0.7,
                                                 }}
                                             >
                                                 {formula
@@ -547,20 +546,6 @@ function FormulasTab({
                     )
                 })}
             </div>
-
-            {studiedFormulas.length < totalFormulas && (
-                <p
-                    className={cn(
-                        'text-center text-white/40 text-xs mt-6',
-                        'transition-all duration-500 delay-700',
-                        mounted ? 'opacity-100' : 'opacity-0'
-                    )}
-                >
-                    {isKorean
-                        ? '시뮬레이션에서 공식을 학습해보세요!'
-                        : 'Study formulas in the simulation!'}
-                </p>
-            )}
         </>
     )
 }
@@ -626,13 +611,25 @@ function RecordsTab({
         return (
             <div
                 className={cn(
-                    'flex flex-col items-center justify-center py-16',
+                    'flex flex-col items-center justify-center py-12',
                     'transition-all duration-500',
                     mounted ? 'opacity-100' : 'opacity-0'
                 )}
             >
-                <Trophy className="w-16 h-16 text-white/20 mb-4" />
-                <p className="text-white/40 text-center">
+                <div
+                    className="w-16 h-16 flex items-center justify-center mb-4 rounded-xl"
+                    style={{
+                        background: theme.bgPanel,
+                        border: `2px solid ${theme.border}`,
+                        boxShadow: `0 3px 0 ${theme.border}`,
+                    }}
+                >
+                    <Trophy className="w-8 h-8 text-white/30" />
+                </div>
+                <p
+                    className="text-center text-sm whitespace-pre-line"
+                    style={{ color: 'rgba(255,255,255,0.5)' }}
+                >
                     {isKorean
                         ? '아직 게임 기록이 없습니다.\n서바이버 모드를 플레이해보세요!'
                         : 'No game records yet.\nTry playing Survivor mode!'}
@@ -651,22 +648,38 @@ function RecordsTab({
                 )}
             >
                 <div
-                    className="rounded-xl p-6 text-center mb-4"
+                    className="p-5 text-center mb-4 rounded-xl"
                     style={{
                         background: theme.bgPanel,
-                        border: `3px solid ${rankColors[gameStats.bestRank] || theme.border}`,
-                        boxShadow: `0 4px 0 ${theme.border}`,
+                        border: `2px solid ${theme.border}`,
+                        boxShadow: `0 3px 0 ${theme.border}`,
                     }}
                 >
-                    <p className="text-white/60 text-sm mb-2">
+                    <p className="text-xs mb-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
                         {isKorean ? '최고 랭크' : 'Best Rank'}
                     </p>
                     <div
                         className="text-6xl font-black"
-                        style={{ color: rankColors[gameStats.bestRank] || 'white' }}
+                        style={{
+                            color: rankColors[gameStats.bestRank] || 'white',
+                        }}
                     >
                         {gameStats.bestRank}
                     </div>
+                    <span
+                        className="text-xs font-bold mt-2 inline-block"
+                        style={{ color: rankColors[gameStats.bestRank] || 'white' }}
+                    >
+                        {gameStats.bestRank === 'S'
+                            ? 'PERFECT'
+                            : gameStats.bestRank === 'A'
+                              ? 'EXCELLENT'
+                              : gameStats.bestRank === 'B'
+                                ? 'GREAT'
+                                : gameStats.bestRank === 'C'
+                                  ? 'GOOD'
+                                  : 'NICE TRY'}
+                    </span>
                 </div>
             </div>
 
@@ -682,15 +695,15 @@ function RecordsTab({
                         style={{ transitionDelay: `${(index + 1) * 100}ms` }}
                     >
                         <div
-                            className="rounded-xl p-3"
+                            className="p-3 rounded-xl"
                             style={{
                                 background: theme.bgPanel,
                                 border: `2px solid ${theme.border}`,
                                 boxShadow: `0 3px 0 ${theme.border}`,
                             }}
                         >
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className="text-lg">{stat.icon}</span>
+                            <div className="flex items-center gap-2 mb-1.5">
+                                <span className="text-base">{stat.icon}</span>
                                 <span className="text-white/60 text-xs">{stat.label}</span>
                             </div>
                             <div className="text-xl font-bold" style={{ color: stat.color }}>
