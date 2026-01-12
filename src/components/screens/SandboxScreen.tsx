@@ -16,6 +16,7 @@ import { ArrowLeft, List, X, Info, ChevronDown, HelpCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Formula, FormulaCategory } from '../../formulas/types'
 import { WobbleShape } from '../canvas/Wobble'
+import { WobbleDisplay } from '../canvas/WobbleDisplay'
 import Balatro from '@/components/Balatro'
 
 // Balatro-inspired color palette
@@ -79,6 +80,8 @@ export function SandboxScreen({
     const [pendingNewWobbles, setPendingNewWobbles] = useState<WobbleShape[]>([])
     const [tutorialShownThisSession, setTutorialShownThisSession] = useState(false)
     const [discoveryShownThisSession, setDiscoveryShownThisSession] = useState(false)
+    const [welcomePhase, setWelcomePhase] = useState<'opening' | 'select' | 'simulation'>('opening')
+    const [openingMounted, setOpeningMounted] = useState(false)
     const canvasRef = useRef<PixiCanvasHandle>(null)
 
     // Tutorial hook
@@ -228,6 +231,15 @@ export function SandboxScreen({
         return () => clearTimeout(timer)
     }, [formulaId])
 
+    // Opening screen mount animation
+    useEffect(() => {
+        if (welcomePhase === 'opening') {
+            setOpeningMounted(false)
+            const timer = setTimeout(() => setOpeningMounted(true), 100)
+            return () => clearTimeout(timer)
+        }
+    }, [welcomePhase])
+
     // Check for new wobbles and unlock when formula is used
     useEffect(() => {
         if (formulaId) {
@@ -328,6 +340,12 @@ export function SandboxScreen({
         localStorage.setItem('wobble-dont-show-info-formulas', JSON.stringify([...newSet]))
     }
 
+    // Handle formula selection from select screen
+    const handleSelectFromWelcome = (selectedFormula: Formula) => {
+        onFormulaChange(selectedFormula)
+        setWelcomePhase('simulation')
+    }
+
     if (!formula) {
         return (
             <div
@@ -335,6 +353,331 @@ export function SandboxScreen({
                 style={{ background: theme.bg }}
             >
                 <div className="animate-pulse text-white/50">{t('simulation.loading')}</div>
+            </div>
+        )
+    }
+
+    // Opening intro screen - shown first on every entry
+    if (welcomePhase === 'opening') {
+        // Floating formula symbols for background effect
+        const floatingSymbols = ['F=ma', 'E=mc²', 'λ', 'Σ', 'π', 'θ', 'ω', 'Δ', '∫', '∞']
+
+        return (
+            <div
+                className="relative w-full h-full overflow-hidden cursor-pointer"
+                style={{ background: '#0a0a12' }}
+                onClick={() => setWelcomePhase('select')}
+            >
+                {/* Balatro Background */}
+                {balatroBackground}
+
+                {/* Floating Formula Symbols */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                    {floatingSymbols.map((symbol, i) => (
+                        <div
+                            key={i}
+                            className={cn(
+                                'absolute text-2xl font-bold transition-all duration-1000',
+                                openingMounted ? 'opacity-20' : 'opacity-0'
+                            )}
+                            style={{
+                                color: theme.gold,
+                                left: `${10 + (i % 5) * 20}%`,
+                                top: `${15 + Math.floor(i / 5) * 60}%`,
+                                transform: `rotate(${-15 + i * 7}deg)`,
+                                transitionDelay: `${300 + i * 100}ms`,
+                                animation: openingMounted
+                                    ? `float-${i % 3} ${3 + i % 2}s ease-in-out infinite`
+                                    : 'none',
+                            }}
+                        >
+                            {symbol}
+                        </div>
+                    ))}
+                </div>
+
+                {/* Vignette overlay */}
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)] pointer-events-none" />
+
+                {/* Opening Content */}
+                <div
+                    className="relative z-10 h-full flex flex-col items-center justify-center"
+                    style={{
+                        paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)',
+                        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)',
+                    }}
+                >
+                    {/* Back Button */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            onBack()
+                        }}
+                        className="absolute top-0 left-0 h-10 w-10 rounded-lg flex items-center justify-center transition-all active:scale-95"
+                        style={{
+                            top: 'max(env(safe-area-inset-top, 0px), 12px)',
+                            left: 'max(env(safe-area-inset-left, 0px), 12px)',
+                            background: theme.bgPanel,
+                            border: `2px solid ${theme.border}`,
+                            boxShadow: `0 3px 0 ${theme.border}`,
+                        }}
+                    >
+                        <ArrowLeft className="h-5 w-5 text-white" />
+                    </button>
+
+                    {/* Wobble Character with enhanced entrance */}
+                    <div
+                        className={cn(
+                            'mb-8 transition-all duration-700',
+                            openingMounted
+                                ? 'opacity-100 scale-100 translate-y-0'
+                                : 'opacity-0 scale-0 translate-y-10'
+                        )}
+                        style={{
+                            transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)', // spring effect
+                        }}
+                    >
+                        <div
+                            className="relative"
+                            style={{
+                                animation: openingMounted ? 'wobble-float 2s ease-in-out infinite' : 'none',
+                            }}
+                        >
+                            <WobbleDisplay
+                                size={70}
+                                color={theme.gold}
+                                shape="circle"
+                                expression="happy"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Description with staged animation - each line appears separately */}
+                    <div className="text-center mb-10 px-8 space-y-3">
+                        {t('simulation.welcome.openingDesc').split('\n').map((line, i) => (
+                            <p
+                                key={i}
+                                className={cn(
+                                    'text-lg leading-relaxed transition-all duration-600',
+                                    openingMounted
+                                        ? 'opacity-100 translate-y-0 scale-100'
+                                        : 'opacity-0 translate-y-6 scale-95'
+                                )}
+                                style={{
+                                    color: 'rgba(255,255,255,0.85)',
+                                    transitionDelay: `${600 + i * 400}ms`, // 더 긴 간격으로 단계적 등장
+                                    transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
+                                }}
+                            >
+                                {line}
+                            </p>
+                        ))}
+                    </div>
+
+                    {/* Tap to Start with bounce effect */}
+                    <div
+                        className={cn(
+                            'flex flex-col items-center gap-2 transition-all duration-500',
+                            openingMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                        )}
+                        style={{ transitionDelay: '1800ms' }} // 설명 3줄 다 나온 후 (600 + 400*3)
+                    >
+                        {/* Animated arrow */}
+                        <div
+                            className="text-white/30"
+                            style={{
+                                animation: 'bounce-arrow 1s ease-in-out infinite',
+                            }}
+                        >
+                            <ChevronDown className="h-6 w-6" />
+                        </div>
+                        <p className="text-white/50 text-sm font-medium">
+                            {t('simulation.welcome.tapToStart')}
+                        </p>
+                    </div>
+                </div>
+
+                {/* CSS Animations */}
+                <style>{`
+                    @keyframes wobble-float {
+                        0%, 100% { transform: translateY(0); }
+                        50% { transform: translateY(-8px); }
+                    }
+                    @keyframes bounce-arrow {
+                        0%, 100% { transform: translateY(0); opacity: 0.3; }
+                        50% { transform: translateY(4px); opacity: 0.6; }
+                    }
+                    @keyframes float-0 {
+                        0%, 100% { transform: translateY(0) rotate(-15deg); }
+                        50% { transform: translateY(-10px) rotate(-10deg); }
+                    }
+                    @keyframes float-1 {
+                        0%, 100% { transform: translateY(0) rotate(5deg); }
+                        50% { transform: translateY(-15px) rotate(10deg); }
+                    }
+                    @keyframes float-2 {
+                        0%, 100% { transform: translateY(0) rotate(-5deg); }
+                        50% { transform: translateY(-8px) rotate(0deg); }
+                    }
+                `}</style>
+            </div>
+        )
+    }
+
+    // Formula select screen
+    if (welcomePhase === 'select') {
+        return (
+            <div
+                className="relative w-full h-full overflow-hidden animate-in fade-in duration-300"
+                style={{ background: '#0a0a12' }}
+            >
+                {/* Balatro Background */}
+                {balatroBackground}
+
+                {/* Vignette overlay */}
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.5)_100%)] pointer-events-none" />
+
+                {/* Welcome Content */}
+                <div
+                    className="relative z-10 h-full flex flex-col"
+                    style={{
+                        paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)',
+                        paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
+                        paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
+                        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)',
+                    }}
+                >
+                    {/* Back Button */}
+                    <button
+                        onClick={onBack}
+                        className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95 mb-4"
+                        style={{
+                            background: theme.bgPanel,
+                            border: `2px solid ${theme.border}`,
+                            boxShadow: `0 3px 0 ${theme.border}`,
+                        }}
+                    >
+                        <ArrowLeft className="h-5 w-5 text-white" />
+                    </button>
+
+                    {/* Section Title */}
+                    <div className="flex items-center gap-2 mb-3 px-2">
+                        <div
+                            className="h-[2px] flex-1"
+                            style={{ background: `linear-gradient(90deg, transparent, ${theme.gold}40)` }}
+                        />
+                        <span className="text-xs font-bold text-white/50 uppercase tracking-wider">
+                            {t('simulation.welcome.selectFormula')}
+                        </span>
+                        <div
+                            className="h-[2px] flex-1"
+                            style={{ background: `linear-gradient(90deg, ${theme.gold}40, transparent)` }}
+                        />
+                    </div>
+
+                    {/* Category Tabs */}
+                    <div className="flex gap-2 px-2 py-2 overflow-x-auto scrollbar-hide mb-3">
+                        <button
+                            onClick={() => setSelectedCategory('all')}
+                            className="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-bold transition-all active:scale-95"
+                            style={{
+                                background:
+                                    selectedCategory === 'all'
+                                        ? theme.gold
+                                        : theme.bgPanelLight,
+                                color: selectedCategory === 'all' ? '#000' : '#fff',
+                                border: `2px solid ${theme.border}`,
+                                boxShadow: `0 2px 0 ${theme.border}`,
+                            }}
+                        >
+                            {t('simulation.categories.all')}
+                        </button>
+                        {categories.map((cat) => {
+                            const color = categoryColors[cat]
+                            const isActive = selectedCategory === cat
+                            return (
+                                <button
+                                    key={cat}
+                                    onClick={() => setSelectedCategory(cat)}
+                                    className="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-bold transition-all active:scale-95"
+                                    style={{
+                                        background: isActive ? color : theme.bgPanelLight,
+                                        color: isActive ? '#000' : '#fff',
+                                        border: `2px solid ${theme.border}`,
+                                        boxShadow: `0 2px 0 ${theme.border}`,
+                                    }}
+                                >
+                                    {t(`simulation.categories.${cat}`)}
+                                </button>
+                            )
+                        })}
+                    </div>
+
+                    {/* Formula Grid */}
+                    <div
+                        className="flex-1 overflow-y-auto px-2 pb-2"
+                    >
+                        <div className="grid grid-cols-2 gap-3">
+                            {filteredFormulas.map((f) => {
+                                const fColor = categoryColors[f.category]
+                                const isSelected = f.id === formulaId
+                                const fName =
+                                    i18n.language === 'en' && f.nameEn ? f.nameEn : f.name
+                                const isNew = !seenFormulas.has(f.id)
+                                return (
+                                    <button
+                                        key={f.id}
+                                        onClick={() => handleSelectFromWelcome(f)}
+                                        className="relative text-left px-4 py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                        style={{
+                                            background: isSelected
+                                                ? fColor
+                                                : theme.bgPanelLight,
+                                            border: `2px solid ${theme.border}`,
+                                            boxShadow: `0 3px 0 ${theme.border}`,
+                                        }}
+                                    >
+                                        {/* NEW badge for unseen formulas */}
+                                        {isNew && !isSelected && (
+                                            <span
+                                                className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 text-[10px] font-black rounded-md"
+                                                style={{
+                                                    background: '#ff6b6b',
+                                                    color: 'white',
+                                                    border: `1.5px solid ${theme.border}`,
+                                                    boxShadow: `0 1px 0 ${theme.border}`,
+                                                }}
+                                            >
+                                                NEW
+                                            </span>
+                                        )}
+                                        <div className="flex items-center gap-2">
+                                            <span
+                                                className="w-2 h-2 rounded-full flex-shrink-0"
+                                                style={{ background: fColor }}
+                                            />
+                                            <span
+                                                className="block text-sm font-bold truncate"
+                                                style={{
+                                                    color: isSelected ? '#000' : 'white',
+                                                }}
+                                            >
+                                                {fName}
+                                            </span>
+                                        </div>
+                                    </button>
+                                )
+                            })}
+                        </div>
+
+                        {/* Empty state */}
+                        {filteredFormulas.length === 0 && (
+                            <div className="text-center py-8 text-white/50 text-sm">
+                                {t('simulation.emptyCategory')}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
         )
     }

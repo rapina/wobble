@@ -27,6 +27,13 @@
             "title": "Real-World Uses",
             "applicationsLabel": "Practical Applications",
             "dontShowAgain": "Don't auto-show for this formula"
+        },
+        "welcome": {
+            "title": "WOBBLE",
+            "description": "Welcome to Wobble!\nSelect a physics formula and explore the simulation.",
+            "openingDesc": "Select a physics formula,\nadjust variables,\nand explore the simulation!",
+            "tapToStart": "Tap to Start",
+            "selectFormula": "Select Formula"
         }
     },
     "tutorial": {

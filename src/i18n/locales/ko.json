@@ -27,6 +27,13 @@
             "title": "어디에 쓰일까?",
             "applicationsLabel": "실생활 활용 예시",
             "dontShowAgain": "이 공식은 다시 자동으로 표시하지 않기"
+        },
+        "welcome": {
+            "title": "WOBBLE",
+            "description": "Wobble에 오신 것을 환영합니다!\n물리 공식을 선택하고 시뮬레이션을 탐험하세요.",
+            "openingDesc": "물리 공식을 선택하고\n변수를 조절하며\n시뮬레이션을 탐험해보세요!",
+            "tapToStart": "탭하여 시작",
+            "selectFormula": "공식 선택"
         }
     },
     "tutorial": {
