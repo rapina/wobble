@@ -96,12 +96,13 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
         icon: '➤',
         color: 0xe74c3c,
         maxLevel: 5,
+        // Buffed: More pierces, less decay for power fantasy
         levelEffects: [
-            { pierceCount: 1, pierceDamageDecay: 0.2 },
-            { pierceCount: 2, pierceDamageDecay: 0.15 },
-            { pierceCount: 3, pierceDamageDecay: 0.1 },
-            { pierceCount: 4, pierceDamageDecay: 0.05 },
-            { pierceCount: 5, pierceDamageDecay: 0 },
+            { pierceCount: 2, pierceDamageDecay: 0.1 },
+            { pierceCount: 3, pierceDamageDecay: 0.08 },
+            { pierceCount: 5, pierceDamageDecay: 0.05 },
+            { pierceCount: 7, pierceDamageDecay: 0.02 },
+            { pierceCount: 10, pierceDamageDecay: 0 },
         ],
     },
 
@@ -111,15 +112,16 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
         nameKo: '폭발 샷',
         descriptionEn: 'Projectiles explode on impact',
         descriptionKo: '탄환이 폭발합니다',
-        icon: '💥',
+        icon: '✸',
         color: 0xf39c12,
         maxLevel: 5,
+        // Buffed: Bigger explosions for power fantasy
         levelEffects: [
-            { explosionRadius: 30 },
-            { explosionRadius: 45 },
-            { explosionRadius: 60 },
-            { explosionRadius: 80 },
+            { explosionRadius: 50 },
+            { explosionRadius: 70 },
             { explosionRadius: 100 },
+            { explosionRadius: 130 },
+            { explosionRadius: 180 },
         ],
     },
 
@@ -132,12 +134,13 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
         icon: '⚡',
         color: 0xf1c40f,
         maxLevel: 5,
+        // Buffed: Even faster fire rate for power fantasy
         levelEffects: [
-            { fireRateBonus: 0.2 },
-            { fireRateBonus: 0.35 },
+            { fireRateBonus: 0.3 },
             { fireRateBonus: 0.5 },
-            { fireRateBonus: 0.7 },
+            { fireRateBonus: 0.75 },
             { fireRateBonus: 1.0 },
+            { fireRateBonus: 1.5 },
         ],
     },
 
@@ -186,12 +189,13 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
         icon: '⁂',
         color: 0xe67e22,
         maxLevel: 5,
+        // Buffed: More projectiles for screen-filling power fantasy
         levelEffects: [
-            { spreadCount: 2, spreadAngle: 15 },
             { spreadCount: 3, spreadAngle: 20 },
-            { spreadCount: 4, spreadAngle: 25 },
-            { spreadCount: 5, spreadAngle: 30 },
-            { spreadCount: 7, spreadAngle: 45 },
+            { spreadCount: 4, spreadAngle: 30 },
+            { spreadCount: 6, spreadAngle: 40 },
+            { spreadCount: 8, spreadAngle: 50 },
+            { spreadCount: 12, spreadAngle: 60 },
         ],
     },
 

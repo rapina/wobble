@@ -50,6 +50,14 @@ export interface ExperienceOrbSystemOptions {
     collectRadius?: number
 }
 
+// Black hole info for vortex stage
+export interface BlackHoleInfo {
+    x: number
+    y: number
+    pullRadius: number
+    consumeRadius: number
+}
+
 const DEFAULT_OPTIONS: Required<ExperienceOrbSystemOptions> = {
     poolSize: 100,
     magnetRadius: 120, // Start attracting at this distance
@@ -211,8 +219,9 @@ export class ExperienceOrbSystem {
 
     /**
      * Update orbs and check collection
+     * @param blackHole Optional black hole that sucks in orbs (for vortex stage)
      */
-    update(deltaSeconds: number, playerX: number, playerY: number): void {
+    update(deltaSeconds: number, playerX: number, playerY: number, blackHole?: BlackHoleInfo): void {
         for (let i = this.orbs.length - 1; i >= 0; i--) {
             const orb = this.orbs[i]
 
@@ -230,13 +239,65 @@ export class ExperienceOrbSystem {
             const dy = playerY - orb.y
             const dist = Math.sqrt(dx * dx + dy * dy)
 
-            // Check collection
+            // Check collection by player
             if (dist < this.collectRadius) {
                 this.collectOrb(orb, i)
                 continue
             }
 
-            // Magnetic attraction when close
+            // Black hole attraction (takes priority over player magnet)
+            if (blackHole) {
+                const bhDx = blackHole.x - orb.x
+                const bhDy = blackHole.y - orb.y
+                const bhDist = Math.sqrt(bhDx * bhDx + bhDy * bhDy)
+
+                // Check if consumed by black hole
+                if (bhDist < blackHole.consumeRadius) {
+                    // Sucked into the void - destroy without giving XP
+                    this.consumeOrb(orb, i)
+                    continue
+                }
+
+                // Strong pull toward black hole
+                if (bhDist < blackHole.pullRadius) {
+                    const pullStrength = 1 - bhDist / blackHole.pullRadius
+                    const pullForce = pullStrength * 8 // Stronger than player magnet
+
+                    const nx = bhDx / bhDist
+                    const ny = bhDy / bhDist
+
+                    // Apply accelerating pull
+                    orb.vx += nx * pullForce * deltaSeconds * 60
+                    orb.vy += ny * pullForce * deltaSeconds * 60
+
+                    // Speed cap
+                    const speed = Math.sqrt(orb.vx * orb.vx + orb.vy * orb.vy)
+                    if (speed > 12) {
+                        orb.vx = (orb.vx / speed) * 12
+                        orb.vy = (orb.vy / speed) * 12
+                    }
+
+                    // Move
+                    orb.x += orb.vx
+                    orb.y += orb.vy
+
+                    // Update graphics with spiral effect
+                    const spiralAngle = Math.atan2(bhDy, bhDx) + (1 - bhDist / blackHole.pullRadius) * Math.PI
+                    const bobAmount = Math.sin((orb.maxLife - orb.life) * 8 + orb.animOffset) * 3
+                    orb.graphics.position.set(orb.x + Math.cos(spiralAngle) * 2, orb.y + bobAmount)
+                    orb.graphics.rotation += deltaSeconds * 5 // Fast spin when being sucked
+
+                    // Shrinking effect as it gets closer
+                    const shrink = 0.5 + (bhDist / blackHole.pullRadius) * 0.5
+                    orb.graphics.scale.set(shrink)
+
+                    // Darker alpha
+                    orb.graphics.alpha = 0.5 + (bhDist / blackHole.pullRadius) * 0.5
+                    continue
+                }
+            }
+
+            // Magnetic attraction to player when close
             if (dist < this.magnetRadius) {
                 // Accelerate towards player
                 const magnetStrength = 1 - dist / this.magnetRadius
@@ -299,6 +360,18 @@ export class ExperienceOrbSystem {
                 orb.graphics.alpha = (orb.life / 3) * sparkle
             }
         }
+    }
+
+    /**
+     * Consume an orb (sucked into black hole - no XP)
+     */
+    private consumeOrb(orb: ExperienceOrb, index: number): void {
+        // Visual feedback - shrink and disappear
+        orb.graphics.scale.set(0.2)
+        orb.graphics.alpha = 0.3
+
+        this.releaseOrb(orb.graphics)
+        this.orbs.splice(index, 1)
     }
 
     private collectOrb(orb: ExperienceOrb, index: number): void {

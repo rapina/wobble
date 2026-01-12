@@ -1,6 +1,7 @@
 import { Container, Graphics } from 'pixi.js'
 import { Wobble } from '../../Wobble'
 import { Enemy, EnemyTier, TIER_CONFIGS, HitEffect } from './types'
+import { PhysicsModifiers, DEFAULT_PHYSICS, applyGravity, applyVortex } from './PhysicsModifiers'
 
 interface EnemySystemContext {
     enemyContainer: Container
@@ -22,6 +23,9 @@ export class EnemySystem {
     private overlapTracker: Map<string, number> = new Map()
     private pendingMerges: PendingMerge[] = []
 
+    // Physics modifiers (stage-based)
+    private physicsModifiers: PhysicsModifiers = DEFAULT_PHYSICS
+
     readonly mergeThreshold = 0.75 // seconds of overlap before merge
     readonly enemies: Enemy[] = []
 
@@ -31,6 +35,13 @@ export class EnemySystem {
 
     updateContext(context: Partial<EnemySystemContext>): void {
         this.context = { ...this.context, ...context }
+    }
+
+    /**
+     * Set physics modifiers for current stage
+     */
+    setPhysicsModifiers(modifiers: PhysicsModifiers): void {
+        this.physicsModifiers = modifiers
     }
 
     // Spawn enemy at random edge
@@ -70,9 +81,13 @@ export class EnemySystem {
         overrides?: { vx?: number; vy?: number; health?: number; maxHealth?: number }
     ): void {
         const config = TIER_CONFIGS[tier]
+        // Aggressive difficulty scaling: very weak early, strong late
+        // t=0: mult=1, t=60: mult=2, t=120: mult=3, t=180: mult=4
         const difficultyMult = 1 + gameTime / 60
 
-        const maxHealth = overrides?.maxHealth ?? 20 * difficultyMult * config.healthMultiplier
+        // Low base health for easy early kills (3 HP base)
+        // t=0: 3*1*1=3 HP (1-2 shots), t=180: 3*4*1=12 HP (much harder)
+        const maxHealth = overrides?.maxHealth ?? 3 * difficultyMult * config.healthMultiplier
         const health = overrides?.health ?? maxHealth
         const speed =
             this.context.baseEnemySpeed * (0.8 + Math.random() * 0.4) * config.speedMultiplier
@@ -109,6 +124,8 @@ export class EnemySystem {
 
     // Update enemy positions (move towards player)
     update(delta: number, playerX: number, playerY: number, animPhase: number): void {
+        const { width, height } = this.context
+
         for (const enemy of this.enemies) {
             const dx = playerX - enemy.x
             const dy = playerY - enemy.y
@@ -119,20 +136,63 @@ export class EnemySystem {
             enemy.vx += (dx / dist) * accel * enemy.speed
             enemy.vy += (dy / dist) * accel * enemy.speed
 
+            // Apply gravity
+            enemy.vy = applyGravity(enemy.vy, delta, this.physicsModifiers.gravity, 0.5)
+
+            // Apply vortex pull if configured
+            if (this.physicsModifiers.vortexCenter && this.physicsModifiers.vortexStrength) {
+                const vortexResult = applyVortex(
+                    enemy.x,
+                    enemy.y,
+                    enemy.vx,
+                    enemy.vy,
+                    width,
+                    height,
+                    {
+                        center: this.physicsModifiers.vortexCenter,
+                        strength: this.physicsModifiers.vortexStrength,
+                    },
+                    delta,
+                    50
+                )
+                enemy.vx = vortexResult.vx
+                enemy.vy = vortexResult.vy
+            }
+
             // Limit speed
             const speed = Math.sqrt(enemy.vx * enemy.vx + enemy.vy * enemy.vy)
-            if (speed > enemy.speed) {
-                enemy.vx = (enemy.vx / speed) * enemy.speed
-                enemy.vy = (enemy.vy / speed) * enemy.speed
+            if (speed > enemy.speed * 2) {
+                // Allow some overspeed from physics
+                enemy.vx = (enemy.vx / speed) * enemy.speed * 2
+                enemy.vy = (enemy.vy / speed) * enemy.speed * 2
             }
 
             // Apply velocity
             enemy.x += enemy.vx * delta
             enemy.y += enemy.vy * delta
 
-            // Friction on velocity from knockback
-            enemy.vx *= 0.98
-            enemy.vy *= 0.98
+            // Friction on velocity (from stage physics)
+            enemy.vx *= this.physicsModifiers.friction
+            enemy.vy *= this.physicsModifiers.friction
+
+            // Wall bounce for elastic stage
+            const bounce = this.physicsModifiers.bounce
+            if (bounce > 0) {
+                if (enemy.x < enemy.size / 2) {
+                    enemy.x = enemy.size / 2
+                    enemy.vx *= -bounce
+                } else if (enemy.x > width - enemy.size / 2) {
+                    enemy.x = width - enemy.size / 2
+                    enemy.vx *= -bounce
+                }
+                if (enemy.y < enemy.size / 2) {
+                    enemy.y = enemy.size / 2
+                    enemy.vy *= -bounce
+                } else if (enemy.y > height - enemy.size / 2) {
+                    enemy.y = height - enemy.size / 2
+                    enemy.vy *= -bounce
+                }
+            }
 
             enemy.graphics.position.set(enemy.x, enemy.y)
 
@@ -358,12 +418,12 @@ export class EnemySystem {
         const newVx = (e1.mass * e1.vx + e2.mass * e2.vx) / totalMass
         const newVy = (e1.mass * e1.vy + e2.mass * e2.vy) / totalMass
 
-        // Health calculation
+        // Health calculation (using same values as spawnAtTier)
         const healthRatio1 = e1.health / e1.maxHealth
         const healthRatio2 = e2.health / e2.maxHealth
         const avgHealthRatio = (healthRatio1 + healthRatio2) / 2
-        const difficultyMult = 1 + gameTime / 60
-        const newMaxHealth = 20 * difficultyMult * config.healthMultiplier
+        const difficultyMult = 1 + gameTime / 60 // Aggressive scaling
+        const newMaxHealth = 3 * difficultyMult * config.healthMultiplier // Low base
         const newHealth = newMaxHealth * avgHealthRatio
 
         // Remove old enemies

@@ -236,6 +236,38 @@ export class CRTFilter extends Filter {
         this.uniforms.uDimensions[1] = height
     }
 
+    get chromaticAberration(): number {
+        return this.uniforms.uChromaticAberration
+    }
+
+    set chromaticAberration(value: number) {
+        this.uniforms.uChromaticAberration = value
+    }
+
+    get curvatureStrength(): number {
+        return this.uniforms.uCurvatureStrength
+    }
+
+    set curvatureStrength(value: number) {
+        this.uniforms.uCurvatureStrength = value
+    }
+
+    get vignetteStrength(): number {
+        return this.uniforms.uVignetteStrength
+    }
+
+    set vignetteStrength(value: number) {
+        this.uniforms.uVignetteStrength = value
+    }
+
+    get flickerIntensity(): number {
+        return this.uniforms.uFlickerIntensity
+    }
+
+    set flickerIntensity(value: number) {
+        this.uniforms.uFlickerIntensity = value
+    }
+
     // Preset for minimal effect (barely noticeable)
     static subtle(): CRTFilter {
         return new CRTFilter({

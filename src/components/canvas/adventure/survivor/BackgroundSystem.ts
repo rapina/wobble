@@ -133,6 +133,9 @@ export class BackgroundSystem {
     private collapseFragments: CollapseFragment[] = []
     private collapseDarkness = 0
 
+    // Stage theme override
+    private stageThemeOverride: ColorTheme | null = null
+
     constructor(context: BackgroundSystemContext) {
         this.context = context
 
@@ -155,6 +158,50 @@ export class BackgroundSystem {
 
     updateContext(context: Partial<BackgroundSystemContext>): void {
         this.context = { ...this.context, ...context }
+    }
+
+    /**
+     * Set a stage-specific theme override
+     * Creates a custom theme from the given color
+     */
+    setTheme(bgColor: number): void {
+        const darkerBg = this.darkenColor(bgColor, 0.3)
+        const lighterBg = this.lightenColor(bgColor, 0.2)
+
+        this.stageThemeOverride = {
+            name: 'stage',
+            bgTop: bgColor,
+            bgBottom: darkerBg,
+            accent1: lighterBg,
+            accent2: this.lightenColor(bgColor, 0.4),
+            particles: [
+                this.lightenColor(bgColor, 0.3),
+                this.lightenColor(bgColor, 0.5),
+                0xffffff,
+                this.lightenColor(bgColor, 0.2),
+            ],
+        }
+    }
+
+    /**
+     * Clear theme override (use default cycling themes)
+     */
+    clearTheme(): void {
+        this.stageThemeOverride = null
+    }
+
+    private darkenColor(color: number, factor: number): number {
+        const r = Math.round(((color >> 16) & 0xff) * (1 - factor))
+        const g = Math.round(((color >> 8) & 0xff) * (1 - factor))
+        const b = Math.round((color & 0xff) * (1 - factor))
+        return (r << 16) | (g << 8) | b
+    }
+
+    private lightenColor(color: number, factor: number): number {
+        const r = Math.min(255, Math.round(((color >> 16) & 0xff) + (255 - ((color >> 16) & 0xff)) * factor))
+        const g = Math.min(255, Math.round(((color >> 8) & 0xff) + (255 - ((color >> 8) & 0xff)) * factor))
+        const b = Math.min(255, Math.round((color & 0xff) + (255 - (color & 0xff)) * factor))
+        return (r << 16) | (g << 8) | b
     }
 
     // Initialize background
@@ -229,6 +276,16 @@ export class BackgroundSystem {
     update(delta: number, activePerksCount: number, gameTime: number = 0): void {
         const deltaSeconds = delta / 60
         this.animTime += deltaSeconds
+
+        // Use stage theme override if set
+        if (this.stageThemeOverride) {
+            const theme = this.stageThemeOverride
+            this.drawGradient(theme, theme, 0)
+            this.drawGrid(theme)
+            this.drawWaves(theme, theme, 0)
+            this.updateParticles(deltaSeconds, theme, theme, 0)
+            return
+        }
 
         // Calculate current theme and transition
         const totalThemeTime = this.THEME_DURATION + this.TRANSITION_DURATION
@@ -477,6 +534,9 @@ export class BackgroundSystem {
         this.animTime = 0
         this.currentThemeIndex = 0
         this.themeTransitionProgress = 0
+
+        // Clear stage theme override
+        this.stageThemeOverride = null
 
         // Reset particles
         for (const particle of this.particles) {

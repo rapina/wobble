@@ -9,7 +9,12 @@ export type GameState =
     | 'paused'
     | 'skill-selection'
     | 'game-over'
+    | 'victory'
     | 'result'
+
+// Game duration constants
+export const GAME_DURATION_SECONDS = 180 // 3 minutes to win
+export const BOSS_SPAWN_TIME = 150 // Boss spawns at 2:30
 
 // Wobble character stats (Brotato-style)
 export interface WobbleStats {
@@ -17,6 +22,7 @@ export interface WobbleStats {
     damageMultiplier: number
     fireRateMultiplier: number
     moveSpeedMultiplier: number
+    knockbackMultiplier: number
 }
 
 export const WOBBLE_STATS: Record<WobbleShape, WobbleStats> = {
@@ -25,42 +31,49 @@ export const WOBBLE_STATS: Record<WobbleShape, WobbleStats> = {
         damageMultiplier: 1.0,
         fireRateMultiplier: 1.0,
         moveSpeedMultiplier: 1.0,
+        knockbackMultiplier: 1.0,
     },
     square: {
         healthMultiplier: 1.3,
         damageMultiplier: 0.8,
         fireRateMultiplier: 0.9,
         moveSpeedMultiplier: 0.9,
+        knockbackMultiplier: 1.3,
     },
     triangle: {
         healthMultiplier: 0.8,
         damageMultiplier: 1.3,
         fireRateMultiplier: 1.1,
         moveSpeedMultiplier: 1.1,
+        knockbackMultiplier: 0.8,
     },
     star: {
         healthMultiplier: 0.9,
         damageMultiplier: 0.9,
         fireRateMultiplier: 0.9,
         moveSpeedMultiplier: 1.2,
+        knockbackMultiplier: 1.1,
     },
     diamond: {
         healthMultiplier: 1.0,
         damageMultiplier: 1.1,
         fireRateMultiplier: 1.1,
         moveSpeedMultiplier: 0.8,
+        knockbackMultiplier: 1.2,
     },
     pentagon: {
         healthMultiplier: 1.2,
         damageMultiplier: 0.9,
         fireRateMultiplier: 0.8,
         moveSpeedMultiplier: 1.0,
+        knockbackMultiplier: 1.0,
     },
     shadow: {
         healthMultiplier: 1.0,
         damageMultiplier: 1.0,
         fireRateMultiplier: 1.0,
         moveSpeedMultiplier: 1.0,
+        knockbackMultiplier: 1.0,
     },
 }
 
@@ -120,22 +133,22 @@ export const TIER_CONFIGS: Record<EnemyTier, TierConfig> = {
     },
     medium: {
         size: 40,
-        healthMultiplier: 2.5,
-        speedMultiplier: 0.85,
+        healthMultiplier: 2, // Was 2.5 - easier to kill
+        speedMultiplier: 0.9, // Was 0.85 - slightly faster
         color: 0x2d1a3d,
         canMerge: true,
     },
     large: {
         size: 60,
-        healthMultiplier: 5,
-        speedMultiplier: 0.7,
+        healthMultiplier: 4, // Was 5 - easier to kill
+        speedMultiplier: 0.8, // Was 0.7 - slightly faster
         color: 0x4a1a5d,
         canMerge: true,
     },
     boss: {
         size: 100,
-        healthMultiplier: 12,
-        speedMultiplier: 0.5,
+        healthMultiplier: 10, // Was 12 - more manageable
+        speedMultiplier: 0.6, // Was 0.5 - slightly faster
         color: 0x6a1a7d,
         canMerge: false,
     },

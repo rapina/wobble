@@ -23,17 +23,26 @@ import {
     PlayerProgress,
     getXpForLevel,
     getLevelFromXp,
+    GAME_DURATION_SECONDS,
+    BOSS_SPAWN_TIME,
     EnemySystem,
     ProjectileSystem,
     BackgroundSystem,
     ExperienceOrbSystem,
+    BlackHoleSystem,
     EffectsManager,
+    ComboSystem,
     HudSystem,
     SkillSelectionScreen,
     ResultScreen,
     CharacterSelectScreen,
     OpeningScreen,
     PauseScreen,
+    STAGES,
+    getDefaultStage,
+    getStageById,
+    type StageConfig,
+    type BlackHoleInfo,
 } from './survivor'
 import { VirtualJoystick } from './VirtualJoystick'
 import { FloatingDamageText } from './FloatingDamageText'
@@ -46,6 +55,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private playerHealth = 100
     private maxPlayerHealth = 100
     private gameState: GameState = 'character-select'
+    private bossSpawned = false
 
     // Experience & Level system
     private playerProgress: PlayerProgress = { xp: 0, level: 1, pendingLevelUps: 0 }
@@ -75,6 +85,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
     // CRT Filter
     declare private crtFilter: CRTFilter
+    // Base CRT filter values (for black hole distortion effect)
+    private baseChromaticAberration = 0.08
+    private baseCurvatureStrength = 0.005
+    private baseVignetteStrength = 0.12
+    private baseFlickerIntensity = 0.002
+    // Current black hole proximity effect (0-1)
+    private blackHoleProximityEffect = 0
 
     // Player
     declare private player: Wobble
@@ -89,14 +106,19 @@ export class PhysicsSurvivorScene extends AdventureScene {
     // Selected character
     private selectedCharacter: WobbleShape = 'circle'
 
+    // Stage system
+    private currentStage: StageConfig = getDefaultStage()
+
     // Core Systems
     declare private enemySystem: EnemySystem
     declare private projectileSystem: ProjectileSystem
     declare private backgroundSystem: BackgroundSystem
     declare private xpOrbSystem: ExperienceOrbSystem
+    declare private blackHoleSystem: BlackHoleSystem
     declare private damageTextSystem: FloatingDamageText
     declare private impactSystem: ImpactEffectSystem
     declare private effectsManager: EffectsManager
+    declare private comboSystem: ComboSystem
 
     // UI Systems
     declare private hudSystem: HudSystem
@@ -106,12 +128,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
     declare private openingScreen: OpeningScreen
     declare private pauseScreen: PauseScreen
 
-    // Fire system
-    private fireRate = 0.5
+    // Fire system - faster baseline for power fantasy (was 0.5)
+    private fireRate = 0.35
     private fireTimer = 0
 
     // Enemy spawn
-    private spawnRate = 2
+    private spawnRate = 1.0 // Faster initial spawn (was 2)
     private spawnTimer = 0
 
     // Animation
@@ -229,9 +251,22 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.onXpCollected(xp)
         }
 
+        // Black hole system for vortex stage
+        this.blackHoleSystem = new BlackHoleSystem({
+            container: this.effectContainer,
+            width: this.width,
+            height: this.height,
+        })
+
         this.effectsManager = new EffectsManager({
             effectContainer: this.effectContainer,
         })
+
+        // Initialize combo system (multi-kill mode)
+        this.comboSystem = new ComboSystem()
+        this.comboSystem.onMultiKill = (killCount, name) => {
+            this.handleMultiKill(killCount, name)
+        }
 
         // Initialize UI systems
         this.hudSystem = new HudSystem({
@@ -274,8 +309,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
             width: this.width,
             height: this.height,
         })
-        this.characterSelectScreen.onStartGame = (character) => {
-            this.showOpening(character)
+        this.characterSelectScreen.onStartGame = (character, stageId) => {
+            this.startWithStage(character, stageId)
         }
         this.characterSelectScreen.onExit = () => {
             this.onPlayComplete?.('success') // This triggers GameScreen's onBack()
@@ -408,6 +443,24 @@ export class PhysicsSurvivorScene extends AdventureScene {
         }
     }
 
+    private handleMultiKill(killCount: number, name: string): void {
+        // Visual celebration based on multi-kill count
+        if (killCount >= 5) {
+            // Epic multi-kill (5+)
+            this.triggerShake(12, 0.25)
+            this.impactSystem.triggerSlowMotion(0.3, 0.2)
+            this.damageTextSystem.spawnCustom(this.playerX, this.playerY - 70, name, 'critical')
+        } else if (killCount >= 3) {
+            // Good multi-kill (3-4)
+            this.triggerShake(6, 0.15)
+            this.damageTextSystem.spawnCustom(this.playerX, this.playerY - 70, name, 'combo')
+        } else {
+            // Double kill
+            this.triggerShake(3, 0.1)
+            this.damageTextSystem.spawnCustom(this.playerX, this.playerY - 70, name, 'normal')
+        }
+    }
+
     private recalculateStats(): void {
         this.stats = { ...DEFAULT_PLAYER_STATS }
 
@@ -462,6 +515,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
             gameTime: this.gameTime,
             skills: this.playerSkills,
         })
+
+        // Update combo display
+        this.hudSystem.updateCombo(
+            this.comboSystem.getState(),
+            this.comboSystem.getComboWindow()
+        )
     }
 
     private fireProjectile(): void {
@@ -469,7 +528,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     private updateProjectiles(delta: number): void {
-        this.projectileSystem.update(delta)
+        this.projectileSystem.update(delta, this.enemySystem.enemies)
 
         this.projectileSystem.checkCollisions(
             this.enemySystem.enemies,
@@ -508,6 +567,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         const deadEnemies = this.enemySystem.getDeadEnemies()
         for (const enemy of deadEnemies) {
+            // Register kill with combo system
+            this.comboSystem.registerKill()
+
             const tierColors: Record<EnemyTier, number> = {
                 small: 0xff6666,
                 medium: 0xff9944,
@@ -551,6 +613,39 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 }
             }
         }
+    }
+
+    /**
+     * Apply damage to player (from black hole or other sources)
+     */
+    private takeDamage(damage: number): void {
+        this.playerHealth -= damage
+
+        if (this.playerHealth <= 0) {
+            this.playerHealth = 0
+            this.gameOver()
+        }
+    }
+
+    /**
+     * Update CRT filter distortion based on black hole proximity
+     */
+    private updateBlackHoleDistortion(): void {
+        if (!this.crtFilter) return
+
+        const intensity = this.blackHoleProximityEffect
+
+        // Increase chromatic aberration (RGB split) - creates "being pulled apart" feel
+        this.crtFilter.chromaticAberration = this.baseChromaticAberration + intensity * 2.5
+
+        // Increase curvature (barrel distortion) - screen warping
+        this.crtFilter.curvatureStrength = this.baseCurvatureStrength + intensity * 0.08
+
+        // Increase vignette (tunnel vision) - darkness closing in
+        this.crtFilter.vignetteStrength = this.baseVignetteStrength + intensity * 0.6
+
+        // Increase flicker - instability
+        this.crtFilter.flickerIntensity = this.baseFlickerIntensity + intensity * 0.03
     }
 
     private createExplosion(x: number, y: number): void {
@@ -675,6 +770,73 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.gameState = 'game-over'
         this.player.updateOptions({ expression: 'dizzy' })
         this.backgroundSystem.startCollapse()
+
+        // Reset black hole distortion effect
+        this.blackHoleProximityEffect = 0
+        this.updateBlackHoleDistortion()
+    }
+
+    private triggerVictory(): void {
+        this.gameState = 'victory'
+        this.player.updateOptions({ expression: 'happy' })
+
+        // Reset black hole distortion effect
+        this.blackHoleProximityEffect = 0
+        this.updateBlackHoleDistortion()
+
+        // Dramatic victory announcement
+        this.damageTextSystem.spawnCustom(this.width / 2, this.height / 2, 'VICTORY!', 'critical')
+
+        // Slow motion celebration
+        this.impactSystem.triggerSlowMotion(0.1, 1.0)
+        this.triggerShake(15, 0.5)
+
+        // Show result after celebration delay
+        setTimeout(() => {
+            this.showResult()
+        }, 2000)
+    }
+
+    private spawnFinalBoss(): void {
+        this.bossSpawned = true
+
+        // Boss warning announcement
+        this.damageTextSystem.spawnCustom(
+            this.width / 2,
+            this.height / 2 - 50,
+            'WARNING: BOSS!',
+            'critical'
+        )
+        this.impactSystem.triggerSlowMotion(0.3, 0.5)
+        this.triggerShake(10, 0.3)
+
+        // Spawn boss at random edge after brief delay
+        setTimeout(() => {
+            const side = Math.floor(Math.random() * 4)
+            let x: number, y: number
+            const size = 100
+
+            switch (side) {
+                case 0: // top
+                    x = Math.random() * this.width
+                    y = -size
+                    break
+                case 1: // right
+                    x = this.width + size
+                    y = Math.random() * this.height
+                    break
+                case 2: // bottom
+                    x = Math.random() * this.width
+                    y = this.height + size
+                    break
+                default: // left
+                    x = -size
+                    y = Math.random() * this.height
+                    break
+            }
+
+            this.enemySystem.spawnAtTier(x, y, 'boss', this.gameTime)
+        }, 500)
     }
 
     private showResult(): void {
@@ -694,9 +856,31 @@ export class PhysicsSurvivorScene extends AdventureScene {
         })
     }
 
+    private startWithStage(character: WobbleShape, stageId: string): void {
+        this.selectedCharacter = character
+        this.currentStage = getStageById(stageId) || getDefaultStage()
+        this.characterSelectScreen.hide()
+        this.showOpening(this.selectedCharacter)
+    }
+
+    private applyStagePhysics(): void {
+        // Apply physics modifiers to all systems
+        this.enemySystem.setPhysicsModifiers(this.currentStage.physics)
+        this.projectileSystem.setPhysicsModifiers(this.currentStage.physics)
+
+        // Update background theme
+        this.backgroundSystem.setTheme(this.currentStage.bgColor)
+
+        // Activate/deactivate black hole for vortex stage
+        if (this.currentStage.id === 'vortex') {
+            this.blackHoleSystem.activate()
+        } else {
+            this.blackHoleSystem.deactivate()
+        }
+    }
+
     private showOpening(character: WobbleShape): void {
         this.selectedCharacter = character
-        this.characterSelectScreen.hide()
         this.gameState = 'opening'
         this.openingScreen.show(character)
 
@@ -710,6 +894,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.openingScreen.hide()
         this.initializeCharacterSkills()
         this.applyCharacterStats()
+        this.applyStagePhysics()
 
         const charData = WOBBLE_CHARACTERS[this.selectedCharacter]
         this.player.updateOptions({
@@ -767,6 +952,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
             if (collapseComplete) {
                 this.showResult()
             }
+        }
+
+        if (this.gameState === 'victory') {
+            // Victory state - keep updating effects while waiting for result screen
+            this.damageTextSystem.update(deltaSeconds)
+            this.impactSystem.update(deltaSeconds)
+            this.updateShake(delta)
         }
 
         if (this.gameState === 'result') {
@@ -828,7 +1020,50 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.gameTime += deltaSeconds
 
         this.backgroundSystem.update(delta, this.playerSkills.length, this.gameTime)
-        this.xpOrbSystem.update(deltaSeconds, this.playerX, this.playerY)
+
+        // Update black hole if active (vortex stage)
+        if (this.blackHoleSystem.getIsActive()) {
+            this.blackHoleSystem.update(deltaSeconds)
+
+            // Update physics vortex center to follow black hole
+            const bhPos = this.blackHoleSystem.getPositionRatio()
+            if (this.currentStage.physics.vortexCenter) {
+                this.currentStage.physics.vortexCenter.x = bhPos.x
+                this.currentStage.physics.vortexCenter.y = bhPos.y
+            }
+
+            // Check player proximity to black hole
+            this.blackHoleProximityEffect = this.blackHoleSystem.getPlayerProximityEffect(
+                this.playerX,
+                this.playerY
+            )
+
+            // Apply damage if player is in danger zone
+            if (this.blackHoleProximityEffect > 0) {
+                const damage = this.blackHoleSystem.getDamagePerSecond() * this.blackHoleProximityEffect * deltaSeconds
+                this.takeDamage(damage)
+            }
+
+            // Apply visual distortion based on proximity
+            this.updateBlackHoleDistortion()
+
+            // Pass black hole info to xp orb system
+            const bhAbsPos = this.blackHoleSystem.getPosition()
+            const blackHoleInfo: BlackHoleInfo = {
+                x: bhAbsPos.x,
+                y: bhAbsPos.y,
+                pullRadius: this.blackHoleSystem.getPullRadius(),
+                consumeRadius: this.blackHoleSystem.getConsumeRadius(),
+            }
+            this.xpOrbSystem.update(deltaSeconds, this.playerX, this.playerY, blackHoleInfo)
+        } else {
+            // Reset distortion if not in vortex stage
+            if (this.blackHoleProximityEffect > 0) {
+                this.blackHoleProximityEffect = 0
+                this.updateBlackHoleDistortion()
+            }
+            this.xpOrbSystem.update(deltaSeconds, this.playerX, this.playerY)
+        }
 
         this.fireTimer += deltaSeconds
         const effectiveFireRate = this.fireRate * this.stats.fireRateMultiplier
@@ -838,10 +1073,23 @@ export class PhysicsSurvivorScene extends AdventureScene {
         }
 
         this.spawnTimer += deltaSeconds
-        const currentSpawnRate = Math.max(0.5, this.spawnRate - this.gameTime / 60)
+        // Slower spawn rate scaling for power fantasy (was /60, min 0.5)
+        // Spawn rate: starts at 1.0s, decreases to 0.3s over 3 minutes
+        const currentSpawnRate = Math.max(0.3, this.spawnRate - this.gameTime / 200)
         if (this.spawnTimer >= currentSpawnRate) {
             this.spawnEnemy()
             this.spawnTimer = 0
+        }
+
+        // Victory condition check
+        if (this.gameTime >= GAME_DURATION_SECONDS) {
+            this.triggerVictory()
+            return
+        }
+
+        // Boss spawn at 2:30
+        if (this.gameTime >= BOSS_SPAWN_TIME && !this.bossSpawned) {
+            this.spawnFinalBoss()
         }
 
         this.updatePlayer(delta)
@@ -851,6 +1099,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.effectsManager.update(delta)
         this.updateHitEffects(delta)
         this.damageTextSystem.update(deltaSeconds)
+        this.comboSystem.update(deltaSeconds)
         this.updateShake(delta)
 
         this.updateHUD()
@@ -886,9 +1135,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     protected onPlayStart(): void {
-        this.gameState = 'character-select'
-        this.playerSkills = []
-        this.resetStats()
+        // Full reset before starting to ensure clean state
+        this.onReset()
         this.characterSelectScreen.show()
     }
 
@@ -962,7 +1210,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.damageTextSystem.reset()
         this.impactSystem.reset()
         this.xpOrbSystem.reset()
+        this.blackHoleSystem.reset()
+        // Reset black hole visual distortion
+        this.blackHoleProximityEffect = 0
+        this.updateBlackHoleDistortion()
         this.effectsManager.reset()
+        this.comboSystem.reset()
 
         // Reset UI systems
         this.hudSystem.reset()
@@ -991,6 +1244,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.maxPlayerHealth = this.baseMaxHealth
         this.playerHealth = this.maxPlayerHealth
         this.gameState = 'character-select'
+        this.bossSpawned = false
         this.playerSkills = []
         this.passiveTrait = ''
         this.momentumSpeedBonus = 0
@@ -1006,6 +1260,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.selectedCharacter = 'circle'
 
         this.joystick.reset()
+
+        // Reset stage to default
+        this.currentStage = getDefaultStage()
 
         this.player?.position.set(this.playerX, this.playerY)
         this.player?.updateOptions({ expression: 'happy' })

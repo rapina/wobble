@@ -1,5 +1,6 @@
 import { Container, Graphics } from 'pixi.js'
 import { Projectile, PlayerStats, Enemy, HitEffect } from './types'
+import { PhysicsModifiers, DEFAULT_PHYSICS, applyVortex } from './PhysicsModifiers'
 
 interface ProjectileSystemContext {
     projectileContainer: Container
@@ -13,6 +14,9 @@ export class ProjectileSystem {
     private baseSpeed = 8
     private baseSize = 8
 
+    // Physics modifiers (stage-based)
+    private physicsModifiers: PhysicsModifiers = DEFAULT_PHYSICS
+
     readonly projectiles: Projectile[] = []
 
     constructor(context: ProjectileSystemContext) {
@@ -21,6 +25,13 @@ export class ProjectileSystem {
 
     updateContext(context: Partial<ProjectileSystemContext>): void {
         this.context = { ...this.context, ...context }
+    }
+
+    /**
+     * Set physics modifiers for current stage
+     */
+    setPhysicsModifiers(modifiers: PhysicsModifiers): void {
+        this.physicsModifiers = modifiers
     }
 
     // Fire projectile towards nearest enemy
@@ -51,7 +62,8 @@ export class ProjectileSystem {
         // Apply stats
         const size = this.baseSize * stats.projectileSizeMultiplier
         const speed = this.baseSpeed * stats.projectileSpeedMultiplier
-        const damage = 10 * stats.damageMultiplier
+        // Increased base damage for power fantasy (was 10, now 25)
+        const damage = 25 * stats.damageMultiplier
         const maxBounces = stats.bounceCount
 
         // Create projectile graphics
@@ -84,38 +96,106 @@ export class ProjectileSystem {
     }
 
     // Update projectile positions
-    update(delta: number): void {
+    update(delta: number, enemies: Enemy[] = []): void {
+        const { width, height } = this.context
+        const bounce = this.physicsModifiers.bounce
+
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const proj = this.projectiles[i]
+
+            // Low-gravity mode: projectile is attracted to nearest enemy (homing effect)
+            // This simulates gravitational pull from the target
+            if (this.physicsModifiers.gravity > 0 && enemies.length > 0) {
+                this.applyTargetGravity(proj, enemies, delta)
+            }
+
+            // Apply vortex pull if configured
+            if (this.physicsModifiers.vortexCenter && this.physicsModifiers.vortexStrength) {
+                const vortexResult = applyVortex(
+                    proj.x,
+                    proj.y,
+                    proj.vx,
+                    proj.vy,
+                    width,
+                    height,
+                    {
+                        center: this.physicsModifiers.vortexCenter,
+                        strength: this.physicsModifiers.vortexStrength * 0.5,
+                    },
+                    delta,
+                    30
+                )
+                proj.vx = vortexResult.vx
+                proj.vy = vortexResult.vy
+            }
 
             // Move
             proj.x += proj.vx * delta
             proj.y += proj.vy * delta
 
-            // 벽 반사 - 탄성 퍼크가 있을 때만 가능
-            if (proj.maxBounces > 0) {
-                if (proj.x < 0 || proj.x > this.context.width) {
-                    proj.vx *= -0.95
-                    proj.x = Math.max(0, Math.min(this.context.width, proj.x))
+            // Wall bounce - from stage physics or skill bounce
+            const effectiveBounce = bounce > 0 ? bounce : proj.maxBounces > 0 ? 0.95 : 0
+            if (effectiveBounce > 0) {
+                if (proj.x < 0 || proj.x > width) {
+                    proj.vx *= -effectiveBounce
+                    proj.x = Math.max(0, Math.min(width, proj.x))
                 }
-                if (proj.y < 0 || proj.y > this.context.height) {
-                    proj.vy *= -0.95
-                    proj.y = Math.max(0, Math.min(this.context.height, proj.y))
+                if (proj.y < 0 || proj.y > height) {
+                    proj.vy *= -effectiveBounce
+                    proj.y = Math.max(0, Math.min(height, proj.y))
                 }
             }
 
             proj.graphics.position.set(proj.x, proj.y)
 
-            // 화면 밖으로 나가면 제거
+            // Remove if outside screen
             const margin = 50
             if (
                 proj.x < -margin ||
-                proj.x > this.context.width + margin ||
+                proj.x > width + margin ||
                 proj.y < -margin ||
-                proj.y > this.context.height + margin
+                proj.y > height + margin
             ) {
                 this.remove(i)
             }
+        }
+    }
+
+    /**
+     * Apply gravitational attraction toward the nearest enemy (target homing)
+     * Creates a subtle homing effect that helps hit enemies
+     */
+    private applyTargetGravity(proj: Projectile, enemies: Enemy[], delta: number): void {
+        // Find nearest enemy that hasn't been hit
+        const target = this.findNearestEnemy(proj.x, proj.y, enemies, proj.hitEnemyIds)
+        if (!target) return
+
+        const dx = target.x - proj.x
+        const dy = target.y - proj.y
+        const dist = Math.sqrt(dx * dx + dy * dy)
+
+        // Only apply when reasonably close (not too far, not too close)
+        if (dist < 20 || dist > 200) return
+
+        // Gravitational homing: gentle curve toward target
+        // Strength based on stage gravity setting
+        const homingStrength = this.physicsModifiers.gravity * 2.0
+
+        // Normalize direction to target
+        const dirX = dx / dist
+        const dirY = dy / dist
+
+        // Apply gentle force toward target
+        proj.vx += dirX * homingStrength * delta
+        proj.vy += dirY * homingStrength * delta
+
+        // Maintain projectile speed (don't slow down or speed up too much)
+        const currentSpeed = Math.sqrt(proj.vx * proj.vx + proj.vy * proj.vy)
+        const targetSpeed = this.baseSpeed * 1.0 // Keep original speed
+        if (currentSpeed > 0) {
+            const speedAdjust = targetSpeed / currentSpeed
+            proj.vx *= 0.98 + 0.02 * speedAdjust // Gradual speed normalization
+            proj.vy *= 0.98 + 0.02 * speedAdjust
         }
     }
 
@@ -148,14 +228,19 @@ export class ProjectileSystem {
                     enemy.health -= proj.damage
                     proj.hitEnemyIds.add(enemy.id)
 
-                    // Knockback - 탄환 진행 방향으로 밀기
+                    // Knockback - push in projectile direction
                     const projSpeed = Math.sqrt(proj.vx * proj.vx + proj.vy * proj.vy)
-                    const knockDirX = proj.vx / (projSpeed || 1) // 탄환 진행 방향
+                    const knockDirX = proj.vx / (projSpeed || 1)
                     const knockDirY = proj.vy / (projSpeed || 1)
-                    // 탄환 속도 기반 넉백 (적의 크기에 따라 감소하지만 최소값 보장)
+                    // Base knockback (reduced by enemy mass)
                     const baseKnockback = projSpeed * 0.8
                     const massRatio = Math.max(0.3, 1 / Math.sqrt(enemy.mass))
-                    const knockback = baseKnockback * massRatio * stats.knockbackMultiplier
+                    // Apply stage physics knockback modifier
+                    const knockback =
+                        baseKnockback *
+                        massRatio *
+                        stats.knockbackMultiplier *
+                        this.physicsModifiers.knockbackMult
                     enemy.vx += knockDirX * knockback
                     enemy.vy += knockDirY * knockback
 

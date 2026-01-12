@@ -4,3 +4,4 @@ export { ResultScreen, type ResultScreenContext, type ResultData } from './Resul
 export { CharacterSelectScreen, type CharacterSelectContext } from './CharacterSelectScreen'
 export { OpeningScreen, type OpeningScreenContext } from './OpeningScreen'
 export { PauseScreen, type PauseScreenContext, type PauseData } from './PauseScreen'
+export { StageSelectScreen, type StageSelectContext } from './StageSelectScreen'

@@ -1,6 +1,7 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js'
-import { PlayerProgress, getXpForLevel } from '../types'
+import { PlayerProgress, getXpForLevel, GAME_DURATION_SECONDS } from '../types'
 import { PlayerSkill, getSkillDefinition } from '../skills'
+import { ComboState } from '../ComboSystem'
 import { drawUIHexagon, drawHeartShape } from '../utils'
 
 export interface HudContext {
@@ -36,6 +37,13 @@ export class HudSystem {
 
     // Skill icons
     private skillIconsContainer!: Container
+
+    // Combo display
+    private comboContainer!: Container
+    private comboCountText!: Text
+    private comboMultiplierText!: Text
+    private comboTimerBar!: Graphics
+    private comboAnimPhase = 0
 
     // Internal state for comparison
     private lastState: HudState | null = null
@@ -151,6 +159,67 @@ export class HudSystem {
         this.skillIconsContainer = new Container()
         this.skillIconsContainer.position.set(15, this.height - 50)
         this.uiContainer.addChild(this.skillIconsContainer)
+
+        // === Top-right: Combo display ===
+        this.comboContainer = new Container()
+        this.comboContainer.position.set(this.width - 80, 30)
+        this.comboContainer.visible = false
+        this.uiContainer.addChild(this.comboContainer)
+
+        // Combo count (large, center)
+        this.comboCountText = new Text({
+            text: '0',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 32,
+                fontWeight: 'bold',
+                fill: 0xffd700,
+                stroke: { color: 0x000000, width: 4 },
+            }),
+        })
+        this.comboCountText.anchor.set(0.5)
+        this.comboContainer.addChild(this.comboCountText)
+
+        // "COMBO" label
+        const comboLabel = new Text({
+            text: 'COMBO',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 10,
+                fontWeight: 'bold',
+                fill: 0xffffff,
+                stroke: { color: 0x000000, width: 2 },
+            }),
+        })
+        comboLabel.anchor.set(0.5)
+        comboLabel.position.set(0, 22)
+        this.comboContainer.addChild(comboLabel)
+
+        // Multiplier text
+        this.comboMultiplierText = new Text({
+            text: 'x1.0',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 12,
+                fontWeight: 'bold',
+                fill: 0x2ecc71,
+                stroke: { color: 0x000000, width: 2 },
+            }),
+        })
+        this.comboMultiplierText.anchor.set(0.5)
+        this.comboMultiplierText.position.set(0, 38)
+        this.comboContainer.addChild(this.comboMultiplierText)
+
+        // Timer bar background
+        const timerBarBg = new Graphics()
+        timerBarBg.roundRect(-30, 50, 60, 6, 3)
+        timerBarBg.fill({ color: 0x000000, alpha: 0.5 })
+        this.comboContainer.addChild(timerBarBg)
+
+        // Timer bar fill
+        this.comboTimerBar = new Graphics()
+        this.comboTimerBar.position.set(-30, 50)
+        this.comboContainer.addChild(this.comboTimerBar)
     }
 
     /**
@@ -238,9 +307,24 @@ export class HudSystem {
     }
 
     private updateTimer(gameTime: number): void {
-        const minutes = Math.floor(gameTime / 60)
-        const seconds = Math.floor(gameTime % 60)
+        // Show countdown (remaining time to victory)
+        const remainingTime = Math.max(0, GAME_DURATION_SECONDS - gameTime)
+        const minutes = Math.floor(remainingTime / 60)
+        const seconds = Math.floor(remainingTime % 60)
         this.timeText.text = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+
+        // Change color based on urgency
+        if (remainingTime <= 30) {
+            // Critical - red flashing
+            const flash = Math.sin(gameTime * 10) > 0
+            this.timeText.style.fill = flash ? 0xff4444 : 0xcc0000
+        } else if (remainingTime <= 60) {
+            // Warning - yellow
+            this.timeText.style.fill = 0xffd700
+        } else {
+            // Normal - dark gray
+            this.timeText.style.fill = 0x292524
+        }
     }
 
     private updateLevel(level: number): void {
@@ -298,10 +382,21 @@ export class HudSystem {
     }
 
     /**
+     * Update combo display (disabled for multi-kill mode - notifications shown via damage text)
+     */
+    updateCombo(_state: ComboState, _maxWindow: number): void {
+        // Multi-kill mode: no continuous combo display
+        // Multi-kills are shown as floating damage text instead
+        this.comboContainer.visible = false
+    }
+
+    /**
      * Reset HUD to initial state
      */
     reset(): void {
         this.lastState = null
+        this.comboContainer.visible = false
+        this.comboAnimPhase = 0
         this.update({
             health: 100,
             maxHealth: 100,

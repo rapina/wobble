@@ -1,6 +1,7 @@
 import { Container } from 'pixi.js'
 import { Wobble, WobbleShape, WOBBLE_CHARACTERS } from '../../Wobble'
 import { WOBBLE_STATS, Enemy } from './types'
+import { PhysicsModifiers, DEFAULT_PHYSICS, applyGravity, applyVortex } from './PhysicsModifiers'
 
 export interface PlayerSystemContext {
     gameContainer: Container
@@ -46,6 +47,9 @@ export class PlayerSystem {
 
     // Stats (applied from external source)
     private moveSpeedMultiplier = 1
+
+    // Physics modifiers (stage-based)
+    private physicsModifiers: PhysicsModifiers = DEFAULT_PHYSICS
 
     // Callbacks
     onHealthChanged?: (health: number, maxHealth: number) => void
@@ -104,6 +108,13 @@ export class PlayerSystem {
     }
 
     /**
+     * Set physics modifiers for current stage
+     */
+    setPhysicsModifiers(modifiers: PhysicsModifiers): void {
+        this.physicsModifiers = modifiers
+    }
+
+    /**
      * Update player position based on joystick input
      */
     update(delta: number, input: JoystickInput): void {
@@ -114,28 +125,53 @@ export class PlayerSystem {
             this.vx = input.dirX * speed
             this.vy = input.dirY * speed
         } else {
-            this.vx = 0
-            this.vy = 0
+            // Apply friction when not actively moving
+            this.vx *= this.physicsModifiers.friction
+            this.vy *= this.physicsModifiers.friction
+        }
+
+        // Apply gravity (affects y velocity)
+        this.vy = applyGravity(this.vy, delta, this.physicsModifiers.gravity, 0.5)
+
+        // Apply vortex pull if configured
+        if (this.physicsModifiers.vortexCenter && this.physicsModifiers.vortexStrength) {
+            const vortexResult = applyVortex(
+                this.x,
+                this.y,
+                this.vx,
+                this.vy,
+                this.width,
+                this.height,
+                {
+                    center: this.physicsModifiers.vortexCenter,
+                    strength: this.physicsModifiers.vortexStrength,
+                },
+                delta,
+                60
+            )
+            this.vx = vortexResult.vx
+            this.vy = vortexResult.vy
         }
 
         // Apply velocity
         this.x += this.vx * delta
         this.y += this.vy * delta
 
-        // Keep in bounds
+        // Keep in bounds (with bounce for elastic stage)
+        const bounce = this.physicsModifiers.bounce
         if (this.x < this.margin) {
             this.x = this.margin
-            this.vx = 0
+            this.vx = bounce > 0 ? -this.vx * bounce : 0
         } else if (this.x > this.width - this.margin) {
             this.x = this.width - this.margin
-            this.vx = 0
+            this.vx = bounce > 0 ? -this.vx * bounce : 0
         }
         if (this.y < this.margin) {
             this.y = this.margin
-            this.vy = 0
+            this.vy = bounce > 0 ? -this.vy * bounce : 0
         } else if (this.y > this.height - this.margin) {
             this.y = this.height - this.margin
-            this.vy = 0
+            this.vy = bounce > 0 ? -this.vy * bounce : 0
         }
 
         this.player.position.set(this.x, this.y)
