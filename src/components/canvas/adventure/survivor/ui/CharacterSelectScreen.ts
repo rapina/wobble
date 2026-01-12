@@ -28,6 +28,7 @@ export class CharacterSelectScreen {
     private leftArrowBtn!: Container
     private rightArrowBtn!: Container
     private startButton!: Container
+    private exitButton!: Container
 
     // Animation state
     private animPhase = 0
@@ -35,6 +36,7 @@ export class CharacterSelectScreen {
 
     // Callbacks
     onStartGame?: (character: WobbleShape) => void
+    onExit?: () => void
 
     constructor(context: CharacterSelectContext) {
         this.screenContainer = context.container
@@ -109,6 +111,12 @@ export class CharacterSelectScreen {
         if (this.startButton) {
             const pulse = 1 + Math.sin(this.animPhase * 3) * 0.02
             this.startButton.scale.set(pulse)
+        }
+
+        // Subtle pulse animation for exit button
+        if (this.exitButton) {
+            const pulse = 1 + Math.sin(this.animPhase * 3 + Math.PI) * 0.02
+            this.exitButton.scale.set(pulse)
         }
     }
 
@@ -444,9 +452,32 @@ export class CharacterSelectScreen {
         this.characterStatsContainer.visible = false
         this.screenContainer.addChild(this.characterStatsContainer)
 
-        // Start button
-        this.startButton = this.createStartButton(this.centerX, this.height - 55)
+        // Action buttons (PLAY | EXIT) - positioned below the card
+        const btnY = this.height - 45
+        const btnWidth = 100
+        const btnGap = 15
+
+        // PLAY button (left)
+        this.startButton = this.createActionButton(
+            'PLAY',
+            this.centerX - btnWidth / 2 - btnGap / 2,
+            btnY,
+            btnWidth,
+            0x5a9a91,
+            () => this.handleStartGame()
+        )
         this.screenContainer.addChild(this.startButton)
+
+        // EXIT button (right)
+        this.exitButton = this.createActionButton(
+            'EXIT',
+            this.centerX + btnWidth / 2 + btnGap / 2,
+            btnY,
+            btnWidth,
+            0xc75050,
+            () => this.onExit?.()
+        )
+        this.screenContainer.addChild(this.exitButton)
     }
 
     private createArrowButton(
@@ -507,53 +538,58 @@ export class CharacterSelectScreen {
         return btn
     }
 
-    private createStartButton(x: number, y: number): Container {
+    private createActionButton(
+        label: string,
+        x: number,
+        y: number,
+        width: number,
+        accentColor: number,
+        onClick: () => void
+    ): Container {
         const btn = new Container()
         btn.position.set(x, y)
         btn.eventMode = 'static'
         btn.cursor = 'pointer'
 
-        const width = 140
-        const height = 44
+        const height = 40
         const cardBgColor = 0xf5f0e8
         const cardShadowColor = 0x3d5c56
-        const accentColor = 0x5a9a91
         const textDark = 0x2d3b38
 
         // Shadow
         const shadow = new Graphics()
-        shadow.roundRect(-width / 2 + 3, -height / 2 + 4, width, height, 12)
+        shadow.roundRect(-width / 2 + 2, -height / 2 + 3, width, height, 10)
         shadow.fill({ color: cardShadowColor, alpha: 0.4 })
         btn.addChild(shadow)
 
         // Button background
         const bg = new Graphics()
-        bg.roundRect(-width / 2, -height / 2, width, height, 12)
+        bg.roundRect(-width / 2, -height / 2, width, height, 10)
         bg.fill(cardBgColor)
-        bg.roundRect(-width / 2, -height / 2, width, height, 12)
-        bg.stroke({ color: accentColor, width: 3 })
+        bg.roundRect(-width / 2, -height / 2, width, height, 10)
+        bg.stroke({ color: accentColor, width: 2 })
         btn.addChild(bg)
 
-        // PLAY text
-        const startText = new Text({
-            text: 'PLAY',
+        // Button text
+        const btnText = new Text({
+            text: label,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: 'bold',
                 fill: textDark,
-                letterSpacing: 3,
+                letterSpacing: 2,
             }),
         })
-        startText.anchor.set(0.5)
-        btn.addChild(startText)
+        btnText.anchor.set(0.5)
+        btn.addChild(btnText)
 
         btn.on('pointerdown', () => {
             btn.scale.set(0.95)
         })
         btn.on('pointerup', () => {
             btn.scale.set(1)
-            this.handleStartGame()
+            onClick()
         })
         btn.on('pointerupoutside', () => {
             btn.scale.set(1)

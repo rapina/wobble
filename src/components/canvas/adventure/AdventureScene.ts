@@ -54,6 +54,7 @@ export abstract class AdventureScene {
     // Phase state
     protected phase: ScenePhase = 'idle'
     protected isPlaying = false
+    protected isPaused = false
     protected playProgress = 0
     protected onPlayComplete?: (result: PlayResult) => void
 
@@ -119,7 +120,12 @@ export abstract class AdventureScene {
 
             this.updateGrid(ticker)
 
-            // Phase-based animation
+            // Phase-based animation (skip if paused)
+            if (this.isPaused) {
+                // Only animate idle effects when paused
+                return
+            }
+
             if (this.phase === 'narration') {
                 this.animateNarration(ticker)
             } else if (this.isPlaying) {
@@ -492,9 +498,31 @@ export abstract class AdventureScene {
      */
     public reset(): void {
         this.isPlaying = false
+        this.isPaused = false
         this.playProgress = 0
         this.onReset()
         this.updatePreview()
+    }
+
+    /**
+     * Pause the scene
+     */
+    public pause(): void {
+        this.isPaused = true
+    }
+
+    /**
+     * Resume the scene
+     */
+    public resume(): void {
+        this.isPaused = false
+    }
+
+    /**
+     * Check if scene is paused
+     */
+    public get paused(): boolean {
+        return this.isPaused
     }
 
     /**

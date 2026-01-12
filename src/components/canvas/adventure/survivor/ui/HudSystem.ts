@@ -120,25 +120,25 @@ export class HudSystem {
         this.timeText.position.set(xpBarX + xpBarWidth + 8, xpBarY + xpBarHeight / 2)
         this.uiContainer.addChild(this.timeText)
 
-        // === Top-right: Level indicator ===
-        const levelX = this.width - 35
-        const levelY = 28
+        // === Level indicator (left side, next to XP bar) ===
+        const levelX = 28
+        const levelY = 58 + 6 // Aligned with XP bar center
 
         // Level badge shadow
         const levelShadow = new Graphics()
-        drawUIHexagon(levelShadow, levelX + 1, levelY + 2, 20, uiShadowColor)
+        drawUIHexagon(levelShadow, levelX + 1, levelY + 2, 16, uiShadowColor)
         levelShadow.alpha = 0.3
         this.uiContainer.addChild(levelShadow)
 
         // Level badge main
         const levelBadge = new Graphics()
-        drawUIHexagon(levelBadge, levelX, levelY, 20, uiBgColor, levelColor, 2)
+        drawUIHexagon(levelBadge, levelX, levelY, 16, uiBgColor, levelColor, 2)
         this.uiContainer.addChild(levelBadge)
 
         // Level number
         const levelStyle = new TextStyle({
             fontFamily: 'Arial, sans-serif',
-            fontSize: 14,
+            fontSize: 12,
             fontWeight: 'bold',
             fill: uiShadowColor,
         })
@@ -146,20 +146,6 @@ export class HudSystem {
         this.levelText.anchor.set(0.5)
         this.levelText.position.set(levelX, levelY)
         this.uiContainer.addChild(this.levelText)
-
-        // "LV" label above level
-        const lvLabel = new Text({
-            text: 'LV',
-            style: new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 8,
-                fontWeight: 'bold',
-                fill: levelColor,
-            }),
-        })
-        lvLabel.anchor.set(0.5)
-        lvLabel.position.set(levelX, levelY - 18)
-        this.uiContainer.addChild(lvLabel)
 
         // === Bottom-left: Skill icons ===
         this.skillIconsContainer = new Container()

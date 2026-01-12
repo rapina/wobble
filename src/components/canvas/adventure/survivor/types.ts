@@ -6,6 +6,7 @@ export type GameState =
     | 'character-select'
     | 'opening'
     | 'playing'
+    | 'paused'
     | 'skill-selection'
     | 'game-over'
     | 'result'

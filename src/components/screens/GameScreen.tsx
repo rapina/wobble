@@ -2,13 +2,13 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AdventureCanvas, AdventureCanvasHandle } from '@/components/canvas/AdventureCanvas'
 import { PlayResult } from '@/components/canvas/adventure'
+import { GameState } from '@/components/canvas/adventure/survivor/types'
 import { useProgressStore } from '@/stores/progressStore'
-import { ArrowLeft, RotateCcw } from 'lucide-react'
+import { Pause, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Balatro from '@/components/Balatro'
 
 const theme = {
-    bgPanel: '#374244',
     border: '#1a1a1a',
 }
 
@@ -21,6 +21,7 @@ export function GameScreen({ onBack }: MinigameScreenProps) {
     const isKorean = i18n.language === 'ko'
     const [mounted, setMounted] = useState(false)
     const [playResult, setPlayResult] = useState<PlayResult | null>(null)
+    const [gamePhase, setGamePhase] = useState<GameState | null>(null)
 
     const canvasRef = useRef<AdventureCanvasHandle>(null)
     const { studiedFormulas } = useProgressStore()
@@ -37,15 +38,33 @@ export function GameScreen({ onBack }: MinigameScreenProps) {
         return () => clearTimeout(timer)
     }, [])
 
+    // Poll game phase to control pause button visibility
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const phase = canvasRef.current?.getGamePhase() ?? null
+            setGamePhase(phase)
+        }, 100) // Poll every 100ms
+        return () => clearInterval(interval)
+    }, [])
+
     // Handle play complete
     const handlePlayComplete = useCallback((result: PlayResult) => {
         setPlayResult(result)
-    }, [])
+        if (result === 'success') {
+            // Exit was triggered from pause menu
+            onBack()
+        }
+    }, [onBack])
 
     // Handle reset
     const handleReset = () => {
         setPlayResult(null)
         canvasRef.current?.reset()
+    }
+
+    // Handle pause - triggers in-game pause screen
+    const handlePause = () => {
+        canvasRef.current?.pauseGame()
     }
 
     // Memoized Balatro background
@@ -82,11 +101,11 @@ export function GameScreen({ onBack }: MinigameScreenProps) {
             {/* Vignette */}
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.5)_100%)] pointer-events-none" />
 
-            {/* Canvas Area */}
+            {/* Canvas Area - Full height */}
             <div
                 className="absolute z-10 rounded-xl overflow-hidden"
                 style={{
-                    top: 'calc(max(env(safe-area-inset-top, 0px), 12px) + 56px)',
+                    top: 'max(env(safe-area-inset-top, 0px), 12px)',
                     left: 'max(env(safe-area-inset-left, 0px), 12px)',
                     right: 'max(env(safe-area-inset-right, 0px), 12px)',
                     bottom: 'calc(max(env(safe-area-inset-bottom, 0px), 8px) + 60px)',
@@ -104,44 +123,21 @@ export function GameScreen({ onBack }: MinigameScreenProps) {
                 />
             </div>
 
-            {/* Top Header */}
-            <div
-                className="absolute top-0 left-0 right-0 z-20"
-                style={{
-                    paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)',
-                    paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
-                    paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
-                }}
-            >
-                <div className="flex items-center gap-3">
-                    {/* Back Button */}
-                    <button
-                        onClick={onBack}
-                        className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95"
-                        style={{
-                            background: theme.bgPanel,
-                            border: `2px solid ${theme.border}`,
-                            boxShadow: `0 3px 0 ${theme.border}`,
-                        }}
-                    >
-                        <ArrowLeft className="h-5 w-5 text-white" />
-                    </button>
-
-                    {/* Title */}
-                    <div
-                        className="flex-1 px-4 py-2 rounded-lg"
-                        style={{
-                            background: theme.bgPanel,
-                            border: `2px solid ${theme.border}`,
-                            boxShadow: `0 3px 0 ${theme.border}`,
-                        }}
-                    >
-                        <h2 className="text-white font-bold truncate">
-                            {isKorean ? '워블 어드벤처' : 'Wobble Adventures'}
-                        </h2>
-                    </div>
-                </div>
-            </div>
+            {/* Pause Button - Top Right (only visible when playing) */}
+            {gamePhase === 'playing' && (
+                <button
+                    onClick={handlePause}
+                    className="absolute z-20 h-10 w-10 rounded-lg flex items-center justify-center transition-all active:scale-95"
+                    style={{
+                        top: 'calc(max(env(safe-area-inset-top, 0px), 12px) + 8px)',
+                        right: 'calc(max(env(safe-area-inset-right, 0px), 12px) + 8px)',
+                        background: 'rgba(0,0,0,0.5)',
+                        border: `2px solid rgba(255,255,255,0.2)`,
+                    }}
+                >
+                    <Pause className="h-5 w-5 text-white" />
+                </button>
+            )}
 
             {/* Reset button on failure */}
             {playResult === 'failure' && (

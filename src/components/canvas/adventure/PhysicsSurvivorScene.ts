@@ -33,6 +33,7 @@ import {
     ResultScreen,
     CharacterSelectScreen,
     OpeningScreen,
+    PauseScreen,
 } from './survivor'
 import { VirtualJoystick } from './VirtualJoystick'
 import { FloatingDamageText } from './FloatingDamageText'
@@ -103,6 +104,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     declare private resultScreen: ResultScreen
     declare private characterSelectScreen: CharacterSelectScreen
     declare private openingScreen: OpeningScreen
+    declare private pauseScreen: PauseScreen
 
     // Fire system
     private fireRate = 0.5
@@ -275,6 +277,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.characterSelectScreen.onStartGame = (character) => {
             this.showOpening(character)
         }
+        this.characterSelectScreen.onExit = () => {
+            this.onPlayComplete?.('success') // This triggers GameScreen's onBack()
+        }
 
         this.openingScreen = new OpeningScreen({
             container: openingContainer,
@@ -283,6 +288,24 @@ export class PhysicsSurvivorScene extends AdventureScene {
         })
         this.openingScreen.onComplete = () => {
             this.startGameAfterOpening()
+        }
+
+        // Pause screen container
+        const pauseContainer = new Container()
+        pauseContainer.visible = false
+        this.container.addChild(pauseContainer)
+
+        this.pauseScreen = new PauseScreen({
+            container: pauseContainer,
+            width: this.width,
+            height: this.height,
+        })
+        this.pauseScreen.onResume = () => {
+            this.resumeGame()
+        }
+        this.pauseScreen.onExit = () => {
+            this.pauseScreen.hide()
+            this.onPlayComplete?.('success')
         }
     }
 
@@ -758,6 +781,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.openingScreen.update(deltaSeconds)
         }
 
+        if (this.gameState === 'paused') {
+            this.pauseScreen.update(deltaSeconds)
+        }
+
         const breathe = Math.sin(this.animPhase * 2) * 0.03
         this.player?.updateOptions({
             wobblePhase: this.animPhase,
@@ -869,6 +896,64 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.stats = { ...DEFAULT_PLAYER_STATS }
     }
 
+    /**
+     * Get current game state snapshot for pause menu
+     */
+    public getGameStateSnapshot() {
+        return {
+            level: this.playerProgress.level,
+            xp: this.playerProgress.xp,
+            xpToNextLevel: getXpForLevel(this.playerProgress.level + 1) - this.playerProgress.xp,
+            gameTime: this.gameTime,
+            skills: [...this.playerSkills],
+            characterId: this.selectedCharacter,
+            health: this.playerHealth,
+            maxHealth: this.maxPlayerHealth,
+        }
+    }
+
+    /**
+     * Get current game phase/state
+     */
+    public getGamePhase(): GameState {
+        return this.gameState
+    }
+
+    /**
+     * Pause the game and show pause screen
+     */
+    public pauseGame(): void {
+        if (this.gameState !== 'playing') return
+
+        this.gameState = 'paused'
+        this.pauseScreen.show({
+            level: this.playerProgress.level,
+            xp: this.playerProgress.xp,
+            xpToNextLevel: getXpForLevel(this.playerProgress.level + 1) - this.playerProgress.xp,
+            gameTime: this.gameTime,
+            skills: [...this.playerSkills],
+            health: this.playerHealth,
+            maxHealth: this.maxPlayerHealth,
+        })
+    }
+
+    /**
+     * Resume the game from pause
+     */
+    public resumeGame(): void {
+        if (this.gameState !== 'paused') return
+
+        this.pauseScreen.hide()
+        this.gameState = 'playing'
+    }
+
+    /**
+     * Check if game is paused
+     */
+    public get gamePaused(): boolean {
+        return this.gameState === 'paused'
+    }
+
     protected onReset(): void {
         // Reset all systems
         this.projectileSystem.reset()
@@ -885,6 +970,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.resultScreen.reset()
         this.characterSelectScreen.reset()
         this.openingScreen.reset()
+        this.pauseScreen.reset()
 
         // Reset hit effects
         for (const effect of this.hitEffects) {

@@ -3,3 +3,4 @@ export { SkillSelectionScreen, type SkillSelectionContext } from './SkillSelecti
 export { ResultScreen, type ResultScreenContext, type ResultData } from './ResultScreen'
 export { CharacterSelectScreen, type CharacterSelectContext } from './CharacterSelectScreen'
 export { OpeningScreen, type OpeningScreenContext } from './OpeningScreen'
+export { PauseScreen, type PauseScreenContext, type PauseData } from './PauseScreen'

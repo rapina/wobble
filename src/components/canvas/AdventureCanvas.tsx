@@ -1,7 +1,21 @@
 import { useRef, useEffect, useImperativeHandle, forwardRef, useState, useCallback } from 'react'
 import { usePixiApp } from '@/hooks/usePixiApp'
 import { AdventureScene, PlayResult, NarrationData, createAdventureScene } from './adventure'
+import { PhysicsSurvivorScene } from './adventure/PhysicsSurvivorScene'
+import { PlayerSkill } from './adventure/survivor/skills'
+import { GameState } from './adventure/survivor/types'
 import { RefreshCw } from 'lucide-react'
+
+export interface GameStateSnapshot {
+    level: number
+    xp: number
+    xpToNextLevel: number
+    gameTime: number
+    skills: PlayerSkill[]
+    characterId: string
+    health: number
+    maxHealth: number
+}
 
 interface AdventureCanvasProps {
     levelId: string
@@ -19,6 +33,11 @@ export interface AdventureCanvasHandle {
     play: () => void
     reset: () => void
     advanceNarration: () => void
+    pauseGame: () => void
+    resumeGame: () => void
+    isGamePaused: () => boolean
+    getGameState: () => GameStateSnapshot | null
+    getGamePhase: () => GameState | null
 }
 
 export const AdventureCanvas = forwardRef<AdventureCanvasHandle, AdventureCanvasProps>(
@@ -80,6 +99,39 @@ export const AdventureCanvas = forwardRef<AdventureCanvasHandle, AdventureCanvas
                     if (sceneRef.current) {
                         sceneRef.current.advanceNarration()
                     }
+                },
+                pauseGame: () => {
+                    const scene = sceneRef.current
+                    if (scene && scene instanceof PhysicsSurvivorScene) {
+                        scene.pauseGame()
+                    }
+                },
+                resumeGame: () => {
+                    const scene = sceneRef.current
+                    if (scene && scene instanceof PhysicsSurvivorScene) {
+                        scene.resumeGame()
+                    }
+                },
+                isGamePaused: () => {
+                    const scene = sceneRef.current
+                    if (scene && scene instanceof PhysicsSurvivorScene) {
+                        return scene.gamePaused
+                    }
+                    return false
+                },
+                getGameState: () => {
+                    const scene = sceneRef.current
+                    if (scene && scene instanceof PhysicsSurvivorScene) {
+                        return scene.getGameStateSnapshot()
+                    }
+                    return null
+                },
+                getGamePhase: () => {
+                    const scene = sceneRef.current
+                    if (scene && scene instanceof PhysicsSurvivorScene) {
+                        return scene.getGamePhase()
+                    }
+                    return null
                 },
             }),
             []
