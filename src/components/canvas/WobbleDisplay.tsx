@@ -108,43 +108,29 @@ export function WobbleDisplay({
             mountedRef.current = false
 
             const currentApp = appRef.current
-            const wobbleToClean = wobbleRef.current
-            const tickerCallback = tickerCallbackRef.current
-
-            // Clear refs immediately
-            appRef.current = null
-            wobbleRef.current = null
-            tickerCallbackRef.current = null
-
             if (currentApp) {
                 try {
-                    // 1. Remove wobble from stage IMMEDIATELY to prevent rendering
-                    if (wobbleToClean && wobbleToClean.parent) {
-                        wobbleToClean.parent.removeChild(wobbleToClean)
-                    }
-                    currentApp.stage.removeChildren()
-
-                    // 2. Stop ticker to prevent new frames
                     currentApp.ticker.stop()
-                    if (tickerCallback) {
-                        currentApp.ticker.remove(tickerCallback)
+                    if (tickerCallbackRef.current) {
+                        currentApp.ticker.remove(tickerCallbackRef.current)
                     }
-                } catch {
-                    // Ignore immediate cleanup errors
-                }
 
-                // 3. Defer destruction with longer delay to let any in-progress render fully complete
-                setTimeout(() => {
-                    try {
-                        currentApp.destroy(true, {
-                            children: true,
-                            texture: false,
-                            textureSource: false,
-                        })
-                    } catch {
-                        // Ignore destruction errors
+                    if (wobbleRef.current && wobbleRef.current.parent) {
+                        wobbleRef.current.parent.removeChild(wobbleRef.current)
                     }
-                }, 200)
+
+                    currentApp.stage.removeChildren()
+                    currentApp.destroy(true, {
+                        children: true,
+                        texture: false,
+                        textureSource: false,
+                    })
+                } catch {
+                    // Ignore cleanup errors
+                }
+                appRef.current = null
+                wobbleRef.current = null
+                tickerCallbackRef.current = null
             }
         }
     }, [size]) // Only recreate on size change
