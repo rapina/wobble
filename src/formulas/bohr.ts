@@ -101,4 +101,24 @@ export const bohr: Formula = {
             { type: 'text', value: ' eV' },
         ],
     },
+    discoveries: [
+        {
+            id: 'ground-state',
+            mission: '주양자수 n을 1로 설정해봐! (바닥상태)',
+            missionEn: 'Set principal quantum number n to 1! (ground state)',
+            result: 'n=1은 가장 낮은 에너지! 전자가 가장 안정한 상태야.',
+            resultEn: 'n=1 is the lowest energy! The most stable state for the electron.',
+            icon: '⚛️',
+            condition: (vars) => Math.round(vars['n']) === 1,
+        },
+        {
+            id: 'ionization',
+            mission: '주양자수 n을 5 이상으로 올려봐!',
+            missionEn: 'Raise principal quantum number n above 5!',
+            result: '높은 n에서는 에너지가 거의 0! 조금만 더 에너지를 받으면 전자가 떠나.',
+            resultEn: 'At high n, energy approaches 0! A little more energy and the electron escapes.',
+            icon: '🚀',
+            condition: (vars) => Math.round(vars['n']) >= 5,
+        },
+    ],
 }

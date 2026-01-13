@@ -149,4 +149,24 @@ export const elasticCollision: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'perfect-elastic',
+            mission: '반발 계수 e를 1로 설정해봐! (완전 탄성 충돌)',
+            missionEn: 'Set restitution coefficient e to 1! (perfectly elastic collision)',
+            result: '반발 계수 1이면 에너지 손실 없이 완전히 튕겨! 이상적인 당구공 충돌이야.',
+            resultEn: 'With e=1, energy is fully conserved! This is an ideal billiard ball collision.',
+            icon: '🎱',
+            condition: (vars) => vars['e'] >= 0.98,
+        },
+        {
+            id: 'inelastic',
+            mission: '반발 계수 e를 0.2 이하로 낮춰봐! (비탄성 충돌)',
+            missionEn: 'Lower restitution coefficient e below 0.2! (inelastic collision)',
+            result: '반발 계수가 낮으면 에너지가 흡수돼! 자동차 범퍼가 충격을 줄이는 방법이야.',
+            resultEn: 'Low restitution absorbs energy! This is how car bumpers reduce impact.',
+            icon: '🚗',
+            condition: (vars) => vars['e'] <= 0.2,
+        },
+    ],
 }

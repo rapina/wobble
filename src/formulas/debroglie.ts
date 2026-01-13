@@ -106,4 +106,24 @@ export const debroglie: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'electron-wave',
+            mission: '전자 질량(9.1)과 낮은 속도(0.5 이하)를 설정해봐!',
+            missionEn: 'Set electron mass (9.1) and low velocity (below 0.5)!',
+            result: '느린 전자는 파장이 길어 파동성이 뚜렷해! 전자현미경의 원리야.',
+            resultEn: 'Slow electrons have long wavelengths showing clear wave behavior! This is how electron microscopes work.',
+            icon: '🔬',
+            condition: (vars) => vars['m'] <= 15 && vars['v'] <= 0.5,
+        },
+        {
+            id: 'heavy-particle',
+            mission: '질량 m을 80 이상으로 올려봐!',
+            missionEn: 'Raise mass m above 80!',
+            result: '무거운 입자는 파장이 매우 짧아! 그래서 일상의 물체는 파동성을 못 느껴.',
+            resultEn: 'Heavy particles have very short wavelengths! This is why everyday objects do not show wave behavior.',
+            icon: '⚾',
+            condition: (vars) => vars['m'] >= 80,
+        },
+    ],
 }

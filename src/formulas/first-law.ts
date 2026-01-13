@@ -96,4 +96,24 @@ export const firstLaw: Formula = {
             { type: 'var', symbol: 'W' },
         ],
     },
+    discoveries: [
+        {
+            id: 'all-heat-to-work',
+            mission: '열량 Q와 일 W를 같게 설정해봐!',
+            missionEn: 'Set heat Q equal to work W!',
+            result: '모든 열이 일로 바뀌면 내부에너지 변화 없음! 이상적인 등온 과정이야.',
+            resultEn: 'When all heat becomes work, no internal energy change! This is an ideal isothermal process.',
+            icon: '⚖️',
+            condition: (vars) => Math.abs(vars['Q'] - vars['W']) <= 20,
+        },
+        {
+            id: 'adiabatic',
+            mission: '열량 Q를 최소로, 일 W를 최대로 설정해봐!',
+            missionEn: 'Minimize heat Q and maximize work W!',
+            result: '열 없이 일만 하면 내부에너지가 감소해! 단열팽창으로 온도가 떨어지는 원리야.',
+            resultEn: 'Work without heat decreases internal energy! This is why adiabatic expansion cools things down.',
+            icon: '🌡️',
+            condition: (vars) => vars['Q'] <= 150 && vars['W'] >= 500,
+        },
+    ],
 }

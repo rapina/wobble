@@ -73,4 +73,24 @@ export const reflection: Formula = {
         output: 'θᵣ',
         expression: [{ type: 'var', symbol: 'θᵢ' }],
     },
+    discoveries: [
+        {
+            id: 'grazing-angle',
+            mission: '입사각 θᵢ를 80° 이상으로 올려봐!',
+            missionEn: 'Raise angle of incidence above 80 degrees!',
+            result: '스치듯 들어오는 빛도 같은 각도로 반사! 호수 표면이 반짝이는 이유야.',
+            resultEn: 'Even grazing light reflects at equal angle! This is why lake surfaces sparkle.',
+            icon: '✨',
+            condition: (vars) => vars['θᵢ'] >= 80,
+        },
+        {
+            id: 'perpendicular',
+            mission: '입사각 θᵢ를 5° 이하로 낮춰봐!',
+            missionEn: 'Lower angle of incidence below 5 degrees!',
+            result: '수직으로 들어오면 수직으로 반사! 거울을 정면으로 볼 때 내 얼굴이 보이는 이유야.',
+            resultEn: 'Perpendicular in means perpendicular out! Why you see your face looking straight at a mirror.',
+            icon: '🪞',
+            condition: (vars) => vars['θᵢ'] <= 5,
+        },
+    ],
 }

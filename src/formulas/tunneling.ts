@@ -135,4 +135,24 @@ export const tunneling: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'high-probability',
+            mission: '투과 확률을 50% 이상으로 만들어봐!',
+            missionEn: 'Get transmission probability above 50%!',
+            result: '절반 이상의 입자가 장벽을 통과해!',
+            resultEn: 'More than half the particles tunnel through!',
+            icon: '🎯',
+            condition: (vars) => vars.T >= 50,
+        },
+        {
+            id: 'classical-transmission',
+            mission: '에너지를 장벽 높이 이상으로 올려봐!',
+            missionEn: 'Raise energy above the barrier height!',
+            result: '에너지가 충분하면 100% 통과!',
+            resultEn: 'With enough energy, 100% transmission!',
+            icon: '💥',
+            condition: (vars) => vars.E >= vars.V,
+        },
+    ],
 }

@@ -128,4 +128,24 @@ export const coulomb: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'close-charges',
+            mission: '거리 r을 3cm 이하로 줄여봐!',
+            missionEn: 'Reduce distance r below 3cm!',
+            result: '전하가 가까우면 힘이 급격히 커져! 역제곱 법칙 때문이야.',
+            resultEn: 'Close charges experience huge force! Due to the inverse square law.',
+            icon: '⚡',
+            condition: (vars) => vars['r'] <= 3,
+        },
+        {
+            id: 'large-charges',
+            mission: '두 전하 q₁과 q₂를 모두 80μC 이상으로 올려봐!',
+            missionEn: 'Raise both charges q1 and q2 above 80 microcoulombs!',
+            result: '큰 전하는 강한 전기력! 번개가 무서운 에너지를 갖는 이유야.',
+            resultEn: 'Large charges mean strong electric force! This is why lightning has tremendous energy.',
+            icon: '🌩️',
+            condition: (vars) => vars['q₁'] >= 80 && vars['q₂'] >= 80,
+        },
+    ],
 }

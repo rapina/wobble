@@ -101,4 +101,24 @@ export const timeDilation: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'relativistic-speed',
+            mission: 'v를 0.9c 이상으로 올려봐!',
+            missionEn: 'Raise v above 0.9c!',
+            result: '광속의 90%에서 시간이 2배 이상 느려져!',
+            resultEn: 'At 90% light speed, time slows down by more than 2x!',
+            icon: '⏰',
+            condition: (vars) => vars['v'] >= 0.9,
+        },
+        {
+            id: 'extreme-dilation',
+            mission: 'v를 0.99c까지 올려봐!',
+            missionEn: 'Push v to 0.99c!',
+            result: '광속에 가까워지면 시간이 7배 이상 느려져!',
+            resultEn: 'Near light speed, time slows down by over 7x!',
+            icon: '🚀',
+            condition: (vars) => vars['v'] >= 0.99,
+        },
+    ],
 }

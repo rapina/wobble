@@ -110,4 +110,24 @@ export const buoyancy: Formula = {
         output: 'F',
         numerator: ['ρ', 'V', 'g'],
     },
+    discoveries: [
+        {
+            id: 'saltwater-float',
+            mission: '유체 밀도 ρ를 1200 이상으로 올려봐! (소금물)',
+            missionEn: 'Raise fluid density above 1200! (saltwater)',
+            result: '밀도가 높은 유체에서는 부력이 더 커! 사해에서 몸이 쉽게 뜨는 이유야.',
+            resultEn: 'Denser fluids provide more buoyancy! This is why you float easily in the Dead Sea.',
+            icon: '🏊',
+            condition: (vars) => vars['ρ'] >= 1200,
+        },
+        {
+            id: 'large-volume',
+            mission: '잠긴 부피 V를 최대(100L)로 늘려봐!',
+            missionEn: 'Maximize submerged volume V to 100L!',
+            result: '부피가 클수록 부력이 커! 큰 배가 물에 뜰 수 있는 원리야.',
+            resultEn: 'Larger volume means more buoyancy! This is how massive ships float on water.',
+            icon: '🚢',
+            condition: (vars) => vars['V'] >= 90,
+        },
+    ],
 }

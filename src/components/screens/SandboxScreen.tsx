@@ -10,11 +10,12 @@ import { useTutorial } from '../../hooks/useTutorial'
 import { usePurchaseStore } from '@/stores/purchaseStore'
 import { useCollectionStore } from '@/stores/collectionStore'
 import { useProgressStore } from '@/stores/progressStore'
+import { useDiscoveryStore } from '@/stores/discoveryStore'
 import { TutorialOverlay } from '../tutorial/TutorialOverlay'
 import { SettingsModal } from '../ui/SettingsModal'
-import { ArrowLeft, List, X, Info, ChevronDown, HelpCircle, Lightbulb } from 'lucide-react'
+import { ArrowLeft, List, X, Info, ChevronDown, HelpCircle, Lightbulb, Target, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Formula, FormulaCategory } from '../../formulas/types'
+import { Formula, FormulaCategory, Discovery } from '../../formulas/types'
 import { WobbleShape } from '../canvas/Wobble'
 import { WobbleDisplay } from '../canvas/WobbleDisplay'
 import Balatro from '@/components/Balatro'
@@ -60,6 +61,7 @@ export function SandboxScreen({
     const { isAdFree } = usePurchaseStore()
     const { unlockByFormula, getNewUnlocksForFormula } = useCollectionStore()
     const { studyFormula } = useProgressStore()
+    const { discover, isDiscovered } = useDiscoveryStore()
     const localizedFormula = useLocalizedFormula(formula)
     const localizedVariables = useLocalizedVariables(formula?.variables ?? [])
     const [mounted, setMounted] = useState(false)
@@ -83,6 +85,8 @@ export function SandboxScreen({
     const [discoveryShownThisSession, setDiscoveryShownThisSession] = useState(false)
     const [welcomePhase, setWelcomePhase] = useState<'opening' | 'select' | 'simulation'>('opening')
     const [openingMounted, setOpeningMounted] = useState(false)
+    const [discoveryToast, setDiscoveryToast] = useState<Discovery | null>(null)
+    const [toastVisible, setToastVisible] = useState(false)
     const canvasRef = useRef<PixiCanvasHandle>(null)
 
     // Tutorial hook
@@ -191,6 +195,14 @@ export function SandboxScreen({
         if (selectedCategory === 'all') return formulas
         return formulas.filter((f) => f.category === selectedCategory)
     }, [formulas, selectedCategory])
+
+    // Find the first undiscovered mission for the current formula
+    const currentMission = useMemo(() => {
+        if (!formula?.discoveries) return null
+        return formula.discoveries.find(
+            (d) => !isDiscovered(formula.id, d.id)
+        )
+    }, [formula, isDiscovered])
 
     // Show AdMob banner when initialized (unless ad-free)
     useEffect(() => {
@@ -324,6 +336,25 @@ export function SandboxScreen({
             return () => clearTimeout(timer)
         }
     }, [formulaId, studyFormula])
+
+    // Check if current mission is achieved
+    useEffect(() => {
+        if (!currentMission || !formula || !variables) return
+
+        // Check if the mission condition is met
+        if (currentMission.condition(variables)) {
+            const isNew = discover(formula.id, currentMission)
+            if (isNew) {
+                // Show toast notification
+                setDiscoveryToast(currentMission)
+                setToastVisible(true)
+                // Start fade out after 3 seconds
+                setTimeout(() => setToastVisible(false), 3000)
+                // Remove from DOM after fade out animation (300ms)
+                setTimeout(() => setDiscoveryToast(null), 3300)
+            }
+        }
+    }, [variables, currentMission, formula, discover])
 
     // Mark formula as seen (for NEW badge)
     const markAsSeen = (id: string) => {
@@ -520,6 +551,11 @@ export function SandboxScreen({
                         0%, 100% { transform: translateY(0) rotate(-5deg); }
                         50% { transform: translateY(-8px) rotate(0deg); }
                     }
+                    @keyframes discovery-bounce {
+                        0% { transform: scale(0) translateY(20px); opacity: 0; }
+                        50% { transform: scale(1.1) translateY(-10px); }
+                        100% { transform: scale(1) translateY(0); opacity: 1; }
+                    }
                 `}</style>
             </div>
         )
@@ -700,9 +736,9 @@ export function SandboxScreen({
 
             {/* Centered Canvas Area */}
             <div
-                className="absolute z-10 rounded-xl overflow-hidden"
+                className="absolute z-10 rounded-xl overflow-hidden transition-all duration-300"
                 style={{
-                    top: 'calc(max(env(safe-area-inset-top, 0px), 12px) + 88px)', // +32px for description banner
+                    top: `calc(max(env(safe-area-inset-top, 0px), 12px) + ${currentMission ? 128 : 88}px)`, // +40px for mission banner when visible
                     left: 'max(env(safe-area-inset-left, 0px), 12px)',
                     right: 'max(env(safe-area-inset-right, 0px), 12px)',
                     bottom: `calc(max(env(safe-area-inset-bottom, 0px), 8px) + ${isAdFree ? 164 : 262}px)`, // +24px for remove ads button spacing
@@ -712,6 +748,7 @@ export function SandboxScreen({
                 onClick={() => setSelectedCard(null)}
             >
                 <PixiCanvas ref={canvasRef} formulaId={formulaId} variables={variables} />
+
             </div>
 
             {/* Top Header */}
@@ -839,6 +876,80 @@ export function SandboxScreen({
                         <span className="text-xs text-gray-300">
                             {localizedFormula.simulationHint || localizedFormula.description}
                         </span>
+                    </div>
+                </div>
+            )}
+
+            {/* Discovery Mission Banner */}
+            {currentMission && (
+                <div
+                    className="absolute left-0 right-0 z-20 animate-in slide-in-from-top-2 fade-in duration-300"
+                    style={{
+                        top: 'calc(max(env(safe-area-inset-top, 0px), 12px) + 88px)',
+                        paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
+                        paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
+                    }}
+                >
+                    <div
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                        style={{
+                            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(30, 27, 75, 0.9) 100%)',
+                            border: '1px solid rgba(139, 92, 246, 0.5)',
+                            boxShadow: '0 0 12px rgba(139, 92, 246, 0.2)',
+                        }}
+                    >
+                        <Target className="h-4 w-4 text-purple-400 shrink-0" />
+                        <span className="text-xs text-purple-200 font-medium">
+                            {i18n.language === 'ko' || i18n.language.startsWith('ko')
+                                ? currentMission.mission
+                                : currentMission.missionEn}
+                        </span>
+                    </div>
+                </div>
+            )}
+
+            {/* Discovery Toast - Top center */}
+            {discoveryToast && (
+                <div
+                    className="fixed z-[100] pointer-events-none"
+                    style={{
+                        top: 'max(env(safe-area-inset-top, 0px), 16px)',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                    }}
+                >
+                    <div
+                        className={cn(
+                            "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300",
+                            toastVisible
+                                ? "opacity-100 translate-y-0 scale-100"
+                                : "opacity-0 -translate-y-2 scale-95"
+                        )}
+                        style={{
+                            background: 'linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%)',
+                            border: '2px solid #8B5CF6',
+                            boxShadow: '0 0 30px rgba(139, 92, 246, 0.5), 0 8px 20px rgba(0,0,0,0.4)',
+                            minWidth: 280,
+                            maxWidth: 340,
+                        }}
+                    >
+                        {/* Icon */}
+                        <span className="text-3xl">{discoveryToast.icon}</span>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                                <Sparkles className="w-4 h-4 text-[#8B5CF6]" />
+                                <span className="text-sm font-bold text-[#8B5CF6]">
+                                    {i18n.language === 'ko' || i18n.language.startsWith('ko') ? '발견!' : 'Discovery!'}
+                                </span>
+                            </div>
+                            <p className="text-white font-bold text-sm leading-snug">
+                                {i18n.language === 'ko' || i18n.language.startsWith('ko')
+                                    ? discoveryToast.result
+                                    : discoveryToast.resultEn}
+                            </p>
+                        </div>
                     </div>
                 </div>
             )}

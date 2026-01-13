@@ -99,4 +99,24 @@ export const pressure: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'needle-point',
+            mission: '면적 A를 5cm² 이하로 줄여봐!',
+            missionEn: 'Reduce area A below 5 square centimeters!',
+            result: '면적이 작으면 압력이 엄청 커져! 압정이 쉽게 찔리는 이유야.',
+            resultEn: 'Small area means huge pressure! This is why thumbtacks pierce easily.',
+            icon: '📌',
+            condition: (vars) => vars['A'] <= 5,
+        },
+        {
+            id: 'snowshoe',
+            mission: '면적 A를 최대(100cm²)로 늘려봐!',
+            missionEn: 'Maximize area A to 100 square centimeters!',
+            result: '면적이 크면 압력이 분산돼! 스키가 눈에 덜 빠지는 원리야.',
+            resultEn: 'Large area spreads pressure out! This is why skis do not sink in snow.',
+            icon: '🎿',
+            condition: (vars) => vars['A'] >= 90,
+        },
+    ],
 }

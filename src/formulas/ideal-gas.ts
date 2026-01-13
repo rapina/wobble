@@ -123,4 +123,24 @@ export const idealGas: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'high-pressure',
+            mission: '온도 T를 최대(500K)로 올리고 부피 V를 최소(10L)로 줄여봐!',
+            missionEn: 'Maximize temperature T to 500K and minimize volume V to 10L!',
+            result: '뜨겁고 좁으면 압력이 급증해! 압력밥솥이 빨리 요리하는 이유야.',
+            resultEn: 'Hot and compressed means high pressure! This is how pressure cookers work.',
+            icon: '🍲',
+            condition: (vars) => vars['T'] >= 480 && vars['V'] <= 15,
+        },
+        {
+            id: 'low-temperature',
+            mission: '온도 T를 220K 이하로 낮춰봐!',
+            missionEn: 'Lower temperature T below 220K!',
+            result: '기체가 차가워지면 압력이 낮아져! 추운 날 타이어 공기압이 떨어지는 이유야.',
+            resultEn: 'Cold gas has lower pressure! This is why tire pressure drops on cold days.',
+            icon: '❄️',
+            condition: (vars) => vars['T'] <= 220,
+        },
+    ],
 }

@@ -99,4 +99,24 @@ export const stefanBoltzmann: Formula = {
             { type: 'text', value: '²' },
         ],
     },
+    discoveries: [
+        {
+            id: 'sun-temperature',
+            mission: '온도 T를 1000K 이상으로 올려봐!',
+            missionEn: 'Raise temperature T above 1000K!',
+            result: '온도가 2배면 복사 에너지는 16배! T⁴에 비례하기 때문이야.',
+            resultEn: 'Double the temperature means 16x more radiation! Because power scales with T to the 4th.',
+            icon: '☀️',
+            condition: (vars) => vars['T'] >= 1000,
+        },
+        {
+            id: 'room-temperature',
+            mission: '온도 T를 350K 이하로 낮춰봐! (상온 근처)',
+            missionEn: 'Lower temperature T below 350K! (near room temperature)',
+            result: '상온 물체도 적외선을 방출해! 열화상 카메라가 작동하는 원리야.',
+            resultEn: 'Room temperature objects emit infrared! This is how thermal cameras work.',
+            icon: '📷',
+            condition: (vars) => vars['T'] <= 350,
+        },
+    ],
 }

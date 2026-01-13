@@ -121,4 +121,24 @@ export const gravity: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'close-encounter',
+            mission: '거리 r을 2 이하로 줄여봐!',
+            missionEn: 'Reduce distance r below 2!',
+            result: '거리가 반으로 줄면 중력은 4배가 돼!',
+            resultEn: 'Halving the distance quadruples the gravity!',
+            icon: '🌍',
+            condition: (vars) => vars.r <= 2,
+        },
+        {
+            id: 'massive-gravity',
+            mission: '질량을 둘 다 최대로 올려봐!',
+            missionEn: 'Max out both masses!',
+            result: '거대한 질량이 만드는 엄청난 중력!',
+            resultEn: 'Massive objects create enormous gravity!',
+            icon: '⭐',
+            condition: (vars) => vars.m1 >= 90 && vars.m2 >= 45,
+        },
+    ],
 }

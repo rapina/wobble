@@ -92,4 +92,24 @@ export const electricPower: Formula = {
         output: 'P',
         numerator: ['V', 'I'],
     },
+    discoveries: [
+        {
+            id: 'household-voltage',
+            mission: '전압 V를 220V, 전류 I를 10A로 설정해봐!',
+            missionEn: 'Set voltage V to 220V and current I to 10A!',
+            result: '2200W = 2.2kW! 에어컨이나 전자레인지의 소비 전력이야.',
+            resultEn: '2200W = 2.2kW! This is the power consumption of an AC or microwave.',
+            icon: '🏠',
+            condition: (vars) => vars['V'] >= 210 && vars['V'] <= 230 && vars['I'] >= 9 && vars['I'] <= 11,
+        },
+        {
+            id: 'high-power',
+            mission: '전력 P를 3000W 이상으로 만들어봐!',
+            missionEn: 'Make power P exceed 3000W!',
+            result: '3kW 이상은 전용 회로가 필요해! 전기차 충전기나 인덕션 레인지 수준이야.',
+            resultEn: 'Above 3kW needs a dedicated circuit! Like EV chargers or induction stoves.',
+            icon: '⚡',
+            condition: (vars) => vars['V'] * vars['I'] >= 3000,
+        },
+    ],
 }

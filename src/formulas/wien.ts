@@ -83,4 +83,24 @@ export const wien: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'sun-temperature',
+            mission: '온도 T를 5800K로 설정해봐! (태양 표면)',
+            missionEn: 'Set temperature T to 5800K! (Sun surface)',
+            result: '태양의 최대 파장은 약 500nm, 녹색-노란색! 태양이 노랗게 보이는 이유야.',
+            resultEn: 'Sun peaks at 500nm, green-yellow! This is why the Sun appears yellow.',
+            icon: '☀️',
+            condition: (vars) => vars['T'] >= 5600 && vars['T'] <= 6000,
+        },
+        {
+            id: 'hot-star',
+            mission: '온도 T를 10000K 이상으로 올려봐!',
+            missionEn: 'Raise temperature T above 10000K!',
+            result: '뜨거운 별은 파란색! 파장이 짧아서 푸르게 보여. 리겔이나 시리우스 같은 별이야.',
+            resultEn: 'Hot stars are blue! Short wavelengths appear blue. Like Rigel or Sirius.',
+            icon: '💙',
+            condition: (vars) => vars['T'] >= 10000,
+        },
+    ],
 }

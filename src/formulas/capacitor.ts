@@ -96,4 +96,24 @@ export const capacitor: Formula = {
         numerator: ['C', 'V'],
         squares: ['V'],
     },
+    discoveries: [
+        {
+            id: 'high-voltage',
+            mission: '전압 V를 8kV 이상으로 올려봐!',
+            missionEn: 'Raise voltage V above 8kV!',
+            result: '전압이 2배면 에너지는 4배! 제세동기가 높은 전압을 쓰는 이유야.',
+            resultEn: 'Double voltage means 4x energy! This is why defibrillators use high voltage.',
+            icon: '💓',
+            condition: (vars) => vars['V'] >= 8,
+        },
+        {
+            id: 'large-capacitor',
+            mission: '전기용량 C를 8mF 이상으로 올려봐!',
+            missionEn: 'Raise capacitance C above 8mF!',
+            result: '큰 용량은 많은 에너지 저장! 전기차 회생제동에 사용되는 원리야.',
+            resultEn: 'Large capacitance stores more energy! Used in electric vehicle regenerative braking.',
+            icon: '🚗',
+            condition: (vars) => vars['C'] >= 8,
+        },
+    ],
 }

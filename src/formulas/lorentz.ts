@@ -111,4 +111,24 @@ export const lorentz: Formula = {
         output: 'F',
         numerator: ['q', 'v', 'B'],
     },
+    discoveries: [
+        {
+            id: 'strong-field',
+            mission: '자기장 세기 B를 1.5T 이상으로 올려봐!',
+            missionEn: 'Raise magnetic field B above 1.5T!',
+            result: '강한 자기장은 큰 힘! MRI가 강력한 자석을 사용하는 이유야.',
+            resultEn: 'Strong magnetic field means strong force! This is why MRI uses powerful magnets.',
+            icon: '🧲',
+            condition: (vars) => vars['B'] >= 1.5,
+        },
+        {
+            id: 'fast-particle',
+            mission: '속력 v를 15m/s 이상으로 올리고 전하 q를 50 이상으로 설정해봐!',
+            missionEn: 'Raise velocity v above 15m/s and charge q above 50!',
+            result: '빠른 전하는 강하게 휘어져! 입자가속기가 자기장으로 경로를 제어해.',
+            resultEn: 'Fast charges curve strongly! Particle accelerators use magnetic fields to control paths.',
+            icon: '🔬',
+            condition: (vars) => vars['v'] >= 15 && vars['q'] >= 50,
+        },
+    ],
 }

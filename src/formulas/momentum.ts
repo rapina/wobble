@@ -92,4 +92,24 @@ export const momentum: Formula = {
         output: 'p',
         numerator: ['m', 'v'],
     },
+    discoveries: [
+        {
+            id: 'heavy-slow',
+            mission: '질량 m을 최대로, 속도 v를 5 이하로 설정해봐!',
+            missionEn: 'Set mass m to max and velocity v below 5!',
+            result: '무거운 물체는 느리게 움직여도 큰 운동량을 가져! 화물열차가 위험한 이유야.',
+            resultEn: 'Heavy objects have large momentum even when slow! This is why freight trains are dangerous.',
+            icon: '🚂',
+            condition: (vars) => vars['m'] >= 45 && vars['v'] <= 5,
+        },
+        {
+            id: 'light-fast',
+            mission: '질량 m을 10 이하로, 속도 v를 18 이상으로 설정해봐!',
+            missionEn: 'Set mass m below 10 and velocity v above 18!',
+            result: '가벼운 물체도 빠르면 큰 운동량을 가져! 총알이 위험한 이유야.',
+            resultEn: 'Light objects can have large momentum when fast! This is why bullets are dangerous.',
+            icon: '🎯',
+            condition: (vars) => vars['m'] <= 10 && vars['v'] >= 18,
+        },
+    ],
 }

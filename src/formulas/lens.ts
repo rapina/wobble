@@ -104,4 +104,24 @@ export const lens: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'equal-distance',
+            mission: '물체 거리 a와 상 거리 b를 같게 설정해봐!',
+            missionEn: 'Set object distance a equal to image distance b!',
+            result: 'a=b일 때 같은 크기의 상! 복사기가 원본 크기를 유지하는 원리야.',
+            resultEn: 'When a=b, image equals object size! How copiers maintain original size.',
+            icon: '📄',
+            condition: (vars) => Math.abs(vars['a'] - vars['b']) <= 5,
+        },
+        {
+            id: 'far-object',
+            mission: '물체 거리 a를 80cm 이상으로 멀리 해봐!',
+            missionEn: 'Set object distance a above 80cm!',
+            result: '멀리 있는 물체의 상은 초점 근처에 맺혀! 망원경의 원리야.',
+            resultEn: 'Distant object images form near the focal point! This is how telescopes work.',
+            icon: '🔭',
+            condition: (vars) => vars['a'] >= 80,
+        },
+    ],
 }

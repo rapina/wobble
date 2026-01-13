@@ -109,4 +109,24 @@ export const heat: Formula = {
         output: 'Q',
         numerator: ['m', 'c', 'ΔT'],
     },
+    discoveries: [
+        {
+            id: 'water-high-capacity',
+            mission: '비열 c를 최대(4200)로 설정해봐! (물의 비열)',
+            missionEn: 'Set specific heat c to maximum (4200)! (water)',
+            result: '물은 비열이 높아서 많은 열을 흡수해! 바다가 기후를 조절하는 이유야.',
+            resultEn: 'Water has high specific heat and absorbs lots of heat! This is why oceans regulate climate.',
+            icon: '🌊',
+            condition: (vars) => vars['c'] >= 4000,
+        },
+        {
+            id: 'metal-low-capacity',
+            mission: '비열 c를 600 이하로 낮춰봐! (금속)',
+            missionEn: 'Lower specific heat c below 600! (metal)',
+            result: '금속은 비열이 낮아 빨리 뜨거워지고 빨리 식어! 프라이팬이 빨리 달궈지는 이유야.',
+            resultEn: 'Metals have low specific heat - they heat up and cool down quickly! Why frying pans heat fast.',
+            icon: '🍳',
+            condition: (vars) => vars['c'] <= 600,
+        },
+    ],
 }

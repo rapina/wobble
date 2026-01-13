@@ -86,4 +86,24 @@ export const uncertainty: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'precise-position',
+            mission: '위치 불확정성 Δx를 0.3nm 이하로 줄여봐!',
+            missionEn: 'Reduce position uncertainty below 0.3nm!',
+            result: '위치를 정확히 알수록 운동량이 더 불확실해져! 양자역학의 핵심 원리야.',
+            resultEn: 'More precise position means more uncertain momentum! A core principle of quantum mechanics.',
+            icon: '🎯',
+            condition: (vars) => vars['Δx'] <= 0.3,
+        },
+        {
+            id: 'uncertain-position',
+            mission: '위치 불확정성 Δx를 8nm 이상으로 늘려봐!',
+            missionEn: 'Increase position uncertainty above 8nm!',
+            result: '위치가 불확실하면 운동량은 꽤 정확히 알 수 있어! 두 가지를 동시에 정확히 알 수 없어.',
+            resultEn: 'Uncertain position allows more precise momentum! Cannot know both precisely at once.',
+            icon: '🌊',
+            condition: (vars) => vars['Δx'] >= 8,
+        },
+    ],
 }

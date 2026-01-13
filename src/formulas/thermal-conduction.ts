@@ -141,4 +141,24 @@ export const thermalConduction: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'metal-conductor',
+            mission: '열전도율 k를 350 이상으로 올려봐! (구리, 알루미늄)',
+            missionEn: 'Raise thermal conductivity k above 350! (copper, aluminum)',
+            result: '금속은 열을 빠르게 전달해! 방열판이 금속으로 만들어지는 이유야.',
+            resultEn: 'Metals conduct heat quickly! This is why heat sinks are made of metal.',
+            icon: '🔥',
+            condition: (vars) => vars['k'] >= 350,
+        },
+        {
+            id: 'insulator',
+            mission: '열전도율 k를 30 이하로, 길이 L을 30 이상으로 설정해봐!',
+            missionEn: 'Set thermal conductivity k below 30 and length L above 30!',
+            result: '열전도율이 낮고 두꺼우면 단열이 잘 돼! 건물 단열재의 원리야.',
+            resultEn: 'Low conductivity and thickness means good insulation! How building insulation works.',
+            icon: '🏠',
+            condition: (vars) => vars['k'] <= 30 && vars['L'] >= 30,
+        },
+    ],
 }

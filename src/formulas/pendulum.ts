@@ -105,4 +105,24 @@ export const pendulum: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'long-pendulum',
+            mission: '줄 길이 L을 4m 이상으로 늘려봐!',
+            missionEn: 'Extend string length L above 4m!',
+            result: '긴 진자는 천천히 흔들려! 괘종시계가 긴 진자를 쓰는 이유야.',
+            resultEn: 'Long pendulums swing slowly! That is why grandfather clocks use long pendulums.',
+            icon: '🕰️',
+            condition: (vars) => vars['L'] >= 4,
+        },
+        {
+            id: 'moon-gravity',
+            mission: '중력가속도 g를 2 이하로 낮춰봐! (달에서의 진자)',
+            missionEn: 'Lower gravitational acceleration g below 2! (pendulum on Moon)',
+            result: '중력이 약하면 진자가 아주 느리게 흔들려! 달에서 시계는 느리게 갈 거야.',
+            resultEn: 'With weak gravity, pendulums swing very slowly! A clock on the Moon would run slow.',
+            icon: '🌙',
+            condition: (vars) => vars['g'] <= 2,
+        },
+    ],
 }

@@ -92,4 +92,24 @@ export const hooke: Formula = {
         output: 'F',
         numerator: ['k', 'x'],
     },
+    discoveries: [
+        {
+            id: 'stiff-spring',
+            mission: '스프링 상수 k를 80 이상으로 올려봐!',
+            missionEn: 'Raise spring constant k above 80!',
+            result: '딱딱한 스프링은 조금만 늘어나도 큰 힘으로 복원해!',
+            resultEn: 'A stiff spring restores with great force even with small stretch!',
+            icon: '🔩',
+            condition: (vars) => vars['k'] >= 80,
+        },
+        {
+            id: 'max-stretch',
+            mission: '변위 x를 최대(2m)로 늘려봐!',
+            missionEn: 'Stretch displacement x to maximum (2m)!',
+            result: '스프링을 많이 늘리면 복원력이 엄청나게 커져! 너무 늘리면 스프링이 망가질 수 있어.',
+            resultEn: 'Stretching too far creates huge restoring force! Too much can damage the spring.',
+            icon: '⚠️',
+            condition: (vars) => vars['x'] >= 1.8,
+        },
+    ],
 }

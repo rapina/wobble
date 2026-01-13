@@ -98,4 +98,24 @@ export const entropy: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'low-temp-entropy',
+            mission: '온도 T를 200K 이하로 낮추고 열량 Q를 높게 유지해봐!',
+            missionEn: 'Lower temperature T below 200K while keeping heat Q high!',
+            result: '낮은 온도에서 같은 열을 가하면 엔트로피 변화가 커! 냉장고가 에너지를 많이 쓰는 이유야.',
+            resultEn: 'Adding heat at low temperature increases entropy more! This is why refrigerators use lots of energy.',
+            icon: '🧊',
+            condition: (vars) => vars['T'] <= 200 && vars['Q'] >= 800,
+        },
+        {
+            id: 'high-temp-entropy',
+            mission: '온도 T를 500K 이상으로 올려봐!',
+            missionEn: 'Raise temperature T above 500K!',
+            result: '높은 온도에서는 같은 열을 가해도 엔트로피 변화가 작아! 열기관 효율의 비밀이야.',
+            resultEn: 'At high temperature, adding heat causes less entropy change! The secret to heat engine efficiency.',
+            icon: '🔥',
+            condition: (vars) => vars['T'] >= 500,
+        },
+    ],
 }

@@ -144,4 +144,31 @@ export const snell: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'total-internal-reflection',
+            mission: 'n₁ > n₂로 설정하고 입사각을 높여봐!',
+            missionEn: 'Set n₁ > n₂ and increase the incident angle!',
+            result: '전반사 발견! 빛이 완전히 반사돼!',
+            resultEn: 'Total internal reflection! Light is completely reflected!',
+            icon: '✨',
+            condition: (vars) => {
+                const n1 = vars['n₁'] ?? 1
+                const n2 = vars['n₂'] ?? 1.5
+                const theta1 = vars['θ₁'] ?? 45
+                const theta1Rad = (theta1 * Math.PI) / 180
+                const sinTheta2 = (n1 * Math.sin(theta1Rad)) / n2
+                return Math.abs(sinTheta2) > 1
+            },
+        },
+        {
+            id: 'strong-refraction',
+            mission: 'n₂를 2 이상으로 높여봐!',
+            missionEn: 'Increase n₂ to 2 or more!',
+            result: '다이아몬드 같은 고굴절률 매질에선 빛이 크게 꺾여!',
+            resultEn: 'In high-refractive materials like diamond, light bends sharply!',
+            icon: '💎',
+            condition: (vars) => vars['n₂'] >= 2,
+        },
+    ],
 }

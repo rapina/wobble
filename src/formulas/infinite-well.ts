@@ -106,4 +106,24 @@ export const infiniteWell: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'narrow-well',
+            mission: '우물 너비 L을 0.7nm 이하로 줄여봐!',
+            missionEn: 'Reduce well width L below 0.7nm!',
+            result: '좁은 우물은 높은 에너지! 양자점이 작을수록 더 높은 에너지 빛을 내.',
+            resultEn: 'Narrow well means higher energy! Smaller quantum dots emit higher energy light.',
+            icon: '💡',
+            condition: (vars) => vars['L'] <= 0.7,
+        },
+        {
+            id: 'excited-state',
+            mission: '양자수 n을 4 이상으로 올려봐!',
+            missionEn: 'Raise quantum number n above 4!',
+            result: '높은 양자수는 에너지가 n²에 비례해서 급격히 증가! 양자 레이저의 원리야.',
+            resultEn: 'Higher quantum number means energy increases as n squared! The principle of quantum lasers.',
+            icon: '🔬',
+            condition: (vars) => Math.round(vars['n']) >= 4,
+        },
+    ],
 }

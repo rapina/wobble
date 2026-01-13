@@ -94,4 +94,24 @@ export const kineticEnergy: Formula = {
         numerator: ['m', 'v'],
         squares: ['v'],
     },
+    discoveries: [
+        {
+            id: 'velocity-squared',
+            mission: '속도 v를 2배로 늘려봐! (5에서 10으로)',
+            missionEn: 'Double the velocity v! (from 5 to 10)',
+            result: '속도가 2배가 되면 에너지는 4배! 속도의 제곱에 비례하기 때문이야.',
+            resultEn: 'Doubling velocity quadruples energy! Because energy is proportional to velocity squared.',
+            icon: '📈',
+            condition: (vars) => vars['v'] >= 10,
+        },
+        {
+            id: 'high-speed-impact',
+            mission: '속도 v를 18 이상으로 올려봐!',
+            missionEn: 'Raise velocity v above 18!',
+            result: '고속 충돌은 엄청난 에너지를 전달해! 자동차 안전벨트가 중요한 이유야.',
+            resultEn: 'High-speed collisions transfer enormous energy! This is why seatbelts are crucial.',
+            icon: '🚗',
+            condition: (vars) => vars['v'] >= 18,
+        },
+    ],
 }

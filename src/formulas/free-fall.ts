@@ -96,4 +96,24 @@ export const freeFall: Formula = {
             { type: 'var', symbol: 't', square: true },
         ],
     },
+    discoveries: [
+        {
+            id: 'long-fall',
+            mission: '시간 t를 8초 이상으로 늘려봐!',
+            missionEn: 'Extend time t above 8 seconds!',
+            result: '8초면 약 300m 낙하! 스카이다이버가 낙하산을 펴기 전 거리야.',
+            resultEn: 'In 8 seconds you fall about 300m! The distance skydivers fall before opening their chute.',
+            icon: '🪂',
+            condition: (vars) => vars['t'] >= 8,
+        },
+        {
+            id: 'jupiter-gravity',
+            mission: '중력가속도 g를 24 이상으로 올려봐! (목성)',
+            missionEn: 'Raise gravitational acceleration g above 24! (Jupiter)',
+            result: '목성에서는 같은 시간에 2.5배 더 떨어져! 무거운 행성은 강한 중력을 가져.',
+            resultEn: 'On Jupiter you fall 2.5x farther in the same time! Massive planets have strong gravity.',
+            icon: '🪐',
+            condition: (vars) => vars['g'] >= 24,
+        },
+    ],
 }

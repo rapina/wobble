@@ -99,4 +99,24 @@ export const standingWave: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'fundamental',
+            mission: '배음 차수 n을 1로 설정해봐! (기본진동)',
+            missionEn: 'Set harmonic number n to 1! (fundamental)',
+            result: '기본진동은 가장 낮은 음! 기타 줄의 가장 낮은 소리가 이거야.',
+            resultEn: 'The fundamental is the lowest pitch! This is the deepest sound a guitar string makes.',
+            icon: '🎸',
+            condition: (vars) => Math.round(vars['n']) === 1,
+        },
+        {
+            id: 'harmonics',
+            mission: '배음 차수 n을 4 이상으로 올려봐!',
+            missionEn: 'Raise harmonic number n above 4!',
+            result: '높은 배음은 파장이 짧고 음이 높아! 하모닉스로 다양한 음색을 만들어.',
+            resultEn: 'Higher harmonics have shorter wavelengths and higher pitch! Harmonics create rich tones.',
+            icon: '🎻',
+            condition: (vars) => Math.round(vars['n']) >= 4,
+        },
+    ],
 }

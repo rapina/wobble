@@ -92,4 +92,24 @@ export const newtonSecond: Formula = {
         output: 'F',
         numerator: ['m', 'a'],
     },
+    discoveries: [
+        {
+            id: 'heavy-acceleration',
+            mission: '질량 m을 최대로 높이고 가속도 a를 10 이상으로 설정해봐!',
+            missionEn: 'Set mass m to max and acceleration a above 10!',
+            result: '무거운 물체를 빠르게 가속하려면 엄청난 힘이 필요해!',
+            resultEn: 'Accelerating a heavy object quickly requires enormous force!',
+            icon: '💪',
+            condition: (vars) => vars['m'] >= 90 && vars['a'] >= 10,
+        },
+        {
+            id: 'light-high-accel',
+            mission: '질량을 5 이하로 낮추고 가속도를 최대로 올려봐!',
+            missionEn: 'Lower mass below 5 and maximize acceleration!',
+            result: '가벼운 물체는 작은 힘으로도 빠르게 가속돼!',
+            resultEn: 'Light objects accelerate quickly with little force!',
+            icon: '🪶',
+            condition: (vars) => vars['m'] <= 5 && vars['a'] >= 18,
+        },
+    ],
 }

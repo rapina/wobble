@@ -116,4 +116,24 @@ export const torque: Formula = {
             { type: 'var', symbol: 'θ' },
         ],
     },
+    discoveries: [
+        {
+            id: 'lever-arm',
+            mission: '거리 r을 1.5m 이상으로 늘려봐!',
+            missionEn: 'Extend distance r above 1.5m!',
+            result: '팔 길이가 길면 작은 힘으로도 큰 토크! 긴 렌치가 볼트를 쉽게 푸는 이유야.',
+            resultEn: 'Longer lever arm means more torque with less force! Why long wrenches loosen bolts easily.',
+            icon: '🔧',
+            condition: (vars) => vars['r'] >= 1.5,
+        },
+        {
+            id: 'perpendicular-force',
+            mission: '각도 θ를 90°로 설정해봐!',
+            missionEn: 'Set angle θ to 90 degrees!',
+            result: '수직으로 힘을 가하면 토크가 최대! 문을 수직으로 밀 때 가장 쉽게 열리는 이유야.',
+            resultEn: 'Perpendicular force gives maximum torque! This is why doors open easiest when pushed straight.',
+            icon: '🚪',
+            condition: (vars) => vars['θ'] >= 85 && vars['θ'] <= 90,
+        },
+    ],
 }

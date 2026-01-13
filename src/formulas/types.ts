@@ -80,6 +80,17 @@ export interface DisplayLayout {
     expression?: ExpressionElement[]
 }
 
+/** 시뮬레이션에서 발견할 수 있는 미션 */
+export interface Discovery {
+    id: string
+    mission: string // "v를 0.95c까지 올려봐"
+    missionEn: string
+    result: string // "광속에 가까워지면 시간이 3배 이상 느려져!"
+    resultEn: string
+    icon: string // "⏰" 또는 "🌟"
+    condition: (variables: Record<string, number>) => boolean
+}
+
 export interface Formula {
     id: string
     name: string
@@ -99,4 +110,6 @@ export interface Formula {
     formatCalculation: (inputs: Record<string, number>) => string
     layout: LayoutConfig
     displayLayout?: DisplayLayout
+    /** 시뮬레이션에서 발견할 수 있는 미션들 */
+    discoveries?: Discovery[]
 }

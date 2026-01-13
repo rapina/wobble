@@ -121,4 +121,24 @@ export const keplerThird: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'moon-orbit',
+            mission: '지구-달 값 (M=5.97, r=384)을 설정해봐!',
+            missionEn: 'Set Earth-Moon values (M=5.97, r=384)!',
+            result: '달의 공전주기는 약 27일! 한 달(month)이라는 단어가 여기서 왔어.',
+            resultEn: 'Moon orbital period is about 27 days! The word month comes from Moon.',
+            icon: '🌙',
+            condition: (vars) => vars['M'] >= 5 && vars['M'] <= 7 && vars['r'] >= 350 && vars['r'] <= 420,
+        },
+        {
+            id: 'far-orbit',
+            mission: '궤도 반지름 r을 5000 이상으로 늘려봐!',
+            missionEn: 'Extend orbital radius r above 5000!',
+            result: '멀리 있을수록 공전주기가 훨씬 길어져! 명왕성은 248년이나 걸려.',
+            resultEn: 'Farther away means much longer orbital period! Pluto takes 248 years.',
+            icon: '🪐',
+            condition: (vars) => vars['r'] >= 5000,
+        },
+    ],
 }

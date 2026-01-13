@@ -115,4 +115,24 @@ export const escapeVelocity: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'earth-escape',
+            mission: '지구 값 (M=5.97, r=6.37)을 설정해봐!',
+            missionEn: 'Set Earth values (M=5.97, r=6.37)!',
+            result: '지구 탈출속도는 약 11.2km/s! 로켓이 이 속도를 내야 우주로 갈 수 있어.',
+            resultEn: 'Earth escape velocity is about 11.2km/s! Rockets must reach this speed to go to space.',
+            icon: '🚀',
+            condition: (vars) => vars['M'] >= 5.5 && vars['M'] <= 6.5 && vars['r'] >= 6 && vars['r'] <= 7,
+        },
+        {
+            id: 'black-hole',
+            mission: '질량 M을 최대로 올리고 반지름 r을 최소로 줄여봐!',
+            missionEn: 'Maximize mass M and minimize radius r!',
+            result: '질량이 크고 반지름이 작으면 탈출속도가 광속에 가까워져! 블랙홀의 원리야.',
+            resultEn: 'Large mass and small radius means escape velocity approaches light speed! The principle of black holes.',
+            icon: '🕳️',
+            condition: (vars) => vars['M'] >= 180 && vars['r'] <= 5,
+        },
+    ],
 }

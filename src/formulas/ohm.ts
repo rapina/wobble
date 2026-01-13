@@ -92,4 +92,24 @@ export const ohm: Formula = {
         output: 'V',
         numerator: ['I', 'R'],
     },
+    discoveries: [
+        {
+            id: 'high-resistance',
+            mission: '저항 R을 80 이상으로 올려봐!',
+            missionEn: 'Raise resistance R above 80 ohms!',
+            result: '저항이 크면 같은 전류에도 높은 전압이 필요해! 전기히터가 열을 내는 원리야.',
+            resultEn: 'High resistance needs high voltage for same current! How electric heaters generate heat.',
+            icon: '🔥',
+            condition: (vars) => vars['R'] >= 80,
+        },
+        {
+            id: 'high-current',
+            mission: '전류 I를 8A 이상으로 올려봐!',
+            missionEn: 'Raise current I above 8 amps!',
+            result: '높은 전류는 두꺼운 전선이 필요해! 가는 전선은 과열되어 위험해질 수 있어.',
+            resultEn: 'High current needs thick wires! Thin wires can overheat and become dangerous.',
+            icon: '⚡',
+            condition: (vars) => vars['I'] >= 8,
+        },
+    ],
 }

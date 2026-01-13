@@ -108,29 +108,43 @@ export function WobbleDisplay({
             mountedRef.current = false
 
             const currentApp = appRef.current
+            const wobbleToClean = wobbleRef.current
+            const tickerCallback = tickerCallbackRef.current
+
+            // Clear refs immediately
+            appRef.current = null
+            wobbleRef.current = null
+            tickerCallbackRef.current = null
+
             if (currentApp) {
                 try {
-                    currentApp.ticker.stop()
-                    if (tickerCallbackRef.current) {
-                        currentApp.ticker.remove(tickerCallbackRef.current)
+                    // 1. Remove wobble from stage IMMEDIATELY to prevent rendering
+                    if (wobbleToClean && wobbleToClean.parent) {
+                        wobbleToClean.parent.removeChild(wobbleToClean)
                     }
-
-                    if (wobbleRef.current && wobbleRef.current.parent) {
-                        wobbleRef.current.parent.removeChild(wobbleRef.current)
-                    }
-
                     currentApp.stage.removeChildren()
-                    currentApp.destroy(true, {
-                        children: true,
-                        texture: false,
-                        textureSource: false,
-                    })
+
+                    // 2. Stop ticker to prevent new frames
+                    currentApp.ticker.stop()
+                    if (tickerCallback) {
+                        currentApp.ticker.remove(tickerCallback)
+                    }
                 } catch {
-                    // Ignore cleanup errors
+                    // Ignore immediate cleanup errors
                 }
-                appRef.current = null
-                wobbleRef.current = null
-                tickerCallbackRef.current = null
+
+                // 3. Defer destruction with longer delay to let any in-progress render fully complete
+                setTimeout(() => {
+                    try {
+                        currentApp.destroy(true, {
+                            children: true,
+                            texture: false,
+                            textureSource: false,
+                        })
+                    } catch {
+                        // Ignore destruction errors
+                    }
+                }, 200)
             }
         }
     }, [size]) // Only recreate on size change

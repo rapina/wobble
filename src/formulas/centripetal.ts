@@ -118,4 +118,24 @@ export const centripetal: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'high-speed-turn',
+            mission: '속력 v를 9 이상으로 올리고 반지름 r을 3 이하로 줄여봐!',
+            missionEn: 'Raise velocity v above 9 and reduce radius r below 3!',
+            result: '빠른 속도로 좁게 돌면 구심력이 급증해! 급커브에서 차가 미끄러지는 이유야.',
+            resultEn: 'Fast tight turns require huge centripetal force! This is why cars skid on sharp curves.',
+            icon: '🏎️',
+            condition: (vars) => vars['v'] >= 9 && vars['r'] <= 3,
+        },
+        {
+            id: 'gentle-curve',
+            mission: '반지름 r을 최대(10m)로 늘려봐!',
+            missionEn: 'Maximize radius r to 10m!',
+            result: '큰 반지름으로 돌면 구심력이 작아져! 고속도로 커브가 완만한 이유야.',
+            resultEn: 'Large radius curves need less force! This is why highway curves are gentle.',
+            icon: '🛣️',
+            condition: (vars) => vars['r'] >= 9,
+        },
+    ],
 }

@@ -120,4 +120,24 @@ export const projectile: Formula = {
             },
         ],
     },
+    discoveries: [
+        {
+            id: 'optimal-angle',
+            mission: '발사각 θ를 45°로 설정해봐!',
+            missionEn: 'Set launch angle θ to 45 degrees!',
+            result: '45°가 최대 도달 거리! sin(90°)=1이 되어 최대 효율이야.',
+            resultEn: '45 degrees gives maximum range! Because sin(90 degrees)=1 gives maximum efficiency.',
+            icon: '🎯',
+            condition: (vars) => vars['θ'] >= 44 && vars['θ'] <= 46,
+        },
+        {
+            id: 'low-gravity-launch',
+            mission: '중력가속도 g를 3 이하로 낮춰봐! (달이나 화성)',
+            missionEn: 'Lower gravitational acceleration g below 3! (Moon or Mars)',
+            result: '중력이 약하면 물체가 훨씬 멀리 날아가! 달에서는 골프공이 엄청 멀리 갈 거야.',
+            resultEn: 'With weak gravity, objects fly much farther! A golf ball on the Moon would go incredibly far.',
+            icon: '🌙',
+            condition: (vars) => vars['g'] <= 3,
+        },
+    ],
 }

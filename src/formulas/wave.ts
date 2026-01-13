@@ -92,4 +92,24 @@ export const wave: Formula = {
         output: 'v',
         numerator: ['f', 'λ'],
     },
+    discoveries: [
+        {
+            id: 'high-frequency',
+            mission: '진동수 f를 4Hz 이상으로 올려봐!',
+            missionEn: 'Raise frequency f above 4Hz!',
+            result: '진동수가 높으면 빠르게 진동해! 높은 음은 진동수가 높은 소리야.',
+            resultEn: 'Higher frequency means faster vibration! High-pitched sounds have high frequency.',
+            icon: '🎵',
+            condition: (vars) => vars['f'] >= 4,
+        },
+        {
+            id: 'long-wavelength',
+            mission: '파장 λ를 8m 이상으로 늘려봐!',
+            missionEn: 'Extend wavelength λ above 8m!',
+            result: '파장이 길면 장애물을 잘 돌아가! AM 라디오가 건물 뒤에서도 들리는 이유야.',
+            resultEn: 'Long wavelengths bend around obstacles! This is why AM radio works behind buildings.',
+            icon: '📻',
+            condition: (vars) => vars['λ'] >= 8,
+        },
+    ],
 }

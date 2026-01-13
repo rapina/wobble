@@ -104,4 +104,29 @@ export const photoelectric: Formula = {
             { type: 'var', symbol: 'W' },
         ],
     },
+    discoveries: [
+        {
+            id: 'threshold-frequency',
+            mission: '진동수를 낮춰서 방출이 안 되게 해봐!',
+            missionEn: 'Lower the frequency until emission stops!',
+            result: '문턱 진동수 발견! 아무리 밝아도 전자가 안 나와!',
+            resultEn: 'Threshold frequency found! No emission regardless of intensity!',
+            icon: '🚫',
+            condition: (vars) => {
+                const f = vars.f ?? 7
+                const W = vars.W ?? 2.3
+                const h = 0.4136
+                return h * f < W
+            },
+        },
+        {
+            id: 'high-energy-electron',
+            mission: '진동수를 최대로 올려봐!',
+            missionEn: 'Maximize the frequency!',
+            result: '고에너지 빛은 빠른 전자를 만들어!',
+            resultEn: 'High-energy light creates fast electrons!',
+            icon: '⚡',
+            condition: (vars) => vars.f >= 11,
+        },
+    ],
 }
