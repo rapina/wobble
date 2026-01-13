@@ -1,4 +1,4 @@
-import { Application, Container, Graphics, Ticker } from 'pixi.js'
+import { Application, Container, Graphics, Ticker, Text, TextStyle } from 'pixi.js'
 import { AdventureScene, AdventureSceneOptions } from './AdventureScene'
 import { Wobble, WobbleShape, WOBBLE_CHARACTERS } from '../Wobble'
 import {
@@ -30,6 +30,9 @@ import {
     BackgroundSystem,
     ExperienceOrbSystem,
     BlackHoleSystem,
+    GravityWellSystem,
+    RepulsionBarrierSystem,
+    CrusherSystem,
     EffectsManager,
     ComboSystem,
     HudSystem,
@@ -99,6 +102,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private playerY = 0
     private playerVx = 0
     private playerVy = 0
+    // External velocity (knockback, bounce, pull) - separate from input
+    private externalVx = 0
+    private externalVy = 0
+    private readonly externalVelocityDecay = 0.92
     private recoilDecay = 0.9
     private readonly playerBaseSpeed = 4
     private readonly baseMaxHealth = 100
@@ -115,6 +122,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
     declare private backgroundSystem: BackgroundSystem
     declare private xpOrbSystem: ExperienceOrbSystem
     declare private blackHoleSystem: BlackHoleSystem
+    declare private gravityWellSystem: GravityWellSystem
+    declare private repulsionBarrierSystem: RepulsionBarrierSystem
+    declare private crusherSystem: CrusherSystem
     declare private damageTextSystem: FloatingDamageText
     declare private impactSystem: ImpactEffectSystem
     declare private effectsManager: EffectsManager
@@ -153,10 +163,44 @@ export class PhysicsSurvivorScene extends AdventureScene {
     // Hit effects (shared with systems)
     private hitEffects: HitEffect[] = []
 
+    // Debug system - reads from localStorage, set via Settings
+    private debugEnabled = localStorage.getItem('wobble-debug-enabled') === 'true'
+    declare private debugText: Text
+    private debugSessionId = 0
+    private debugStateHistory: string[] = []
+    private debugDomElement: HTMLDivElement | null = null
+
+    // Scene instance tracking
+    private static instanceCounter = 0
+    private instanceId: number
+
+    // Track if this scene has been destroyed to prevent stale operations
+    private isDestroyed = false
+
     constructor(app: Application, options?: AdventureSceneOptions) {
         super(app, options)
+
+        // Track scene instances
+        PhysicsSurvivorScene.instanceCounter++
+        this.instanceId = PhysicsSurvivorScene.instanceCounter
+        console.warn(`[SCENE #${this.instanceId}] PhysicsSurvivorScene CREATED (total created: ${PhysicsSurvivorScene.instanceCounter})`)
+
         if (options?.studiedFormulas) {
             this.studiedFormulas = options.studiedFormulas
+        }
+    }
+
+    /**
+     * Clean up resources when scene is destroyed
+     */
+    protected onDestroy(): void {
+        this.isDestroyed = true
+        console.warn(`[SCENE #${this.instanceId}] PhysicsSurvivorScene DESTROYED`)
+
+        // Clean up DOM debug overlay
+        if (this.debugDomElement) {
+            this.debugDomElement.remove()
+            this.debugDomElement = null
         }
     }
 
@@ -251,8 +295,26 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.onXpCollected(xp)
         }
 
-        // Black hole system for vortex stage
+        // World entity systems for each stage
         this.blackHoleSystem = new BlackHoleSystem({
+            container: this.effectContainer,
+            width: this.width,
+            height: this.height,
+        })
+
+        this.gravityWellSystem = new GravityWellSystem({
+            container: this.effectContainer,
+            width: this.width,
+            height: this.height,
+        })
+
+        this.repulsionBarrierSystem = new RepulsionBarrierSystem({
+            container: this.effectContainer,
+            width: this.width,
+            height: this.height,
+        })
+
+        this.crusherSystem = new CrusherSystem({
             container: this.effectContainer,
             width: this.width,
             height: this.height,
@@ -296,11 +358,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
             height: this.height,
         })
         this.resultScreen.onRetry = () => {
+            this.debugLog('resultScreen.onRetry called')
             this.resultScreen.hide()
             this.reset()
             this.play()
         }
         this.resultScreen.onExit = () => {
+            this.debugLog('resultScreen.onExit called')
             this.onPlayComplete?.('success')
         }
 
@@ -310,9 +374,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
             height: this.height,
         })
         this.characterSelectScreen.onStartGame = (character, stageId) => {
+            this.debugLog(`characterSelectScreen.onStartGame: ${character}, ${stageId}`)
             this.startWithStage(character, stageId)
         }
         this.characterSelectScreen.onExit = () => {
+            this.debugLog('characterSelectScreen.onExit called')
             this.onPlayComplete?.('success') // This triggers GameScreen's onBack()
         }
 
@@ -322,6 +388,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
             height: this.height,
         })
         this.openingScreen.onComplete = () => {
+            this.debugLog('openingScreen.onComplete called')
             this.startGameAfterOpening()
         }
 
@@ -339,9 +406,57 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.resumeGame()
         }
         this.pauseScreen.onExit = () => {
+            this.debugLog('pauseScreen.onExit called')
             this.pauseScreen.hide()
+            // Reset isPlaying flag so next play() call triggers onPlayStart()
+            // This is critical for mobile where component may not fully unmount
+            this.isPlaying = false
+            this.debugLog(`isPlaying set to false, calling onPlayComplete`)
             this.onPlayComplete?.('success')
         }
+
+        // Debug overlay - use DOM element for guaranteed visibility
+        if (this.debugEnabled) {
+            this.createDebugDomOverlay()
+        }
+
+        console.warn(`[SCENE #${this.instanceId}] setup() COMPLETED - systems initialized`)
+    }
+
+    private createDebugDomOverlay(): void {
+        // Remove ALL existing debug overlays (including from other scene instances)
+        const existingOverlays = document.querySelectorAll('#survivor-debug-overlay')
+        existingOverlays.forEach(el => el.remove())
+        console.log(`[DEBUG] Removed ${existingOverlays.length} existing overlay(s)`)
+
+        if (this.debugDomElement) {
+            this.debugDomElement.remove()
+            this.debugDomElement = null
+        }
+
+        const div = document.createElement('div')
+        div.id = 'survivor-debug-overlay'
+        div.style.cssText = `
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            width: 240px;
+            max-height: 300px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 3px solid #ff0;
+            border-radius: 8px;
+            padding: 8px;
+            font-family: monospace;
+            font-size: 10px;
+            color: #0f0;
+            z-index: 999999;
+            overflow-y: auto;
+            pointer-events: none;
+        `
+        div.innerHTML = '<b style="color:#ff0">DEBUG INIT</b>'
+        document.body.appendChild(div)
+        this.debugDomElement = div
+        console.log('[DEBUG] DOM debug overlay created')
     }
 
     protected drawBackground(): void {
@@ -409,7 +524,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     private showSkillSelection(): void {
-        this.gameState = 'skill-selection'
+        this.setGameState('skill-selection', 'showSkillSelection')
         this.skillSelectionScreen.show(this.playerSkills, this.playerProgress.level)
     }
 
@@ -438,7 +553,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.showSkillSelection()
         } else {
             this.skillSelectionScreen.hide()
-            this.gameState = 'playing'
+            this.setGameState('playing', 'finishLevelUp')
             this.updateHUD()
         }
     }
@@ -561,9 +676,25 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
     private updateEnemiesAndMerges(delta: number, deltaSeconds: number): void {
         this.enemySystem.update(delta, this.playerX, this.playerY, this.animPhase)
+
+        // Apply gravity well pull to enemies (they get sucked in too!)
+        if (this.gravityWellSystem.getIsActive()) {
+            for (const enemy of this.enemySystem.enemies) {
+                const pull = this.gravityWellSystem.applyGravityPull(
+                    enemy.x, enemy.y,
+                    enemy.vx, enemy.vy,
+                    deltaSeconds
+                )
+                enemy.vx = pull.vx
+                enemy.vy = pull.vy
+            }
+        }
+
         this.enemySystem.checkCollisions(deltaSeconds, this.hitEffects)
         this.enemySystem.updateMerges(this.gameTime, this.hitEffects)
         this.enemySystem.cleanupOverlapTracker()
+        // Clean up enemies that drifted too far off-screen (from physics)
+        this.enemySystem.cleanupOffScreen()
 
         const deadEnemies = this.enemySystem.getDeadEnemies()
         for (const enemy of deadEnemies) {
@@ -648,6 +779,104 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.crtFilter.flickerIntensity = this.baseFlickerIntensity + intensity * 0.03
     }
 
+    /**
+     * Update all world entity systems and apply their effects
+     */
+    private updateWorldEntities(deltaSeconds: number): void {
+        // Track total proximity effect for visual feedback
+        let totalProximityEffect = 0
+
+        // === BLACK HOLE (Vortex Stage) ===
+        if (this.blackHoleSystem.getIsActive()) {
+            this.blackHoleSystem.update(deltaSeconds)
+
+            // Update physics vortex center to follow black hole
+            const bhPos = this.blackHoleSystem.getPositionRatio()
+            if (this.currentStage.physics.vortexCenter) {
+                this.currentStage.physics.vortexCenter.x = bhPos.x
+                this.currentStage.physics.vortexCenter.y = bhPos.y
+            }
+
+            // Check player proximity and apply damage
+            const bhProximity = this.blackHoleSystem.getPlayerProximityEffect(this.playerX, this.playerY)
+            if (bhProximity > 0) {
+                const damage = this.blackHoleSystem.getDamagePerSecond() * bhProximity * deltaSeconds
+                this.takeDamage(damage)
+            }
+            totalProximityEffect = Math.max(totalProximityEffect, bhProximity)
+        }
+
+        // === GRAVITY WELLS (Low-Gravity Stage) ===
+        if (this.gravityWellSystem.getIsActive()) {
+            this.gravityWellSystem.update(deltaSeconds)
+
+            // Apply gentle drift to player (can escape, but pulled slightly)
+            const drift = this.gravityWellSystem.applyPlayerDrift(
+                this.playerX, this.playerY,
+                deltaSeconds
+            )
+            this.externalVx += drift.dvx
+            this.externalVy += drift.dvy
+
+            // Check player proximity for visual effect
+            const gwProximity = this.gravityWellSystem.getPlayerProximityEffect(this.playerX, this.playerY)
+            totalProximityEffect = Math.max(totalProximityEffect, gwProximity)
+        }
+
+        // === REPULSION BARRIERS (Elastic Stage) ===
+        if (this.repulsionBarrierSystem.getIsActive()) {
+            this.repulsionBarrierSystem.update(deltaSeconds)
+
+            // Check player collision with barriers (use combined velocity for collision detection)
+            const totalVx = this.playerVx + this.externalVx
+            const totalVy = this.playerVy + this.externalVy
+            const barrierCollision = this.repulsionBarrierSystem.checkCollision(
+                this.playerX, this.playerY,
+                totalVx, totalVy,
+                25 // Player radius
+            )
+            if (barrierCollision && barrierCollision.bounced) {
+                // Player is blocked but NOT bounced - just stop movement in that direction
+                this.externalVx = 0
+                this.externalVy = 0
+                this.triggerShake(3, 0.1)
+            }
+
+            // Check projectile collisions with barriers
+            this.projectileSystem.checkBarrierCollisions((x, y, vx, vy, radius) =>
+                this.repulsionBarrierSystem.checkCollision(x, y, vx, vy, radius)
+            )
+
+            // Check player proximity for visual effect
+            const rbProximity = this.repulsionBarrierSystem.getPlayerProximityEffect(this.playerX, this.playerY)
+            totalProximityEffect = Math.max(totalProximityEffect, rbProximity)
+        }
+
+        // === CRUSHERS (Momentum Stage) ===
+        if (this.crusherSystem.getIsActive()) {
+            this.crusherSystem.update(deltaSeconds, this.playerX, this.playerY)
+
+            // Check player collision with crushers
+            const crusherCollision = this.crusherSystem.checkCollision(this.playerX, this.playerY, 25)
+            if (crusherCollision) {
+                // Apply push to external velocity
+                this.externalVx += crusherCollision.pushVx
+                this.externalVy += crusherCollision.pushVy
+                // Apply damage
+                this.takeDamage(crusherCollision.damage * deltaSeconds)
+                this.triggerShake(5, 0.15)
+            }
+
+            // Check player proximity for visual effect
+            const crProximity = this.crusherSystem.getPlayerProximityEffect(this.playerX, this.playerY)
+            totalProximityEffect = Math.max(totalProximityEffect, crProximity)
+        }
+
+        // Update visual distortion based on proximity to any world entity
+        this.blackHoleProximityEffect = totalProximityEffect
+        this.updateBlackHoleDistortion()
+    }
+
     private createExplosion(x: number, y: number): void {
         const radius = this.stats.explosionRadius
         const damage = 5 * this.stats.damageMultiplier
@@ -726,9 +955,17 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
     private updatePlayer(delta: number): void {
         const input = this.joystick.getInput()
-        const speed = this.playerBaseSpeed * this.stats.moveSpeedMultiplier
+        let speed = this.playerBaseSpeed * this.stats.moveSpeedMultiplier
+
+        // Apply gravity well slowdown (player can escape but moves slower)
+        if (this.gravityWellSystem.getIsActive()) {
+            const gravitySpeedMult = this.gravityWellSystem.getPlayerSpeedMultiplier(this.playerX, this.playerY)
+            speed *= gravitySpeedMult
+        }
+
         const deadzone = 0.1
 
+        // Input velocity from joystick
         if (input.magnitude > deadzone) {
             this.playerVx = input.dirX * speed
             this.playerVy = input.dirY * speed
@@ -737,37 +974,50 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.playerVy = 0
         }
 
-        this.playerX += this.playerVx * delta
-        this.playerY += this.playerVy * delta
+        // Combine input velocity with external velocity (knockback, bounce, etc.)
+        const totalVx = this.playerVx + this.externalVx
+        const totalVy = this.playerVy + this.externalVy
+
+        // Apply combined velocity
+        this.playerX += totalVx * delta
+        this.playerY += totalVy * delta
+
+        // Decay external velocity
+        this.externalVx *= this.externalVelocityDecay
+        this.externalVy *= this.externalVelocityDecay
+
+        // Clear tiny external velocities
+        if (Math.abs(this.externalVx) < 0.1) this.externalVx = 0
+        if (Math.abs(this.externalVy) < 0.1) this.externalVy = 0
 
         const margin = 30
         if (this.playerX < margin) {
             this.playerX = margin
-            this.playerVx = 0
+            this.externalVx = Math.abs(this.externalVx) * 0.5 // Bounce off wall
         } else if (this.playerX > this.width - margin) {
             this.playerX = this.width - margin
-            this.playerVx = 0
+            this.externalVx = -Math.abs(this.externalVx) * 0.5
         }
         if (this.playerY < margin) {
             this.playerY = margin
-            this.playerVy = 0
+            this.externalVy = Math.abs(this.externalVy) * 0.5
         } else if (this.playerY > this.height - margin) {
             this.playerY = this.height - margin
-            this.playerVy = 0
+            this.externalVy = -Math.abs(this.externalVy) * 0.5
         }
 
         this.player.position.set(this.playerX, this.playerY)
 
-        const velMag = Math.sqrt(this.playerVx * this.playerVx + this.playerVy * this.playerVy)
+        const velMag = Math.sqrt(totalVx * totalVx + totalVy * totalVy)
         if (velMag > 0.5) {
             this.player.updateOptions({
-                lookDirection: { x: this.playerVx / velMag, y: this.playerVy / velMag },
+                lookDirection: { x: totalVx / velMag, y: totalVy / velMag },
             })
         }
     }
 
     private gameOver(): void {
-        this.gameState = 'game-over'
+        this.setGameState('game-over', 'gameOver')
         this.player.updateOptions({ expression: 'dizzy' })
         this.backgroundSystem.startCollapse()
 
@@ -777,7 +1027,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     private triggerVictory(): void {
-        this.gameState = 'victory'
+        this.setGameState('victory', 'triggerVictory')
         this.player.updateOptions({ expression: 'happy' })
 
         // Reset black hole distortion effect
@@ -840,7 +1090,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     private showResult(): void {
-        this.gameState = 'result'
+        this.setGameState('result', 'showResult')
 
         const rank = getRankFromTime(this.gameTime)
         const kills = Math.floor(this.score / 10)
@@ -857,6 +1107,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     private startWithStage(character: WobbleShape, stageId: string): void {
+        this.debugLog(`startWithStage: ${character}, stage: ${stageId}`)
         this.selectedCharacter = character
         this.currentStage = getStageById(stageId) || getDefaultStage()
         this.characterSelectScreen.hide()
@@ -871,18 +1122,33 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Update background theme
         this.backgroundSystem.setTheme(this.currentStage.bgColor)
 
-        // Activate/deactivate black hole for vortex stage
-        if (this.currentStage.id === 'vortex') {
-            this.blackHoleSystem.activate()
-        } else {
-            this.blackHoleSystem.deactivate()
+        // Deactivate all world entities first
+        this.blackHoleSystem.deactivate()
+        this.gravityWellSystem.deactivate()
+        this.repulsionBarrierSystem.deactivate()
+        this.crusherSystem.deactivate()
+
+        // Activate the appropriate world entity for this stage
+        switch (this.currentStage.id) {
+            case 'vortex':
+                this.blackHoleSystem.activate()
+                break
+            case 'low-gravity':
+                this.gravityWellSystem.activate()
+                break
+            case 'elastic':
+                this.repulsionBarrierSystem.activate()
+                break
+            case 'momentum':
+                this.crusherSystem.activate()
+                break
         }
     }
 
     private showOpening(character: WobbleShape): void {
         this.selectedCharacter = character
-        this.gameState = 'opening'
-        this.openingScreen.show(character)
+        this.setGameState('opening', 'showOpening')
+        this.openingScreen.show(character, this.currentStage)
 
         // Hide player during opening (opening has its own wobble)
         if (this.player) {
@@ -891,6 +1157,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     private startGameAfterOpening(): void {
+        this.debugLog('startGameAfterOpening called')
         this.openingScreen.hide()
         this.initializeCharacterSkills()
         this.applyCharacterStats()
@@ -907,7 +1174,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.gameTime = 0
         this.score = 0
         this.playerProgress = { xp: 0, level: 1, pendingLevelUps: 0 }
-        this.gameState = 'playing'
+        this.setGameState('playing', 'startGameAfterOpening')
         this.updateHUD()
     }
 
@@ -933,6 +1200,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     protected animateIdle(ticker: Ticker): void {
+        // Prevent operation on destroyed scene
+        if (this.isDestroyed) return
+
         const delta = ticker.deltaMS / 16.67
         const deltaSeconds = ticker.deltaMS / 1000
         this.animPhase += deltaSeconds
@@ -983,9 +1253,15 @@ export class PhysicsSurvivorScene extends AdventureScene {
             scaleX: 1 + breathe,
             scaleY: 1 - breathe,
         })
+
+        // Update debug overlay
+        this.updateDebugText()
     }
 
     protected animatePlay(ticker: Ticker): void {
+        // Prevent operation on destroyed scene
+        if (this.isDestroyed) return
+
         if (this.gameState !== 'playing') {
             this.animateIdle(ticker)
             return
@@ -1021,33 +1297,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         this.backgroundSystem.update(delta, this.playerSkills.length, this.gameTime)
 
-        // Update black hole if active (vortex stage)
+        // Update world entities and their effects
+        this.updateWorldEntities(deltaSeconds)
+
+        // Update XP orbs (with black hole info if active)
         if (this.blackHoleSystem.getIsActive()) {
-            this.blackHoleSystem.update(deltaSeconds)
-
-            // Update physics vortex center to follow black hole
-            const bhPos = this.blackHoleSystem.getPositionRatio()
-            if (this.currentStage.physics.vortexCenter) {
-                this.currentStage.physics.vortexCenter.x = bhPos.x
-                this.currentStage.physics.vortexCenter.y = bhPos.y
-            }
-
-            // Check player proximity to black hole
-            this.blackHoleProximityEffect = this.blackHoleSystem.getPlayerProximityEffect(
-                this.playerX,
-                this.playerY
-            )
-
-            // Apply damage if player is in danger zone
-            if (this.blackHoleProximityEffect > 0) {
-                const damage = this.blackHoleSystem.getDamagePerSecond() * this.blackHoleProximityEffect * deltaSeconds
-                this.takeDamage(damage)
-            }
-
-            // Apply visual distortion based on proximity
-            this.updateBlackHoleDistortion()
-
-            // Pass black hole info to xp orb system
             const bhAbsPos = this.blackHoleSystem.getPosition()
             const blackHoleInfo: BlackHoleInfo = {
                 x: bhAbsPos.x,
@@ -1057,11 +1311,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
             }
             this.xpOrbSystem.update(deltaSeconds, this.playerX, this.playerY, blackHoleInfo)
         } else {
-            // Reset distortion if not in vortex stage
-            if (this.blackHoleProximityEffect > 0) {
-                this.blackHoleProximityEffect = 0
-                this.updateBlackHoleDistortion()
-            }
             this.xpOrbSystem.update(deltaSeconds, this.playerX, this.playerY)
         }
 
@@ -1124,6 +1373,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
             scaleY: 1 - breathe,
             expression,
         })
+
+        // Update debug overlay
+        this.updateDebugText()
     }
 
     protected updatePreview(): void {
@@ -1135,9 +1387,26 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     protected onPlayStart(): void {
+        // Prevent operation on destroyed scene
+        if (this.isDestroyed) {
+            console.warn(`[SCENE #${this.instanceId}] onPlayStart BLOCKED - scene is destroyed`)
+            return
+        }
+
+        this.debugSessionId++
+        this.debugStateHistory = []
+        this.debugLog(`onPlayStart called (isPlaying was: ${this.isPlaying})`)
+
         // Full reset before starting to ensure clean state
         this.onReset()
+        this.debugLog('Showing character select screen')
         this.characterSelectScreen.show()
+        // Check both the internal flag and the actual PixiJS container state
+        const charScreen = this.characterSelectScreen as unknown as { screenContainer?: { visible?: boolean; parent?: unknown; children?: unknown[] } }
+        const containerVisible = charScreen.screenContainer?.visible ?? 'N/A'
+        const hasParent = !!charScreen.screenContainer?.parent
+        const childCount = charScreen.screenContainer?.children?.length ?? 0
+        this.debugLog(`characterSelectScreen.show() completed - flag: ${this.characterSelectScreen.visible}, container: ${containerVisible}, hasParent: ${hasParent}, children: ${childCount}`)
     }
 
     private resetStats(): void {
@@ -1171,9 +1440,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
      * Pause the game and show pause screen
      */
     public pauseGame(): void {
+        this.debugLog(`pauseGame called (current state: ${this.gameState})`)
         if (this.gameState !== 'playing') return
 
-        this.gameState = 'paused'
+        this.setGameState('paused', 'pauseGame')
         this.pauseScreen.show({
             level: this.playerProgress.level,
             xp: this.playerProgress.xp,
@@ -1189,10 +1459,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
      * Resume the game from pause
      */
     public resumeGame(): void {
+        this.debugLog(`resumeGame called (current state: ${this.gameState})`)
         if (this.gameState !== 'paused') return
 
         this.pauseScreen.hide()
-        this.gameState = 'playing'
+        this.setGameState('playing', 'resumeGame')
     }
 
     /**
@@ -1203,6 +1474,15 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     protected onReset(): void {
+        this.debugLog(`onReset called (current state: ${this.gameState})`)
+
+        // Safety check - ensure systems are initialized
+        if (!this.projectileSystem || !this.characterSelectScreen) {
+            console.error(`[SCENE #${this.instanceId}] onReset called but systems not initialized!`)
+            this.debugLog('ERROR: Systems not initialized in onReset')
+            return
+        }
+
         // Reset all systems
         this.projectileSystem.reset()
         this.enemySystem.reset()
@@ -1210,8 +1490,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.damageTextSystem.reset()
         this.impactSystem.reset()
         this.xpOrbSystem.reset()
+        // Reset all world entity systems
         this.blackHoleSystem.reset()
-        // Reset black hole visual distortion
+        this.gravityWellSystem.reset()
+        this.repulsionBarrierSystem.reset()
+        this.crusherSystem.reset()
+        // Reset visual distortion
         this.blackHoleProximityEffect = 0
         this.updateBlackHoleDistortion()
         this.effectsManager.reset()
@@ -1243,7 +1527,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.playerProgress = { xp: 0, level: 1, pendingLevelUps: 0 }
         this.maxPlayerHealth = this.baseMaxHealth
         this.playerHealth = this.maxPlayerHealth
-        this.gameState = 'character-select'
+        this.setGameState('character-select', 'onReset')
         this.bossSpawned = false
         this.playerSkills = []
         this.passiveTrait = ''
@@ -1257,6 +1541,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.playerY = this.centerY
         this.playerVx = 0
         this.playerVy = 0
+        this.externalVx = 0
+        this.externalVy = 0
         this.selectedCharacter = 'circle'
 
         this.joystick.reset()
@@ -1270,5 +1556,76 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.player.visible = true
         }
         this.updateHUD()
+        this.debugLog('onReset complete')
+    }
+
+    // ==================== DEBUG METHODS ====================
+
+    private debugLog(message: string): void {
+        const timestamp = new Date().toISOString().split('T')[1].slice(0, 12)
+        const logEntry = `[${timestamp}] S${this.debugSessionId}: ${message}`
+        console.log(`[PhysicsSurvivor] ${logEntry}`)
+
+        // Keep last 10 entries in history
+        this.debugStateHistory.push(logEntry)
+        if (this.debugStateHistory.length > 10) {
+            this.debugStateHistory.shift()
+        }
+    }
+
+    private setGameState(newState: GameState, reason: string): void {
+        const oldState = this.gameState
+        this.gameState = newState
+        this.debugLog(`STATE: ${oldState} -> ${newState} (${reason})`)
+    }
+
+    private updateDebugText(): void {
+        if (!this.debugEnabled) return
+
+        // Create DOM overlay if not exists
+        if (!this.debugDomElement) {
+            this.createDebugDomOverlay()
+        }
+
+        // Access private screenContainer via any cast for debugging
+        const getScreenInfo = (screen: unknown): { visible: boolean; children: number; hasParent: boolean } => {
+            try {
+                const s = screen as { screenContainer?: { visible?: boolean; children?: unknown[]; parent?: unknown } }
+                return {
+                    visible: s.screenContainer?.visible ?? false,
+                    children: s.screenContainer?.children?.length ?? 0,
+                    hasParent: !!s.screenContainer?.parent,
+                }
+            } catch {
+                return { visible: false, children: 0, hasParent: false }
+            }
+        }
+
+        const charInfo = getScreenInfo(this.characterSelectScreen)
+        const openingInfo = getScreenInfo(this.openingScreen)
+        const pauseInfo = getScreenInfo(this.pauseScreen)
+        const resultInfo = getScreenInfo(this.resultScreen)
+        const skillInfo = getScreenInfo(this.skillSelectionScreen)
+
+        const lines = [
+            `<b style="color:#ff0">=== DEBUG S${this.debugSessionId} ===</b>`,
+            `<b style="color:#f00">Instance #${this.instanceId} (total: ${PhysicsSurvivorScene.instanceCounter})</b>`,
+            `<span style="color:#0ff">gameState:</span> <b>${this.gameState}</b>`,
+            `<span style="color:#0ff">isPlaying:</span> ${this.isPlaying}`,
+            `<span style="color:#0ff">isDestroyed:</span> ${this.isDestroyed}`,
+            `<span style="color:#0ff">gameTime:</span> ${this.gameTime.toFixed(1)}s`,
+            `<span style="color:#888">--- Screens (v/c/p) ---</span>`,
+            `charSelect: ${charInfo.visible}/${charInfo.children}/${charInfo.hasParent}`,
+            `opening: ${openingInfo.visible}/${openingInfo.children}/${openingInfo.hasParent}`,
+            `pause: ${pauseInfo.visible}/${pauseInfo.children}/${pauseInfo.hasParent}`,
+            `result: ${resultInfo.visible}/${resultInfo.children}/${resultInfo.hasParent}`,
+            `skillSelect: ${skillInfo.visible}/${skillInfo.children}/${skillInfo.hasParent}`,
+            `<span style="color:#888">--- History ---</span>`,
+            ...this.debugStateHistory.slice(-5).map(h => `<span style="color:#aaa">${h}</span>`),
+        ]
+
+        if (this.debugDomElement) {
+            this.debugDomElement.innerHTML = lines.join('<br>')
+        }
     }
 }

@@ -23,6 +23,7 @@ export interface StageConfig {
     particleColor: number // Particle/effect color
     description: string // Physics formula
     trait: string // Gameplay characteristic description
+    tip: string // Gameplay tip for this stage
 }
 
 export const DEFAULT_PHYSICS: PhysicsModifiers = {
@@ -49,12 +50,13 @@ export const STAGES: StageConfig[] = [
         particleColor: 0xffffff,
         description: 'F = ma',
         trait: '표준 물리 법칙이 지배한다',
+        tip: '3분간 생존하세요!',
     },
     {
         id: 'low-gravity',
-        name: 'Low Gravity',
-        nameKo: '인력의 세계',
-        icon: '!',
+        name: 'Gravity Wells',
+        nameKo: '끌어당기는 자',
+        icon: '◎',
         physics: {
             gravity: 0.15,
             friction: 0.995,
@@ -64,14 +66,15 @@ export const STAGES: StageConfig[] = [
         formula: 'free-fall',
         bgColor: 0x1a1a2e,
         particleColor: 0xaaaaff,
-        description: 'h = 1/2 gt^2',
-        trait: '탄환이 적의 중력에 이끌린다',
+        description: 'h = ½gt²',
+        trait: '중력체가 모든 것을 끌어당긴다',
+        tip: '중력체에 가까이 가면 끌려갑니다',
     },
     {
         id: 'elastic',
-        name: 'Elastic',
-        nameKo: '반발의 세계',
-        icon: '%',
+        name: 'Repulsion',
+        nameKo: '튕겨내는 자',
+        icon: '◇',
         physics: {
             gravity: 0,
             friction: 0.98,
@@ -82,13 +85,14 @@ export const STAGES: StageConfig[] = [
         bgColor: 0xff69b4,
         particleColor: 0xffaacc,
         description: 'F = -kx',
-        trait: '모든 것이 튕겨나간다',
+        trait: '반발 장벽이 모든 것을 튕겨낸다',
+        tip: '장벽에 부딪히면 튕겨납니다',
     },
     {
         id: 'momentum',
-        name: 'Momentum',
-        nameKo: '질량의 세계',
-        icon: '@',
+        name: 'Crushers',
+        nameKo: '밀어붙이는 자',
+        icon: '▣',
         physics: {
             gravity: 0,
             friction: 0.92,
@@ -99,13 +103,14 @@ export const STAGES: StageConfig[] = [
         bgColor: 0x4a4a4a,
         particleColor: 0xffaa00,
         description: 'p = mv',
-        trait: '무거운 자가 승리한다',
+        trait: '거대한 파괴자가 밀어붙인다',
+        tip: '경고 표시가 보이면 피하세요!',
     },
     {
         id: 'vortex',
-        name: 'Vortex',
-        nameKo: '심연의 세계',
-        icon: '#',
+        name: 'Devourer',
+        nameKo: '삼켜버리는 자',
+        icon: '●',
         physics: {
             gravity: 0,
             friction: 0.98,
@@ -117,8 +122,9 @@ export const STAGES: StageConfig[] = [
         formula: 'centripetal',
         bgColor: 0x2d1b4e,
         particleColor: 0xaa44ff,
-        description: 'F = mv^2/r',
-        trait: '중심이 모든 것을 삼킨다',
+        description: 'F = mv²/r',
+        trait: '블랙홀이 모든 것을 삼킨다',
+        tip: '블랙홀에 가까워지면 데미지!',
     },
 ]
 

@@ -326,10 +326,10 @@ export class StageSelectScreen {
         // Physics effect description
         const effectDescriptions: Record<string, string> = {
             normal: '표준 물리 법칙이 지배한다',
-            'low-gravity': '탄환이 적의 중력에 이끌린다',
-            elastic: '모든 것이 튕겨나간다',
-            momentum: '무거운 자가 승리한다',
-            vortex: '중심이 모든 것을 삼킨다',
+            'low-gravity': '중력체가 모든 것을 끌어당긴다',
+            elastic: '반발 장벽이 모든 것을 튕겨낸다',
+            momentum: '거대한 파괴자가 밀어붙인다',
+            vortex: '블랙홀이 모든 것을 삼킨다',
         }
 
         const effectText = new Text({

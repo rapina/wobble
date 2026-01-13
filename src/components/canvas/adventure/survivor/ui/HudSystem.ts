@@ -110,17 +110,15 @@ export class HudSystem {
         this.xpBarFill.position.set(xpBarX + 2, xpBarY + 2)
         this.uiContainer.addChild(this.xpBarFill)
 
-        // Timer text
+        // Timer text - with stroke for visibility on any background
         const timerStyle = new TextStyle({
             fontFamily: 'Arial, sans-serif',
             fontSize: 10,
             fontWeight: 'bold',
-            fill: uiShadowColor,
-            dropShadow: {
-                color: 0xffffff,
-                blur: 2,
-                distance: 0,
-                alpha: 0.8,
+            fill: 0xffffff,
+            stroke: {
+                color: 0x000000,
+                width: 3,
             },
         })
         this.timeText = new Text({ text: '00:00', style: timerStyle })
@@ -313,17 +311,17 @@ export class HudSystem {
         const seconds = Math.floor(remainingTime % 60)
         this.timeText.text = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
 
-        // Change color based on urgency
+        // Change color based on urgency (all colors visible with black stroke)
         if (remainingTime <= 30) {
             // Critical - red flashing
             const flash = Math.sin(gameTime * 10) > 0
-            this.timeText.style.fill = flash ? 0xff4444 : 0xcc0000
+            this.timeText.style.fill = flash ? 0xff6666 : 0xff3333
         } else if (remainingTime <= 60) {
             // Warning - yellow
-            this.timeText.style.fill = 0xffd700
+            this.timeText.style.fill = 0xffdd44
         } else {
-            // Normal - dark gray
-            this.timeText.style.fill = 0x292524
+            // Normal - white
+            this.timeText.style.fill = 0xffffff
         }
     }
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, Check, RefreshCw, Loader2, Trash2, AlertTriangle } from 'lucide-react'
+import { X, Check, RefreshCw, Loader2, Trash2, AlertTriangle, Bug } from 'lucide-react'
 import { useInAppPurchase } from '@/hooks/useInAppPurchase'
 import { usePurchaseStore } from '@/stores/purchaseStore'
 import { useCollectionStore } from '@/stores/collectionStore'
@@ -18,6 +18,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     const { isAdFree, setAdFree, reset: resetPurchase } = usePurchaseStore()
     const { resetCollection } = useCollectionStore()
     const [showResetConfirm, setShowResetConfirm] = useState(false)
+    const [debugEnabled, setDebugEnabled] = useState(() => {
+        return localStorage.getItem('wobble-debug-enabled') === 'true'
+    })
     const {
         isNative,
         product,
@@ -224,6 +227,58 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
                     {/* Error Message */}
                     {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+
+                    {/* Debug Mode Toggle */}
+                    <div
+                        className="p-4 rounded-xl cursor-pointer transition-all hover:bg-white/5"
+                        style={{
+                            background: debugEnabled
+                                ? 'rgba(255, 100, 100, 0.15)'
+                                : 'rgba(255,255,255,0.05)',
+                            border: debugEnabled
+                                ? '2px solid rgba(255, 100, 100, 0.5)'
+                                : '2px solid rgba(255,255,255,0.1)',
+                        }}
+                        onClick={() => {
+                            const newValue = !debugEnabled
+                            setDebugEnabled(newValue)
+                            localStorage.setItem('wobble-debug-enabled', String(newValue))
+                        }}
+                    >
+                        <div className="flex items-center gap-3">
+                            <div
+                                className="w-10 h-10 rounded-full flex items-center justify-center"
+                                style={{
+                                    background: debugEnabled ? 'rgba(255,100,100,0.3)' : 'rgba(255,255,255,0.1)',
+                                }}
+                            >
+                                <Bug className={`w-5 h-5 ${debugEnabled ? 'text-red-400' : 'text-white/50'}`} />
+                            </div>
+                            <div className="flex-1">
+                                <p className="font-semibold text-white">
+                                    {isKorean ? '디버그 모드' : 'Debug Mode'}
+                                </p>
+                                <p className="text-sm text-white/50">
+                                    {debugEnabled
+                                        ? isKorean ? '디버그 오버레이 활성화됨' : 'Debug overlay enabled'
+                                        : isKorean ? '탭하여 활성화' : 'Tap to enable'}
+                                </p>
+                            </div>
+                            <div
+                                className={cn(
+                                    'w-12 h-7 rounded-full transition-all relative',
+                                    debugEnabled ? 'bg-red-500' : 'bg-white/20'
+                                )}
+                            >
+                                <div
+                                    className={cn(
+                                        'absolute top-1 w-5 h-5 rounded-full bg-white transition-all',
+                                        debugEnabled ? 'left-6' : 'left-1'
+                                    )}
+                                />
+                            </div>
+                        </div>
+                    </div>
 
                     {/* Divider */}
                     <div className="border-t border-white/10 pt-4 mt-4">

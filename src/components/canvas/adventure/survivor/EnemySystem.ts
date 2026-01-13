@@ -1,7 +1,7 @@
 import { Container, Graphics } from 'pixi.js'
 import { Wobble } from '../../Wobble'
 import { Enemy, EnemyTier, TIER_CONFIGS, HitEffect } from './types'
-import { PhysicsModifiers, DEFAULT_PHYSICS, applyGravity, applyVortex } from './PhysicsModifiers'
+import { PhysicsModifiers, DEFAULT_PHYSICS, applyVortex } from './PhysicsModifiers'
 
 interface EnemySystemContext {
     enemyContainer: Container
@@ -9,6 +9,7 @@ interface EnemySystemContext {
     width: number
     height: number
     baseEnemySpeed: number
+    maxEnemyCount?: number
 }
 
 interface PendingMerge {
@@ -26,11 +27,23 @@ export class EnemySystem {
     // Physics modifiers (stage-based)
     private physicsModifiers: PhysicsModifiers = DEFAULT_PHYSICS
 
+    // Maximum enemy count to prevent O(n²) collision explosion
+    private readonly maxEnemyCount: number
+
     readonly mergeThreshold = 0.75 // seconds of overlap before merge
     readonly enemies: Enemy[] = []
 
     constructor(context: EnemySystemContext) {
         this.context = context
+        // Default max 50 enemies - keeps collision checks under 1250 per frame
+        this.maxEnemyCount = context.maxEnemyCount ?? 50
+    }
+
+    /**
+     * Check if more enemies can be spawned
+     */
+    canSpawn(): boolean {
+        return this.enemies.length < this.maxEnemyCount
     }
 
     updateContext(context: Partial<EnemySystemContext>): void {
@@ -45,7 +58,12 @@ export class EnemySystem {
     }
 
     // Spawn enemy at random edge
-    spawnAtEdge(gameTime: number): void {
+    spawnAtEdge(gameTime: number): boolean {
+        // Check enemy limit before spawning
+        if (!this.canSpawn()) {
+            return false
+        }
+
         const side = Math.floor(Math.random() * 4)
         const size = TIER_CONFIGS.small.size
         let x: number, y: number
@@ -70,6 +88,7 @@ export class EnemySystem {
         }
 
         this.spawnAtTier(x, y, 'small', gameTime)
+        return true
     }
 
     // Spawn enemy at specific tier
@@ -136,8 +155,9 @@ export class EnemySystem {
             enemy.vx += (dx / dist) * accel * enemy.speed
             enemy.vy += (dy / dist) * accel * enemy.speed
 
-            // Apply gravity
-            enemy.vy = applyGravity(enemy.vy, delta, this.physicsModifiers.gravity, 0.5)
+            // Note: Stage gravity is NOT applied to enemies
+            // Enemies should always chase the player regardless of world physics
+            // Gravity wells pull enemies via the vortex system instead
 
             // Apply vortex pull if configured
             if (this.physicsModifiers.vortexCenter && this.physicsModifiers.vortexStrength) {
@@ -208,6 +228,9 @@ export class EnemySystem {
 
     // Check for enemy collisions and potential merges
     checkCollisions(deltaSeconds: number, hitEffects: HitEffect[]): void {
+        // Early exit optimization for large enemy counts
+        const maxCheckDist = 150 // Max distance to check collisions
+
         for (let i = 0; i < this.enemies.length; i++) {
             for (let j = i + 1; j < this.enemies.length; j++) {
                 const e1 = this.enemies[i]
@@ -218,6 +241,10 @@ export class EnemySystem {
 
                 const dx = e2.x - e1.x
                 const dy = e2.y - e1.y
+
+                // Quick distance check - skip if clearly too far (avoid sqrt)
+                if (Math.abs(dx) > maxCheckDist || Math.abs(dy) > maxCheckDist) continue
+
                 const dist = Math.sqrt(dx * dx + dy * dy)
                 const minDist = e1.size / 2 + e2.size / 2
 
@@ -340,6 +367,33 @@ export class EnemySystem {
             }
         }
         return score
+    }
+
+    /**
+     * Remove enemies that have drifted too far off-screen
+     * Important for stages with gravity/physics that push enemies away
+     */
+    cleanupOffScreen(): number {
+        const margin = 300 // How far off-screen before removal
+        const { width, height } = this.context
+        let removed = 0
+
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+            const enemy = this.enemies[i]
+            if (
+                enemy.x < -margin ||
+                enemy.x > width + margin ||
+                enemy.y < -margin ||
+                enemy.y > height + margin
+            ) {
+                this.context.enemyContainer.removeChild(enemy.graphics)
+                enemy.graphics.destroy()
+                this.enemies.splice(i, 1)
+                removed++
+            }
+        }
+
+        return removed
     }
 
     // Cleanup stale overlap tracking

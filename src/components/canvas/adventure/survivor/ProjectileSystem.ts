@@ -367,6 +367,25 @@ export class ProjectileSystem {
         this.projectiles.splice(index, 1)
     }
 
+    /**
+     * Check and apply barrier collisions to all projectiles
+     * Used for Elastic stage repulsion barriers
+     */
+    checkBarrierCollisions(
+        checkCollision: (x: number, y: number, vx: number, vy: number, radius: number) =>
+            { vx: number; vy: number; bounced: boolean; barrierIndex: number } | null
+    ): void {
+        const projectileRadius = this.baseSize
+
+        for (const proj of this.projectiles) {
+            const result = checkCollision(proj.x, proj.y, proj.vx, proj.vy, projectileRadius * proj.scale)
+            if (result && result.bounced) {
+                proj.vx = result.vx
+                proj.vy = result.vy
+            }
+        }
+    }
+
     // Reset all projectiles
     reset(): void {
         for (const proj of this.projectiles) {

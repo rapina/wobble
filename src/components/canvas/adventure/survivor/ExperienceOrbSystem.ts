@@ -77,6 +77,12 @@ export class ExperienceOrbSystem {
 
     private totalXpCollected = 0
 
+    // Merge timer - check for merging periodically
+    private mergeTimer = 0
+    private readonly MERGE_INTERVAL = 0.5 // Check every 0.5 seconds
+    private readonly MERGE_RADIUS = 25 // Orbs within this distance will merge
+    private readonly MAX_ORBS = 50 // Start merging aggressively if above this count
+
     constructor(context: ExperienceOrbSystemContext, options?: ExperienceOrbSystemOptions) {
         this.context = context
         this.poolSize = options?.poolSize ?? DEFAULT_OPTIONS.poolSize
@@ -209,8 +215,8 @@ export class ExperienceOrbSystem {
             vx: Math.cos(angle) * speed,
             vy: Math.sin(angle) * speed - 2, // Initial upward burst
             xpValue,
-            life: 30, // 30 seconds lifetime
-            maxLife: 30,
+            life: 8, // 8 seconds lifetime
+            maxLife: 8,
             collected: false,
             collectSpeed: 0,
             animOffset: Math.random() * Math.PI * 2, // Random phase for varied animation
@@ -218,10 +224,125 @@ export class ExperienceOrbSystem {
     }
 
     /**
+     * Merge nearby orbs to reduce count and improve performance
+     */
+    private mergeNearbyOrbs(): void {
+        // Use larger merge radius if too many orbs
+        const mergeRadius = this.orbs.length > this.MAX_ORBS
+            ? this.MERGE_RADIUS * 1.5
+            : this.MERGE_RADIUS
+
+        // Track which orbs have been merged (to skip them)
+        const merged = new Set<number>()
+
+        for (let i = 0; i < this.orbs.length; i++) {
+            if (merged.has(i)) continue
+
+            const orbA = this.orbs[i]
+
+            // Don't merge orbs that are being collected
+            if (orbA.collectSpeed > 0) continue
+
+            for (let j = i + 1; j < this.orbs.length; j++) {
+                if (merged.has(j)) continue
+
+                const orbB = this.orbs[j]
+
+                // Don't merge orbs that are being collected
+                if (orbB.collectSpeed > 0) continue
+
+                const dx = orbA.x - orbB.x
+                const dy = orbA.y - orbB.y
+                const dist = Math.sqrt(dx * dx + dy * dy)
+
+                if (dist < mergeRadius) {
+                    // Merge B into A
+                    orbA.xpValue += orbB.xpValue
+
+                    // Average position weighted by XP
+                    const totalXp = orbA.xpValue
+                    const weightB = orbB.xpValue / totalXp
+                    orbA.x = orbA.x * (1 - weightB) + orbB.x * weightB
+                    orbA.y = orbA.y * (1 - weightB) + orbB.y * weightB
+
+                    // Refresh life (bonus for merging)
+                    orbA.life = Math.min(orbA.life + 2, orbA.maxLife)
+
+                    // Update graphics size based on new XP value
+                    this.updateOrbGraphics(orbA)
+
+                    merged.add(j)
+                }
+            }
+        }
+
+        // Remove merged orbs (iterate backwards)
+        const mergedIndices = Array.from(merged).sort((a, b) => b - a)
+        for (const idx of mergedIndices) {
+            this.releaseOrb(this.orbs[idx].graphics)
+            this.orbs.splice(idx, 1)
+        }
+    }
+
+    /**
+     * Update orb graphics after merge (new size/color)
+     */
+    private updateOrbGraphics(orb: ExperienceOrb): void {
+        const orbColor = getOrbColor(orb.xpValue)
+        const orbSize = getOrbSize(orb.xpValue)
+        const graphics = orb.graphics
+
+        graphics.clear()
+
+        // Outer glow
+        graphics.circle(0, 0, orbSize * 1.3)
+        graphics.fill({ color: orbColor, alpha: 0.25 })
+
+        // Main gem body (hexagon)
+        const sides = 6
+        const points: number[] = []
+        for (let i = 0; i < sides; i++) {
+            const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
+            points.push(Math.cos(angle) * orbSize)
+            points.push(Math.sin(angle) * orbSize)
+        }
+        graphics.poly(points)
+        graphics.fill(orbColor)
+        graphics.poly(points)
+        graphics.stroke({ color: 0xffffff, width: 1.5, alpha: 0.6 })
+
+        // Inner bright core
+        const coreSize = orbSize * 0.5
+        graphics.moveTo(0, -coreSize)
+        graphics.lineTo(coreSize * 0.3, -coreSize * 0.3)
+        graphics.lineTo(coreSize, 0)
+        graphics.lineTo(coreSize * 0.3, coreSize * 0.3)
+        graphics.lineTo(0, coreSize)
+        graphics.lineTo(-coreSize * 0.3, coreSize * 0.3)
+        graphics.lineTo(-coreSize, 0)
+        graphics.lineTo(-coreSize * 0.3, -coreSize * 0.3)
+        graphics.closePath()
+        graphics.fill({ color: 0xffffff, alpha: 0.9 })
+
+        // Top highlight
+        graphics.circle(-orbSize * 0.3, -orbSize * 0.3, orbSize * 0.25)
+        graphics.fill({ color: 0xffffff, alpha: 0.7 })
+    }
+
+    /**
      * Update orbs and check collection
      * @param blackHole Optional black hole that sucks in orbs (for vortex stage)
      */
     update(deltaSeconds: number, playerX: number, playerY: number, blackHole?: BlackHoleInfo): void {
+        // Periodically merge nearby orbs
+        this.mergeTimer += deltaSeconds
+        if (this.mergeTimer >= this.MERGE_INTERVAL) {
+            this.mergeTimer = 0
+            if (this.orbs.length > 10) { // Only merge if there are enough orbs
+                this.mergeNearbyOrbs()
+            }
+        }
+
         for (let i = this.orbs.length - 1; i >= 0; i--) {
             const orb = this.orbs[i]
 
@@ -355,9 +476,9 @@ export class ExperienceOrbSystem {
                 0.85 + Math.sin((orb.maxLife - orb.life) * 12 + orb.animOffset * 2) * 0.15
             orb.graphics.alpha = sparkle
 
-            // Fade out in last 3 seconds (override sparkle)
-            if (orb.life < 3) {
-                orb.graphics.alpha = (orb.life / 3) * sparkle
+            // Fade out in last 2 seconds (override sparkle)
+            if (orb.life < 2) {
+                orb.graphics.alpha = (orb.life / 2) * sparkle
             }
         }
     }
@@ -412,6 +533,7 @@ export class ExperienceOrbSystem {
         }
         this.orbs = []
         this.totalXpCollected = 0
+        this.mergeTimer = 0
     }
 
     /**

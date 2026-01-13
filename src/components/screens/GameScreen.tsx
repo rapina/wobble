@@ -26,16 +26,20 @@ export function GameScreen({ onBack }: MinigameScreenProps) {
     const canvasRef = useRef<AdventureCanvasHandle>(null)
     const { studiedFormulas } = useProgressStore()
 
-    // Mount animation and auto-start game
+    // Mount animation
     useEffect(() => {
         setMounted(false)
         setPlayResult(null)
         const timer = setTimeout(() => {
             setMounted(true)
-            // Auto-start the game
-            canvasRef.current?.play()
         }, 50)
         return () => clearTimeout(timer)
+    }, [])
+
+    // Auto-start game when scene is ready
+    const handleSceneReady = useCallback(() => {
+        console.warn('[GameScreen] onSceneReady - calling play()')
+        canvasRef.current?.play()
     }, [])
 
     // Poll game phase to control pause button visibility
@@ -120,6 +124,7 @@ export function GameScreen({ onBack }: MinigameScreenProps) {
                     targets={{}}
                     studiedFormulas={studiedFormulas}
                     onPlayComplete={handlePlayComplete}
+                    onSceneReady={handleSceneReady}
                 />
             </div>
 

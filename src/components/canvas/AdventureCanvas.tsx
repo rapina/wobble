@@ -25,6 +25,7 @@ interface AdventureCanvasProps {
     studiedFormulas?: Set<string>
     onPlayComplete?: (result: PlayResult) => void
     onNarrationComplete?: () => void
+    onSceneReady?: () => void
     width?: number | string
     height?: number | string
 }
@@ -50,6 +51,7 @@ export const AdventureCanvas = forwardRef<AdventureCanvasHandle, AdventureCanvas
             studiedFormulas,
             onPlayComplete,
             onNarrationComplete,
+            onSceneReady,
             width = '100%',
             height = '100%',
         },
@@ -60,6 +62,7 @@ export const AdventureCanvas = forwardRef<AdventureCanvasHandle, AdventureCanvas
         const sceneRef = useRef<AdventureScene | null>(null)
         const onPlayCompleteRef = useRef(onPlayComplete)
         const onNarrationCompleteRef = useRef(onNarrationComplete)
+        const onSceneReadyRef = useRef(onSceneReady)
         const [sceneError, setSceneError] = useState<Error | null>(null)
         const [sceneRetryCount, setSceneRetryCount] = useState(0)
 
@@ -71,6 +74,10 @@ export const AdventureCanvas = forwardRef<AdventureCanvasHandle, AdventureCanvas
         useEffect(() => {
             onNarrationCompleteRef.current = onNarrationComplete
         }, [onNarrationComplete])
+
+        useEffect(() => {
+            onSceneReadyRef.current = onSceneReady
+        }, [onSceneReady])
 
         const error = appError || sceneError
 
@@ -88,6 +95,7 @@ export const AdventureCanvas = forwardRef<AdventureCanvasHandle, AdventureCanvas
             ref,
             () => ({
                 play: () => {
+                    console.warn('[AdventureCanvas] play() called, sceneRef.current:', sceneRef.current ? 'exists' : 'null')
                     sceneRef.current?.play()
                 },
                 reset: () => {
@@ -139,26 +147,27 @@ export const AdventureCanvas = forwardRef<AdventureCanvasHandle, AdventureCanvas
 
         // Create/switch scene based on levelId
         useEffect(() => {
+            console.warn('[AdventureCanvas] useEffect triggered - isReady:', isReady, 'levelId:', levelId)
             if (!isReady || !app) return
 
             // Store previous scene for delayed cleanup
             const previousScene = sceneRef.current
             sceneRef.current = null
+            console.warn('[AdventureCanvas] Previous scene:', previousScene ? 'exists' : 'null')
 
             // Immediately hide and remove previous scene from stage
+            // IMPORTANT: Destroy synchronously to prevent race conditions
             if (previousScene) {
                 try {
-                    previousScene.container.visible = false
-                    previousScene.container.renderable = false
-                    if (app.stage) {
-                        app.stage.removeChild(previousScene.container)
-                    }
+                    console.warn('[AdventureCanvas] Destroying previous scene IMMEDIATELY')
+                    previousScene.destroy()
                 } catch (e) {
-                    console.error('[AdventureCanvas] Hide error:', e)
+                    console.error('[AdventureCanvas] Destroy error:', e)
                 }
             }
 
             try {
+                console.warn('[AdventureCanvas] Creating new scene for levelId:', levelId)
                 // Create new scene
                 const scene = createAdventureScene(levelId, app, {
                     narrations,
@@ -174,46 +183,30 @@ export const AdventureCanvas = forwardRef<AdventureCanvasHandle, AdventureCanvas
                 if (scene) {
                     app.stage.addChild(scene.container)
                     sceneRef.current = scene
+                    console.warn('[AdventureCanvas] New scene assigned to sceneRef, calling onSceneReady')
                     setSceneError(null)
+                    // Notify parent that scene is ready (use setTimeout to ensure state is settled)
+                    setTimeout(() => {
+                        onSceneReadyRef.current?.()
+                    }, 0)
                 }
             } catch (e) {
                 console.error('[AdventureCanvas] Scene creation error:', e)
                 setSceneError(e instanceof Error ? e : new Error(String(e)))
             }
 
-            // Destroy previous scene after a frame (outside render cycle)
-            if (previousScene) {
-                requestAnimationFrame(() => {
-                    try {
-                        previousScene.destroy()
-                    } catch (e) {
-                        console.error('[AdventureCanvas] Destroy error:', e)
-                    }
-                })
-            }
-
             return () => {
+                console.warn('[AdventureCanvas] useEffect CLEANUP running')
                 if (sceneRef.current) {
                     const sceneToDestroy = sceneRef.current
                     sceneRef.current = null
 
                     try {
-                        sceneToDestroy.container.visible = false
-                        sceneToDestroy.container.renderable = false
-                        if (app.stage) {
-                            app.stage.removeChild(sceneToDestroy.container)
-                        }
+                        console.warn('[AdventureCanvas] Destroying scene in cleanup')
+                        sceneToDestroy.destroy()
                     } catch (e) {
-                        console.error('[AdventureCanvas] Cleanup hide error:', e)
+                        console.error('[AdventureCanvas] Cleanup destroy error:', e)
                     }
-
-                    requestAnimationFrame(() => {
-                        try {
-                            sceneToDestroy.destroy()
-                        } catch (e) {
-                            console.error('[AdventureCanvas] Cleanup destroy error:', e)
-                        }
-                    })
                 }
             }
             // Note: narrations is intentionally not in dependencies - it's only used at scene creation
