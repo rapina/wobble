@@ -183,7 +183,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Track scene instances
         PhysicsSurvivorScene.instanceCounter++
         this.instanceId = PhysicsSurvivorScene.instanceCounter
-        console.warn(`[SCENE #${this.instanceId}] PhysicsSurvivorScene CREATED (total created: ${PhysicsSurvivorScene.instanceCounter})`)
+        console.log(`[SCENE #${this.instanceId}] PhysicsSurvivorScene CREATED (total created: ${PhysicsSurvivorScene.instanceCounter})`)
 
         if (options?.studiedFormulas) {
             this.studiedFormulas = options.studiedFormulas
@@ -195,7 +195,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
      */
     protected onDestroy(): void {
         this.isDestroyed = true
-        console.warn(`[SCENE #${this.instanceId}] PhysicsSurvivorScene DESTROYED`)
+        console.log(`[SCENE #${this.instanceId}] PhysicsSurvivorScene DESTROYED`)
 
         // Clean up DOM debug overlay
         if (this.debugDomElement) {
@@ -415,12 +415,23 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.onPlayComplete?.('success')
         }
 
+        // Initialize joystick (must be in setup() to be available for onReset)
+        this.joystick = new VirtualJoystick({
+            maxRadius: 60,
+            baseColor: 0x000000,
+            knobColor: 0xffffff,
+            baseAlpha: 0.2,
+            knobAlpha: 0.5,
+        })
+        this.uiContainer.addChild(this.joystick)
+        this.joystick.attachTo(this.gameContainer)
+
         // Debug overlay - use DOM element for guaranteed visibility
         if (this.debugEnabled) {
             this.createDebugDomOverlay()
         }
 
-        console.warn(`[SCENE #${this.instanceId}] setup() COMPLETED - systems initialized`)
+        console.log(`[SCENE #${this.instanceId}] setup() COMPLETED - systems initialized`)
     }
 
     private createDebugDomOverlay(): void {
@@ -484,20 +495,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         })
         this.player.position.set(this.playerX, this.playerY)
         this.gameContainer.addChild(this.player)
-
-        this.setupInteraction()
-    }
-
-    private setupInteraction(): void {
-        this.joystick = new VirtualJoystick({
-            maxRadius: 60,
-            baseColor: 0x000000,
-            knobColor: 0xffffff,
-            baseAlpha: 0.2,
-            knobAlpha: 0.5,
-        })
-        this.uiContainer.addChild(this.joystick)
-        this.joystick.attachTo(this.gameContainer)
+        // Note: joystick is now initialized in setup() to ensure it's available for onReset()
     }
 
     private onXpCollected(xp: number): void {
@@ -1387,9 +1385,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     protected onPlayStart(): void {
+        console.log(`[SCENE #${this.instanceId}] onPlayStart CALLED - isDestroyed: ${this.isDestroyed}, isPlaying: ${this.isPlaying}`)
+
         // Prevent operation on destroyed scene
         if (this.isDestroyed) {
-            console.warn(`[SCENE #${this.instanceId}] onPlayStart BLOCKED - scene is destroyed`)
+            console.log(`[SCENE #${this.instanceId}] onPlayStart BLOCKED - scene is destroyed`)
             return
         }
 
@@ -1398,14 +1398,26 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.debugLog(`onPlayStart called (isPlaying was: ${this.isPlaying})`)
 
         // Full reset before starting to ensure clean state
+        console.log(`[SCENE #${this.instanceId}] Calling onReset...`)
         this.onReset()
+        console.log(`[SCENE #${this.instanceId}] onReset completed, now calling characterSelectScreen.show()`)
+
+        // Verify characterSelectScreen exists before calling show()
+        if (!this.characterSelectScreen) {
+            console.error(`[SCENE #${this.instanceId}] ERROR: characterSelectScreen is undefined!`)
+            this.debugLog('ERROR: characterSelectScreen is undefined in onPlayStart')
+            return
+        }
+
         this.debugLog('Showing character select screen')
         this.characterSelectScreen.show()
+
         // Check both the internal flag and the actual PixiJS container state
         const charScreen = this.characterSelectScreen as unknown as { screenContainer?: { visible?: boolean; parent?: unknown; children?: unknown[] } }
         const containerVisible = charScreen.screenContainer?.visible ?? 'N/A'
         const hasParent = !!charScreen.screenContainer?.parent
         const childCount = charScreen.screenContainer?.children?.length ?? 0
+        console.log(`[SCENE #${this.instanceId}] characterSelectScreen.show() completed - visible: ${containerVisible}, children: ${childCount}, hasParent: ${hasParent}`)
         this.debugLog(`characterSelectScreen.show() completed - flag: ${this.characterSelectScreen.visible}, container: ${containerVisible}, hasParent: ${hasParent}, children: ${childCount}`)
     }
 
@@ -1474,14 +1486,45 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     protected onReset(): void {
+        console.log(`[SCENE #${this.instanceId}] onReset CALLED - state: ${this.gameState}`)
         this.debugLog(`onReset called (current state: ${this.gameState})`)
 
-        // Safety check - ensure systems are initialized
-        if (!this.projectileSystem || !this.characterSelectScreen) {
-            console.error(`[SCENE #${this.instanceId}] onReset called but systems not initialized!`)
-            this.debugLog('ERROR: Systems not initialized in onReset')
+        // Safety check - ensure ALL systems are initialized
+        const systems = {
+            projectileSystem: !!this.projectileSystem,
+            enemySystem: !!this.enemySystem,
+            backgroundSystem: !!this.backgroundSystem,
+            xpOrbSystem: !!this.xpOrbSystem,
+            blackHoleSystem: !!this.blackHoleSystem,
+            gravityWellSystem: !!this.gravityWellSystem,
+            repulsionBarrierSystem: !!this.repulsionBarrierSystem,
+            crusherSystem: !!this.crusherSystem,
+            damageTextSystem: !!this.damageTextSystem,
+            impactSystem: !!this.impactSystem,
+            effectsManager: !!this.effectsManager,
+            comboSystem: !!this.comboSystem,
+            hudSystem: !!this.hudSystem,
+            skillSelectionScreen: !!this.skillSelectionScreen,
+            resultScreen: !!this.resultScreen,
+            characterSelectScreen: !!this.characterSelectScreen,
+            openingScreen: !!this.openingScreen,
+            pauseScreen: !!this.pauseScreen,
+            joystick: !!this.joystick,
+        }
+
+        const missingSystems = Object.entries(systems)
+            .filter(([, exists]) => !exists)
+            .map(([name]) => name)
+
+        console.log(`[SCENE #${this.instanceId}] onReset safety check - missing: ${missingSystems.length > 0 ? missingSystems.join(', ') : 'none'}`)
+
+        if (missingSystems.length > 0) {
+            console.error(`[SCENE #${this.instanceId}] onReset ABORTING - systems not initialized: ${missingSystems.join(', ')}`)
+            this.debugLog(`ERROR: Systems not initialized: ${missingSystems.join(', ')}`)
             return
         }
+
+        console.log(`[SCENE #${this.instanceId}] onReset proceeding with reset...`)
 
         // Reset all systems
         this.projectileSystem.reset()

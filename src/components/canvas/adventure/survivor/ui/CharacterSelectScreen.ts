@@ -82,6 +82,7 @@ export class CharacterSelectScreen {
     }
 
     show(): void {
+        console.log('[CharacterSelectScreen] show() CALLED')
         this.isVisible = true
         this.animPhase = 0
         this.screenContainer.visible = true
@@ -89,8 +90,10 @@ export class CharacterSelectScreen {
         // Refresh available characters from collection
         this.refreshAvailableCharacters()
 
+        console.log('[CharacterSelectScreen] Calling createUI...')
         this.createUI()
         this.initStagePreviewParticles()
+        console.log(`[CharacterSelectScreen] show() COMPLETED - visible: ${this.screenContainer.visible}, children: ${this.screenContainer.children.length}`)
     }
 
     /**
@@ -566,7 +569,9 @@ export class CharacterSelectScreen {
     }
 
     private createUI(): void {
+        console.log(`[CharacterSelectScreen] createUI() CALLED - children before remove: ${this.screenContainer.children.length}`)
         this.screenContainer.removeChildren()
+        console.log(`[CharacterSelectScreen] removeChildren done - children: ${this.screenContainer.children.length}`)
 
         // === THEME COLORS ===
         const bgTopColor = 0x7db8b0
@@ -1009,6 +1014,8 @@ export class CharacterSelectScreen {
             () => this.onExit?.()
         )
         this.screenContainer.addChild(this.exitButton)
+
+        console.log(`[CharacterSelectScreen] createUI() COMPLETED - children: ${this.screenContainer.children.length}`)
     }
 
     private createArrowButton(symbol: string, x: number, y: number, onClick: () => void): Container {
