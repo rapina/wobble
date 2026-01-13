@@ -1,7 +1,7 @@
 {
   "name": "wobble",
   "private": true,
-  "version": "0.0.4",
+  "version": "0.0.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,9 +14,9 @@
     "android:build": "npm run build:debug && npx cap sync android && cd android && JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-24.jdk/Contents/Home ./gradlew assembleDebug",
     "android:install": "adb install -r android/app/build/outputs/apk/debug/app-debug.apk",
     "android:deploy": "npm run android:build && npm run android:install",
-    "android:release": "npm run build && npx cap sync android && cd android && JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-24.jdk/Contents/Home ./gradlew bundleRelease && npm run postrelease",
-    "android:release:apk": "npm run build && npx cap sync android && cd android && JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-24.jdk/Contents/Home ./gradlew assembleRelease && npm run postrelease",
-    "postrelease": "node scripts/bump-version.js"
+    "android:release": "npm run bump-version && npm run build && npx cap sync android && cd android && JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-24.jdk/Contents/Home ./gradlew bundleRelease",
+    "android:release:apk": "npm run bump-version && npm run build && npx cap sync android && cd android && JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-24.jdk/Contents/Home ./gradlew assembleRelease",
+    "bump-version": "node scripts/bump-version.js"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",
