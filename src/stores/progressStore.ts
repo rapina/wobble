@@ -160,6 +160,38 @@ export const lawToFormulaMap: Record<string, string[]> = {
     chain: ['elastic-collision'],
 }
 
+// Physics skill to formula mapping (survivor mode skills)
+export const skillToFormulaMap: Record<string, string[]> = {
+    'elastic-bounce': ['elastic-collision'],
+    'momentum-pierce': ['momentum'],
+    'pressure-wave': ['ideal-gas'],
+    'frequency-burst': ['photoelectric'],
+    'fma-impact': ['newton-second'],
+    'gravity-pull': ['gravity'],
+    'refraction-spread': ['snell'],
+    'centripetal-pulse': ['centripetal'],
+}
+
+// Check if a physics skill is unlocked based on studied formulas
+export function isSkillUnlocked(skillId: string, studiedFormulas: Set<string>): boolean {
+    const requiredFormulas = skillToFormulaMap[skillId]
+
+    // If no mapping exists, skill is always available
+    if (!requiredFormulas || requiredFormulas.length === 0) {
+        return true
+    }
+
+    // Check if any of the required formulas have been studied
+    return requiredFormulas.some((formulaId) => studiedFormulas.has(formulaId))
+}
+
+// Get all available skills based on studied formulas
+export function getAvailableSkills(studiedFormulas: Set<string>): string[] {
+    return Object.keys(skillToFormulaMap).filter((skillId) =>
+        isSkillUnlocked(skillId, studiedFormulas)
+    )
+}
+
 // Check if a physics law is unlocked based on studied formulas
 export function isLawUnlocked(law: string, studiedFormulas: Set<string>): boolean {
     const requiredFormulas = lawToFormulaMap[law]

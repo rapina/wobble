@@ -1,9 +1,11 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js'
 import { Wobble, WobbleShape, WOBBLE_CHARACTERS } from '../../../Wobble'
 import { PLAYABLE_CHARACTERS, WOBBLE_STATS } from '../types'
-import { SKILL_DEFINITIONS, PASSIVE_DEFINITIONS, getCharacterSkillConfig } from '../skills'
+import { SKILL_DEFINITIONS, PASSIVE_DEFINITIONS, getCharacterSkillConfig, SkillDefinition } from '../skills'
 import { STAGES, StageConfig } from '../PhysicsModifiers'
 import { useCollectionStore } from '@/stores/collectionStore'
+import { useProgressStore, isSkillUnlocked, skillToFormulaMap } from '@/stores/progressStore'
+import { getFormula } from '@/formulas/registry'
 
 export interface CharacterSelectContext {
     container: Container
@@ -50,6 +52,17 @@ export class CharacterSelectScreen {
     // Stage preview particles
     private previewParticles: PreviewParticle[] = []
 
+    // Selected skills (player chooses up to 5)
+    private selectedSkills: string[] = []
+    private readonly MAX_SKILLS = 5
+
+    // Drag and drop state
+    private draggingSkillId: string | null = null
+    private dragGhost: Container | null = null
+    private dragStartPos = { x: 0, y: 0 }
+    private isDragging = false
+    private slotBounds: Array<{ x: number; y: number; width: number; height: number }> = []
+
     // Action buttons
     private startButton!: Container
     private exitButton!: Container
@@ -59,7 +72,7 @@ export class CharacterSelectScreen {
     private isVisible = false
 
     // Callbacks
-    onStartGame?: (character: WobbleShape, stageId: string) => void
+    onStartGame?: (character: WobbleShape, stageId: string, selectedSkills: string[]) => void
     onExit?: () => void
 
     constructor(context: CharacterSelectContext) {
@@ -169,6 +182,7 @@ export class CharacterSelectScreen {
         this.hide()
         this.selectedCharacterIndex = 0
         this.selectedStageIndex = 0
+        this.selectedSkills = []
         this.animPhase = 0
         this.previewParticles = []
     }
@@ -302,12 +316,13 @@ export class CharacterSelectScreen {
      * Update stage preview animation
      */
     private updateStagePreview(deltaSeconds: number): void {
-        if (!this.stagePreviewGraphics) return
+        if (!this.stagePreviewContainer || !this.stagePreviewGraphics) return
 
         const stage = STAGES[this.selectedStageIndex]
         const previewWidth = this.width - 60
         const previewHeight = 160
 
+        // Use clear() - the Batcher issue was fixed in usePixiApp.ts
         this.stagePreviewGraphics.clear()
 
         // Draw background gradient
@@ -734,15 +749,14 @@ export class CharacterSelectScreen {
             textMuted
         )
 
-        // ========== 3. SKILLS SECTION ==========
+        // ========== 3. SKILL SELECTION SECTION (Drag & Drop Grid) ==========
         const skillSectionY = statsSectionY + 115
-        const startingSkills = skillConfig.startingSkills
-            .map(id => SKILL_DEFINITIONS[id])
-            .filter(Boolean)
+        const studiedFormulas = useProgressStore.getState().studiedFormulas
+        const allSkills = Object.values(SKILL_DEFINITIONS)
 
-        // Skills label
+        // Skills label with selection count
         const skillsLabel = new Text({
-            text: 'SKILLS',
+            text: `SKILLS (${this.selectedSkills.length}/${this.MAX_SKILLS})`,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 10,
@@ -755,55 +769,405 @@ export class CharacterSelectScreen {
         skillsLabel.position.set(this.centerX, skillSectionY)
         this.screenContainer.addChild(skillsLabel)
 
-        // Skill pills (centered, can have multiple)
-        const skillPillY = skillSectionY + 18
-        const skillPillWidth = startingSkills.length > 1 ? 85 : 120
-        const skillGap = 10
-        const totalSkillsWidth = startingSkills.length * skillPillWidth + (startingSkills.length - 1) * skillGap
-        let skillStartX = this.centerX - totalSkillsWidth / 2 + skillPillWidth / 2
+        // ===== 5 Fixed Slots for Selected Skills (Drop Targets) =====
+        const slotY = skillSectionY + 18
+        const slotSize = 44
+        const slotGap = 8
+        const totalSlotsWidth = this.MAX_SKILLS * slotSize + (this.MAX_SKILLS - 1) * slotGap
+        const slotsStartX = this.centerX - totalSlotsWidth / 2
 
-        startingSkills.forEach((skillDef, index) => {
-            const skillX = skillStartX + index * (skillPillWidth + skillGap)
-            const skillNameText = `${skillDef.icon} ${skillDef.nameKo}`
+        // Clear slot bounds for drop detection
+        this.slotBounds = []
 
-            const skillPill = new Graphics()
-            skillPill.roundRect(skillX - skillPillWidth / 2, skillPillY, skillPillWidth, 28, 14)
-            skillPill.fill({ color: skillDef.color, alpha: 0.15 })
-            skillPill.roundRect(skillX - skillPillWidth / 2, skillPillY, skillPillWidth, 28, 14)
-            skillPill.stroke({ color: skillDef.color, width: 1.5, alpha: 0.6 })
-            this.screenContainer.addChild(skillPill)
+        for (let i = 0; i < this.MAX_SKILLS; i++) {
+            const slotX = slotsStartX + i * (slotSize + slotGap)
+            const selectedSkillId = this.selectedSkills[i]
+            const skillDef = selectedSkillId ? SKILL_DEFINITIONS[selectedSkillId] : null
 
-            const skillText = new Text({
-                text: skillNameText,
-                style: new TextStyle({
-                    fontFamily: 'Arial, sans-serif',
-                    fontSize: 11,
-                    fontWeight: 'bold',
-                    fill: textDark,
-                }),
+            // Store slot bounds for drop detection
+            this.slotBounds.push({
+                x: slotX,
+                y: slotY,
+                width: slotSize,
+                height: slotSize,
             })
-            skillText.anchor.set(0.5)
-            skillText.position.set(skillX, skillPillY + 14)
-            this.screenContainer.addChild(skillText)
-        })
 
-        // No skills message
-        if (startingSkills.length === 0) {
-            const noSkillText = new Text({
-                text: '-',
-                style: new TextStyle({
-                    fontFamily: 'Arial, sans-serif',
-                    fontSize: 12,
-                    fill: textMuted,
-                }),
-            })
-            noSkillText.anchor.set(0.5)
-            noSkillText.position.set(this.centerX, skillPillY + 14)
-            this.screenContainer.addChild(noSkillText)
+            const slotContainer = new Container()
+            slotContainer.position.set(slotX, slotY)
+            this.screenContainer.addChild(slotContainer)
+
+            const slotBg = new Graphics()
+            slotBg.roundRect(0, 0, slotSize, slotSize, 8)
+
+            if (skillDef) {
+                // Filled slot
+                slotBg.fill({ color: skillDef.color, alpha: 0.3 })
+                slotBg.roundRect(0, 0, slotSize, slotSize, 8)
+                slotBg.stroke({ color: skillDef.color, width: 2, alpha: 0.8 })
+
+                const icon = new Text({
+                    text: skillDef.icon,
+                    style: new TextStyle({ fontSize: 18, fill: skillDef.color }),
+                })
+                icon.anchor.set(0.5)
+                icon.position.set(slotSize / 2, slotSize / 2 - 5)
+                slotContainer.addChild(icon)
+
+                const name = new Text({
+                    text: skillDef.nameKo.slice(0, 4),
+                    style: new TextStyle({ fontSize: 8, fill: textDark, fontWeight: 'bold' }),
+                })
+                name.anchor.set(0.5)
+                name.position.set(slotSize / 2, slotSize - 8)
+                slotContainer.addChild(name)
+
+                // Tap to remove from slot
+                slotContainer.eventMode = 'static'
+                slotContainer.cursor = 'pointer'
+                slotContainer.on('pointerdown', () => {
+                    if (!this.isDragging) {
+                        this.removeSkillFromSlot(i)
+                    }
+                })
+            } else {
+                // Empty slot
+                slotBg.fill({ color: textMuted, alpha: 0.1 })
+                slotBg.roundRect(0, 0, slotSize, slotSize, 8)
+                slotBg.stroke({ color: textMuted, width: 1, alpha: 0.3, alignment: 0.5 })
+
+                const plus = new Text({
+                    text: '+',
+                    style: new TextStyle({ fontSize: 20, fill: textMuted, fontWeight: 'bold' }),
+                })
+                plus.anchor.set(0.5)
+                plus.position.set(slotSize / 2, slotSize / 2)
+                plus.alpha = 0.5
+                slotContainer.addChild(plus)
+            }
+            slotContainer.addChild(slotBg)
         }
 
+        // ===== Skill Grid with Vertical Scroll =====
+        const gridY = slotY + slotSize + 12
+        const gridCols = 5 // Same as slot count
+        const gridGap = slotGap
+        const skillCardSize = slotSize // Same size as slots
+        const gridPadding = (cardWidth - (gridCols * skillCardSize + (gridCols - 1) * gridGap)) / 2
+        const visibleRows = 2 // Show 2 rows at a time
+        const visibleHeight = visibleRows * skillCardSize + (visibleRows - 1) * gridGap
+        const gridRows = Math.ceil(allSkills.length / gridCols)
+        const totalGridHeight = gridRows * skillCardSize + (gridRows - 1) * gridGap
+
+        // Grid wrapper with mask for scrolling
+        const gridWrapper = new Container()
+        gridWrapper.position.set(cardX + gridPadding, gridY)
+        this.screenContainer.addChild(gridWrapper)
+
+        const gridMask = new Graphics()
+        gridMask.rect(0, 0, cardWidth - gridPadding * 2, visibleHeight)
+        gridMask.fill(0xffffff)
+        gridWrapper.addChild(gridMask)
+
+        const gridScrollContainer = new Container()
+        gridScrollContainer.mask = gridMask
+        gridWrapper.addChild(gridScrollContainer)
+
+        const gridContent = new Container()
+        gridScrollContainer.addChild(gridContent)
+
+        // Scroll state
+        let gridScrollY = 0
+        const maxGridScroll = Math.max(0, totalGridHeight - visibleHeight)
+
+        allSkills.forEach((skillDef, index) => {
+            const col = index % gridCols
+            const row = Math.floor(index / gridCols)
+            const skillCardX = col * (skillCardSize + gridGap)
+            const skillCardY = row * (skillCardSize + gridGap)
+
+            const isUnlocked = isSkillUnlocked(skillDef.id, studiedFormulas)
+            const isSelected = this.selectedSkills.includes(skillDef.id)
+
+            const skillCard = new Container()
+            skillCard.position.set(skillCardX, skillCardY)
+            gridContent.addChild(skillCard)
+
+            const bg = new Graphics()
+            bg.roundRect(0, 0, skillCardSize, skillCardSize, 8)
+            if (!isUnlocked) {
+                bg.fill({ color: 0x666666, alpha: 0.2 })
+                bg.stroke({ color: 0x666666, width: 1, alpha: 0.3 })
+            } else if (isSelected) {
+                bg.fill({ color: skillDef.color, alpha: 0.4 })
+                bg.stroke({ color: skillDef.color, width: 2, alpha: 1 })
+            } else {
+                bg.fill({ color: skillDef.color, alpha: 0.15 })
+                bg.stroke({ color: skillDef.color, width: 1, alpha: 0.5 })
+            }
+            skillCard.addChild(bg)
+
+            if (isUnlocked) {
+                const icon = new Text({
+                    text: skillDef.icon,
+                    style: new TextStyle({ fontSize: 18, fill: skillDef.color }),
+                })
+                icon.anchor.set(0.5)
+                icon.position.set(skillCardSize / 2, skillCardSize / 2 - 5)
+                skillCard.addChild(icon)
+
+                const name = new Text({
+                    text: skillDef.nameKo.slice(0, 4),
+                    style: new TextStyle({
+                        fontSize: 8,
+                        fill: textDark,
+                        fontWeight: 'bold',
+                    }),
+                })
+                name.anchor.set(0.5)
+                name.position.set(skillCardSize / 2, skillCardSize - 8)
+                skillCard.addChild(name)
+            } else {
+                // Locked skill - show "?" and hint
+                const questionMark = new Text({
+                    text: '?',
+                    style: new TextStyle({
+                        fontSize: 22,
+                        fill: 0x888888,
+                        fontWeight: 'bold',
+                    }),
+                })
+                questionMark.anchor.set(0.5)
+                questionMark.position.set(skillCardSize / 2, skillCardSize / 2 - 2)
+                questionMark.alpha = 0.7
+                skillCard.addChild(questionMark)
+
+                // Get required formula for hint
+                const requiredFormulas = skillToFormulaMap[skillDef.id] || []
+                const formulaId = requiredFormulas[0]
+                const formula = formulaId ? getFormula(formulaId) : null
+                const hintText = formula ? formula.name : '???'
+
+                const hint = new Text({
+                    text: hintText,
+                    style: new TextStyle({
+                        fontSize: 7,
+                        fill: 0x888888,
+                    }),
+                })
+                hint.anchor.set(0.5)
+                hint.position.set(skillCardSize / 2, skillCardSize - 7)
+                hint.alpha = 0.8
+                skillCard.addChild(hint)
+            }
+
+            // Checkmark for selected
+            if (isSelected) {
+                const check = new Graphics()
+                check.circle(skillCardSize - 6, 6, 5)
+                check.fill({ color: skillDef.color })
+                check.circle(skillCardSize - 6, 6, 5)
+                check.stroke({ color: 0xffffff, width: 1.5 })
+                skillCard.addChild(check)
+
+                const checkText = new Text({
+                    text: '✓',
+                    style: new TextStyle({ fontSize: 7, fill: 0xffffff, fontWeight: 'bold' }),
+                })
+                checkText.anchor.set(0.5)
+                checkText.position.set(skillCardSize - 6, 6)
+                skillCard.addChild(checkText)
+            }
+
+            // Store skill info for event handling
+            skillCard.name = skillDef.id
+            skillCard.eventMode = 'static'
+            skillCard.cursor = isUnlocked ? 'pointer' : 'default'
+        })
+
+        // Edge fade for vertical scroll
+        const fadeHeight = 15
+        const topFade = new Graphics()
+        for (let i = 0; i < fadeHeight; i++) {
+            const alpha = 1 - i / fadeHeight
+            topFade.rect(0, i, cardWidth - gridPadding * 2, 1)
+            topFade.fill({ color: cardBgColor, alpha: alpha * 0.9 })
+        }
+        topFade.visible = false
+        gridWrapper.addChild(topFade)
+
+        const bottomFade = new Graphics()
+        for (let i = 0; i < fadeHeight; i++) {
+            const alpha = i / fadeHeight
+            bottomFade.rect(0, visibleHeight - fadeHeight + i, cardWidth - gridPadding * 2, 1)
+            bottomFade.fill({ color: cardBgColor, alpha: alpha * 0.9 })
+        }
+        bottomFade.visible = maxGridScroll > 0
+        gridWrapper.addChild(bottomFade)
+
+        // Scroll indicator dots
+        if (gridRows > visibleRows) {
+            const dotCount = gridRows - visibleRows + 1
+            const dotGap = 6
+            const dotsHeight = dotCount * dotGap
+            const dotsX = cardWidth - gridPadding * 2 + 8
+            const dotsStartY = (visibleHeight - dotsHeight) / 2
+
+            for (let i = 0; i < dotCount; i++) {
+                const dot = new Graphics()
+                dot.circle(dotsX, dotsStartY + i * dotGap, 2)
+                dot.fill({ color: textMuted, alpha: i === 0 ? 0.8 : 0.3 })
+                gridWrapper.addChild(dot)
+            }
+        }
+
+        // Unified pointer handling for scroll and drag
+        let scrollStartY = 0
+        let scrollStartOffset = 0
+        let isScrolling = false
+        let pointerStartSkillId: string | null = null
+
+        gridWrapper.eventMode = 'static'
+
+        // Grid wrapper absolute position
+        const gridWrapperX = cardX + gridPadding
+        const gridWrapperY = gridY
+
+        gridWrapper.on('pointerdown', (e) => {
+            scrollStartY = e.global.y
+            scrollStartOffset = gridScrollY
+            isScrolling = false
+            this.dragStartPos = { x: e.global.x, y: e.global.y }
+
+            // Calculate which skill card is under pointer using grid position
+            const localX = e.global.x - gridWrapperX
+            const localY = e.global.y - gridWrapperY + gridScrollY // Account for scroll
+
+            const col = Math.floor(localX / (skillCardSize + gridGap))
+            const row = Math.floor(localY / (skillCardSize + gridGap))
+
+            // Check if within cell (not in gap)
+            const cellX = localX - col * (skillCardSize + gridGap)
+            const cellY = localY - row * (skillCardSize + gridGap)
+            const inCell = cellX >= 0 && cellX < skillCardSize && cellY >= 0 && cellY < skillCardSize
+
+            console.log('[DRAG DEBUG] pointerdown:', {
+                global: { x: e.global.x, y: e.global.y },
+                wrapperPos: { x: gridWrapperX, y: gridWrapperY },
+                local: { x: localX, y: localY },
+                gridScrollY,
+                col, row,
+                cell: { x: cellX, y: cellY },
+                inCell,
+                skillCardSize, gridGap
+            })
+
+            // Check if within grid bounds and inside a cell
+            if (col >= 0 && col < gridCols && row >= 0 && row < gridRows && inCell) {
+                const index = row * gridCols + col
+                if (index < allSkills.length) {
+                    const skillDef = allSkills[index]
+                    const isUnlocked = isSkillUnlocked(skillDef.id, studiedFormulas)
+                    console.log('[DRAG DEBUG] skill found:', { index, skillId: skillDef.id, isUnlocked })
+                    if (isUnlocked) {
+                        pointerStartSkillId = skillDef.id
+                        this.draggingSkillId = skillDef.id
+                        this.isDragging = false
+                        console.log('[DRAG DEBUG] drag started for:', skillDef.id)
+                    }
+                }
+            } else {
+                console.log('[DRAG DEBUG] outside grid or in gap')
+            }
+        })
+
+        gridWrapper.on('pointermove', (e) => {
+            if (scrollStartY === 0) return
+
+            const dy = e.global.y - scrollStartY
+            const dx = e.global.x - this.dragStartPos.x
+            const distance = Math.sqrt(dx * dx + dy * dy)
+
+            // Determine if scrolling or dragging
+            if (!isScrolling && !this.isDragging) {
+                // If a skill is selected, prioritize drag over scroll
+                if (this.draggingSkillId && distance > 10) {
+                    console.log('[DRAG DEBUG] pointermove: switching to DRAG mode (skill selected)', { distance, skillId: this.draggingSkillId })
+                    this.isDragging = true
+                    this.createDragGhost(this.draggingSkillId, e.global.x, e.global.y)
+                } else if (!this.draggingSkillId && Math.abs(dy) > 8) {
+                    // No skill selected, allow scroll
+                    console.log('[DRAG DEBUG] pointermove: switching to SCROLL mode (no skill)', { dy, dx })
+                    isScrolling = true
+                }
+            }
+
+            // Handle scroll
+            if (isScrolling && !this.isDragging) {
+                gridScrollY = Math.max(0, Math.min(maxGridScroll, scrollStartOffset - dy))
+                gridContent.y = -gridScrollY
+                topFade.visible = gridScrollY > 5
+                bottomFade.visible = gridScrollY < maxGridScroll - 5
+            }
+
+            // Handle drag ghost movement
+            if (this.isDragging && this.dragGhost) {
+                this.dragGhost.position.set(e.global.x, e.global.y)
+                this.highlightHoveredSlot(e.global.x, e.global.y)
+            }
+        })
+
+        gridWrapper.on('pointerup', (e) => {
+            console.log('[DRAG DEBUG] pointerup:', {
+                draggingSkillId: this.draggingSkillId,
+                isDragging: this.isDragging,
+                isScrolling,
+                pointerStartSkillId
+            })
+            if (this.draggingSkillId) {
+                if (this.isDragging) {
+                    // Drop on slot
+                    console.log('[DRAG DEBUG] pointerup: dropping skill')
+                    this.handleDrop(e.global.x, e.global.y)
+                } else if (!isScrolling && pointerStartSkillId) {
+                    // Tap - toggle selection
+                    console.log('[DRAG DEBUG] pointerup: tap to toggle', pointerStartSkillId)
+                    this.toggleSkillSelection(pointerStartSkillId)
+                }
+            }
+            this.cleanupDrag()
+            scrollStartY = 0
+            isScrolling = false
+            pointerStartSkillId = null
+        })
+
+        gridWrapper.on('pointerupoutside', () => {
+            this.cleanupDrag()
+            scrollStartY = 0
+            isScrolling = false
+            pointerStartSkillId = null
+        })
+
+        // Global pointer events for drag (outside grid area)
+        this.screenContainer.eventMode = 'static'
+        this.screenContainer.on('pointermove', (e) => {
+            if (!this.isDragging || !this.dragGhost) return
+            this.dragGhost.position.set(e.global.x, e.global.y)
+            this.highlightHoveredSlot(e.global.x, e.global.y)
+        })
+
+        this.screenContainer.on('pointerup', (e) => {
+            if (this.isDragging && this.draggingSkillId) {
+                this.handleDrop(e.global.x, e.global.y)
+            }
+            this.cleanupDrag()
+        })
+
+        this.screenContainer.on('pointerupoutside', () => {
+            this.cleanupDrag()
+        })
+
         // ========== 4. PASSIVE SECTION ==========
-        const passiveSectionY = skillSectionY + 60
+        const passiveSectionY = gridY + visibleHeight + 15
         const passiveDef = PASSIVE_DEFINITIONS[skillConfig.passive]
 
         // Passive label
@@ -846,6 +1210,23 @@ export class CharacterSelectScreen {
             passiveText.anchor.set(0.5)
             passiveText.position.set(this.centerX, passivePillY + 14)
             this.screenContainer.addChild(passiveText)
+
+            // Passive description
+            const passiveDescY = passivePillY + 34
+            const passiveDesc = new Text({
+                text: passiveDef.descriptionKo,
+                style: new TextStyle({
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 10,
+                    fill: textMuted,
+                    wordWrap: true,
+                    wordWrapWidth: this.width - 80,
+                    align: 'center',
+                }),
+            })
+            passiveDesc.anchor.set(0.5, 0)
+            passiveDesc.position.set(this.centerX, passiveDescY)
+            this.screenContainer.addChild(passiveDesc)
         } else {
             const noPassiveText = new Text({
                 text: '-',
@@ -861,7 +1242,7 @@ export class CharacterSelectScreen {
         }
 
         // ========== 5. STAGE/BACKGROUND SECTION (BOTTOM) ==========
-        const stageSectionY = passiveSectionY + 65
+        const stageSectionY = passiveSectionY + 80
         const previewWidth = cardWidth - 20
         const previewHeight = 160
 
@@ -1154,6 +1535,131 @@ export class CharacterSelectScreen {
     private handleStartGame(): void {
         const stage = STAGES[this.selectedStageIndex]
         this.hide()
-        this.onStartGame?.(this.getSelectedCharacter(), stage.id)
+        this.onStartGame?.(this.getSelectedCharacter(), stage.id, this.selectedSkills)
+    }
+
+    getSelectedSkills(): string[] {
+        return [...this.selectedSkills]
+    }
+
+    private toggleSkillSelection(skillId: string): void {
+        const index = this.selectedSkills.indexOf(skillId)
+        if (index >= 0) {
+            // Deselect
+            this.selectedSkills.splice(index, 1)
+        } else if (this.selectedSkills.length < this.MAX_SKILLS) {
+            // Select (if under limit)
+            this.selectedSkills.push(skillId)
+        }
+        // Refresh UI
+        this.createUI()
+    }
+
+    private removeSkillFromSlot(slotIndex: number): void {
+        if (slotIndex >= 0 && slotIndex < this.selectedSkills.length) {
+            this.selectedSkills.splice(slotIndex, 1)
+            this.createUI()
+        }
+    }
+
+    private createDragGhost(skillId: string, x: number, y: number): void {
+        const skillDef = SKILL_DEFINITIONS[skillId]
+        if (!skillDef) return
+
+        // Remove existing ghost
+        if (this.dragGhost) {
+            this.dragGhost.destroy()
+        }
+
+        this.dragGhost = new Container()
+        this.dragGhost.position.set(x, y)
+        this.dragGhost.alpha = 0.9
+        this.dragGhost.scale.set(1.1) // Slightly larger for visibility
+
+        const ghostSize = 44 // Same as slot size
+        const bg = new Graphics()
+        bg.roundRect(-ghostSize / 2, -ghostSize / 2, ghostSize, ghostSize, 8)
+        bg.fill({ color: skillDef.color, alpha: 0.7 })
+        bg.roundRect(-ghostSize / 2, -ghostSize / 2, ghostSize, ghostSize, 8)
+        bg.stroke({ color: 0xffffff, width: 2 })
+        this.dragGhost.addChild(bg)
+
+        const icon = new Text({
+            text: skillDef.icon,
+            style: new TextStyle({ fontSize: 18, fill: 0xffffff }),
+        })
+        icon.anchor.set(0.5)
+        icon.position.set(0, -5)
+        this.dragGhost.addChild(icon)
+
+        const name = new Text({
+            text: skillDef.nameKo.slice(0, 4),
+            style: new TextStyle({ fontSize: 8, fill: 0xffffff, fontWeight: 'bold' }),
+        })
+        name.anchor.set(0.5)
+        name.position.set(0, 14)
+        this.dragGhost.addChild(name)
+
+        this.screenContainer.addChild(this.dragGhost)
+    }
+
+    private highlightHoveredSlot(x: number, y: number): void {
+        // This could be enhanced to show visual feedback on hovered slot
+        // For now we just track position for drop detection
+    }
+
+    private handleDrop(x: number, y: number): void {
+        if (!this.draggingSkillId) return
+
+        // Check if dropped on a slot
+        for (let i = 0; i < this.slotBounds.length; i++) {
+            const slot = this.slotBounds[i]
+            if (
+                x >= slot.x &&
+                x <= slot.x + slot.width &&
+                y >= slot.y &&
+                y <= slot.y + slot.height
+            ) {
+                // Dropped on this slot
+                this.addSkillToSlot(this.draggingSkillId, i)
+                return
+            }
+        }
+    }
+
+    private addSkillToSlot(skillId: string, slotIndex: number): void {
+        // Check if skill already selected
+        const existingIndex = this.selectedSkills.indexOf(skillId)
+
+        if (existingIndex >= 0) {
+            // Already selected - move to new slot
+            this.selectedSkills.splice(existingIndex, 1)
+        }
+
+        // If slot has a skill, we need to handle replacement
+        if (slotIndex < this.selectedSkills.length) {
+            // Insert at specific position
+            this.selectedSkills.splice(slotIndex, 0, skillId)
+            // If over limit, remove last
+            if (this.selectedSkills.length > this.MAX_SKILLS) {
+                this.selectedSkills.pop()
+            }
+        } else if (this.selectedSkills.length < this.MAX_SKILLS) {
+            // Add to end (or specific slot if within range)
+            this.selectedSkills.push(skillId)
+        }
+
+        this.createUI()
+    }
+
+    private cleanupDrag(): void {
+        this.draggingSkillId = null
+        this.isDragging = false
+        this.dragStartPos = { x: 0, y: 0 }
+
+        if (this.dragGhost) {
+            this.dragGhost.destroy()
+            this.dragGhost = null
+        }
     }
 }

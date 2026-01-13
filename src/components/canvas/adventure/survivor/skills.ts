@@ -42,6 +42,8 @@ export interface SkillDefinition {
     color: number
     maxLevel: number
     levelEffects: SkillLevelEffect[] // Array of 5 effects (index 0 = level 1)
+    formulaId?: string // Connected physics formula for unlock system
+    physicsVisualType?: string // Type of physics visual effect
 }
 
 export interface PlayerSkill {
@@ -69,15 +71,18 @@ export interface CharacterSkillConfig {
 // ============================================
 
 export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
-    'bounce-shot': {
-        id: 'bounce-shot',
-        nameEn: 'Bounce Shot',
-        nameKo: '바운스 샷',
-        descriptionEn: 'Projectiles bounce to nearby enemies',
-        descriptionKo: '탄환이 근처 적에게 튕겨갑니다',
+    // 탄성 충돌 (Elastic Collision) - 운동량 보존 법칙
+    'elastic-bounce': {
+        id: 'elastic-bounce',
+        nameEn: 'Elastic Collision',
+        nameKo: '탄성 충돌',
+        descriptionEn: 'Projectiles conserve momentum when bouncing',
+        descriptionKo: '운동량을 보존하며 튕겨갑니다',
         icon: '◎',
         color: 0x3498db,
         maxLevel: 5,
+        formulaId: 'elastic-collision',
+        physicsVisualType: 'elastic',
         levelEffects: [
             { bounceCount: 1 },
             { bounceCount: 2 },
@@ -87,16 +92,18 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
         ],
     },
 
-    'piercing-shot': {
-        id: 'piercing-shot',
-        nameEn: 'Piercing Shot',
-        nameKo: '관통 샷',
-        descriptionEn: 'Projectiles pass through enemies',
-        descriptionKo: '탄환이 적을 관통합니다',
+    // 운동량 관통 (Momentum Pierce) - p = mv
+    'momentum-pierce': {
+        id: 'momentum-pierce',
+        nameEn: 'Momentum Pierce',
+        nameKo: '운동량 관통',
+        descriptionEn: 'Heavy projectiles push through enemies',
+        descriptionKo: '무거운 탄환이 적을 밀고 지나갑니다',
         icon: '➤',
         color: 0xe74c3c,
         maxLevel: 5,
-        // Buffed: More pierces, less decay for power fantasy
+        formulaId: 'momentum',
+        physicsVisualType: 'momentum',
         levelEffects: [
             { pierceCount: 2, pierceDamageDecay: 0.1 },
             { pierceCount: 3, pierceDamageDecay: 0.08 },
@@ -106,16 +113,18 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
         ],
     },
 
-    'explosion-shot': {
-        id: 'explosion-shot',
-        nameEn: 'Explosion Shot',
-        nameKo: '폭발 샷',
-        descriptionEn: 'Projectiles explode on impact',
-        descriptionKo: '탄환이 폭발합니다',
+    // 압력파 (Pressure Wave) - PV = nRT
+    'pressure-wave': {
+        id: 'pressure-wave',
+        nameEn: 'Pressure Wave',
+        nameKo: '압력파',
+        descriptionEn: 'Gas expansion creates explosive pressure',
+        descriptionKo: '기체 팽창으로 폭발적 압력을 만듭니다',
         icon: '✸',
         color: 0xf39c12,
         maxLevel: 5,
-        // Buffed: Bigger explosions for power fantasy
+        formulaId: 'ideal-gas',
+        physicsVisualType: 'pressure',
         levelEffects: [
             { explosionRadius: 50 },
             { explosionRadius: 70 },
@@ -125,16 +134,18 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
         ],
     },
 
-    'rapid-fire': {
-        id: 'rapid-fire',
-        nameEn: 'Rapid Fire',
-        nameKo: '속사',
-        descriptionEn: 'Increased fire rate',
-        descriptionKo: '발사 속도가 증가합니다',
+    // 진동수 증폭 (Frequency Burst) - E = hf
+    'frequency-burst': {
+        id: 'frequency-burst',
+        nameEn: 'Frequency Burst',
+        nameKo: '진동수 증폭',
+        descriptionEn: 'Higher frequency means faster fire rate',
+        descriptionKo: '높은 진동수로 빠르게 발사합니다',
         icon: '⚡',
         color: 0xf1c40f,
         maxLevel: 5,
-        // Buffed: Even faster fire rate for power fantasy
+        formulaId: 'photoelectric',
+        physicsVisualType: 'frequency',
         levelEffects: [
             { fireRateBonus: 0.3 },
             { fireRateBonus: 0.5 },
@@ -144,15 +155,18 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
         ],
     },
 
-    'heavy-shot': {
-        id: 'heavy-shot',
-        nameEn: 'Heavy Shot',
-        nameKo: '강타',
-        descriptionEn: 'Increased damage and knockback',
-        descriptionKo: '데미지와 넉백이 증가합니다',
+    // F=ma 충격 (F=ma Impact) - 뉴턴 제2법칙
+    'fma-impact': {
+        id: 'fma-impact',
+        nameEn: 'F=ma Impact',
+        nameKo: 'F=ma 충격',
+        descriptionEn: 'Greater mass means greater force',
+        descriptionKo: '큰 질량이 큰 힘을 만듭니다',
         icon: '⬤',
         color: 0x9b59b6,
         maxLevel: 5,
+        formulaId: 'newton-second',
+        physicsVisualType: 'fma',
         levelEffects: [
             { damageBonus: 0.3, knockbackBonus: 0.5 },
             { damageBonus: 0.5, knockbackBonus: 0.75 },
@@ -162,15 +176,18 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
         ],
     },
 
-    homing: {
-        id: 'homing',
-        nameEn: 'Homing',
-        nameKo: '유도',
-        descriptionEn: 'Projectiles track enemies',
-        descriptionKo: '탄환이 적을 추적합니다',
+    // 중력 유도 (Gravity Pull) - F = GMm/r²
+    'gravity-pull': {
+        id: 'gravity-pull',
+        nameEn: 'Gravity Pull',
+        nameKo: '중력 유도',
+        descriptionEn: 'Projectiles curve toward enemies',
+        descriptionKo: '중력으로 적을 향해 휘어집니다',
         icon: '◇',
         color: 0x1abc9c,
         maxLevel: 5,
+        formulaId: 'gravity',
+        physicsVisualType: 'gravity',
         levelEffects: [
             { homingTurnRate: 0.5 },
             { homingTurnRate: 1.0 },
@@ -180,16 +197,18 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
         ],
     },
 
-    'spread-shot': {
-        id: 'spread-shot',
-        nameEn: 'Spread Shot',
-        nameKo: '산탄',
-        descriptionEn: 'Fire multiple projectiles',
-        descriptionKo: '여러 탄환을 발사합니다',
+    // 굴절 분산 (Refraction Spread) - 스넬의 법칙
+    'refraction-spread': {
+        id: 'refraction-spread',
+        nameEn: 'Refraction Spread',
+        nameKo: '굴절 분산',
+        descriptionEn: 'Light refracts into multiple beams',
+        descriptionKo: '빛이 여러 각도로 굴절됩니다',
         icon: '⁂',
         color: 0xe67e22,
         maxLevel: 5,
-        // Buffed: More projectiles for screen-filling power fantasy
+        formulaId: 'snell',
+        physicsVisualType: 'refraction',
         levelEffects: [
             { spreadCount: 3, spreadAngle: 20 },
             { spreadCount: 4, spreadAngle: 30 },
@@ -199,15 +218,18 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
         ],
     },
 
-    shockwave: {
-        id: 'shockwave',
-        nameEn: 'Shockwave',
-        nameKo: '충격파',
-        descriptionEn: 'Periodic knockback pulse',
-        descriptionKo: '주기적으로 충격파를 발생시킵니다',
+    // 원심력 펄스 (Centripetal Pulse) - F = mv²/r
+    'centripetal-pulse': {
+        id: 'centripetal-pulse',
+        nameEn: 'Centripetal Pulse',
+        nameKo: '원심력 펄스',
+        descriptionEn: 'Rotating force pushes enemies away',
+        descriptionKo: '회전하는 힘이 적을 밀어냅니다',
         icon: '◯',
         color: 0x2ecc71,
         maxLevel: 5,
+        formulaId: 'centripetal',
+        physicsVisualType: 'centripetal',
         levelEffects: [
             { shockwaveInterval: 5, shockwaveRadius: 80, shockwaveKnockback: 100 },
             { shockwaveInterval: 4, shockwaveRadius: 100, shockwaveKnockback: 150 },
@@ -285,32 +307,34 @@ export const PASSIVE_DEFINITIONS: Record<string, PassiveDefinition> = {
 }
 
 // ============================================
-// CHARACTER SKILL CONFIGURATION
+// CHARACTER PASSIVE CONFIGURATION
+// Characters now only provide stats + passive
+// Skills are selected by the player from their unlocked skills
 // ============================================
 
 export const CHARACTER_SKILLS: Record<WobbleShape, CharacterSkillConfig> = {
     circle: {
-        startingSkills: ['rapid-fire'],
+        startingSkills: [], // Skills are now player-selected
         passive: 'momentum',
     },
     square: {
-        startingSkills: ['heavy-shot'],
+        startingSkills: [],
         passive: 'fortitude',
     },
     triangle: {
-        startingSkills: ['piercing-shot', 'rapid-fire'],
+        startingSkills: [],
         passive: 'critical-edge',
     },
     star: {
-        startingSkills: ['spread-shot'],
+        startingSkills: [],
         passive: 'lucky-star',
     },
     diamond: {
-        startingSkills: ['homing'],
+        startingSkills: [],
         passive: 'precision',
     },
     pentagon: {
-        startingSkills: ['shockwave', 'bounce-shot'],
+        startingSkills: [],
         passive: 'guardian-aura',
     },
     shadow: {

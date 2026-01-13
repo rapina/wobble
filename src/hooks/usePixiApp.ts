@@ -2,6 +2,10 @@ import { Application } from 'pixi.js'
 import { useEffect, useRef, useState, useCallback, RefObject } from 'react'
 import { pixiColors } from '../utils/pixiHelpers'
 
+// Global queue to serialize PixiJS app lifecycle in React StrictMode
+let globalInitPromise: Promise<void> = Promise.resolve()
+let activeDestroyCount = 0
+
 interface UsePixiAppOptions {
     backgroundColor?: number
     antialias?: boolean
@@ -46,6 +50,21 @@ export function usePixiApp(
 
         const initApp = async () => {
             try {
+                // Wait for any pending destroys to complete before creating new app
+                // This prevents PixiJS v8 shared Batcher corruption in React StrictMode
+                if (activeDestroyCount > 0) {
+                    await new Promise<void>((resolve) => {
+                        const checkDestroy = () => {
+                            if (activeDestroyCount === 0) {
+                                resolve()
+                            } else {
+                                setTimeout(checkDestroy, 50)
+                            }
+                        }
+                        checkDestroy()
+                    })
+                }
+
                 const app = new Application()
 
                 await app.init({
@@ -105,11 +124,35 @@ export function usePixiApp(
             }
             if (appRef.current) {
                 try {
-                    appRef.current.destroy(true, { children: true, texture: true })
+                    // In PixiJS v8, destroy() corrupts the shared Batcher.
+                    // Use a deferred destroy to avoid React StrictMode double-render issues.
+                    const appToDestroy = appRef.current
+                    appRef.current = null
+
+                    // Stop the ticker first to prevent render cycles during destroy
+                    appToDestroy.ticker.stop()
+
+                    // Remove canvas from DOM immediately
+                    if (appToDestroy.canvas && appToDestroy.canvas.parentNode) {
+                        appToDestroy.canvas.parentNode.removeChild(appToDestroy.canvas)
+                    }
+
+                    // Mark destroy as pending so new apps wait
+                    activeDestroyCount++
+
+                    // Defer the actual destroy with a longer delay
+                    setTimeout(() => {
+                        try {
+                            appToDestroy.destroy(true, { children: true, texture: true })
+                        } catch (e) {
+                            console.warn('[PixiApp] Deferred destroy error (safe to ignore):', e)
+                        } finally {
+                            activeDestroyCount--
+                        }
+                    }, 100) // 100ms delay to ensure render cycle completes
                 } catch (e) {
-                    console.error('[PixiApp] Destroy error:', e)
+                    console.error('[PixiApp] Cleanup error:', e)
                 }
-                appRef.current = null
             }
             setIsReady(false)
         }

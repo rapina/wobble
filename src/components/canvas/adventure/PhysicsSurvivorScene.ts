@@ -50,6 +50,8 @@ import {
 import { VirtualJoystick } from './VirtualJoystick'
 import { FloatingDamageText } from './FloatingDamageText'
 import { ImpactEffectSystem } from './ImpactEffectSystem'
+// PhysicsSkillVisuals disabled due to PixiJS Batcher conflicts
+// import { PhysicsSkillVisuals } from './survivor/PhysicsSkillVisuals'
 
 export class PhysicsSurvivorScene extends AdventureScene {
     // Game state
@@ -129,6 +131,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
     declare private impactSystem: ImpactEffectSystem
     declare private effectsManager: EffectsManager
     declare private comboSystem: ComboSystem
+    // PhysicsSkillVisuals disabled due to PixiJS Batcher conflicts
+    // declare private physicsSkillVisuals: PhysicsSkillVisuals
 
     // UI Systems
     declare private hudSystem: HudSystem
@@ -324,6 +328,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
             effectContainer: this.effectContainer,
         })
 
+        // PhysicsSkillVisuals disabled due to PixiJS Batcher conflicts
+        // this.physicsSkillVisuals = new PhysicsSkillVisuals(this.effectContainer)
+
         // Initialize combo system (multi-kill mode)
         this.comboSystem = new ComboSystem()
         this.comboSystem.onMultiKill = (killCount, name) => {
@@ -373,9 +380,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
             width: this.width,
             height: this.height,
         })
-        this.characterSelectScreen.onStartGame = (character, stageId) => {
-            this.debugLog(`characterSelectScreen.onStartGame: ${character}, ${stageId}`)
-            this.startWithStage(character, stageId)
+        this.characterSelectScreen.onStartGame = (character, stageId, selectedSkills) => {
+            this.debugLog(`characterSelectScreen.onStartGame: ${character}, ${stageId}, skills: ${selectedSkills.join(', ')}`)
+            this.startWithStage(character, stageId, selectedSkills)
         }
         this.characterSelectScreen.onExit = () => {
             this.debugLog('characterSelectScreen.onExit called')
@@ -885,6 +892,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
         explosion.position.set(x, y)
         this.effectContainer.addChild(explosion)
 
+        // PhysicsSkillVisuals disabled due to PixiJS Batcher conflicts
+        // this.physicsSkillVisuals.renderPressureWave({ x, y, radius, color: 0xf39c12 })
+
         this.impactSystem.trigger(x, y, 'explosion')
 
         for (const enemy of this.enemySystem.enemies) {
@@ -945,7 +955,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
             if (effect.timer <= 0) {
                 this.effectContainer.removeChild(effect.graphics)
-                effect.graphics.destroy()
+                // Don't call destroy() during render cycle - let GC handle it
                 this.hitEffects.splice(i, 1)
             }
         }
@@ -1104,10 +1114,14 @@ export class PhysicsSurvivorScene extends AdventureScene {
         })
     }
 
-    private startWithStage(character: WobbleShape, stageId: string): void {
-        this.debugLog(`startWithStage: ${character}, stage: ${stageId}`)
+    // Player-selected skills from character select screen
+    private playerSelectedSkills: string[] = []
+
+    private startWithStage(character: WobbleShape, stageId: string, selectedSkills: string[] = []): void {
+        this.debugLog(`startWithStage: ${character}, stage: ${stageId}, skills: ${selectedSkills.length}`)
         this.selectedCharacter = character
         this.currentStage = getStageById(stageId) || getDefaultStage()
+        this.playerSelectedSkills = selectedSkills
         this.characterSelectScreen.hide()
         this.showOpening(this.selectedCharacter)
     }
@@ -1179,11 +1193,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private initializeCharacterSkills(): void {
         const config = getCharacterSkillConfig(this.selectedCharacter)
 
-        this.playerSkills = config.startingSkills.map((skillId) => ({
+        // Use player-selected skills from character select screen
+        this.playerSkills = this.playerSelectedSkills.map((skillId) => ({
             skillId,
             level: 1,
         }))
 
+        // Character provides passive only
         this.passiveTrait = config.passive
         this.momentumSpeedBonus = 0
         this.consecutiveHits = 0
@@ -1344,6 +1360,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.updateEnemiesAndMerges(delta, deltaSeconds)
         this.checkPlayerCollisions()
         this.effectsManager.update(delta)
+        // PhysicsSkillVisuals disabled due to PixiJS Batcher conflicts
+        // this.physicsSkillVisuals.update(delta)
         this.updateHitEffects(delta)
         this.damageTextSystem.update(deltaSeconds)
         this.comboSystem.update(deltaSeconds)
@@ -1542,6 +1560,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.blackHoleProximityEffect = 0
         this.updateBlackHoleDistortion()
         this.effectsManager.reset()
+        // PhysicsSkillVisuals disabled due to PixiJS Batcher conflicts
+        // this.physicsSkillVisuals.reset()
         this.comboSystem.reset()
 
         // Reset UI systems
@@ -1553,9 +1573,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.pauseScreen.reset()
 
         // Reset hit effects
+        // Don't call destroy() synchronously as it can corrupt PixiJS v8's shared Batcher
         for (const effect of this.hitEffects) {
             this.effectContainer.removeChild(effect.graphics)
-            effect.graphics.destroy()
         }
         this.hitEffects = []
 
@@ -1573,6 +1593,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.setGameState('character-select', 'onReset')
         this.bossSpawned = false
         this.playerSkills = []
+        this.playerSelectedSkills = []
         this.passiveTrait = ''
         this.momentumSpeedBonus = 0
         this.consecutiveHits = 0
