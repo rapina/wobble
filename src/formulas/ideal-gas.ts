@@ -8,6 +8,8 @@ export const idealGas: Formula = {
     expression: 'PV = nRT',
     description: '기체의 압력, 부피, 온도 사이의 관계',
     descriptionEn: 'The relationship between gas pressure, volume, and temperature',
+    simulationHint: '용기 안 기체 입자들이 압력, 부피, 온도에 따라 움직이는 모습',
+    simulationHintEn: 'Shows gas particles moving based on pressure, volume, and temperature',
     applications: [
         '자동차 타이어 공기압 변화 예측',
         '에어컨과 냉장고의 냉매 설계',

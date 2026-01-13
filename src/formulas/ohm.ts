@@ -8,6 +8,8 @@ export const ohm: Formula = {
     expression: 'V = IR',
     description: '전압, 전류, 저항 사이의 관계',
     descriptionEn: 'Relationship between voltage, current, and resistance',
+    simulationHint: '저항이 클수록 전류가 줄어드는 회로의 모습',
+    simulationHintEn: 'Shows current decreasing as resistance increases in a circuit',
     applications: [
         '가정용 전기 배선 설계',
         '스마트폰 충전기의 전류 제한',

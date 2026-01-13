@@ -8,6 +8,8 @@ export const freeFall: Formula = {
     expression: 'h = ½gt²',
     description: '중력에 의해 자유낙하하는 물체의 이동 거리',
     descriptionEn: 'The distance traveled by an object in free fall under gravity',
+    simulationHint: '물체가 중력에 의해 점점 빨라지며 떨어지는 모습',
+    simulationHintEn: 'Shows an object accelerating downward under gravity',
     applications: [
         '스카이다이버의 낙하 시간 계산',
         '놀이공원 자이로드롭 설계',

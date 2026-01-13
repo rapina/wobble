@@ -8,6 +8,8 @@ export const kineticEnergy: Formula = {
     expression: 'E = ½mv²',
     description: '움직이는 물체가 가진 에너지',
     descriptionEn: 'Energy possessed by a moving object',
+    simulationHint: '물체의 속도가 빨라질수록 운동 에너지가 커지는 모습',
+    simulationHintEn: 'Shows kinetic energy increasing as object speed increases',
     applications: [
         '자동차 충돌 시 발생하는 충격 에너지 계산',
         '롤러코스터 설계 시 속도와 에너지 관계 분석',

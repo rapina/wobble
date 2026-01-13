@@ -8,6 +8,8 @@ export const entropy: Formula = {
     expression: 'ΔS = Q/T',
     description: '열역학 제2법칙: 무질서도의 변화량',
     descriptionEn: 'Second law of thermodynamics: change in disorder',
+    simulationHint: '열이 전달되면서 입자들의 무질서도가 증가하는 모습',
+    simulationHintEn: 'Shows particles becoming more disordered as heat is transferred',
     applications: [
         '열기관의 효율 한계 계산 (카르노 사이클)',
         '화학 반응의 자발성 예측',

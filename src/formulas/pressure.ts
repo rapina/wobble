@@ -8,6 +8,8 @@ export const pressure: Formula = {
     expression: 'P = F/A',
     description: '단위 면적당 가해지는 힘',
     descriptionEn: 'Force applied per unit area',
+    simulationHint: '같은 힘이라도 면적이 작을수록 압력이 커지는 모습',
+    simulationHintEn: 'Shows how pressure increases as area decreases for the same force',
     applications: [
         '압정이 쉽게 찔리는 이유',
         '스키가 눈에 덜 빠지는 원리',

@@ -9,6 +9,8 @@ export const reflection: Formula = {
     description: '빛이 표면에서 반사될 때 입사각과 반사각은 같다',
     descriptionEn:
         'When light reflects off a surface, angle of incidence equals angle of reflection',
+    simulationHint: '빛이 거울 면에서 같은 각도로 반사되는 모습',
+    simulationHintEn: 'Shows light reflecting off a mirror at equal angles',
     applications: [
         '거울에 비친 내 모습',
         '자동차 백미러와 사이드미러',

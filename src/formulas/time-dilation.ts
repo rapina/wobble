@@ -8,6 +8,8 @@ export const timeDilation: Formula = {
     expression: 't = t₀/√(1-v²/c²)',
     description: '빠르게 움직이는 물체의 시간은 정지한 관찰자에게 더 느리게 흐른다',
     descriptionEn: 'Time passes slower for fast-moving objects relative to a stationary observer',
+    simulationHint: '빠르게 움직이는 물체의 시간이 느려지는 모습',
+    simulationHintEn: 'Shows time slowing down for fast-moving objects',
     applications: [
         'GPS 위성의 시간 보정',
         '우주 비행사의 나이가 덜 드는 현상',

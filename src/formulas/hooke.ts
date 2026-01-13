@@ -8,6 +8,8 @@ export const hooke: Formula = {
     expression: 'F = -kx',
     description: '스프링이 늘어나거나 줄어든 길이에 비례하여 복원력이 작용한다',
     descriptionEn: 'Restoring force is proportional to the spring displacement',
+    simulationHint: '스프링이 늘어나고 줄어들며 복원력이 작용하는 모습',
+    simulationHintEn: 'Shows a spring stretching and compressing with restoring force',
     applications: [
         '자동차 서스펜션 설계',
         '침대 매트리스의 탄성 조절',

@@ -8,6 +8,8 @@ export const electricPower: Formula = {
     expression: 'P = VI',
     description: '전기 에너지가 소비되거나 생성되는 속도',
     descriptionEn: 'The rate at which electrical energy is consumed or generated',
+    simulationHint: '전압과 전류에 따라 소비되는 전력이 변하는 모습',
+    simulationHintEn: 'Shows power consumption changing with voltage and current',
     applications: [
         '전기요금 계산 (kWh)',
         '가전제품의 소비 전력 비교',

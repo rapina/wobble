@@ -8,6 +8,8 @@ export const heat: Formula = {
     expression: 'Q = mcΔT',
     description: '물체의 온도를 변화시키는 데 필요한 열에너지',
     descriptionEn: "The heat energy required to change an object's temperature",
+    simulationHint: '물체에 열이 가해지면서 온도가 올라가는 모습',
+    simulationHintEn: 'Shows temperature rising as heat is applied to an object',
     applications: [
         '물을 끓이는 데 필요한 에너지 계산',
         '냉난방 시스템 용량 설계',

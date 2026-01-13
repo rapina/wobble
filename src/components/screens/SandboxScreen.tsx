@@ -12,7 +12,7 @@ import { useCollectionStore } from '@/stores/collectionStore'
 import { useProgressStore } from '@/stores/progressStore'
 import { TutorialOverlay } from '../tutorial/TutorialOverlay'
 import { SettingsModal } from '../ui/SettingsModal'
-import { ArrowLeft, List, X, Info, ChevronDown, HelpCircle } from 'lucide-react'
+import { ArrowLeft, List, X, Info, ChevronDown, HelpCircle, Lightbulb } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Formula, FormulaCategory } from '../../formulas/types'
 import { WobbleShape } from '../canvas/Wobble'
@@ -27,6 +27,7 @@ const categoryColors: Record<FormulaCategory, string> = {
     thermodynamics: '#ff6b6b',
     electricity: '#69f0ae',
     special: '#ffd700',
+    quantum: '#e040fb', // Purple/Magenta for quantum mechanics
 }
 
 // Balatro theme
@@ -701,7 +702,7 @@ export function SandboxScreen({
             <div
                 className="absolute z-10 rounded-xl overflow-hidden"
                 style={{
-                    top: 'calc(max(env(safe-area-inset-top, 0px), 12px) + 56px)',
+                    top: 'calc(max(env(safe-area-inset-top, 0px), 12px) + 88px)', // +32px for description banner
                     left: 'max(env(safe-area-inset-left, 0px), 12px)',
                     right: 'max(env(safe-area-inset-right, 0px), 12px)',
                     bottom: `calc(max(env(safe-area-inset-bottom, 0px), 8px) + ${isAdFree ? 164 : 262}px)`, // +24px for remove ads button spacing
@@ -816,6 +817,31 @@ export function SandboxScreen({
                     </div>
                 </div>
             </div>
+
+            {/* Simulation Hint Banner */}
+            {(localizedFormula?.simulationHint || localizedFormula?.description) && (
+                <div
+                    className="absolute left-0 right-0 z-20"
+                    style={{
+                        top: 'calc(max(env(safe-area-inset-top, 0px), 12px) + 48px)',
+                        paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
+                        paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
+                    }}
+                >
+                    <div
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                        style={{
+                            background: 'rgba(26, 26, 46, 0.9)',
+                            border: `1px solid ${theme.border}`,
+                        }}
+                    >
+                        <Lightbulb className="h-4 w-4 text-yellow-400 shrink-0" />
+                        <span className="text-xs text-gray-300">
+                            {localizedFormula.simulationHint || localizedFormula.description}
+                        </span>
+                    </div>
+                </div>
+            )}
 
             {/* Bottom Controls Container */}
             <div

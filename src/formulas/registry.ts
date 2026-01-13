@@ -40,6 +40,11 @@ import { buoyancy } from './buoyancy'
 import { photoelectric } from './photoelectric'
 import { debroglie } from './debroglie'
 import { timeDilation } from './time-dilation'
+// Quantum Mechanics
+import { uncertainty } from './uncertainty'
+import { infiniteWell } from './infinite-well'
+import { tunneling } from './tunneling'
+import { bohr } from './bohr'
 
 export const formulas: Record<string, Formula> = {
     // Mechanics
@@ -83,6 +88,11 @@ export const formulas: Record<string, Formula> = {
     photoelectric: photoelectric,
     debroglie: debroglie,
     'time-dilation': timeDilation,
+    // Quantum Mechanics
+    uncertainty: uncertainty,
+    'infinite-well': infiniteWell,
+    tunneling: tunneling,
+    bohr: bohr,
 }
 
 export const formulaList = Object.values(formulas)

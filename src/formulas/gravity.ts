@@ -8,6 +8,8 @@ export const gravity: Formula = {
     expression: 'F = Gm₁m₂/r²',
     description: '두 물체 사이에 작용하는 중력',
     descriptionEn: 'The gravitational force between two objects',
+    simulationHint: '두 물체가 질량과 거리에 따라 서로 끌어당기는 모습',
+    simulationHintEn: 'Shows two objects attracting each other based on mass and distance',
     applications: [
         '행성과 위성의 공전 궤도 계산',
         'GPS 위성의 정확한 위치 보정',

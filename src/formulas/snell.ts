@@ -8,6 +8,8 @@ export const snell: Formula = {
     expression: 'n₁sinθ₁ = n₂sinθ₂',
     description: '빛이 다른 매질로 들어갈 때 굴절되는 각도의 관계',
     descriptionEn: 'Relationship of refraction angles when light enters a different medium',
+    simulationHint: '빛이 물이나 유리에 들어갈 때 꺾이는 모습',
+    simulationHintEn: 'Shows light bending as it enters water or glass',
     applications: [
         '안경 렌즈와 콘택트렌즈 설계',
         '광섬유 통신의 전반사 원리',

@@ -8,6 +8,8 @@ export const buoyancy: Formula = {
     expression: 'F = ρVg',
     description: '유체 속에서 물체를 위로 밀어올리는 힘',
     descriptionEn: 'The upward force pushing an object in a fluid',
+    simulationHint: '물체가 유체 속에서 밀도에 따라 뜨거나 가라앉는 모습',
+    simulationHintEn: 'Shows an object floating or sinking in fluid based on density',
     applications: [
         '배와 잠수함의 부양 설계',
         '열기구와 비행선의 부력 계산',

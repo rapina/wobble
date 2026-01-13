@@ -8,6 +8,8 @@ export const centripetal: Formula = {
     expression: 'F = mv²/r',
     description: '원운동하는 물체를 중심으로 당기는 힘',
     descriptionEn: 'The force pulling a rotating object toward the center',
+    simulationHint: '물체가 원형 궤도를 따라 회전하며 중심 방향으로 힘을 받는 모습',
+    simulationHintEn: 'Shows an object rotating in a circular path with force toward the center',
     applications: [
         '놀이공원 회전 놀이기구의 안전 설계',
         '자동차가 커브길을 돌 때 필요한 마찰력 계산',

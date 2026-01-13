@@ -4,6 +4,7 @@ import { Formula, Variable } from '@/formulas/types'
 export interface LocalizedFormula {
     name: string
     description: string
+    simulationHint?: string
     applications: string[]
 }
 
@@ -21,6 +22,10 @@ export function useLocalizedFormula(formula: Formula | null): LocalizedFormula |
         name: isEnglish && formula.nameEn ? formula.nameEn : formula.name,
         description:
             isEnglish && formula.descriptionEn ? formula.descriptionEn : formula.description,
+        simulationHint:
+            isEnglish && formula.simulationHintEn
+                ? formula.simulationHintEn
+                : formula.simulationHint,
         applications:
             isEnglish && formula.applicationsEn
                 ? formula.applicationsEn

@@ -8,6 +8,8 @@ export const torque: Formula = {
     expression: 'τ = rF sin θ',
     description: '물체를 회전시키는 힘의 효과',
     descriptionEn: 'The rotational effect of a force',
+    simulationHint: '힘의 크기와 회전축까지의 거리에 따라 회전력이 변하는 모습',
+    simulationHintEn: 'Shows how rotational force changes with force magnitude and distance from axis',
     applications: [
         '렌치로 볼트를 조이는 원리',
         '시소의 균형 잡기',

@@ -8,6 +8,8 @@ export const lens: Formula = {
     expression: '1/f = 1/a + 1/b',
     description: '렌즈의 초점거리와 물체·상 거리의 관계',
     descriptionEn: 'The relationship between focal length, object distance, and image distance',
+    simulationHint: '렌즈를 통해 상이 형성되는 위치와 크기가 변하는 모습',
+    simulationHintEn: 'Shows how image position and size change through a lens',
     applications: [
         '안경 렌즈의 도수 계산',
         '카메라 초점 조절 원리',

@@ -257,26 +257,56 @@ Each shape has a unique personality and role:
 
 ---
 
+## Quantum Mechanics (양자역학)
+
+### Uncertainty Principle (불확정성 원리)
+- **ID**: `uncertainty`
+- **Formula**: `ΔxΔp ≥ ℏ/2`
+- **Shapes Used**: **diamond (Gem)**
+- **Description**: Position and momentum cannot both be precisely known simultaneously
+
+### Infinite Square Well (무한 퍼텐셜 우물)
+- **ID**: `infinite-well`
+- **Formula**: `Eₙ = n²ℏ²π²/2mL²`
+- **Shapes Used**: **diamond (Gem)**
+- **Description**: Quantized energy levels of a particle confined in a box
+
+### Quantum Tunneling (양자 터널링)
+- **ID**: `tunneling`
+- **Formula**: `T ≈ e⁻²ᵏᴸ`
+- **Shapes Used**: **diamond (Gem)**
+- **Description**: Particles can probabilistically pass through classically forbidden barriers
+
+### Bohr Model (보어 모형)
+- **ID**: `bohr`
+- **Formula**: `Eₙ = -13.6/n² eV`
+- **Shapes Used**: circle, **pentagon (Penta)**
+- **Description**: Quantized electron orbits in hydrogen atom with photon emission/absorption
+
+---
+
 ## Shape Usage Summary
 
 Current shape usage across all scenes:
 
 | Shape | Count | Used In |
 |-------|-------|---------|
-| circle | 28 | Most scenes (protagonist) |
+| circle | 29 | Most scenes (protagonist), **bohr** (electron) |
 | square | 18 | Many scenes (secondary character) |
 | triangle | 1 | **pressure** |
 | star | 1 | **wien** |
-| diamond | 0 | - |
-| pentagon | 1 | **torque** |
+| diamond | 4 | **uncertainty**, **infinite-well**, **tunneling** (Gem - quantum particle) |
+| pentagon | 2 | **torque**, **bohr** (nucleus) |
 
-### Shape-Featured Formulas (NEW)
+### Shape-Featured Formulas
 
-These new formulas specifically showcase each character shape:
+These formulas specifically showcase each character shape:
 
 - **triangle (Spike)**: `pressure` - Spike presses down, demonstrating P = F/A
 - **star (Twinkle)**: `wien` - Twinkle glows different colors based on temperature
 - **pentagon (Penta)**: `torque` - Penta pushes lever arm to create rotation
+- **diamond (Gem)**: `uncertainty`, `infinite-well`, `tunneling` - Gem represents the elusive quantum particle
+- **pentagon (Penta)**: `bohr` - Penta as the stable nucleus with orbiting electron
 
 ---
 

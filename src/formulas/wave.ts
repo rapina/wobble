@@ -8,6 +8,8 @@ export const wave: Formula = {
     expression: 'v = fλ',
     description: '파동이 전파되는 속도',
     descriptionEn: 'Speed at which a wave propagates',
+    simulationHint: '파동이 진동수와 파장에 따라 전파되는 모습',
+    simulationHintEn: 'Shows a wave propagating based on frequency and wavelength',
     applications: [
         '라디오와 TV 방송 주파수 설계',
         '초음파 검사 장비의 해상도 계산',

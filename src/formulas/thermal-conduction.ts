@@ -8,6 +8,8 @@ export const thermalConduction: Formula = {
     expression: 'Q = kAΔT/L',
     description: '물질을 통해 전달되는 열량',
     descriptionEn: 'The amount of heat transferred through a material',
+    simulationHint: '열이 물질을 통해 고온에서 저온으로 전달되는 모습',
+    simulationHintEn: 'Shows heat flowing through material from high to low temperature',
     applications: [
         '건물 단열재의 효율 계산',
         '전자기기 방열판 설계',

@@ -8,6 +8,8 @@ export const momentum: Formula = {
     expression: 'p = mv',
     description: '물체의 운동 상태를 나타내는 물리량',
     descriptionEn: 'Physical quantity representing the motion state of an object',
+    simulationHint: '질량과 속도에 따라 물체의 운동량이 변하는 모습',
+    simulationHintEn: 'Shows how momentum changes with mass and velocity',
     applications: [
         '당구나 볼링에서 공의 충돌 예측',
         '교통사고 분석 시 차량 속도 추정',

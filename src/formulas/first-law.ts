@@ -8,6 +8,8 @@ export const firstLaw: Formula = {
     expression: 'ΔU = Q - W',
     description: '에너지 보존 법칙: 내부에너지 변화 = 열 - 일',
     descriptionEn: 'Energy conservation: change in internal energy = heat - work',
+    simulationHint: '열이 들어오고 일이 나가면서 내부 에너지가 변하는 모습',
+    simulationHintEn: 'Shows internal energy changing as heat enters and work exits',
     applications: [
         '냉장고와 에어컨의 냉각 사이클 설계',
         '자동차 엔진의 효율 계산',

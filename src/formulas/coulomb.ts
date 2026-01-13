@@ -8,6 +8,8 @@ export const coulomb: Formula = {
     expression: 'F = kq₁q₂/r²',
     description: '두 전하 사이에 작용하는 전기력',
     descriptionEn: 'The electric force between two charges',
+    simulationHint: '두 전하가 같은 부호면 밀어내고, 다른 부호면 끌어당기는 모습',
+    simulationHintEn: 'Shows charges repelling when same sign, attracting when opposite',
     applications: [
         '정전기 방지 제품 설계',
         '복사기와 레이저 프린터의 토너 부착 원리',

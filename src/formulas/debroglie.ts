@@ -9,6 +9,8 @@ export const debroglie: Formula = {
     description: '모든 물질은 파동성을 가지며, 그 파장은 운동량에 반비례한다',
     descriptionEn:
         'All matter has wave properties, with wavelength inversely proportional to momentum',
+    simulationHint: '입자가 파동처럼 퍼져나가며 운동량에 따라 파장이 변하는 모습',
+    simulationHintEn: 'Shows a particle spreading like a wave with wavelength changing based on momentum',
     applications: [
         '전자현미경의 초고해상도 원리',
         '반도체 칩의 나노 구조 설계',

@@ -8,6 +8,8 @@ export const escapeVelocity: Formula = {
     expression: 'v = √(2GM/r)',
     description: '행성의 중력을 벗어나기 위한 최소 속도',
     descriptionEn: "The minimum velocity needed to escape a planet's gravity",
+    simulationHint: '물체가 행성의 중력을 벗어나는 데 필요한 속도를 보여주는 모습',
+    simulationHintEn: 'Shows the velocity needed for an object to escape planetary gravity',
     applications: [
         '로켓 발사 속도 계산',
         '블랙홀의 사건 지평선 이해',

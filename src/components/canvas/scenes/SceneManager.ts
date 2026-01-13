@@ -39,6 +39,11 @@ import { KeplerThirdScene } from './KeplerThirdScene'
 import { PressureScene } from './PressureScene'
 import { WienScene } from './WienScene'
 import { TorqueScene } from './TorqueScene'
+// Quantum Mechanics scenes
+import { UncertaintyScene } from './UncertaintyScene'
+import { InfiniteWellScene } from './InfiniteWellScene'
+import { TunnelingScene } from './TunnelingScene'
+import { BohrScene } from './BohrScene'
 
 type SceneConstructor = new (app: Application) => BaseScene
 
@@ -82,6 +87,11 @@ const sceneMap: Record<string, SceneConstructor> = {
     pressure: PressureScene,
     wien: WienScene,
     torque: TorqueScene,
+    // Quantum Mechanics scenes
+    uncertainty: UncertaintyScene,
+    'infinite-well': InfiniteWellScene,
+    tunneling: TunnelingScene,
+    bohr: BohrScene,
 }
 
 export function getSceneClass(formulaId: string): SceneConstructor | null {

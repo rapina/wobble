@@ -8,6 +8,8 @@ export const projectile: Formula = {
     expression: 'R = v²sin2θ/g',
     description: '비스듬히 던진 물체의 수평 도달 거리',
     descriptionEn: 'The horizontal range of an object thrown at an angle',
+    simulationHint: '물체가 포물선 궤적을 그리며 날아가는 모습',
+    simulationHintEn: 'Shows an object flying through the air in a parabolic trajectory',
     applications: [
         '축구나 농구에서 공의 궤적 예측',
         '대포나 미사일의 사거리 계산',

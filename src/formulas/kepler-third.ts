@@ -8,6 +8,8 @@ export const keplerThird: Formula = {
     expression: 'T² = (4π²/GM)r³',
     description: '행성의 공전주기와 궤도반경의 관계',
     descriptionEn: 'The relationship between orbital period and orbital radius',
+    simulationHint: '행성이 중심 별 주위를 공전하며 궤도에 따라 주기가 변하는 모습',
+    simulationHintEn: 'Shows a planet orbiting a star with period changing based on orbital radius',
     applications: [
         '인공위성의 궤도 주기 계산',
         '외계 행성 탐색 (항성의 흔들림 분석)',

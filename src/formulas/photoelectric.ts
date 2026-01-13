@@ -8,6 +8,8 @@ export const photoelectric: Formula = {
     expression: 'Ek = hf - W',
     description: '빛이 금속 표면에서 전자를 방출시킬 때, 전자의 운동에너지',
     descriptionEn: 'The kinetic energy of electrons emitted when light strikes a metal surface',
+    simulationHint: '빛이 금속에 닿으면 전자가 튀어나오는 모습',
+    simulationHintEn: 'Shows electrons being ejected when light hits a metal surface',
     applications: [
         '태양전지의 전기 생산 원리',
         '디지털 카메라 이미지 센서',

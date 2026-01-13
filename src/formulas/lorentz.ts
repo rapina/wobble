@@ -8,6 +8,8 @@ export const lorentz: Formula = {
     expression: 'F = qvB',
     description: '자기장 속에서 운동하는 전하에 작용하는 힘',
     descriptionEn: 'The force acting on a moving charge in a magnetic field',
+    simulationHint: '자기장 속에서 움직이는 전하가 휘어지는 모습',
+    simulationHintEn: 'Shows a moving charge curving in a magnetic field',
     applications: [
         '전동기(모터)의 회전 원리',
         'MRI 의료 영상 장비',

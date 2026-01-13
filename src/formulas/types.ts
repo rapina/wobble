@@ -54,6 +54,7 @@ export type FormulaCategory =
     | 'thermodynamics'
     | 'electricity'
     | 'special'
+    | 'quantum'
 
 // Display layout for formula visualization
 export type DisplayLayoutType = 'linear' | 'fraction' | 'fraction-square' | 'custom'
@@ -86,6 +87,9 @@ export interface Formula {
     expression: string
     description: string
     descriptionEn?: string
+    /** 시뮬레이션이 무엇을 보여주는지 설명 (배너에 표시) */
+    simulationHint?: string
+    simulationHintEn?: string
     /** 실생활에서 이 공식이 사용되는 예시들 */
     applications?: string[]
     applicationsEn?: string[]

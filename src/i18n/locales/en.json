@@ -20,7 +20,8 @@
             "gravity": "Gravity",
             "thermodynamics": "Thermo",
             "electricity": "Electric",
-            "special": "Special"
+            "special": "Special",
+            "quantum": "Quantum"
         },
         "emptyCategory": "No formulas in this category",
         "info": {

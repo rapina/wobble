@@ -9,6 +9,8 @@ export const wien: Formula = {
     description: '흑체 복사의 최대 파장은 온도에 반비례한다',
     descriptionEn:
         'Peak wavelength of blackbody radiation is inversely proportional to temperature',
+    simulationHint: '온도가 높아질수록 물체의 색이 빨강에서 파랑으로 변하는 모습',
+    simulationHintEn: 'Shows object color shifting from red to blue as temperature increases',
     applications: [
         '별의 색깔로 표면 온도 측정',
         '적외선 열화상 카메라 설계',

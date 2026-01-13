@@ -8,6 +8,8 @@ export const stefanBoltzmann: Formula = {
     expression: 'P = σAT⁴',
     description: '흑체가 방출하는 복사 에너지',
     descriptionEn: 'The radiant energy emitted by a black body',
+    simulationHint: '온도에 따라 물체가 방출하는 복사 에너지가 급격히 변하는 모습',
+    simulationHintEn: 'Shows radiant energy increasing dramatically with temperature',
     applications: [
         '태양의 표면 온도 측정',
         '적외선 체온계의 작동 원리',

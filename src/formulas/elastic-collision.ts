@@ -9,6 +9,8 @@ export const elasticCollision: Formula = {
     description: '충돌 전후 상대속도의 비율로 반발 계수를 나타낸다',
     descriptionEn:
         'The coefficient of restitution as the ratio of relative velocities before and after collision',
+    simulationHint: '두 물체가 충돌 후 반발 계수에 따라 튕겨나가는 모습',
+    simulationHintEn: 'Shows two objects bouncing off each other based on restitution coefficient',
     applications: [
         '당구공 충돌 후 움직임 예측',
         '테니스 라켓과 공의 반발력 설계',

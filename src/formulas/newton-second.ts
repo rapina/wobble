@@ -8,6 +8,8 @@ export const newtonSecond: Formula = {
     expression: 'F = ma',
     description: '힘은 질량과 가속도의 곱과 같다',
     descriptionEn: 'Force equals mass times acceleration',
+    simulationHint: '캐릭터에 힘이 가해질 때 질량에 따라 가속도가 달라지는 모습',
+    simulationHintEn: 'Shows how acceleration changes based on mass when force is applied',
     applications: [
         '자동차 급브레이크 시 필요한 제동력 계산',
         '로켓 발사 시 필요한 추진력 설계',

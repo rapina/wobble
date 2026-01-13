@@ -8,6 +8,8 @@ export const capacitor: Formula = {
     expression: 'E = ½CV²',
     description: '축전기에 저장된 전기 에너지',
     descriptionEn: 'The electrical energy stored in a capacitor',
+    simulationHint: '축전기에 전하가 쌓이며 에너지가 저장되는 모습',
+    simulationHintEn: 'Shows charge accumulating in a capacitor and storing energy',
     applications: [
         '카메라 플래시의 순간 발광',
         '전기차의 회생 제동 에너지 저장',

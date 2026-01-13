@@ -8,6 +8,8 @@ export const pendulum: Formula = {
     expression: 'T = 2π√(L/g)',
     description: '진자가 한 번 왕복하는 시간',
     descriptionEn: 'The time for a pendulum to complete one full swing',
+    simulationHint: '진자가 좌우로 흔들리며 길이에 따라 주기가 변하는 모습',
+    simulationHintEn: 'Shows a pendulum swinging with period changing based on length',
     applications: [
         '괘종시계의 정확한 시간 측정',
         '지진계의 진동 감지',
