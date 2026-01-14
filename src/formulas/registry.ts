@@ -45,6 +45,20 @@ import { uncertainty } from './uncertainty'
 import { infiniteWell } from './infinite-well'
 import { tunneling } from './tunneling'
 import { bohr } from './bohr'
+// Chemistry
+import { ph } from './ph'
+import { dilution } from './dilution'
+import { reactionRate } from './reaction-rate'
+// New Physics
+import { radioactiveDecay } from './radioactive-decay'
+import { angularMomentum } from './angular-momentum'
+import { bernoulli } from './bernoulli'
+import { doppler } from './doppler'
+import { faraday } from './faraday'
+import { magneticField } from './magnetic-field'
+import { rotationalEnergy } from './rotational-energy'
+import { inverseSquare } from './inverse-square'
+import { beatFrequency } from './beat-frequency'
 
 export const formulas: Record<string, Formula> = {
     // Mechanics
@@ -93,6 +107,20 @@ export const formulas: Record<string, Formula> = {
     'infinite-well': infiniteWell,
     tunneling: tunneling,
     bohr: bohr,
+    // Chemistry
+    ph: ph,
+    dilution: dilution,
+    'reaction-rate': reactionRate,
+    // New Physics
+    'radioactive-decay': radioactiveDecay,
+    'angular-momentum': angularMomentum,
+    bernoulli: bernoulli,
+    doppler: doppler,
+    faraday: faraday,
+    'magnetic-field': magneticField,
+    'rotational-energy': rotationalEnergy,
+    'inverse-square': inverseSquare,
+    'beat-frequency': beatFrequency,
 }
 
 export const formulaList = Object.values(formulas)

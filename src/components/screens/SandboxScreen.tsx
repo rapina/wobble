@@ -33,6 +33,7 @@ const categoryColors: Record<FormulaCategory, string> = {
     electricity: '#69f0ae',
     special: '#ffd700',
     quantum: '#e040fb', // Purple/Magenta for quantum mechanics
+    chemistry: '#4fc3f7', // Light blue for chemistry
 }
 
 // Balatro theme
@@ -105,8 +106,6 @@ export function SandboxScreen({
     const [challengeToast, setChallengeToast] = useState<{ type: 'success'; score: number; combo: number; insight?: string } | { type: 'wrong'; hint: string } | null>(null)
     const [challengeToastVisible, setChallengeToastVisible] = useState(false)
     const [challengeTransition, setChallengeTransition] = useState<'idle' | 'exit' | 'enter'>('idle')
-    const [unlockToast, setUnlockToast] = useState<{ formulas: string[]; type: 'ad' | 'prerequisite' } | null>(null)
-    const [unlockToastVisible, setUnlockToastVisible] = useState(false)
     const [webAdCountdown, setWebAdCountdown] = useState(5)
     const canvasRef = useRef<PixiCanvasHandle>(null)
 
@@ -349,16 +348,7 @@ export function SandboxScreen({
             const earnedScore = solveChallenge()
 
             // Complete discovery and check for new unlocks
-            const newlyUnlocked = completeDiscovery(formula.id)
-            if (newlyUnlocked.length > 0) {
-                // Show prerequisite unlock toast after challenge toast
-                setTimeout(() => {
-                    setUnlockToast({ formulas: newlyUnlocked, type: 'prerequisite' })
-                    setUnlockToastVisible(true)
-                    setTimeout(() => setUnlockToastVisible(false), 3500)
-                    setTimeout(() => setUnlockToast(null), 4000)
-                }, 2500) // After challenge toast disappears
-            }
+            completeDiscovery(formula.id)
 
             // Get contextual insight for the result
             const insight = getInsightText(formula.id, variables, isKo)
@@ -563,22 +553,13 @@ export function SandboxScreen({
             () => {
                 // 광고 시청 완료 - 공식 해금
                 unlockFormula(formulaIdToUnlock)
-
-                // 해금 알림
-                const unlockedFormula = formulas.find(f => f.id === formulaIdToUnlock)
-                if (unlockedFormula) {
-                    setUnlockToast({ formulas: [formulaIdToUnlock], type: 'ad' })
-                    setUnlockToastVisible(true)
-                    setTimeout(() => setUnlockToastVisible(false), 2500)
-                    setTimeout(() => setUnlockToast(null), 3000)
-                }
             },
             () => {
                 // 광고 로드 실패 - 아무 동작 없음
                 console.log('Reward ad failed')
             }
         )
-    }, [showRewardAd, unlockFormula, formulas])
+    }, [showRewardAd, unlockFormula])
 
     if (!formula) {
         return (
@@ -1362,71 +1343,6 @@ export function SandboxScreen({
                                 </span>
                             </>
                         )}
-                    </div>
-                </div>
-            )}
-
-            {/* Unlock Toast - Center */}
-            {unlockToast && (
-                <div
-                    className="fixed z-[100] pointer-events-none"
-                    style={{
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        animation: unlockToastVisible
-                            ? 'toast-bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
-                            : 'toast-bounce-out 0.3s ease-out forwards',
-                    }}
-                >
-                    <div
-                        className="flex flex-col items-center gap-3 px-6 py-5 rounded-xl"
-                        style={{
-                            background: theme.bgPanel,
-                            border: `3px solid ${theme.border}`,
-                            boxShadow: `0 6px 0 ${theme.border}, 0 10px 30px rgba(0,0,0,0.5)`,
-                        }}
-                    >
-                        <div
-                            className="px-4 py-1.5 rounded-lg"
-                            style={{
-                                background: unlockToast.type === 'prerequisite' ? theme.blue : theme.gold,
-                                border: `2px solid ${theme.border}`,
-                            }}
-                        >
-                            <span className="text-sm font-black text-white">
-                                {unlockToast.type === 'prerequisite'
-                                    ? (i18n.language === 'ko' ? '새 공식 해금!' : 'New Formula Unlocked!')
-                                    : (i18n.language === 'ko' ? '잠금 해제' : 'Unlocked')}
-                            </span>
-                        </div>
-                        {unlockToast.type === 'prerequisite' && (
-                            <p className="text-white/60 text-xs text-center">
-                                {i18n.language === 'ko'
-                                    ? '챌린지 완료 보상으로 해금되었습니다'
-                                    : 'Unlocked as a challenge reward'}
-                            </p>
-                        )}
-                        <div className="flex flex-wrap justify-center gap-2 max-w-[260px]">
-                            {unlockToast.formulas.map(fId => {
-                                const f = formulas.find(formula => formula.id === fId)
-                                if (!f) return null
-                                const fName = i18n.language === 'en' && f.nameEn ? f.nameEn : f.name
-                                return (
-                                    <span
-                                        key={fId}
-                                        className="px-2.5 py-1 rounded-lg text-xs font-bold"
-                                        style={{
-                                            background: theme.bgPanelLight,
-                                            color: categoryColors[f.category],
-                                            border: `2px solid ${theme.border}`,
-                                        }}
-                                    >
-                                        {fName}
-                                    </span>
-                                )
-                            })}
-                        </div>
                     </div>
                 </div>
             )}

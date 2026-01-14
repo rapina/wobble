@@ -140,10 +140,10 @@ export class SkillSelectionScreen {
     }
 
     private createUI(): void {
-        // Semi-transparent bright overlay
+        // Balatro green felt overlay
         const bg = new Graphics()
         bg.rect(0, 0, this.width, this.height)
-        bg.fill({ color: 0x0d9488, alpha: 0.4 })
+        bg.fill({ color: 0x3d6b59, alpha: 0.85 })
         this.screenContainer.addChild(bg)
 
         // Level up banner at top
@@ -152,7 +152,7 @@ export class SkillSelectionScreen {
         this.levelUpBanner.scale.set(0)
         this.screenContainer.addChild(this.levelUpBanner)
 
-        // Banner background
+        // Banner background - Balatro style with thick black border
         const bannerBg = new Graphics()
         const bannerW = 160
         const bannerH = 40
@@ -163,20 +163,20 @@ export class SkillSelectionScreen {
         bannerBg.lineTo(bannerW / 2 - 15, bannerH / 2)
         bannerBg.lineTo(-bannerW / 2 + 15, bannerH / 2)
         bannerBg.closePath()
-        bannerBg.fill(0xffffff)
-        bannerBg.stroke({ color: 0xfbbf24, width: 3 })
+        bannerBg.fill(0x374244)
+        bannerBg.stroke({ color: 0x1a1a1a, width: 4 })
         this.levelUpBanner.addChild(bannerBg)
 
-        // Level up text
+        // Level up text - Balatro gold
         this.levelUpWaveText = new WaveText({
             text: `LEVEL ${this.currentLevel}!`,
             style: {
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 18,
                 fontWeight: 'bold',
-                fill: 0x422006,
+                fill: 0xc9a227,
                 dropShadow: {
-                    color: 0xfbbf24,
+                    color: 0x1a1a1a,
                     blur: 4,
                     distance: 0,
                     alpha: 0.5,
@@ -253,18 +253,18 @@ export class SkillSelectionScreen {
     ): Container {
         const container = new Container()
 
-        // Card shadow
+        // Card shadow - Balatro style
         const shadow = new Graphics()
-        shadow.roundRect(-cardWidth / 2 + 3, -cardHeight / 2 + 4, cardWidth, cardHeight, 12)
-        shadow.fill({ color: 0x0d9488, alpha: 0.3 })
+        shadow.roundRect(-cardWidth / 2 + 3, -cardHeight / 2 + 5, cardWidth, cardHeight, 12)
+        shadow.fill({ color: 0x1a1a1a, alpha: 0.4 })
         container.addChild(shadow)
 
-        // Card background
+        // Card background - Balatro dark panel with thick border
         const cardBg = new Graphics()
         cardBg.roundRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 12)
-        cardBg.fill(0xffffff)
+        cardBg.fill(0x374244)
         cardBg.roundRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 12)
-        cardBg.stroke({ color: skillDef.color, width: 2 })
+        cardBg.stroke({ color: 0x1a1a1a, width: 4 })
         container.addChild(cardBg)
 
         // Skill icon (left side)
@@ -287,14 +287,14 @@ export class SkillSelectionScreen {
         iconText.position.set(-cardWidth / 2 + 35, 0)
         container.addChild(iconText)
 
-        // Skill name
+        // Skill name - white text for dark background
         const nameText = new Text({
             text: skillDef.nameKo,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 14,
                 fontWeight: 'bold',
-                fill: 0x422006,
+                fill: 0xffffff,
             }),
         })
         nameText.anchor.set(0, 0.5)
@@ -315,14 +315,14 @@ export class SkillSelectionScreen {
         levelText.position.set(-cardWidth / 2 + 70 + nameText.width + 8, -15)
         container.addChild(levelText)
 
-        // Current effect
+        // Current effect - lighter text for dark background
         const currentEffect = getCurrentLevelDescription(skill.skillId, skill.level)
         const currentText = new Text({
             text: currentEffect,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 11,
-                fill: 0x78716c,
+                fill: 0xaaaaaa,
             }),
         })
         currentText.anchor.set(0, 0.5)
@@ -343,7 +343,7 @@ export class SkillSelectionScreen {
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 16,
-                fill: isMaxLevel ? 0xd6d3d1 : 0x059669,
+                fill: isMaxLevel ? 0x666666 : 0xc9a227,
             }),
         })
         arrowText.anchor.set(0.5)
@@ -356,7 +356,7 @@ export class SkillSelectionScreen {
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 12,
                 fontWeight: 'bold',
-                fill: isMaxLevel ? 0xfbbf24 : 0x059669,
+                fill: isMaxLevel ? 0xc9a227 : 0x4a9eff,
             }),
         })
         nextLevelText.anchor.set(0.5)
@@ -368,9 +368,9 @@ export class SkillSelectionScreen {
         container.cursor = 'pointer'
         container.on('pointerdown', () => this.handleSkillSelect(index))
 
-        // Hover effect
+        // Hover effect - lighter panel on hover
         container.on('pointerover', () => {
-            cardBg.tint = 0xf0fdf4
+            cardBg.tint = 0x4a5658
         })
         container.on('pointerout', () => {
             cardBg.tint = 0xffffff

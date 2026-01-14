@@ -12,58 +12,58 @@ interface ColorTheme {
 
 const COLOR_THEMES: ColorTheme[] = [
     {
-        // Soft Sage - muted teal/green
-        name: 'meadow',
-        bgTop: 0x7db8b0, // soft sage
-        bgBottom: 0x5a9a91, // muted teal
-        accent1: 0xc9a87c, // muted gold
-        accent2: 0xd4b896, // soft beige
-        particles: [0x9dccc5, 0x7db8b0, 0xd4c4a8, 0xe8dcc8],
+        // Balatro Green Felt - primary theme
+        name: 'felt',
+        bgTop: 0x3d6b59, // felt green
+        bgBottom: 0x2d5a4a, // darker felt
+        accent1: 0xc9a227, // Balatro gold
+        accent2: 0x4a9eff, // Balatro blue
+        particles: [0x4d7b69, 0x5d8b79, 0xc9a227, 0x4a9eff],
     },
     {
-        // Dusty Peach - soft warm tones
-        name: 'sunset',
-        bgTop: 0xd4a589, // dusty peach
-        bgBottom: 0xc08d6f, // muted terracotta
-        accent1: 0x7a9e9e, // muted teal
-        accent2: 0xc9b896, // soft sand
-        particles: [0xe5cfc0, 0xd4a589, 0xc9b896, 0xede5db],
+        // Balatro Deep Green
+        name: 'deep',
+        bgTop: 0x2d5a4a, // darker felt
+        bgBottom: 0x1d4a3a, // deep green
+        accent1: 0xe85d4c, // Balatro red
+        accent2: 0xc9a227, // Balatro gold
+        particles: [0x3d6b59, 0x4d7b69, 0xe85d4c, 0xc9a227],
     },
     {
-        // Warm Sand - soft earth tones
-        name: 'golden',
-        bgTop: 0xc9b88a, // warm sand
-        bgBottom: 0xb5a478, // muted khaki
-        accent1: 0x7a9eb5, // dusty blue
-        accent2: 0xc9a87c, // soft caramel
-        particles: [0xddd4be, 0xc9b88a, 0xe5d8c8, 0xede5db],
+        // Balatro Emerald
+        name: 'emerald',
+        bgTop: 0x4d7b69, // lighter felt
+        bgBottom: 0x3d6b59, // felt green
+        accent1: 0xc9a227, // Balatro gold
+        accent2: 0xFF6B9D, // Balatro pink
+        particles: [0x5d8b79, 0x6d9b89, 0xc9a227, 0xFF6B9D],
     },
     {
-        // Dusty Rose - muted pink
-        name: 'coral',
-        bgTop: 0xc9a0a0, // dusty rose
-        bgBottom: 0xb58989, // muted mauve
-        accent1: 0x8ab5c4, // soft sky
-        accent2: 0xc9b896, // warm beige
-        particles: [0xe0cfcf, 0xd4b5b5, 0xc5dbe3, 0xe8dcc8],
+        // Balatro Night
+        name: 'night',
+        bgTop: 0x374244, // dark panel
+        bgBottom: 0x1a1a2e, // deep dark
+        accent1: 0x4a9eff, // Balatro blue
+        accent2: 0xc9a227, // Balatro gold
+        particles: [0x4a5658, 0x5a6668, 0x4a9eff, 0xc9a227],
     },
     {
-        // Soft Sky - muted blue
-        name: 'ocean',
-        bgTop: 0x8ab5c4, // soft sky blue
-        bgBottom: 0x7299ab, // dusty slate
-        accent1: 0xc9b88a, // warm sand
-        accent2: 0x9ec4d1, // pale cyan
-        particles: [0xc5dbe3, 0xa8c8d4, 0xddd4be, 0xd8e8ed],
+        // Balatro Jade
+        name: 'jade',
+        bgTop: 0x5d8b79, // jade green
+        bgBottom: 0x4d7b69, // deeper jade
+        accent1: 0xc9a227, // Balatro gold
+        accent2: 0x4a9eff, // Balatro blue
+        particles: [0x6d9b89, 0x7dab99, 0xc9a227, 0x4a9eff],
     },
     {
-        // Misty Lavender - soft purple/gray
-        name: 'lavender',
-        bgTop: 0xb0a0c0, // misty lavender
-        bgBottom: 0x9688a8, // dusty violet
-        accent1: 0x8ab8b0, // sage
-        accent2: 0xc9b896, // soft beige
-        particles: [0xd4c8e0, 0xc4b8d4, 0xa8ccc5, 0xe8dcc8],
+        // Balatro Dusk
+        name: 'dusk',
+        bgTop: 0x3d5a5a, // teal felt
+        bgBottom: 0x2d4a4a, // dark teal
+        accent1: 0xe85d4c, // Balatro red
+        accent2: 0xFF6B9D, // Balatro pink
+        particles: [0x4d6b6b, 0x5d7b7b, 0xe85d4c, 0xFF6B9D],
     },
 ]
 
@@ -221,21 +221,21 @@ export class BackgroundSystem {
         this.drawGrid(COLOR_THEMES[0])
     }
 
-    // Create ambient floating particles
+    // Create ambient floating particles - Balatro style
     private createParticles(): void {
         this.particles = []
-        const particleCount = 40
+        const particleCount = 50
 
         for (let i = 0; i < particleCount; i++) {
-            const types: ('circle' | 'hexagon' | 'diamond')[] = ['circle', 'hexagon', 'diamond']
+            const types: ('circle' | 'hexagon' | 'diamond')[] = ['circle', 'diamond', 'diamond'] // More diamonds for card feel
             this.particles.push({
                 x: Math.random() * this.context.width,
                 y: Math.random() * this.context.height,
-                size: 3 + Math.random() * 8,
+                size: 4 + Math.random() * 10, // Slightly larger
                 color: 0xffffff, // Will be updated per theme
-                alpha: 0.08 + Math.random() * 0.15, // Reduced alpha for softer look
-                speedX: (Math.random() - 0.5) * 0.3,
-                speedY: -0.2 - Math.random() * 0.3, // Drift upward
+                alpha: 0.12 + Math.random() * 0.18, // Higher alpha for dark background
+                speedX: (Math.random() - 0.5) * 0.4,
+                speedY: -0.3 - Math.random() * 0.4, // Drift upward
                 phase: Math.random() * Math.PI * 2,
                 type: types[Math.floor(Math.random() * types.length)],
             })
@@ -355,24 +355,27 @@ export class BackgroundSystem {
         }
     }
 
-    // Draw subtle hexagonal grid pattern
+    // Draw subtle card suit pattern - Balatro style
     private drawGrid(theme: ColorTheme): void {
         this.gridGraphics.clear()
 
-        const hexSize = 30
-        const rows = Math.ceil(this.context.height / (hexSize * 1.5)) + 1
-        const cols = Math.ceil(this.context.width / (hexSize * 1.732)) + 1
+        const gridSize = 60
+        const rows = Math.ceil(this.context.height / gridSize) + 1
+        const cols = Math.ceil(this.context.width / gridSize) + 1
 
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
-                const x = col * hexSize * 1.732 + (row % 2) * hexSize * 0.866
-                const y = row * hexSize * 1.5
+                const x = col * gridSize + (row % 2) * (gridSize / 2)
+                const y = row * gridSize
 
-                // Pulsing alpha based on position and time (reduced for softer look)
-                const pulse = Math.sin(this.animTime * 0.5 + x * 0.01 + y * 0.01) * 0.5 + 0.5
-                const alpha = 0.02 + pulse * 0.025
+                // Pulsing alpha based on position and time
+                const pulse = Math.sin(this.animTime * 0.3 + x * 0.008 + y * 0.008) * 0.5 + 0.5
+                const alpha = 0.04 + pulse * 0.04
 
-                this.drawHexagon(this.gridGraphics, x, y, hexSize * 0.4, theme.accent1, alpha)
+                // Draw small diamond shape (like card suits)
+                const size = 8
+                this.gridGraphics.poly([x, y - size, x + size, y, x, y + size, x - size, y])
+                this.gridGraphics.fill({ color: theme.accent1, alpha })
             }
         }
     }
@@ -633,10 +636,10 @@ export class BackgroundSystem {
         // Draw collapse effect
         this.collapseGraphics.clear()
 
-        // Dark overlay growing from edges
+        // Dark overlay growing from edges - Balatro dark
         const darkAlpha = this.collapseDarkness * 0.9
         this.collapseGraphics.rect(0, 0, this.context.width, this.context.height)
-        this.collapseGraphics.fill({ color: 0x1a1520, alpha: darkAlpha })
+        this.collapseGraphics.fill({ color: 0x1a1a1a, alpha: darkAlpha })
 
         let allFallen = true
         const gravity = 800

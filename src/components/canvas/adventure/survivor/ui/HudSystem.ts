@@ -56,12 +56,12 @@ export class HudSystem {
     }
 
     private setup(): void {
-        // === UI Color Palette (bright theme) ===
-        const uiBgColor = 0xffffff // Clean white background
-        const uiBorderColor = 0x78716c // Warm gray border
-        const uiShadowColor = 0x292524 // Soft shadow
-        const healthColor = 0xef4444 // Vibrant red
-        const levelColor = 0xfbbf24 // Golden yellow
+        // === Balatro Theme Colors ===
+        const uiBgColor = 0x374244 // Dark panel background
+        const uiBorderColor = 0x1a1a1a // Thick black border
+        const uiShadowColor = 0x1a1a1a // Dark shadow
+        const healthColor = 0xe85d4c // Balatro red
+        const levelColor = 0xc9a227 // Balatro gold
 
         // === Top-left: Health display as hexagonal hearts ===
         // Health badge shadow
@@ -164,15 +164,15 @@ export class HudSystem {
         this.comboContainer.visible = false
         this.uiContainer.addChild(this.comboContainer)
 
-        // Combo count (large, center)
+        // Combo count (large, center) - Balatro gold
         this.comboCountText = new Text({
             text: '0',
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 32,
                 fontWeight: 'bold',
-                fill: 0xffd700,
-                stroke: { color: 0x000000, width: 4 },
+                fill: 0xc9a227,
+                stroke: { color: 0x1a1a1a, width: 4 },
             }),
         })
         this.comboCountText.anchor.set(0.5)
@@ -193,15 +193,15 @@ export class HudSystem {
         comboLabel.position.set(0, 22)
         this.comboContainer.addChild(comboLabel)
 
-        // Multiplier text
+        // Multiplier text - Balatro felt green
         this.comboMultiplierText = new Text({
             text: 'x1.0',
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 12,
                 fontWeight: 'bold',
-                fill: 0x2ecc71,
-                stroke: { color: 0x000000, width: 2 },
+                fill: 0x4a9eff,
+                stroke: { color: 0x1a1a1a, width: 2 },
             }),
         })
         this.comboMultiplierText.anchor.set(0.5)
@@ -244,11 +244,11 @@ export class HudSystem {
         const heartSize = 12
         const heartGap = 4
 
-        // Bright theme colors
-        const fullHeartColor = 0xef4444
-        const fullHeartStroke = 0xdc2626
-        const emptyHeartColor = 0xffffff
-        const emptyHeartStroke = 0xd6d3d1
+        // Balatro theme colors
+        const fullHeartColor = 0xe85d4c
+        const fullHeartStroke = 0x1a1a1a
+        const emptyHeartColor = 0x374244
+        const emptyHeartStroke = 0x1a1a1a
 
         for (let i = 0; i < maxHearts; i++) {
             const x = i * (heartSize * 2 + heartGap)
@@ -300,7 +300,7 @@ export class HudSystem {
         this.xpBarFill.clear()
         if (progressRatio > 0) {
             this.xpBarFill.roundRect(0, 0, barWidth * progressRatio, barHeight, 5)
-            this.xpBarFill.fill(0x2ecc71)
+            this.xpBarFill.fill(0x3d6b59) // Balatro felt green
         }
     }
 
@@ -343,9 +343,9 @@ export class HudSystem {
             const x = index * (hexSize * 2 + iconGap) + hexSize
             iconContainer.position.set(x, hexSize)
 
-            // Hexagon background
+            // Hexagon background (Balatro style - dark panel with thick border)
             const bg = new Graphics()
-            drawUIHexagon(bg, 0, 0, hexSize, 0xffffff, skillDef.color, 2)
+            drawUIHexagon(bg, 0, 0, hexSize, 0x374244, 0x1a1a1a, 3)
             iconContainer.addChild(bg)
 
             // Skill icon
@@ -361,14 +361,14 @@ export class HudSystem {
             iconText.position.set(0, -3)
             iconContainer.addChild(iconText)
 
-            // Level number
+            // Level number (white for dark background)
             const levelText = new Text({
                 text: `${skill.level}`,
                 style: new TextStyle({
                     fontFamily: 'Arial, sans-serif',
                     fontSize: 8,
                     fontWeight: 'bold',
-                    fill: 0x422006,
+                    fill: 0xffffff,
                 }),
             })
             levelText.anchor.set(0.5)

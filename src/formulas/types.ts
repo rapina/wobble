@@ -55,6 +55,7 @@ export type FormulaCategory =
     | 'electricity'
     | 'special'
     | 'quantum'
+    | 'chemistry'
 
 // Display layout for formula visualization
 export type DisplayLayoutType = 'linear' | 'fraction' | 'fraction-square' | 'custom'

@@ -175,7 +175,7 @@ export class CRTFilter extends Filter {
 
     constructor(options: CRTFilterOptions = {}) {
         const {
-            scanlineIntensity = 0.08,
+            scanlineIntensity = 0.03, // Reduced from 0.08
             chromaticAberration = 0.15,
             curvatureStrength = 0.01,
             vignetteStrength = 0.2,
@@ -271,7 +271,7 @@ export class CRTFilter extends Filter {
     // Preset for minimal effect (barely noticeable)
     static subtle(): CRTFilter {
         return new CRTFilter({
-            scanlineIntensity: 0.04,
+            scanlineIntensity: 0.015, // Reduced from 0.04
             chromaticAberration: 0.08,
             curvatureStrength: 0.005,
             vignetteStrength: 0.12,
@@ -282,7 +282,7 @@ export class CRTFilter extends Filter {
     // Preset for light effect (noticeable but not distracting)
     static light(): CRTFilter {
         return new CRTFilter({
-            scanlineIntensity: 0.08,
+            scanlineIntensity: 0.03, // Reduced from 0.08
             chromaticAberration: 0.15,
             curvatureStrength: 0.01,
             vignetteStrength: 0.2,
@@ -293,7 +293,7 @@ export class CRTFilter extends Filter {
     // Preset for medium effect
     static medium(): CRTFilter {
         return new CRTFilter({
-            scanlineIntensity: 0.15,
+            scanlineIntensity: 0.06, // Reduced from 0.15
             chromaticAberration: 0.3,
             curvatureStrength: 0.02,
             vignetteStrength: 0.3,
@@ -304,7 +304,7 @@ export class CRTFilter extends Filter {
     // Preset for heavy retro effect
     static heavy(): CRTFilter {
         return new CRTFilter({
-            scanlineIntensity: 0.3,
+            scanlineIntensity: 0.12, // Reduced from 0.3
             chromaticAberration: 0.6,
             curvatureStrength: 0.04,
             vignetteStrength: 0.45,

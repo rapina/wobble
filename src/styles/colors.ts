@@ -20,6 +20,15 @@ export const colors = {
     volume: '#85C1E9', // Light Sky Blue - V (부피)
     wavelength: '#BB8FCE', // Soft Purple - λ (파장)
 
+    // Chemistry colors
+    acidic: '#E74C3C', // Red - acidic solutions
+    neutral: '#2ECC71', // Green - neutral pH
+    basic: '#3498DB', // Blue - basic solutions
+    concentration: '#9B59B6', // Purple - molarity
+    reactant: '#F39C12', // Orange - reactants
+    product: '#1ABC9C', // Teal - products
+    catalyst: '#E91E63', // Pink - catalyst/rate constant
+
     // GBA SP Device colors (Deep Purple like the image)
     gbaShell: '#4A3463', // Deep purple shell
     gbaShellDark: '#2D1F3D', // Darker purple for shadows

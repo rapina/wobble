@@ -63,6 +63,26 @@ export const UNLOCK_CONDITIONS: Record<string, UnlockCondition> = {
     'infinite-well': { type: 'ad' },
     'tunneling': { type: 'ad' },
     'bohr': { type: 'ad' },
+    'radioactive-decay': { type: 'ad' },
+
+    // Chemistry
+    'ph': { type: 'ad' },
+    'dilution': { type: 'ad' },
+    'reaction-rate': { type: 'ad' },
+
+    // New Physics - 역학
+    'angular-momentum': { type: 'ad' },
+    'bernoulli': { type: 'ad' },
+    'rotational-energy': { type: 'ad' },
+
+    // New Physics - 파동
+    'doppler': { type: 'ad' },
+    'inverse-square': { type: 'ad' },
+    'beat-frequency': { type: 'ad' },
+
+    // New Physics - 전자기
+    'faraday': { type: 'ad' },
+    'magnetic-field': { type: 'ad' },
 }
 
 // 무료 공식 목록 (역학 카테고리)

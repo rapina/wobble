@@ -4,6 +4,7 @@ import { X, Check, RefreshCw, Loader2, Trash2, AlertTriangle, Bug } from 'lucide
 import { useInAppPurchase } from '@/hooks/useInAppPurchase'
 import { usePurchaseStore } from '@/stores/purchaseStore'
 import { useCollectionStore } from '@/stores/collectionStore'
+import { useFormulaUnlockStore } from '@/stores/formulaUnlockStore'
 import { IS_AD_TESTING } from '@/hooks/useAdMob'
 import { cn } from '@/lib/utils'
 
@@ -17,6 +18,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     const isKorean = i18n.language === 'ko'
     const { isAdFree, setAdFree, reset: resetPurchase } = usePurchaseStore()
     const { resetCollection } = useCollectionStore()
+    const { unlockAll, unlockedFormulas } = useFormulaUnlockStore()
+    const [allUnlocked, setAllUnlocked] = useState(false)
     const [showResetConfirm, setShowResetConfirm] = useState(false)
     const [debugEnabled, setDebugEnabled] = useState(() => {
         return localStorage.getItem('wobble-debug-enabled') === 'true'
@@ -189,6 +192,35 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                             }}
                         >
                             DEBUG: Force Remove Ads
+                        </button>
+                    )}
+
+                    {/* DEBUG: Unlock All Formulas Button (테스트 모드에서만) */}
+                    {IS_AD_TESTING && (
+                        <button
+                            onClick={() => {
+                                unlockAll()
+                                setAllUnlocked(true)
+                                setTimeout(() => setAllUnlocked(false), 2000)
+                            }}
+                            disabled={allUnlocked}
+                            className={cn(
+                                'w-full py-3 rounded-xl font-bold text-sm',
+                                'transition-all duration-200',
+                                'hover:scale-[1.02] active:scale-[0.98]',
+                                'disabled:opacity-70'
+                            )}
+                            style={{
+                                background: allUnlocked
+                                    ? 'linear-gradient(135deg, #27ae60 0%, #1e8449 100%)'
+                                    : 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)',
+                                color: '#fff',
+                                boxShadow: allUnlocked
+                                    ? '0 4px 0 #145a32, 0 6px 20px rgba(39, 174, 96, 0.3)'
+                                    : '0 4px 0 #5b2c6f, 0 6px 20px rgba(155, 89, 182, 0.3)',
+                            }}
+                        >
+                            {allUnlocked ? '✓ All Formulas Unlocked!' : `DEBUG: Unlock All Formulas (${unlockedFormulas.size})`}
                         </button>
                     )}
 

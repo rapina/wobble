@@ -285,16 +285,38 @@ Each shape has a unique personality and role:
 
 ---
 
+## Chemistry (화학) - NEW
+
+### pH Scale (pH 산성도)
+- **ID**: `ph`
+- **Formula**: `pH = -log[H⁺]`
+- **Shapes Used**: circle (H+ ions, OH- ions)
+- **Description**: Negative logarithm of hydrogen ion concentration. Shows solution color changing from red (acidic) to green (neutral) to blue/purple (basic)
+
+### Dilution Formula (희석 공식)
+- **ID**: `dilution`
+- **Formula**: `M₁V₁ = M₂V₂`
+- **Shapes Used**: circle (solute molecules)
+- **Description**: Amount of solute remains constant before and after dilution. Visualizes solute spreading as water is added
+
+### Rate Law (반응 속도 법칙)
+- **ID**: `reaction-rate`
+- **Formula**: `r = k[A]ⁿ`
+- **Shapes Used**: circle (reactants), star (products)
+- **Description**: Reaction rate is proportional to concentration raised to a power. Shows particles colliding and transforming
+
+---
+
 ## Shape Usage Summary
 
 Current shape usage across all scenes:
 
 | Shape | Count | Used In |
 |-------|-------|---------|
-| circle | 29 | Most scenes (protagonist), **bohr** (electron) |
+| circle | 32 | Most scenes (protagonist), **bohr** (electron), **ph**, **dilution**, **reaction-rate** |
 | square | 18 | Many scenes (secondary character) |
 | triangle | 1 | **pressure** |
-| star | 1 | **wien** |
+| star | 2 | **wien**, **reaction-rate** (products) |
 | diamond | 4 | **uncertainty**, **infinite-well**, **tunneling** (Gem - quantum particle) |
 | pentagon | 2 | **torque**, **bohr** (nucleus) |
 

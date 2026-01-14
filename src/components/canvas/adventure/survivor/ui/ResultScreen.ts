@@ -201,14 +201,14 @@ export class ResultScreen {
 
         if (!this.data) return
 
-        // Muted Balatro-style theme colors
-        const bgTopColor = 0x7db8b0 // soft sage
-        const bgBottomColor = 0x5a9a91 // muted teal
-        const cardBgColor = 0xf5f0e8 // warm cream
-        const cardShadowColor = 0x3d5c56
-        const textDark = 0x2d3b38
-        const textMuted = 0x5a6b66
-        const accentGold = 0xd4a574 // muted gold
+        // Balatro green felt theme colors
+        const bgTopColor = 0x3d6b59 // felt green
+        const bgBottomColor = 0x2d5a4a // darker felt
+        const cardBgColor = 0x374244 // dark panel
+        const cardShadowColor = 0x1a1a1a // black shadow
+        const textDark = 0xffffff // white text
+        const textMuted = 0xaaaaaa // light gray
+        const accentGold = 0xc9a227 // Balatro gold
 
         // Gradient background
         const bg = new Graphics()
@@ -256,12 +256,12 @@ export class ResultScreen {
         cardShadow.fill({ color: cardShadowColor, alpha: 0.4 })
         this.screenContainer.addChild(cardShadow)
 
-        // Main card background
+        // Main card background - Balatro style with thick black border
         const card = new Graphics()
         card.roundRect(cardX, cardY, cardWidth, cardHeight, 16)
         card.fill(cardBgColor)
         card.roundRect(cardX, cardY, cardWidth, cardHeight, 16)
-        card.stroke({ color: accentGold, width: 3 })
+        card.stroke({ color: 0x1a1a1a, width: 4 })
         card.alpha = 0
         this.screenContainer.addChild(card)
 
@@ -437,12 +437,12 @@ export class ResultScreen {
         rankShadow.fill({ color: cardShadowColor, alpha: 0.3 })
         this.resultRankCard.addChild(rankShadow)
 
-        // Rank badge background
+        // Rank badge background - Balatro style with thick black border
         const rankBg = new Graphics()
         rankBg.roundRect(-rankBoxWidth / 2, -rankBoxHeight / 2, rankBoxWidth, rankBoxHeight, 12)
         rankBg.fill(cardBgColor)
         rankBg.roundRect(-rankBoxWidth / 2, -rankBoxHeight / 2, rankBoxWidth, rankBoxHeight, 12)
-        rankBg.stroke({ color: rankConfig.color, width: 3 })
+        rankBg.stroke({ color: 0x1a1a1a, width: 4 })
         this.resultRankCard.addChild(rankBg)
 
         // Rank letter
@@ -478,14 +478,14 @@ export class ResultScreen {
         this.resultButtons.alpha = 0
         this.screenContainer.addChild(this.resultButtons)
 
-        // Retry button
-        const retryBtn = this.createTextButton('RETRY', -55, 0x5a9a91, () => {
+        // Retry button - Balatro blue
+        const retryBtn = this.createTextButton('RETRY', -55, 0x4a9eff, () => {
             this.onRetry?.()
         })
         this.resultButtons.addChild(retryBtn)
 
-        // Share button
-        const shareBtn = this.createTextButton('SHARE', 55, 0x8b7355, () => {
+        // Share button - Balatro gold
+        const shareBtn = this.createTextButton('SHARE', 55, 0xc9a227, () => {
             if (!this.data) return
             const kills = Math.floor(this.data.score / 10)
             const rank = getRankFromTime(this.data.gameTime)
@@ -516,31 +516,30 @@ export class ResultScreen {
 
         const btnWidth = 90
         const btnHeight = 40
-        const cardBgColor = 0xf5f0e8
-        const cardShadowColor = 0x3d5c56
+        const cardShadowColor = 0x1a1a1a
 
         // Shadow
         const shadow = new Graphics()
-        shadow.roundRect(-btnWidth / 2 + 2, -btnHeight / 2 + 3, btnWidth, btnHeight, 10)
-        shadow.fill({ color: cardShadowColor, alpha: 0.3 })
+        shadow.roundRect(-btnWidth / 2 + 2, -btnHeight / 2 + 4, btnWidth, btnHeight, 10)
+        shadow.fill({ color: cardShadowColor, alpha: 0.5 })
         btn.addChild(shadow)
 
-        // Button background
+        // Colored background (like HomeScreen buttons)
         const bg = new Graphics()
         bg.roundRect(-btnWidth / 2, -btnHeight / 2, btnWidth, btnHeight, 10)
-        bg.fill(cardBgColor)
+        bg.fill(color)
         bg.roundRect(-btnWidth / 2, -btnHeight / 2, btnWidth, btnHeight, 10)
-        bg.stroke({ color, width: 2 })
+        bg.stroke({ color: 0x1a1a1a, width: 3 })
         btn.addChild(bg)
 
-        // Button text
+        // Text color based on background (black on gold, white on others)
         const text = new Text({
             text: label,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 14,
                 fontWeight: 'bold',
-                fill: color,
+                fill: color === 0xc9a227 ? 0x000000 : 0xffffff,
                 letterSpacing: 1,
             }),
         })

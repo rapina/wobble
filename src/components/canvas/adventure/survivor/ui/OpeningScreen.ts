@@ -188,17 +188,17 @@ export class OpeningScreen {
         this.tipText.alpha = 0
         this.screenContainer.addChild(this.tipText)
 
-        // Ready text (hidden initially)
+        // Ready text (hidden initially) - Balatro gold
         this.readyText = new Text({
             text: 'READY',
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 48,
                 fontWeight: 'bold',
-                fill: this.selectedStage.particleColor,
+                fill: 0xc9a227,
                 align: 'center',
                 dropShadow: {
-                    color: 0x000000,
+                    color: 0x1a1a1a,
                     blur: 8,
                     distance: 2,
                     alpha: 0.6,
@@ -319,7 +319,7 @@ export class OpeningScreen {
 
             if (this.readyText) {
                 this.readyText.text = 'READY'
-                this.readyText.style.fill = this.selectedStage.particleColor
+                this.readyText.style.fill = 0xc9a227 // Balatro gold
 
                 const scaleProgress = Math.min(1, readyT * 3)
                 this.readyText.scale.set(easeOutBack(scaleProgress))

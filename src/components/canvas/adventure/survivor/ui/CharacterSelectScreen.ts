@@ -233,8 +233,8 @@ export class CharacterSelectScreen {
         const stage = STAGES[this.selectedStageIndex]
         this.previewParticles = []
 
-        const previewWidth = this.width - 60
-        const previewHeight = 100
+        const previewWidth = this.width - 50
+        const previewHeight = 60
 
         switch (stage.id) {
             case 'normal':
@@ -323,8 +323,8 @@ export class CharacterSelectScreen {
         if (!this.stagePreviewContainer || !this.stagePreviewGraphics) return
 
         const stage = STAGES[this.selectedStageIndex]
-        const previewWidth = this.width - 60
-        const previewHeight = 100
+        const previewWidth = this.width - 50
+        const previewHeight = 60
 
         // Use clear() - the Batcher issue was fixed in usePixiApp.ts
         this.stagePreviewGraphics.clear()
@@ -592,14 +592,14 @@ export class CharacterSelectScreen {
         this.screenContainer.removeChildren()
         console.log(`[CharacterSelectScreen] removeChildren done - children: ${this.screenContainer.children.length}`)
 
-        // === THEME COLORS ===
-        const bgTopColor = 0x7db8b0
-        const bgBottomColor = 0x5a9a91
-        const cardBgColor = 0xf5f0e8
-        const cardShadowColor = 0x3d5c56
-        const textDark = 0x2d3b38
-        const textMuted = 0x5a6b66
-        const accentGold = 0xd4a574
+        // === BALATRO THEME COLORS ===
+        const bgTopColor = 0x3d6b59 // Felt green
+        const bgBottomColor = 0x2d5a4a // Darker felt
+        const cardBgColor = 0x374244 // Dark panel
+        const cardShadowColor = 0x1a1a1a // Black shadow
+        const textDark = 0xffffff // White text
+        const textMuted = 0xaaaaaa // Light gray
+        const accentGold = 0xc9a227 // Balatro gold
 
         const selectedShape = this.getSelectedCharacter()
         const selectedChar = WOBBLE_CHARACTERS[selectedShape]
@@ -641,11 +641,11 @@ export class CharacterSelectScreen {
         }
         this.screenContainer.addChild(pattern)
 
-        // Main card
-        const cardX = 20
-        const cardY = 20
-        const cardWidth = this.width - 40
-        const cardHeight = this.height - 85
+        // Main card (include buttons inside)
+        const cardX = 15
+        const cardY = 15
+        const cardWidth = this.width - 30
+        const cardHeight = this.height - 30 // Full height, buttons inside
 
         // Card shadow
         const cardShadow = new Graphics()
@@ -653,23 +653,32 @@ export class CharacterSelectScreen {
         cardShadow.fill({ color: cardShadowColor, alpha: 0.4 })
         this.screenContainer.addChild(cardShadow)
 
-        // Card background
+        // Card background - Balatro style with thick black border
         const card = new Graphics()
         card.roundRect(cardX, cardY, cardWidth, cardHeight, 16)
         card.fill(cardBgColor)
         card.roundRect(cardX, cardY, cardWidth, cardHeight, 16)
-        card.stroke({ color: accentGold, width: 3 })
+        card.stroke({ color: 0x1a1a1a, width: 4 })
         this.screenContainer.addChild(card)
 
-        // ========== 1. CHARACTER SECTION (TOP) ==========
-        const charSectionY = cardY + 25
+        // ========== 1. CHARACTER + STATS SECTION (HORIZONTAL LAYOUT) ==========
+        const charSectionY = cardY + 20
+        const charStatsRowY = charSectionY + 60
 
-        // Character preview container
+        // Calculate positions for centered horizontal layout
+        const sectionGap = 15 // Gap between character and stats
+        const charAreaWidth = 130 // Character area width (arrows + wobble)
+        const statsAreaWidth = 160 // Stats area width (radar + labels)
+        const totalWidth = charAreaWidth + sectionGap + statsAreaWidth
+        const startX = this.centerX - totalWidth / 2
+
+        // === LEFT: Character preview ===
+        const charAreaX = startX + charAreaWidth / 2
         this.characterCardContainer = new Container()
-        this.characterCardContainer.position.set(this.centerX, charSectionY + 45)
+        this.characterCardContainer.position.set(charAreaX, charStatsRowY)
         this.screenContainer.addChild(this.characterCardContainer)
 
-        // Character wobble (centered, larger)
+        // Character wobble (bigger for 9:16)
         this.previewWobble = new Wobble({
             size: 55,
             shape: selectedShape,
@@ -680,22 +689,22 @@ export class CharacterSelectScreen {
         this.previewWobble.position.set(0, 0)
         this.characterCardContainer.addChild(this.previewWobble)
 
-        // Character name
+        // Character name (below wobble)
         const charNameText = new Text({
             text: selectedChar.nameKo,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: 'bold',
                 fill: textDark,
             }),
         })
         charNameText.anchor.set(0.5)
-        charNameText.position.set(0, 50)
+        charNameText.position.set(0, 52)
         this.characterCardContainer.addChild(charNameText)
 
         // Character page dots
-        const charDotsY = 70
+        const charDotsY = 72
         const charDotGap = 12
         const charTotalDotsWidth = (this.availableCharacters.length - 1) * charDotGap
         this.availableCharacters.forEach((char, i) => {
@@ -711,25 +720,24 @@ export class CharacterSelectScreen {
             this.characterCardContainer.addChild(dot)
         })
 
-        // Character arrows
-        this.charLeftArrowBtn = this.createArrowButton('<', this.centerX - 90, charSectionY + 45, () => {
+        // Character arrows (around character)
+        this.charLeftArrowBtn = this.createArrowButton('<', charAreaX - 58, charStatsRowY, () => {
             this.selectPrevCharacter()
         })
         this.screenContainer.addChild(this.charLeftArrowBtn)
 
-        this.charRightArrowBtn = this.createArrowButton('>', this.centerX + 90, charSectionY + 45, () => {
+        this.charRightArrowBtn = this.createArrowButton('>', charAreaX + 58, charStatsRowY, () => {
             this.selectNextCharacter()
         })
         this.screenContainer.addChild(this.charRightArrowBtn)
 
-        // ========== 2. STATS SECTION (Radar chart - centered) ==========
-        const statsSectionY = charSectionY + 130
-
+        // === RIGHT: Stats radar chart ===
+        const statsAreaX = startX + charAreaWidth + sectionGap + statsAreaWidth / 2
         const statsContainer = new Container()
-        statsContainer.position.set(this.centerX, statsSectionY)
+        statsContainer.position.set(statsAreaX, charStatsRowY)
         this.screenContainer.addChild(statsContainer)
 
-        // Radar chart (centered, larger)
+        // Radar chart (bigger for 9:16)
         const radarRadius = 45
 
         const statLabels = ['HP', 'DMG', 'RATE', 'SPD', 'KNOCK']
@@ -746,15 +754,15 @@ export class CharacterSelectScreen {
             statValues,
             statLabels,
             0,
-            45,
+            5,
             radarRadius,
             selectedChar.color,
             textDark,
             textMuted
         )
 
-        // ========== 3. SKILL SELECTION SECTION (Drag & Drop Grid) ==========
-        const skillSectionY = statsSectionY + 115
+        // ========== 2. SKILL SELECTION SECTION (Drag & Drop Grid) ==========
+        const skillSectionY = charStatsRowY + 95
         const studiedFormulas = useProgressStore.getState().studiedFormulas
         const allSkills = Object.values(SKILL_DEFINITIONS)
 
@@ -854,12 +862,12 @@ export class CharacterSelectScreen {
         }
 
         // ===== Skill Grid with Vertical Scroll =====
-        const gridY = slotY + slotSize + 12
+        const gridY = slotY + slotSize + 10
         const gridCols = 5 // Same as slot count
         const gridGap = slotGap
         const skillCardSize = slotSize // Same size as slots
         const gridPadding = (cardWidth - (gridCols * skillCardSize + (gridCols - 1) * gridGap)) / 2
-        const visibleRows = 2 // Show 2 rows at a time
+        const visibleRows = 3 // Show 3 rows at a time
         const visibleHeight = visibleRows * skillCardSize + (visibleRows - 1) * gridGap
         const gridRows = Math.ceil(allSkills.length / gridCols)
         const totalGridHeight = gridRows * skillCardSize + (gridRows - 1) * gridGap
@@ -1269,12 +1277,10 @@ export class CharacterSelectScreen {
             skillDescContainer.addChild(placeholder)
         }
 
-        // ========== 5. PASSIVE SECTION ==========
-        const passiveSectionY = skillDescSectionY + skillDescHeight + 10
+        // ========== 5. PASSIVE SECTION (anchored above stage) ==========
+        // Calculate from bottom: buttons(-35) -> stage(60+25) -> passive(26+10)
+        const passivePillY = cardY + cardHeight - 35 - 25 - 60 - 10 - 26
         const passiveDef = PASSIVE_DEFINITIONS[skillConfig.passive]
-
-        // Passive pill (compact - no label)
-        const passivePillY = passiveSectionY
         if (passiveDef) {
             const passiveNameText = `${passiveDef.icon} ${passiveDef.nameKo}`
             const passivePillWidth = 120
@@ -1313,36 +1319,20 @@ export class CharacterSelectScreen {
             this.screenContainer.addChild(noPassiveText)
         }
 
-        // ========== 6. STAGE/BACKGROUND SECTION (BOTTOM) ==========
-        const passiveHeight = 26
-        const stageSectionY = passiveSectionY + passiveHeight + 10
+        // ========== 6. STAGE/BACKGROUND SECTION (anchored to bottom) ==========
         const previewWidth = cardWidth - 20
-        const previewHeight = 100
-
-        // Section label
-        const stageLabel = new Text({
-            text: 'STAGE',
-            style: new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 10,
-                fontWeight: 'bold',
-                fill: textMuted,
-                letterSpacing: 2,
-            }),
-        })
-        stageLabel.anchor.set(0.5)
-        stageLabel.position.set(this.centerX, stageSectionY)
-        this.screenContainer.addChild(stageLabel)
+        const previewHeight = 60
+        // Position from bottom: buttons at -35, stage above with margin
+        const previewY = cardY + cardHeight - 35 - 25 - previewHeight
 
         // Stage preview container
-        const previewY = stageSectionY + 15
         this.stagePreviewContainer = new Container()
         this.stagePreviewContainer.position.set(cardX + 10, previewY)
         this.screenContainer.addChild(this.stagePreviewContainer)
 
         // Preview background
         const previewBorder = new Graphics()
-        previewBorder.roundRect(0, 0, previewWidth, previewHeight, 12)
+        previewBorder.roundRect(0, 0, previewWidth, previewHeight, 10)
         previewBorder.fill({ color: selectedStage.bgColor, alpha: 1 })
         this.stagePreviewContainer.addChild(previewBorder)
 
@@ -1350,100 +1340,86 @@ export class CharacterSelectScreen {
         this.stagePreviewGraphics = new Graphics()
         this.stagePreviewContainer.addChild(this.stagePreviewGraphics)
 
-        // Stage info overlay (centered in preview)
+        // Stage info overlay (left side)
         const stageInfoOverlay = new Container()
-        stageInfoOverlay.position.set(previewWidth / 2, previewHeight / 2)
+        stageInfoOverlay.position.set(70, previewHeight / 2)
         this.stagePreviewContainer.addChild(stageInfoOverlay)
 
-        // Stage icon + name + formula centered
+        // Stage icon
         const stageIcon = new Text({
             text: selectedStage.icon,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 22,
+                fontSize: 20,
                 fill: 0xffffff,
             }),
         })
         stageIcon.anchor.set(0.5)
-        stageIcon.position.set(-50, 0)
+        stageIcon.position.set(-35, 0)
         stageIcon.alpha = 0.9
         stageInfoOverlay.addChild(stageIcon)
 
+        // Stage name + formula + trait stacked
         const stageNameText = new Text({
             text: selectedStage.nameKo,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 16,
+                fontSize: 13,
                 fontWeight: 'bold',
                 fill: 0xffffff,
             }),
         })
         stageNameText.anchor.set(0, 0.5)
-        stageNameText.position.set(-30, -10)
+        stageNameText.position.set(-10, -12)
         stageInfoOverlay.addChild(stageNameText)
 
         const formulaText = new Text({
-            text: selectedStage.description,
+            text: `${selectedStage.description}  ·  ${selectedStage.trait}`,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 12,
-                fontWeight: 'bold',
+                fontSize: 9,
                 fill: selectedStage.particleColor,
             }),
         })
         formulaText.anchor.set(0, 0.5)
-        formulaText.position.set(-30, 10)
+        formulaText.position.set(-10, 6)
         stageInfoOverlay.addChild(formulaText)
 
         // Preview border stroke
         const borderStroke = new Graphics()
-        borderStroke.roundRect(0, 0, previewWidth, previewHeight, 12)
+        borderStroke.roundRect(0, 0, previewWidth, previewHeight, 10)
         borderStroke.stroke({ color: selectedStage.particleColor, width: 2, alpha: 0.8 })
         this.stagePreviewContainer.addChild(borderStroke)
 
-        // Stage trait description (below preview)
-        const traitY = previewY + previewHeight + 10
-        const traitText = new Text({
-            text: selectedStage.trait,
-            style: new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 11,
-                fill: textMuted,
-            }),
-        })
-        traitText.anchor.set(0.5)
-        traitText.position.set(this.centerX, traitY)
-        this.screenContainer.addChild(traitText)
-
-        // Stage dots
-        const stageDotY = traitY + 20
-        const stageDotGap = 14
+        // Stage dots (inside preview, bottom right)
+        const stageDotY = previewHeight - 10
+        const stageDotGap = 10
         const stageTotalDotsWidth = (STAGES.length - 1) * stageDotGap
+        const dotsStartX = previewWidth - 15 - stageTotalDotsWidth
         STAGES.forEach((stage, i) => {
             const isSelected = i === this.selectedStageIndex
             const dot = new Graphics()
-            const dotX = this.centerX - stageTotalDotsWidth / 2 + i * stageDotGap
-            dot.circle(dotX, stageDotY, isSelected ? 5 : 3)
+            dot.circle(dotsStartX + i * stageDotGap, stageDotY, isSelected ? 4 : 2.5)
             dot.fill({
-                color: isSelected ? stage.particleColor : textMuted,
+                color: isSelected ? 0xffffff : 0xffffff,
                 alpha: isSelected ? 1 : 0.4,
             })
-            this.screenContainer.addChild(dot)
+            this.stagePreviewContainer.addChild(dot)
         })
 
         // Stage arrows
-        this.stageLeftArrowBtn = this.createSmallArrowButton('<', cardX + 24, previewY + previewHeight / 2, () => {
+        this.stageLeftArrowBtn = this.createSmallArrowButton('<', cardX + 22, previewY + previewHeight / 2, () => {
             this.selectPrevStage()
         })
         this.screenContainer.addChild(this.stageLeftArrowBtn)
 
-        this.stageRightArrowBtn = this.createSmallArrowButton('>', cardX + cardWidth - 24, previewY + previewHeight / 2, () => {
+        this.stageRightArrowBtn = this.createSmallArrowButton('>', cardX + cardWidth - 22, previewY + previewHeight / 2, () => {
             this.selectNextStage()
         })
         this.screenContainer.addChild(this.stageRightArrowBtn)
 
-        // ========== ACTION BUTTONS ==========
-        const btnY = this.height - 40
+        // ========== ACTION BUTTONS (inside card at bottom) ==========
+        const btnY = cardY + cardHeight - 35
         const btnWidth = 100
         const btnGap = 15
 
@@ -1452,7 +1428,7 @@ export class CharacterSelectScreen {
             this.centerX - btnWidth / 2 - btnGap / 2,
             btnY,
             btnWidth,
-            0x5a9a91,
+            0x4a9eff, // Balatro blue
             () => {
                 this.handleStartGame()
             }
@@ -1464,7 +1440,7 @@ export class CharacterSelectScreen {
             this.centerX + btnWidth / 2 + btnGap / 2,
             btnY,
             btnWidth,
-            0xc75050,
+            0xe85d4c, // Balatro red
             () => this.onExit?.()
         )
         this.screenContainer.addChild(this.exitButton)
@@ -1479,21 +1455,19 @@ export class CharacterSelectScreen {
         btn.cursor = 'pointer'
 
         const btnSize = 32
-        const cardBgColor = 0xf5f0e8
-        const cardShadowColor = 0x3d5c56
-        const textDark = 0x2d3b38
-        const accentGold = 0xd4a574
+        const cardShadowColor = 0x1a1a1a
+        const btnColor = 0xc9a227 // Balatro gold
 
         const shadow = new Graphics()
         shadow.circle(2, 3, btnSize / 2)
-        shadow.fill({ color: cardShadowColor, alpha: 0.3 })
+        shadow.fill({ color: cardShadowColor, alpha: 0.5 })
         btn.addChild(shadow)
 
         const bg = new Graphics()
         bg.circle(0, 0, btnSize / 2)
-        bg.fill(cardBgColor)
+        bg.fill(btnColor)
         bg.circle(0, 0, btnSize / 2)
-        bg.stroke({ color: accentGold, width: 2 })
+        bg.stroke({ color: 0x1a1a1a, width: 3 })
         btn.addChild(bg)
 
         const arrow = new Text({
@@ -1502,7 +1476,7 @@ export class CharacterSelectScreen {
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 16,
                 fontWeight: 'bold',
-                fill: textDark,
+                fill: 0x000000, // Black text on gold
             }),
         })
         arrow.anchor.set(0.5)
@@ -1566,29 +1540,30 @@ export class CharacterSelectScreen {
         btn.cursor = 'pointer'
 
         const height = 38
-        const cardBgColor = 0xf5f0e8
-        const cardShadowColor = 0x3d5c56
-        const textDark = 0x2d3b38
+        const cardShadowColor = 0x1a1a1a
 
+        // Shadow
         const shadow = new Graphics()
-        shadow.roundRect(-width / 2 + 2, -height / 2 + 3, width, height, 10)
-        shadow.fill({ color: cardShadowColor, alpha: 0.4 })
+        shadow.roundRect(-width / 2 + 2, -height / 2 + 4, width, height, 10)
+        shadow.fill({ color: cardShadowColor, alpha: 0.5 })
         btn.addChild(shadow)
 
+        // Colored background (like HomeScreen buttons)
         const bg = new Graphics()
         bg.roundRect(-width / 2, -height / 2, width, height, 10)
-        bg.fill(cardBgColor)
+        bg.fill(accentColor)
         bg.roundRect(-width / 2, -height / 2, width, height, 10)
-        bg.stroke({ color: accentColor, width: 2 })
+        bg.stroke({ color: 0x1a1a1a, width: 3 })
         btn.addChild(bg)
 
+        // Dark text on colored background
         const btnText = new Text({
             text: label,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 14,
                 fontWeight: 'bold',
-                fill: textDark,
+                fill: accentColor === 0xc9a227 ? 0x000000 : 0xffffff, // Black text on gold, white on others
                 letterSpacing: 2,
             }),
         })

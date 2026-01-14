@@ -46,8 +46,8 @@ export const STAGES: StageConfig[] = [
             knockbackMult: 1,
         },
         formula: 'newton-second',
-        bgColor: 0x87ceeb,
-        particleColor: 0xffffff,
+        bgColor: 0x3d6b59, // Balatro felt green
+        particleColor: 0xc9a227, // Balatro gold
         description: 'F = ma',
         trait: '표준 물리 법칙이 지배한다',
         tip: '3분간 생존하세요!',
@@ -64,8 +64,8 @@ export const STAGES: StageConfig[] = [
             knockbackMult: 1.5,
         },
         formula: 'free-fall',
-        bgColor: 0x1a1a2e,
-        particleColor: 0xaaaaff,
+        bgColor: 0x1a1a2e, // Balatro deep dark
+        particleColor: 0x4a9eff, // Balatro blue
         description: 'h = ½gt²',
         trait: '중력체가 모든 것을 끌어당긴다',
         tip: '중력체에 가까이 가면 끌려갑니다',
@@ -82,8 +82,8 @@ export const STAGES: StageConfig[] = [
             knockbackMult: 1.8,
         },
         formula: 'hooke',
-        bgColor: 0xff69b4,
-        particleColor: 0xffaacc,
+        bgColor: 0x4d3d5a, // Balatro purple-tinted felt
+        particleColor: 0xFF6B9D, // Balatro pink
         description: 'F = -kx',
         trait: '반발 장벽이 모든 것을 튕겨낸다',
         tip: '장벽에 부딪히면 튕겨납니다',
@@ -100,8 +100,8 @@ export const STAGES: StageConfig[] = [
             knockbackMult: 0.4,
         },
         formula: 'momentum',
-        bgColor: 0x4a4a4a,
-        particleColor: 0xffaa00,
+        bgColor: 0x374244, // Balatro dark panel
+        particleColor: 0xc9a227, // Balatro gold
         description: 'p = mv',
         trait: '거대한 파괴자가 밀어붙인다',
         tip: '경고 표시가 보이면 피하세요!',
@@ -120,8 +120,8 @@ export const STAGES: StageConfig[] = [
             vortexStrength: 0.25,
         },
         formula: 'centripetal',
-        bgColor: 0x2d1b4e,
-        particleColor: 0xaa44ff,
+        bgColor: 0x2d1a3e, // Balatro deep purple
+        particleColor: 0xe85d4c, // Balatro red
         description: 'F = mv²/r',
         trait: '블랙홀이 모든 것을 삼킨다',
         tip: '블랙홀에 가까워지면 데미지!',

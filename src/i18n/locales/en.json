@@ -21,7 +21,8 @@
             "thermodynamics": "Thermo",
             "electricity": "Electric",
             "special": "Special",
-            "quantum": "Quantum"
+            "quantum": "Quantum",
+            "chemistry": "Chemistry"
         },
         "emptyCategory": "No formulas in this category",
         "info": {

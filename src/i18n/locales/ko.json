@@ -21,7 +21,8 @@
             "thermodynamics": "열역학",
             "electricity": "전기",
             "special": "특수",
-            "quantum": "양자"
+            "quantum": "양자",
+            "chemistry": "화학"
         },
         "emptyCategory": "이 카테고리에 공식이 없습니다",
         "info": {

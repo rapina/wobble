@@ -44,6 +44,20 @@ import { UncertaintyScene } from './UncertaintyScene'
 import { InfiniteWellScene } from './InfiniteWellScene'
 import { TunnelingScene } from './TunnelingScene'
 import { BohrScene } from './BohrScene'
+// Chemistry scenes
+import { PhScene } from './PhScene'
+import { DilutionScene } from './DilutionScene'
+import { ReactionRateScene } from './ReactionRateScene'
+// New Physics scenes
+import { RadioactiveDecayScene } from './RadioactiveDecayScene'
+import { AngularMomentumScene } from './AngularMomentumScene'
+import { BernoulliScene } from './BernoulliScene'
+import { DopplerScene } from './DopplerScene'
+import { FaradayScene } from './FaradayScene'
+import { MagneticFieldScene } from './MagneticFieldScene'
+import { RotationalEnergyScene } from './RotationalEnergyScene'
+import { InverseSquareScene } from './InverseSquareScene'
+import { BeatFrequencyScene } from './BeatFrequencyScene'
 
 type SceneConstructor = new (app: Application) => BaseScene
 
@@ -92,6 +106,20 @@ const sceneMap: Record<string, SceneConstructor> = {
     'infinite-well': InfiniteWellScene,
     tunneling: TunnelingScene,
     bohr: BohrScene,
+    // Chemistry scenes
+    ph: PhScene,
+    dilution: DilutionScene,
+    'reaction-rate': ReactionRateScene,
+    // New Physics scenes
+    'radioactive-decay': RadioactiveDecayScene,
+    'angular-momentum': AngularMomentumScene,
+    bernoulli: BernoulliScene,
+    doppler: DopplerScene,
+    faraday: FaradayScene,
+    'magnetic-field': MagneticFieldScene,
+    'rotational-energy': RotationalEnergyScene,
+    'inverse-square': InverseSquareScene,
+    'beat-frequency': BeatFrequencyScene,
 }
 
 export function getSceneClass(formulaId: string): SceneConstructor | null {

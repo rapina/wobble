@@ -62,57 +62,86 @@ export class PauseScreen {
     private createUI(data: PauseData): void {
         this.screenContainer.removeChildren()
 
-        // Theme colors (matching ResultScreen)
-        const bgColor = 0x1a1a2e
-        const cardBgColor = 0xf5f0e8
-        const cardShadowColor = 0x3d5c56
-        const textDark = 0x2d3b38
-        const textMuted = 0x5a6b66
-        const accentGold = 0xd4a574
-        const accentGreen = 0x5a9a91
-        const accentRed = 0xc75050
+        // Balatro theme colors
+        const bgColor = 0x3d6b59 // Felt green background
+        const cardBgColor = 0x374244 // Dark panel
+        const cardShadowColor = 0x1a1a1a // Black shadow
+        const accentGold = 0xc9a227 // Balatro gold
+        const accentBlue = 0x4a9eff // Balatro blue
+        const accentRed = 0xe85d4c // Balatro red
 
-        // Semi-transparent dark background
+        // Semi-transparent felt background
         const bg = new Graphics()
         bg.rect(0, 0, this.width, this.height)
-        bg.fill({ color: bgColor, alpha: 0.85 })
+        bg.fill({ color: bgColor, alpha: 0.92 })
         bg.eventMode = 'static'
         bg.on('pointerdown', () => this.onResume?.())
         this.screenContainer.addChild(bg)
 
-        // Responsive card sizing
+        // Vignette effect
+        const vignette = new Graphics()
+        for (let i = 0; i < 5; i++) {
+            const alpha = 0.12 * (1 - i / 5)
+            vignette.rect(0, i * 30, this.width, 30)
+            vignette.fill({ color: 0x000000, alpha })
+            vignette.rect(0, this.height - (i + 1) * 30, this.width, 30)
+            vignette.fill({ color: 0x000000, alpha })
+        }
+        this.screenContainer.addChild(vignette)
+
+        // Responsive card sizing - compact to fit content
         const cardPadding = Math.min(24, this.width * 0.06)
         const cardWidth = this.width - cardPadding * 2
-        const cardHeight = Math.min(320, this.height * 0.55)
+        // Calculate height based on content: stats + xp + skills + buttons
+        const hasSkills = data.skills.length > 0
+        const skillRows = Math.min(3, data.skills.length)
+        const baseHeight = 180 // Stats + XP bar
+        const skillsHeight = hasSkills ? 30 + skillRows * 33 : 0
+        const buttonsHeight = 60
+        const cardHeight = baseHeight + skillsHeight + buttonsHeight
         const cardX = cardPadding
-        const cardY = (this.height - cardHeight) / 2 - 30
+        const cardY = (this.height - cardHeight) / 2 - 10
 
         // Card shadow
         const cardShadow = new Graphics()
-        cardShadow.roundRect(cardX + 3, cardY + 5, cardWidth, cardHeight, 14)
-        cardShadow.fill({ color: cardShadowColor, alpha: 0.4 })
+        cardShadow.roundRect(cardX + 3, cardY + 6, cardWidth, cardHeight, 14)
+        cardShadow.fill({ color: cardShadowColor, alpha: 0.5 })
         this.screenContainer.addChild(cardShadow)
 
-        // Card background
+        // Card background - Balatro style with thick black border
         const card = new Graphics()
         card.roundRect(cardX, cardY, cardWidth, cardHeight, 14)
         card.fill(cardBgColor)
         card.roundRect(cardX, cardY, cardWidth, cardHeight, 14)
-        card.stroke({ color: accentGold, width: 3 })
+        card.stroke({ color: 0x1a1a1a, width: 4 })
         card.eventMode = 'static'
         this.screenContainer.addChild(card)
 
-        // Title
+        // Title badge (like HomeScreen)
+        const badgeWidth = 140
+        const badgeHeight = 36
+        const badgeShadow = new Graphics()
+        badgeShadow.roundRect(this.centerX - badgeWidth / 2 + 2, cardY - 18 + 3, badgeWidth, badgeHeight, 8)
+        badgeShadow.fill({ color: cardShadowColor, alpha: 0.5 })
+        this.screenContainer.addChild(badgeShadow)
+
+        const badge = new Graphics()
+        badge.roundRect(this.centerX - badgeWidth / 2, cardY - 18, badgeWidth, badgeHeight, 8)
+        badge.fill(accentGold)
+        badge.roundRect(this.centerX - badgeWidth / 2, cardY - 18, badgeWidth, badgeHeight, 8)
+        badge.stroke({ color: 0x1a1a1a, width: 3 })
+        this.screenContainer.addChild(badge)
+
         const titleStyle = new TextStyle({
             fontFamily: 'Arial, sans-serif',
-            fontSize: Math.min(20, this.width * 0.055),
+            fontSize: 16,
             fontWeight: 'bold',
-            fill: textDark,
-            letterSpacing: 2,
+            fill: 0x000000,
+            letterSpacing: 3,
         })
         const title = new Text({ text: 'PAUSED', style: titleStyle })
         title.anchor.set(0.5)
-        title.position.set(this.centerX, cardY + 32)
+        title.position.set(this.centerX, cardY)
         this.screenContainer.addChild(title)
 
         // Inner content padding
@@ -121,11 +150,11 @@ export class PauseScreen {
         const contentWidth = cardWidth - innerPadding * 2
 
         // Stats section - horizontal layout for Level and Time
-        const statsY = cardY + 65
+        const statsY = cardY + 35
         const statBoxWidth = (contentWidth - 10) / 2
         const statBoxHeight = 50
 
-        // Level box
+        // Level box (gold accent)
         this.createStatBox(
             contentX,
             statsY,
@@ -133,12 +162,10 @@ export class PauseScreen {
             statBoxHeight,
             'LEVEL',
             `Lv. ${data.level}`,
-            textMuted,
-            textDark,
-            cardShadowColor
+            accentGold
         )
 
-        // Time box
+        // Time box (blue accent)
         const mins = Math.floor(data.gameTime / 60)
         const secs = Math.floor(data.gameTime % 60)
         this.createStatBox(
@@ -148,21 +175,19 @@ export class PauseScreen {
             statBoxHeight,
             'TIME',
             `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`,
-            textMuted,
-            textDark,
-            cardShadowColor
+            accentBlue
         )
 
         // XP Bar - full width below stats
         const xpBarY = statsY + statBoxHeight + 12
-        const xpBarHeight = 20
+        const xpBarHeight = 24
 
         // XP label
         const xpLabelStyle = new TextStyle({
             fontFamily: 'Arial, sans-serif',
             fontSize: 10,
             fontWeight: 'bold',
-            fill: textMuted,
+            fill: 0xaaaaaa,
         })
         const xpLabel = new Text({ text: 'EXP', style: xpLabelStyle })
         xpLabel.anchor.set(0, 0.5)
@@ -173,26 +198,40 @@ export class PauseScreen {
         const xpBarX = contentX + 35
         const xpBarWidth = contentWidth - 35
         const xpBarBg = new Graphics()
-        xpBarBg.roundRect(xpBarX, xpBarY, xpBarWidth, xpBarHeight, 10)
-        xpBarBg.fill({ color: textMuted, alpha: 0.15 })
-        xpBarBg.roundRect(xpBarX, xpBarY, xpBarWidth, xpBarHeight, 10)
-        xpBarBg.stroke({ color: textMuted, width: 1, alpha: 0.3 })
+        xpBarBg.roundRect(xpBarX, xpBarY, xpBarWidth, xpBarHeight, 12)
+        xpBarBg.fill({ color: 0x2d3b38, alpha: 1 })
+        xpBarBg.roundRect(xpBarX, xpBarY, xpBarWidth, xpBarHeight, 12)
+        xpBarBg.stroke({ color: 0x1a1a1a, width: 2 })
         this.screenContainer.addChild(xpBarBg)
 
-        // XP bar fill
+        // XP bar fill - Balatro green
         const xpRatio = data.xp / (data.xp + data.xpToNextLevel)
         if (xpRatio > 0) {
             const xpBarFill = new Graphics()
             xpBarFill.roundRect(
-                xpBarX + 2,
-                xpBarY + 2,
-                Math.max(0, (xpBarWidth - 4) * xpRatio),
-                xpBarHeight - 4,
-                8
+                xpBarX + 3,
+                xpBarY + 3,
+                Math.max(0, (xpBarWidth - 6) * xpRatio),
+                xpBarHeight - 6,
+                9
             )
-            xpBarFill.fill(0x2ecc71)
+            xpBarFill.fill(0x3d6b59)
             this.screenContainer.addChild(xpBarFill)
         }
+
+        // XP text
+        const xpText = new Text({
+            text: `${data.xp} / ${data.xp + data.xpToNextLevel}`,
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 10,
+                fontWeight: 'bold',
+                fill: 0xffffff,
+            }),
+        })
+        xpText.anchor.set(0.5)
+        xpText.position.set(xpBarX + xpBarWidth / 2, xpBarY + xpBarHeight / 2)
+        this.screenContainer.addChild(xpText)
 
         // Skills section
         const skillsY = xpBarY + xpBarHeight + 15
@@ -201,7 +240,7 @@ export class PauseScreen {
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 11,
                 fontWeight: 'bold',
-                fill: textMuted,
+                fill: 0xaaaaaa,
                 letterSpacing: 1,
             })
             const skillsLabel = new Text({
@@ -213,8 +252,8 @@ export class PauseScreen {
             this.screenContainer.addChild(skillsLabel)
 
             // Skill items
-            const skillItemHeight = 26
-            const skillItemGap = 4
+            const skillItemHeight = 28
+            const skillItemGap = 5
             const skillStartY = skillsY + 20
             const maxVisibleSkills = 3
 
@@ -227,12 +266,18 @@ export class PauseScreen {
                 const itemWidth = contentWidth
                 const itemX = contentX
 
+                // Skill pill shadow
+                const pillShadow = new Graphics()
+                pillShadow.roundRect(itemX + 2, itemY + 3, itemWidth, skillItemHeight, skillItemHeight / 2)
+                pillShadow.fill({ color: 0x1a1a1a, alpha: 0.3 })
+                this.screenContainer.addChild(pillShadow)
+
                 // Skill pill background
                 const pillBg = new Graphics()
                 pillBg.roundRect(itemX, itemY, itemWidth, skillItemHeight, skillItemHeight / 2)
-                pillBg.fill({ color: skillDef.color, alpha: 0.15 })
+                pillBg.fill({ color: 0x2d3b38, alpha: 1 })
                 pillBg.roundRect(itemX, itemY, itemWidth, skillItemHeight, skillItemHeight / 2)
-                pillBg.stroke({ color: skillDef.color, width: 1, alpha: 0.4 })
+                pillBg.stroke({ color: skillDef.color, width: 2, alpha: 0.8 })
                 this.screenContainer.addChild(pillBg)
 
                 // Skill icon
@@ -240,12 +285,12 @@ export class PauseScreen {
                     text: skillDef.icon,
                     style: new TextStyle({
                         fontFamily: 'Arial, sans-serif',
-                        fontSize: 12,
+                        fontSize: 13,
                         fill: skillDef.color,
                     }),
                 })
                 iconText.anchor.set(0.5)
-                iconText.position.set(itemX + 16, itemY + skillItemHeight / 2)
+                iconText.position.set(itemX + 18, itemY + skillItemHeight / 2)
                 this.screenContainer.addChild(iconText)
 
                 // Skill name and level
@@ -253,13 +298,13 @@ export class PauseScreen {
                     text: `${skillDef.nameKo} Lv.${skill.level}`,
                     style: new TextStyle({
                         fontFamily: 'Arial, sans-serif',
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight: 'bold',
-                        fill: textDark,
+                        fill: 0xffffff,
                     }),
                 })
                 skillNameText.anchor.set(0, 0.5)
-                skillNameText.position.set(itemX + 30, itemY + skillItemHeight / 2)
+                skillNameText.position.set(itemX + 34, itemY + skillItemHeight / 2)
                 this.screenContainer.addChild(skillNameText)
 
                 // Skill effect (only show if there's enough space)
@@ -271,11 +316,11 @@ export class PauseScreen {
                             style: new TextStyle({
                                 fontFamily: 'Arial, sans-serif',
                                 fontSize: 9,
-                                fill: textMuted,
+                                fill: 0xaaaaaa,
                             }),
                         })
                         effectText.anchor.set(1, 0.5)
-                        effectText.position.set(itemX + itemWidth - 10, itemY + skillItemHeight / 2)
+                        effectText.position.set(itemX + itemWidth - 12, itemY + skillItemHeight / 2)
                         this.screenContainer.addChild(effectText)
                     }
                 }
@@ -289,7 +334,7 @@ export class PauseScreen {
                     style: new TextStyle({
                         fontFamily: 'Arial, sans-serif',
                         fontSize: 9,
-                        fill: textMuted,
+                        fill: 0xaaaaaa,
                     }),
                 })
                 moreText.anchor.set(0.5)
@@ -298,19 +343,19 @@ export class PauseScreen {
             }
         }
 
-        // Action buttons - responsive sizing
-        const btnY = cardY + cardHeight + 25
-        const btnWidth = Math.min(85, (contentWidth - 20) / 2)
+        // Action buttons - inside card at bottom
+        const btnY = cardY + cardHeight - 30
+        const btnWidth = Math.min(100, (contentWidth - 20) / 2)
         const btnGap = 15
 
-        // Resume button (primary)
-        const resumeBtn = this.createButton('RESUME', -btnWidth / 2 - btnGap / 2, btnWidth, accentGreen, () => {
+        // Resume button (primary - blue)
+        const resumeBtn = this.createButton('RESUME', -btnWidth / 2 - btnGap / 2, btnWidth, accentBlue, () => {
             this.onResume?.()
         })
         resumeBtn.position.y = btnY
         this.screenContainer.addChild(resumeBtn)
 
-        // Exit button (secondary)
+        // Exit button (secondary - red)
         const exitBtn = this.createButton('EXIT', btnWidth / 2 + btnGap / 2, btnWidth, accentRed, () => {
             this.onExit?.()
         })
@@ -325,22 +370,20 @@ export class PauseScreen {
         height: number,
         label: string,
         value: string,
-        labelColor: number,
-        valueColor: number,
-        shadowColor: number
+        accentColor: number
     ): void {
         // Box shadow
         const shadow = new Graphics()
         shadow.roundRect(x + 2, y + 3, width, height, 10)
-        shadow.fill({ color: shadowColor, alpha: 0.15 })
+        shadow.fill({ color: 0x1a1a1a, alpha: 0.3 })
         this.screenContainer.addChild(shadow)
 
-        // Box background
+        // Box background - Balatro darker panel
         const boxBg = new Graphics()
         boxBg.roundRect(x, y, width, height, 10)
-        boxBg.fill({ color: 0xffffff, alpha: 0.5 })
+        boxBg.fill({ color: 0x2d3b38, alpha: 1 })
         boxBg.roundRect(x, y, width, height, 10)
-        boxBg.stroke({ color: labelColor, width: 1, alpha: 0.3 })
+        boxBg.stroke({ color: accentColor, width: 2, alpha: 0.8 })
         this.screenContainer.addChild(boxBg)
 
         // Label
@@ -350,7 +393,7 @@ export class PauseScreen {
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 9,
                 fontWeight: 'bold',
-                fill: labelColor,
+                fill: accentColor,
                 letterSpacing: 1,
             }),
         })
@@ -365,7 +408,7 @@ export class PauseScreen {
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 16,
                 fontWeight: 'bold',
-                fill: valueColor,
+                fill: 0xffffff,
             }),
         })
         valueText.anchor.set(0.5)
@@ -386,31 +429,30 @@ export class PauseScreen {
         btn.cursor = 'pointer'
 
         const btnHeight = 40
-        const cardBgColor = 0xf5f0e8
-        const cardShadowColor = 0x3d5c56
+        const cardShadowColor = 0x1a1a1a
 
         // Shadow
         const shadow = new Graphics()
-        shadow.roundRect(-width / 2 + 2, -btnHeight / 2 + 3, width, btnHeight, 10)
-        shadow.fill({ color: cardShadowColor, alpha: 0.3 })
+        shadow.roundRect(-width / 2 + 2, -btnHeight / 2 + 4, width, btnHeight, 10)
+        shadow.fill({ color: cardShadowColor, alpha: 0.5 })
         btn.addChild(shadow)
 
-        // Button background
+        // Colored background (like HomeScreen buttons)
         const bg = new Graphics()
         bg.roundRect(-width / 2, -btnHeight / 2, width, btnHeight, 10)
-        bg.fill(cardBgColor)
+        bg.fill(color)
         bg.roundRect(-width / 2, -btnHeight / 2, width, btnHeight, 10)
-        bg.stroke({ color, width: 2 })
+        bg.stroke({ color: 0x1a1a1a, width: 3 })
         btn.addChild(bg)
 
-        // Button text
+        // Text color based on background
         const text = new Text({
             text: label,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 13,
                 fontWeight: 'bold',
-                fill: color,
+                fill: 0xffffff, // White text on colored background
                 letterSpacing: 1,
             }),
         })

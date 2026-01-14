@@ -399,6 +399,9 @@ function FormulasTab({
                 'elastic-collision',
                 'pressure',
                 'torque',
+                'angular-momentum',
+                'bernoulli',
+                'rotational-energy',
             ],
         },
         {
@@ -418,7 +421,7 @@ function FormulasTab({
             id: 'waves',
             name: isKorean ? '파동 & 광학' : 'Waves & Optics',
             color: theme.blue,
-            formulas: ['wave', 'reflection', 'snell', 'lens', 'standing-wave'],
+            formulas: ['wave', 'reflection', 'snell', 'lens', 'standing-wave', 'doppler', 'inverse-square', 'beat-frequency'],
         },
         {
             id: 'thermo',
@@ -438,13 +441,25 @@ function FormulasTab({
             id: 'electricity',
             name: isKorean ? '전자기' : 'Electricity',
             color: '#f1c40f',
-            formulas: ['ohm', 'coulomb', 'electric-power', 'lorentz', 'capacitor'],
+            formulas: ['ohm', 'coulomb', 'electric-power', 'lorentz', 'capacitor', 'faraday', 'magnetic-field'],
         },
         {
             id: 'modern',
             name: isKorean ? '현대 물리' : 'Modern Physics',
             color: theme.green,
             formulas: ['buoyancy', 'photoelectric', 'debroglie', 'time-dilation'],
+        },
+        {
+            id: 'quantum',
+            name: isKorean ? '양자역학' : 'Quantum',
+            color: '#9b59b6',
+            formulas: ['uncertainty', 'infinite-well', 'tunneling', 'bohr', 'radioactive-decay'],
+        },
+        {
+            id: 'chemistry',
+            name: isKorean ? '화학' : 'Chemistry',
+            color: '#1abc9c',
+            formulas: ['ph', 'dilution', 'reaction-rate'],
         },
     ]
 
