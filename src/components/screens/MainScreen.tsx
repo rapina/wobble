@@ -7,6 +7,7 @@ import { CollectionScreen } from './CollectionScreen'
 import { GameScreen } from './GameScreen.tsx'
 import { GameSelectScreen } from './GameSelectScreen.tsx'
 import { AchievementsScreen } from './AchievementsScreen'
+import { IntroScreen, IntroScene } from './IntroScreen'
 import { formulaList } from '../../formulas/registry'
 import { Formula } from '../../formulas/types'
 import { useMusic } from '../../hooks/useMusic'
@@ -14,6 +15,7 @@ import { useInAppPurchase } from '../../hooks/useInAppPurchase'
 import { cn } from '@/lib/utils'
 
 type ScreenState =
+    | 'intro'
     | 'home'
     | 'sandbox'
     | 'collection'
@@ -23,7 +25,10 @@ type ScreenState =
     | 'achievements'
 
 export function MainScreen() {
-    const [screenState, setScreenState] = useState<ScreenState>('home')
+    // Check if intro has been seen, show intro first if not
+    const [screenState, setScreenState] = useState<ScreenState>(() =>
+        IntroScene.hasSeenIntro() ? 'home' : 'intro'
+    )
     const [selectedFormula, setSelectedFormula] = useState<Formula | null>(null)
     const [isTransitioning, setIsTransitioning] = useState(false)
     const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -158,7 +163,9 @@ export function MainScreen() {
                     isTransitioning ? 'opacity-0' : 'opacity-100'
                 )}
             >
-                {screenState === 'home' ? (
+                {screenState === 'intro' ? (
+                    <IntroScreen onComplete={() => setScreenState('home')} />
+                ) : screenState === 'home' ? (
                     <HomeScreen onSelectMode={handleSelectMode} />
                 ) : screenState === 'sandbox' && selectedFormula ? (
                     <SandboxScreen
