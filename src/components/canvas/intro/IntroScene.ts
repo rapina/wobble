@@ -732,10 +732,10 @@ export class IntroScene {
             this.sceneContainer.addChild(this.skipButton)
         }
 
-        // Next/Start button
+        // Next/Start button (positioned above ad banner)
         const btnWidth = isLastStep ? 160 : 120
         const btnHeight = 44
-        const btnY = this.height - 70
+        const btnY = this.height - 140
 
         this.nextButton = new Container()
         this.nextButton.position.set(this.centerX, btnY)

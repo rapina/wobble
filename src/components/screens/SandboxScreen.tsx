@@ -11,7 +11,8 @@ import { usePurchaseStore } from '@/stores/purchaseStore'
 import { useCollectionStore } from '@/stores/collectionStore'
 import { useProgressStore } from '@/stores/progressStore'
 import { useChallengeStore } from '@/stores/challengeStore'
-import { useFormulaUnlockStore, FREE_FORMULAS } from '@/stores/formulaUnlockStore'
+import { useFormulaUnlockStore, getPrerequisiteFormulaName, UNLOCK_CONDITIONS } from '@/stores/formulaUnlockStore'
+import { formulas as formulaRegistry } from '@/formulas/registry'
 import { generateChallenge } from '@/utils/challengeGenerator'
 import { getInsightText } from '@/utils/formulaInsights'
 import { TutorialOverlay } from '../tutorial/TutorialOverlay'
@@ -65,8 +66,8 @@ export function SandboxScreen({
     const {
         isUnlocked,
         unlockFormula,
-        performInitialUnlock,
-        hasInitialUnlock,
+        getUnlockCondition,
+        completeDiscovery,
     } = useFormulaUnlockStore()
     const { unlockByFormula, getNewUnlocksForFormula } = useCollectionStore()
     const { studyFormula } = useProgressStore()
@@ -104,7 +105,7 @@ export function SandboxScreen({
     const [challengeToast, setChallengeToast] = useState<{ type: 'success'; score: number; combo: number; insight?: string } | { type: 'wrong'; hint: string } | null>(null)
     const [challengeToastVisible, setChallengeToastVisible] = useState(false)
     const [challengeTransition, setChallengeTransition] = useState<'idle' | 'exit' | 'enter'>('idle')
-    const [unlockToast, setUnlockToast] = useState<{ formulas: string[] } | null>(null)
+    const [unlockToast, setUnlockToast] = useState<{ formulas: string[]; type: 'ad' | 'prerequisite' } | null>(null)
     const [unlockToastVisible, setUnlockToastVisible] = useState(false)
     const [webAdCountdown, setWebAdCountdown] = useState(5)
     const canvasRef = useRef<PixiCanvasHandle>(null)
@@ -347,6 +348,18 @@ export function SandboxScreen({
         if (currentChallenge.condition(variables)) {
             const earnedScore = solveChallenge()
 
+            // Complete discovery and check for new unlocks
+            const newlyUnlocked = completeDiscovery(formula.id)
+            if (newlyUnlocked.length > 0) {
+                // Show prerequisite unlock toast after challenge toast
+                setTimeout(() => {
+                    setUnlockToast({ formulas: newlyUnlocked, type: 'prerequisite' })
+                    setUnlockToastVisible(true)
+                    setTimeout(() => setUnlockToastVisible(false), 3500)
+                    setTimeout(() => setUnlockToast(null), 4000)
+                }, 2500) // After challenge toast disappears
+            }
+
             // Get contextual insight for the result
             const insight = getInsightText(formula.id, variables, isKo)
 
@@ -380,7 +393,7 @@ export function SandboxScreen({
             setTimeout(() => setChallengeToastVisible(false), 1600)
             setTimeout(() => setChallengeToast(null), 1900)
         }
-    }, [variables, currentChallenge, formula, solveChallenge, setChallenge, combo, getChallengeHint, i18n.language, challengeTransition])
+    }, [variables, currentChallenge, formula, solveChallenge, setChallenge, combo, getChallengeHint, i18n.language, challengeTransition, completeDiscovery])
 
     // Show AdMob banner when initialized (unless ad-free)
     useEffect(() => {
@@ -430,22 +443,6 @@ export function SandboxScreen({
             return () => clearTimeout(timer)
         }
     }, [welcomePhase])
-
-    // 처음 시뮬레이션 진입 시 5개 공식 무료 해금 (광고 제거 구매 안한 경우만)
-    useEffect(() => {
-        if (!isAdFree && welcomePhase === 'simulation' && !hasInitialUnlock) {
-            const unlockedIds = performInitialUnlock()
-            if (unlockedIds.length > 0) {
-                // 해금 알림 표시
-                setTimeout(() => {
-                    setUnlockToast({ formulas: unlockedIds })
-                    setUnlockToastVisible(true)
-                }, 500)
-                setTimeout(() => setUnlockToastVisible(false), 4000)
-                setTimeout(() => setUnlockToast(null), 4500)
-            }
-        }
-    }, [welcomePhase, isAdFree, hasInitialUnlock, performInitialUnlock])
 
     // Check for new wobbles and unlock when formula is used
     useEffect(() => {
@@ -570,7 +567,7 @@ export function SandboxScreen({
                 // 해금 알림
                 const unlockedFormula = formulas.find(f => f.id === formulaIdToUnlock)
                 if (unlockedFormula) {
-                    setUnlockToast({ formulas: [formulaIdToUnlock] })
+                    setUnlockToast({ formulas: [formulaIdToUnlock], type: 'ad' })
                     setUnlockToastVisible(true)
                     setTimeout(() => setUnlockToastVisible(false), 2500)
                     setTimeout(() => setUnlockToast(null), 3000)
@@ -955,26 +952,45 @@ export function SandboxScreen({
                                                 </span>
                                             </div>
                                         </button>
-                                        {/* Unlock button overlay for locked formulas */}
-                                        {isLocked && (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    handleUnlockFormula(f.id)
-                                                }}
-                                                disabled={isRewardAdLoading}
-                                                className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold transition-all active:scale-95"
-                                                style={{
-                                                    background: '#f59e0b',
-                                                    color: '#000',
-                                                    border: `1.5px solid ${theme.border}`,
-                                                    boxShadow: `0 1px 0 ${theme.border}`,
-                                                }}
-                                            >
-                                                <Lock className="w-2.5 h-2.5" />
-                                                {i18n.language === 'ko' ? '잠김' : 'Locked'}
-                                            </button>
-                                        )}
+                                        {/* Unlock condition badge for locked formulas */}
+                                        {isLocked && (() => {
+                                            const cond = getUnlockCondition(f.id)
+                                            if (cond.type === 'prerequisite') {
+                                                const prereq = formulaRegistry[cond.formulaId]
+                                                return (
+                                                    <div
+                                                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                                        style={{
+                                                            background: theme.bgPanel,
+                                                            color: '#aaa',
+                                                            border: `1.5px solid ${theme.border}`,
+                                                        }}
+                                                    >
+                                                        <Lock className="w-2.5 h-2.5" />
+                                                        {i18n.language === 'ko' ? prereq?.name : prereq?.nameEn}
+                                                    </div>
+                                                )
+                                            }
+                                            return (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        handleUnlockFormula(f.id)
+                                                    }}
+                                                    disabled={isRewardAdLoading}
+                                                    className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold transition-all active:scale-95"
+                                                    style={{
+                                                        background: '#f59e0b',
+                                                        color: '#000',
+                                                        border: `1.5px solid ${theme.border}`,
+                                                        boxShadow: `0 1px 0 ${theme.border}`,
+                                                    }}
+                                                >
+                                                    <Lock className="w-2.5 h-2.5" />
+                                                    {i18n.language === 'ko' ? '잠김' : 'Locked'}
+                                                </button>
+                                            )
+                                        })()}
                                     </div>
                                 )
                             })}
@@ -1023,31 +1039,59 @@ export function SandboxScreen({
                 <PixiCanvas ref={canvasRef} formulaId={formulaId} variables={variables} />
 
                 {/* Locked Overlay - Silhouette style */}
-                {isCurrentFormulaLocked && (
-                    <div
-                        className="absolute inset-0 flex flex-col items-center justify-end pb-6"
-                        style={{
-                            background: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.88) 50%, rgba(0,0,0,0.95) 100%)',
-                        }}
-                    >
-                        <button
-                            onClick={() => handleUnlockFormula(formulaId)}
-                            disabled={isRewardAdLoading}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95"
+                {isCurrentFormulaLocked && (() => {
+                    const condition = getUnlockCondition(formulaId)
+                    const prerequisiteId = condition.type === 'prerequisite' ? condition.formulaId : null
+                    const prerequisiteFormula = prerequisiteId ? formulaRegistry[prerequisiteId] : null
+
+                    return (
+                        <div
+                            className="absolute inset-0 flex flex-col items-center justify-end pb-6"
                             style={{
-                                background: 'rgba(245, 158, 11, 0.9)',
-                                color: '#000',
-                                border: `2px solid ${theme.border}`,
-                                boxShadow: `0 3px 0 ${theme.border}`,
+                                background: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.88) 50%, rgba(0,0,0,0.95) 100%)',
                             }}
                         >
-                            <Lock className="w-4 h-4" />
-                            {isRewardAdLoading
-                                ? (i18n.language === 'ko' ? '로딩...' : 'Loading...')
-                                : (i18n.language === 'ko' ? '잠금 해제' : 'Unlock')}
-                        </button>
-                    </div>
-                )}
+                            {condition.type === 'prerequisite' && prerequisiteFormula ? (
+                                <div className="text-center px-4">
+                                    <div
+                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg mb-2"
+                                        style={{
+                                            background: theme.bgPanel,
+                                            border: `2px solid ${theme.border}`,
+                                        }}
+                                    >
+                                        <Lock className="w-4 h-4 text-white/60" />
+                                        <span className="text-white/80 text-sm font-bold">
+                                            {i18n.language === 'ko' ? '선행 조건' : 'Prerequisite'}
+                                        </span>
+                                    </div>
+                                    <p className="text-white/60 text-xs leading-relaxed">
+                                        {i18n.language === 'ko'
+                                            ? `"${prerequisiteFormula.name}"에서 챌린지를 완료하세요`
+                                            : `Complete a challenge in "${prerequisiteFormula.nameEn}"`}
+                                    </p>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => handleUnlockFormula(formulaId)}
+                                    disabled={isRewardAdLoading}
+                                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95"
+                                    style={{
+                                        background: 'rgba(245, 158, 11, 0.9)',
+                                        color: '#000',
+                                        border: `2px solid ${theme.border}`,
+                                        boxShadow: `0 3px 0 ${theme.border}`,
+                                    }}
+                                >
+                                    <Lock className="w-4 h-4" />
+                                    {isRewardAdLoading
+                                        ? (i18n.language === 'ko' ? '로딩...' : 'Loading...')
+                                        : (i18n.language === 'ko' ? '잠금 해제' : 'Unlock')}
+                                </button>
+                            )}
+                        </div>
+                    )
+                })()}
             </div>
 
             {/* Top Header */}
@@ -1346,14 +1390,23 @@ export function SandboxScreen({
                         <div
                             className="px-4 py-1.5 rounded-lg"
                             style={{
-                                background: theme.gold,
+                                background: unlockToast.type === 'prerequisite' ? theme.blue : theme.gold,
                                 border: `2px solid ${theme.border}`,
                             }}
                         >
-                            <span className="text-sm font-black text-black">
-                                {i18n.language === 'ko' ? '잠금 해제' : 'Unlocked'}
+                            <span className="text-sm font-black text-white">
+                                {unlockToast.type === 'prerequisite'
+                                    ? (i18n.language === 'ko' ? '새 공식 해금!' : 'New Formula Unlocked!')
+                                    : (i18n.language === 'ko' ? '잠금 해제' : 'Unlocked')}
                             </span>
                         </div>
+                        {unlockToast.type === 'prerequisite' && (
+                            <p className="text-white/60 text-xs text-center">
+                                {i18n.language === 'ko'
+                                    ? '챌린지 완료 보상으로 해금되었습니다'
+                                    : 'Unlocked as a challenge reward'}
+                            </p>
+                        )}
                         <div className="flex flex-wrap justify-center gap-2 max-w-[260px]">
                             {unlockToast.formulas.map(fId => {
                                 const f = formulas.find(formula => formula.id === fId)
@@ -1646,26 +1699,45 @@ export function SandboxScreen({
                                                         </span>
                                                     </div>
                                                 </button>
-                                                {/* Unlock button overlay for locked formulas */}
-                                                {isLocked && (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            handleUnlockFormula(f.id)
-                                                        }}
-                                                        disabled={isRewardAdLoading}
-                                                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold transition-all active:scale-95"
-                                                        style={{
-                                                            background: '#f59e0b',
-                                                            color: '#000',
-                                                            border: `1.5px solid ${theme.border}`,
-                                                            boxShadow: `0 1px 0 ${theme.border}`,
-                                                        }}
-                                                    >
-                                                        <Unlock className="w-2.5 h-2.5" />
-                                                        {i18n.language === 'ko' ? '광고' : 'AD'}
-                                                    </button>
-                                                )}
+                                                {/* Unlock condition badge for locked formulas */}
+                                                {isLocked && (() => {
+                                                    const cond = getUnlockCondition(f.id)
+                                                    if (cond.type === 'prerequisite') {
+                                                        const prereq = formulaRegistry[cond.formulaId]
+                                                        return (
+                                                            <div
+                                                                className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                                                style={{
+                                                                    background: theme.bgPanel,
+                                                                    color: '#aaa',
+                                                                    border: `1.5px solid ${theme.border}`,
+                                                                }}
+                                                            >
+                                                                <Lock className="w-2.5 h-2.5" />
+                                                                {i18n.language === 'ko' ? prereq?.name : prereq?.nameEn}
+                                                            </div>
+                                                        )
+                                                    }
+                                                    return (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                handleUnlockFormula(f.id)
+                                                            }}
+                                                            disabled={isRewardAdLoading}
+                                                            className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold transition-all active:scale-95"
+                                                            style={{
+                                                                background: '#f59e0b',
+                                                                color: '#000',
+                                                                border: `1.5px solid ${theme.border}`,
+                                                                boxShadow: `0 1px 0 ${theme.border}`,
+                                                            }}
+                                                        >
+                                                            <Lock className="w-2.5 h-2.5" />
+                                                            {i18n.language === 'ko' ? '잠김' : 'Locked'}
+                                                        </button>
+                                                    )
+                                                })()}
                                             </div>
                                         )
                                     })}
