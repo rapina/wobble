@@ -121,6 +121,15 @@ export const keplerThird: Formula = {
             },
         ],
     },
+    getInsight: (vars) => {
+        const T = vars['T']
+        if (T < 0.1) return { ko: '저궤도 위성 정도야 (90분)', en: 'Low orbit satellite (90 min)' }
+        if (T < 1) return { ko: '정지궤도 위성 정도야 (24시간)', en: 'Geostationary satellite (24 hours)' }
+        if (T < 30) return { ko: '달의 공전주기 정도야', en: 'Like the Moon orbital period' }
+        if (T < 400) return { ko: '지구의 공전주기 정도야', en: 'Like Earth orbital period' }
+        if (T < 5000) return { ko: '목성의 공전주기 정도야', en: 'Like Jupiter orbital period' }
+        return { ko: '외행성급 긴 공전주기!', en: 'Outer planet level long period!' }
+    },
     discoveries: [
         {
             id: 'moon-orbit',

@@ -104,6 +104,14 @@ export const lens: Formula = {
             },
         ],
     },
+    getInsight: (vars) => {
+        const f = vars['f']
+        if (f < 5) return { ko: '돋보기 정도의 짧은 초점이야', en: 'Short focal length like a magnifying glass' }
+        if (f < 10) return { ko: '스마트폰 카메라 렌즈 정도야', en: 'Like a smartphone camera lens' }
+        if (f < 20) return { ko: '안경 렌즈 정도야', en: 'Like eyeglass lenses' }
+        if (f < 35) return { ko: '표준 카메라 렌즈 정도야', en: 'Like a standard camera lens' }
+        return { ko: '망원 렌즈 정도의 긴 초점이야', en: 'Long focal length like telephoto lens' }
+    },
     discoveries: [
         {
             id: 'equal-distance',

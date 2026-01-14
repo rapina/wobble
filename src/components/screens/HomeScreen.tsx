@@ -14,9 +14,10 @@ import { useAchievementStore } from '@/stores/achievementStore'
 import { formulaList } from '@/formulas/registry'
 import { cn } from '@/lib/utils'
 
-// Theme matching SimulationScreen
+// Balatro theme
 const theme = {
-    bg: '#0a0a12',
+    bg: '#1a1a2e',
+    felt: '#3d6b59',
     bgPanel: '#374244',
     bgPanelLight: '#4a5658',
     border: '#1a1a1a',
@@ -24,7 +25,7 @@ const theme = {
     red: '#e85d4c',
     blue: '#4a9eff',
     pink: '#FF6B9D',
-    purple: '#BB8FCE',
+    purple: '#9b59b6',
 }
 
 export type GameMode = 'sandbox' | 'collection' | 'game' | 'learning' | 'achievements'
@@ -51,26 +52,34 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
     }, [])
 
     return (
-        <div className="relative w-full h-full overflow-hidden bg-[#0a0a12]">
+        <div className="relative w-full h-full overflow-hidden" style={{ background: theme.felt }}>
             {/* Balatro Background */}
-            <div className="absolute inset-0 opacity-60">
+            <div className="absolute inset-0 opacity-40">
                 <Balatro
-                    color1="#c9a227"
-                    color2="#4a9eff"
-                    color3="#1a1a2e"
-                    spinSpeed={2}
+                    color1="#2d5a4a"
+                    color2="#1a4035"
+                    color3="#0d2018"
+                    spinSpeed={1.5}
                     spinRotation={-1}
-                    contrast={2.5}
-                    lighting={0.3}
-                    spinAmount={0.15}
-                    pixelFilter={800}
+                    contrast={2}
+                    lighting={0.2}
+                    spinAmount={0.1}
+                    pixelFilter={600}
                     isRotate={true}
                     mouseInteraction={false}
                 />
             </div>
 
+            {/* Felt texture overlay */}
+            <div
+                className="absolute inset-0 pointer-events-none opacity-30"
+                style={{
+                    backgroundImage: 'radial-gradient(circle at 50% 50%, transparent 20%, rgba(0,0,0,0.3) 100%)',
+                }}
+            />
+
             {/* Vignette overlay */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.5)_100%)] pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)] pointer-events-none" />
 
             {/* Settings - Top Right */}
             <div
@@ -142,24 +151,31 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                         mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-12'
                     )}
                 >
-                    <h1
-                        className="text-6xl font-black tracking-wider"
+                    <div
+                        className="inline-block px-8 py-3 rounded-xl"
                         style={{
-                            color: '#c9a227',
-                            textShadow:
-                                '0 0 40px rgba(201, 162, 39, 0.8), 0 0 80px rgba(201, 162, 39, 0.4), 0 4px 0 #8a6d1a',
-                            fontFamily: 'system-ui, -apple-system, sans-serif',
+                            background: theme.bgPanel,
+                            border: `4px solid ${theme.border}`,
+                            boxShadow: `0 6px 0 ${theme.border}`,
                         }}
                     >
-                        <ShuffleText duration={1200} trigger="mount" loop={true} loopDelay={5000}>
-                            {t('home.title')}
-                        </ShuffleText>
-                    </h1>
+                        <h1
+                            className="text-5xl font-black tracking-wider"
+                            style={{
+                                color: theme.gold,
+                                textShadow: '0 2px 0 #8a6d1a',
+                                fontFamily: 'system-ui, -apple-system, sans-serif',
+                            }}
+                        >
+                            <ShuffleText duration={1200} trigger="mount" loop={true} loopDelay={5000}>
+                                {t('home.title')}
+                            </ShuffleText>
+                        </h1>
+                    </div>
                     <p
-                        className="text-base tracking-[0.2em] mt-4 font-bold"
+                        className="text-sm tracking-[0.15em] mt-4 font-bold"
                         style={{
-                            color: '#5DADE2',
-                            textShadow: '0 0 20px rgba(93, 173, 226, 0.6)',
+                            color: 'rgba(255,255,255,0.7)',
                         }}
                     >
                         PHYSICS{' '}
@@ -184,34 +200,33 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                 {/* Menu Cards */}
                 <div
                     className={cn(
-                        'space-y-3 mx-auto w-full',
+                        'space-y-4 mx-auto w-full',
                         'transition-all duration-1000 delay-300 ease-out',
                         mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
                     )}
-                    style={{ maxWidth: 400 }}
+                    style={{ maxWidth: 320 }}
                 >
                     {/* Sandbox - Main Card */}
                     <button
                         onClick={() => onSelectMode('sandbox')}
-                        className="w-full relative overflow-hidden rounded-xl transition-all active:scale-[0.98] hover:brightness-110"
+                        className="w-full relative overflow-hidden rounded-xl transition-all active:scale-[0.97]"
                         style={{
-                            background: `linear-gradient(180deg, ${theme.gold} 0%, #a8861f 100%)`,
+                            background: theme.gold,
                             border: `3px solid ${theme.border}`,
-                            boxShadow: `0 4px 0 ${theme.border}, inset 0 1px 0 rgba(255,255,255,0.3)`,
+                            boxShadow: `0 5px 0 ${theme.border}`,
                         }}
                     >
                         <div className="px-6 py-4 flex items-center justify-center">
-                            <span className="text-xl font-black text-black tracking-wide uppercase">
+                            <span className="text-lg font-black text-black tracking-wide uppercase">
                                 {t('home.sandbox')}
                             </span>
                             {unseenFormulaCount > 0 && (
                                 <span
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 px-2 py-0.5 text-[10px] font-black rounded-md animate-pulse"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 text-[10px] font-black rounded-md"
                                     style={{
                                         background: theme.red,
                                         color: 'white',
                                         border: `2px solid ${theme.border}`,
-                                        boxShadow: `0 2px 0 ${theme.border}`,
                                     }}
                                 >
                                     NEW
@@ -223,15 +238,15 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                     {/* Minigame Mode Card */}
                     <button
                         onClick={() => onSelectMode('game')}
-                        className="w-full relative overflow-hidden rounded-xl transition-all active:scale-[0.98] hover:brightness-110"
+                        className="w-full relative overflow-hidden rounded-xl transition-all active:scale-[0.97]"
                         style={{
-                            background: `linear-gradient(180deg, ${theme.pink} 0%, #d94d7a 100%)`,
+                            background: theme.red,
                             border: `3px solid ${theme.border}`,
-                            boxShadow: `0 4px 0 ${theme.border}, inset 0 1px 0 rgba(255,255,255,0.3)`,
+                            boxShadow: `0 5px 0 ${theme.border}`,
                         }}
                     >
                         <div className="px-6 py-4 flex items-center justify-center">
-                            <span className="text-xl font-black text-black tracking-wide uppercase">
+                            <span className="text-lg font-black text-white tracking-wide uppercase">
                                 {t('home.game')}
                             </span>
                         </div>
@@ -240,21 +255,21 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                     {/* Collection - Bottom Card */}
                     <button
                         onClick={() => onSelectMode('collection')}
-                        className="w-full relative overflow-hidden rounded-xl transition-all active:scale-[0.98] hover:brightness-110"
+                        className="w-full relative overflow-hidden rounded-xl transition-all active:scale-[0.97]"
                         style={{
-                            background: `linear-gradient(180deg, ${theme.purple} 0%, #9b6fb5 100%)`,
+                            background: theme.blue,
                             border: `3px solid ${theme.border}`,
-                            boxShadow: `0 4px 0 ${theme.border}, inset 0 1px 0 rgba(255,255,255,0.3)`,
+                            boxShadow: `0 5px 0 ${theme.border}`,
                         }}
                     >
                         <div className="px-6 py-4 flex items-center justify-center">
-                            <span className="text-xl font-black text-black tracking-wide uppercase">
+                            <span className="text-lg font-black text-white tracking-wide uppercase">
                                 {t('home.collection')}
                             </span>
                             <span
                                 className="ml-3 px-2 py-0.5 text-xs font-bold rounded-md"
                                 style={{
-                                    background: 'rgba(0,0,0,0.2)',
+                                    background: 'rgba(0,0,0,0.3)',
                                     color: 'white',
                                 }}
                             >

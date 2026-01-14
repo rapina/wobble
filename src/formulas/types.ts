@@ -91,6 +91,12 @@ export interface Discovery {
     condition: (variables: Record<string, number>) => boolean
 }
 
+/** 결과값에 대한 실생활 인사이트 */
+export interface Insight {
+    ko: string
+    en: string
+}
+
 export interface Formula {
     id: string
     name: string
@@ -112,4 +118,6 @@ export interface Formula {
     displayLayout?: DisplayLayout
     /** 시뮬레이션에서 발견할 수 있는 미션들 */
     discoveries?: Discovery[]
+    /** 결과값에 대한 실생활 인사이트 생성 */
+    getInsight?: (variables: Record<string, number>) => Insight | null
 }

@@ -26,10 +26,46 @@ export interface SkillLevelEffect {
     spreadCount?: number // Number of projectiles
     spreadAngle?: number // Degrees
 
-    // Shockwave
+    // Shockwave (원심력 펄스)
     shockwaveInterval?: number // Seconds between pulses
     shockwaveRadius?: number
     shockwaveKnockback?: number
+
+    // === NEW SKILL EFFECTS ===
+
+    // Elastic Return (탄성 회귀) - hooke
+    returnDistance?: number // Max distance before returning
+    returnDamageMultiplier?: number // Damage on return pass
+
+    // Magnetic Shield (자기장 방어) - lorentz
+    shieldRadius?: number
+    deflectionStrength?: number // 0-1, how much enemies curve away
+
+    // Static Repulsion (정전기 반발) - coulomb
+    repulsionRadius?: number
+    repulsionForce?: number
+
+    // Buoyant Bomb (부력 폭탄) - buoyancy
+    floatDuration?: number // Seconds before dropping
+    dropRadius?: number
+    dropDamage?: number
+
+    // Quantum Tunnel (양자 터널링) - tunneling
+    tunnelChance?: number // 0-1, probability
+    tunnelDamageBonus?: number // Extra damage on tunnel
+
+    // Pendulum Rhythm (진자 리듬) - pendulum
+    rhythmPeriod?: number // Seconds per cycle
+    peakDamageBonus?: number // Max bonus at peak
+
+    // Torque Slash (토크 회전참) - torque
+    slashRadius?: number
+    slashDamage?: number
+    slashSpeed?: number // Rotations per second
+
+    // Time Warp (시간 왜곡) - time-dilation
+    warpRadius?: number
+    slowFactor?: number // 0-1, how much enemies slow
 }
 
 export interface SkillDefinition {
@@ -238,6 +274,178 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
             { shockwaveInterval: 2, shockwaveRadius: 200, shockwaveKnockback: 300 },
         ],
     },
+
+    // ============================================
+    // NEW SKILLS (8 additional skills)
+    // ============================================
+
+    // 탄성 회귀 (Elastic Return) - F = -kx (훅의 법칙)
+    'elastic-return': {
+        id: 'elastic-return',
+        nameEn: 'Elastic Return',
+        nameKo: '탄성 회귀',
+        descriptionEn: 'Projectiles return like a spring',
+        descriptionKo: '스프링처럼 발사체가 되돌아옵니다',
+        icon: '⟳',
+        color: 0x9b59b6,
+        maxLevel: 5,
+        formulaId: 'hooke',
+        physicsVisualType: 'spring',
+        levelEffects: [
+            { returnDistance: 150, returnDamageMultiplier: 0.5 },
+            { returnDistance: 180, returnDamageMultiplier: 0.6 },
+            { returnDistance: 220, returnDamageMultiplier: 0.7 },
+            { returnDistance: 260, returnDamageMultiplier: 0.8 },
+            { returnDistance: 300, returnDamageMultiplier: 1.0 },
+        ],
+    },
+
+    // 자기장 방어 (Magnetic Shield) - F = qvB (로렌츠 힘)
+    'magnetic-shield': {
+        id: 'magnetic-shield',
+        nameEn: 'Magnetic Shield',
+        nameKo: '자기장 방어',
+        descriptionEn: 'Magnetic field deflects enemies',
+        descriptionKo: '자기장이 적의 경로를 휘게 합니다',
+        icon: '⊛',
+        color: 0x3498db,
+        maxLevel: 5,
+        formulaId: 'lorentz',
+        physicsVisualType: 'magnetic',
+        levelEffects: [
+            { shieldRadius: 60, deflectionStrength: 0.3 },
+            { shieldRadius: 80, deflectionStrength: 0.5 },
+            { shieldRadius: 100, deflectionStrength: 0.7 },
+            { shieldRadius: 120, deflectionStrength: 0.85 },
+            { shieldRadius: 150, deflectionStrength: 1.0 },
+        ],
+    },
+
+    // 정전기 반발 (Static Repulsion) - F = kq₁q₂/r² (쿨롱의 법칙)
+    'static-repulsion': {
+        id: 'static-repulsion',
+        nameEn: 'Static Repulsion',
+        nameKo: '정전기 반발',
+        descriptionEn: 'Electric charge pushes enemies away',
+        descriptionKo: '전하가 적을 지속적으로 밀어냅니다',
+        icon: '⊕',
+        color: 0xf1c40f,
+        maxLevel: 5,
+        formulaId: 'coulomb',
+        physicsVisualType: 'electric',
+        levelEffects: [
+            { repulsionRadius: 80, repulsionForce: 50 },
+            { repulsionRadius: 100, repulsionForce: 80 },
+            { repulsionRadius: 120, repulsionForce: 120 },
+            { repulsionRadius: 150, repulsionForce: 160 },
+            { repulsionRadius: 180, repulsionForce: 200 },
+        ],
+    },
+
+    // 부력 폭탄 (Buoyant Bomb) - F = ρVg (부력)
+    'buoyant-bomb': {
+        id: 'buoyant-bomb',
+        nameEn: 'Buoyant Bomb',
+        nameKo: '부력 폭탄',
+        descriptionEn: 'Projectiles float up then drop explosively',
+        descriptionKo: '발사체가 떠올랐다 떨어지며 폭발합니다',
+        icon: '◠',
+        color: 0x1abc9c,
+        maxLevel: 5,
+        formulaId: 'buoyancy',
+        physicsVisualType: 'buoyancy',
+        levelEffects: [
+            { floatDuration: 1.5, dropRadius: 60, dropDamage: 20 },
+            { floatDuration: 1.3, dropRadius: 80, dropDamage: 35 },
+            { floatDuration: 1.1, dropRadius: 100, dropDamage: 50 },
+            { floatDuration: 0.9, dropRadius: 130, dropDamage: 70 },
+            { floatDuration: 0.7, dropRadius: 160, dropDamage: 100 },
+        ],
+    },
+
+    // 양자 터널링 (Quantum Tunnel) - T ≈ e^(-2κL) (터널링 확률)
+    'quantum-tunnel': {
+        id: 'quantum-tunnel',
+        nameEn: 'Quantum Tunnel',
+        nameKo: '양자 터널링',
+        descriptionEn: 'Projectiles may phase through enemies',
+        descriptionKo: '확률적으로 적을 투과하며 추가 데미지',
+        icon: '⫘',
+        color: 0x8e44ad,
+        maxLevel: 5,
+        formulaId: 'tunneling',
+        physicsVisualType: 'quantum',
+        levelEffects: [
+            { tunnelChance: 0.1, tunnelDamageBonus: 0.5 },
+            { tunnelChance: 0.15, tunnelDamageBonus: 0.75 },
+            { tunnelChance: 0.2, tunnelDamageBonus: 1.0 },
+            { tunnelChance: 0.25, tunnelDamageBonus: 1.25 },
+            { tunnelChance: 0.3, tunnelDamageBonus: 1.5 },
+        ],
+    },
+
+    // 진자 리듬 (Pendulum Rhythm) - T = 2π√(L/g) (진자 주기)
+    'pendulum-rhythm': {
+        id: 'pendulum-rhythm',
+        nameEn: 'Pendulum Rhythm',
+        nameKo: '진자 리듬',
+        descriptionEn: 'Damage oscillates with timing',
+        descriptionKo: '주기적으로 공격력이 최대가 됩니다',
+        icon: '◷',
+        color: 0xe67e22,
+        maxLevel: 5,
+        formulaId: 'pendulum',
+        physicsVisualType: 'pendulum',
+        levelEffects: [
+            { rhythmPeriod: 4.0, peakDamageBonus: 0.5 },
+            { rhythmPeriod: 3.5, peakDamageBonus: 0.75 },
+            { rhythmPeriod: 3.0, peakDamageBonus: 1.0 },
+            { rhythmPeriod: 2.5, peakDamageBonus: 1.5 },
+            { rhythmPeriod: 2.0, peakDamageBonus: 2.0 },
+        ],
+    },
+
+    // 토크 회전참 (Torque Slash) - τ = rF sin θ (토크)
+    'torque-slash': {
+        id: 'torque-slash',
+        nameEn: 'Torque Slash',
+        nameKo: '토크 회전참',
+        descriptionEn: 'Spinning blade damages nearby enemies',
+        descriptionKo: '회전하는 칼날이 주변 적을 벱니다',
+        icon: '↻',
+        color: 0xc0392b,
+        maxLevel: 5,
+        formulaId: 'torque',
+        physicsVisualType: 'torque',
+        levelEffects: [
+            { slashRadius: 60, slashDamage: 8, slashSpeed: 1.5 },
+            { slashRadius: 75, slashDamage: 12, slashSpeed: 1.8 },
+            { slashRadius: 90, slashDamage: 16, slashSpeed: 2.1 },
+            { slashRadius: 110, slashDamage: 22, slashSpeed: 2.5 },
+            { slashRadius: 130, slashDamage: 30, slashSpeed: 3.0 },
+        ],
+    },
+
+    // 시간 왜곡 (Time Warp) - t = t₀/√(1-v²/c²) (시간 지연)
+    'time-warp': {
+        id: 'time-warp',
+        nameEn: 'Time Warp',
+        nameKo: '시간 왜곡',
+        descriptionEn: 'Slow down nearby enemies',
+        descriptionKo: '주변 적의 시간을 느리게 합니다',
+        icon: '◐',
+        color: 0x2c3e50,
+        maxLevel: 5,
+        formulaId: 'time-dilation',
+        physicsVisualType: 'time',
+        levelEffects: [
+            { warpRadius: 80, slowFactor: 0.2 },
+            { warpRadius: 100, slowFactor: 0.3 },
+            { warpRadius: 120, slowFactor: 0.4 },
+            { warpRadius: 150, slowFactor: 0.5 },
+            { warpRadius: 180, slowFactor: 0.6 },
+        ],
+    },
 }
 
 // ============================================
@@ -369,6 +577,7 @@ export function getNextLevelDescription(skillId: string, currentLevel: number): 
 
     const parts: string[] = []
 
+    // Original skills
     if (effect.bounceCount !== undefined) parts.push(`튕김 ${effect.bounceCount}회`)
     if (effect.pierceCount !== undefined) parts.push(`관통 ${effect.pierceCount}회`)
     if (effect.pierceDamageDecay !== undefined)
@@ -386,6 +595,32 @@ export function getNextLevelDescription(skillId: string, currentLevel: number): 
     if (effect.shockwaveInterval !== undefined) parts.push(`주기 ${effect.shockwaveInterval}초`)
     if (effect.shockwaveRadius !== undefined) parts.push(`범위 ${effect.shockwaveRadius}`)
 
+    // New skills
+    if (effect.returnDistance !== undefined) parts.push(`거리 ${effect.returnDistance}`)
+    if (effect.returnDamageMultiplier !== undefined)
+        parts.push(`복귀 데미지 ${Math.round(effect.returnDamageMultiplier * 100)}%`)
+    if (effect.shieldRadius !== undefined) parts.push(`반경 ${effect.shieldRadius}`)
+    if (effect.deflectionStrength !== undefined)
+        parts.push(`편향 ${Math.round(effect.deflectionStrength * 100)}%`)
+    if (effect.repulsionRadius !== undefined) parts.push(`반경 ${effect.repulsionRadius}`)
+    if (effect.repulsionForce !== undefined) parts.push(`밀어냄 ${effect.repulsionForce}`)
+    if (effect.floatDuration !== undefined) parts.push(`체공 ${effect.floatDuration}초`)
+    if (effect.dropRadius !== undefined) parts.push(`낙하 범위 ${effect.dropRadius}`)
+    if (effect.dropDamage !== undefined) parts.push(`낙하 데미지 ${effect.dropDamage}`)
+    if (effect.tunnelChance !== undefined)
+        parts.push(`터널 ${Math.round(effect.tunnelChance * 100)}%`)
+    if (effect.tunnelDamageBonus !== undefined)
+        parts.push(`보너스 +${Math.round(effect.tunnelDamageBonus * 100)}%`)
+    if (effect.rhythmPeriod !== undefined) parts.push(`주기 ${effect.rhythmPeriod}초`)
+    if (effect.peakDamageBonus !== undefined)
+        parts.push(`최대 +${Math.round(effect.peakDamageBonus * 100)}%`)
+    if (effect.slashRadius !== undefined) parts.push(`반경 ${effect.slashRadius}`)
+    if (effect.slashDamage !== undefined) parts.push(`데미지 ${effect.slashDamage}`)
+    if (effect.slashSpeed !== undefined) parts.push(`회전 ${effect.slashSpeed}회/초`)
+    if (effect.warpRadius !== undefined) parts.push(`반경 ${effect.warpRadius}`)
+    if (effect.slowFactor !== undefined)
+        parts.push(`감속 ${Math.round(effect.slowFactor * 100)}%`)
+
     return parts.join(', ')
 }
 
@@ -402,6 +637,7 @@ export function getCurrentLevelDescription(skillId: string, level: number): stri
 
     const parts: string[] = []
 
+    // Original skills
     if (effect.bounceCount !== undefined) parts.push(`튕김 ${effect.bounceCount}회`)
     if (effect.pierceCount !== undefined) parts.push(`관통 ${effect.pierceCount}회`)
     if (effect.explosionRadius !== undefined) parts.push(`반경 ${effect.explosionRadius}`)
@@ -412,6 +648,17 @@ export function getCurrentLevelDescription(skillId: string, level: number): stri
     if (effect.homingTurnRate !== undefined) parts.push(`추적력 ${effect.homingTurnRate}`)
     if (effect.spreadCount !== undefined) parts.push(`탄환 ${effect.spreadCount}발`)
     if (effect.shockwaveInterval !== undefined) parts.push(`주기 ${effect.shockwaveInterval}초`)
+
+    // New skills
+    if (effect.returnDistance !== undefined) parts.push(`거리 ${effect.returnDistance}`)
+    if (effect.shieldRadius !== undefined) parts.push(`반경 ${effect.shieldRadius}`)
+    if (effect.repulsionRadius !== undefined) parts.push(`반경 ${effect.repulsionRadius}`)
+    if (effect.floatDuration !== undefined) parts.push(`체공 ${effect.floatDuration}초`)
+    if (effect.tunnelChance !== undefined)
+        parts.push(`터널 ${Math.round(effect.tunnelChance * 100)}%`)
+    if (effect.rhythmPeriod !== undefined) parts.push(`주기 ${effect.rhythmPeriod}초`)
+    if (effect.slashRadius !== undefined) parts.push(`반경 ${effect.slashRadius}`)
+    if (effect.warpRadius !== undefined) parts.push(`반경 ${effect.warpRadius}`)
 
     return parts.join(', ')
 }
@@ -425,7 +672,7 @@ export interface CombinedSkillStats {
     damageMultiplier: number
     knockbackMultiplier: number
 
-    // Additive
+    // Additive - Original skills
     bounceCount: number
     pierceCount: number
     pierceDamageDecay: number
@@ -436,6 +683,26 @@ export interface CombinedSkillStats {
     shockwaveInterval: number
     shockwaveRadius: number
     shockwaveKnockback: number
+
+    // Additive - New skills
+    returnDistance: number // Elastic Return
+    returnDamageMultiplier: number
+    shieldRadius: number // Magnetic Shield
+    deflectionStrength: number
+    repulsionRadius: number // Static Repulsion
+    repulsionForce: number
+    floatDuration: number // Buoyant Bomb
+    dropRadius: number
+    dropDamage: number
+    tunnelChance: number // Quantum Tunnel
+    tunnelDamageBonus: number
+    rhythmPeriod: number // Pendulum Rhythm
+    peakDamageBonus: number
+    slashRadius: number // Torque Slash
+    slashDamage: number
+    slashSpeed: number
+    warpRadius: number // Time Warp
+    slowFactor: number
 }
 
 export function calculateCombinedSkillStats(skills: PlayerSkill[]): CombinedSkillStats {
@@ -453,6 +720,25 @@ export function calculateCombinedSkillStats(skills: PlayerSkill[]): CombinedSkil
         shockwaveInterval: 0,
         shockwaveRadius: 0,
         shockwaveKnockback: 0,
+        // New skill defaults
+        returnDistance: 0,
+        returnDamageMultiplier: 0,
+        shieldRadius: 0,
+        deflectionStrength: 0,
+        repulsionRadius: 0,
+        repulsionForce: 0,
+        floatDuration: 0,
+        dropRadius: 0,
+        dropDamage: 0,
+        tunnelChance: 0,
+        tunnelDamageBonus: 0,
+        rhythmPeriod: 0,
+        peakDamageBonus: 0,
+        slashRadius: 0,
+        slashDamage: 0,
+        slashSpeed: 0,
+        warpRadius: 0,
+        slowFactor: 0,
     }
 
     for (const skill of skills) {
@@ -503,6 +789,71 @@ export function calculateCombinedSkillStats(skills: PlayerSkill[]): CombinedSkil
             result.shockwaveInterval = effect.shockwaveInterval
             result.shockwaveRadius = effect.shockwaveRadius || 0
             result.shockwaveKnockback = effect.shockwaveKnockback || 0
+        }
+
+        // === NEW SKILLS ===
+
+        // Elastic Return (use highest values)
+        if (effect.returnDistance !== undefined) {
+            result.returnDistance = Math.max(result.returnDistance, effect.returnDistance)
+            result.returnDamageMultiplier = Math.max(
+                result.returnDamageMultiplier,
+                effect.returnDamageMultiplier || 0
+            )
+        }
+
+        // Magnetic Shield (use highest values)
+        if (effect.shieldRadius !== undefined) {
+            result.shieldRadius = Math.max(result.shieldRadius, effect.shieldRadius)
+            result.deflectionStrength = Math.max(
+                result.deflectionStrength,
+                effect.deflectionStrength || 0
+            )
+        }
+
+        // Static Repulsion (use highest values)
+        if (effect.repulsionRadius !== undefined) {
+            result.repulsionRadius = Math.max(result.repulsionRadius, effect.repulsionRadius)
+            result.repulsionForce = Math.max(result.repulsionForce, effect.repulsionForce || 0)
+        }
+
+        // Buoyant Bomb (use highest values)
+        if (effect.floatDuration !== undefined) {
+            result.floatDuration = effect.floatDuration // Lower is better, use latest
+            result.dropRadius = Math.max(result.dropRadius, effect.dropRadius || 0)
+            result.dropDamage = Math.max(result.dropDamage, effect.dropDamage || 0)
+        }
+
+        // Quantum Tunnel (use highest values)
+        if (effect.tunnelChance !== undefined) {
+            result.tunnelChance = Math.max(result.tunnelChance, effect.tunnelChance)
+            result.tunnelDamageBonus = Math.max(
+                result.tunnelDamageBonus,
+                effect.tunnelDamageBonus || 0
+            )
+        }
+
+        // Pendulum Rhythm (use lowest period for fastest cycle, highest bonus)
+        if (effect.rhythmPeriod !== undefined) {
+            if (result.rhythmPeriod === 0) {
+                result.rhythmPeriod = effect.rhythmPeriod
+            } else {
+                result.rhythmPeriod = Math.min(result.rhythmPeriod, effect.rhythmPeriod)
+            }
+            result.peakDamageBonus = Math.max(result.peakDamageBonus, effect.peakDamageBonus || 0)
+        }
+
+        // Torque Slash (use highest values)
+        if (effect.slashRadius !== undefined) {
+            result.slashRadius = Math.max(result.slashRadius, effect.slashRadius)
+            result.slashDamage = Math.max(result.slashDamage, effect.slashDamage || 0)
+            result.slashSpeed = Math.max(result.slashSpeed, effect.slashSpeed || 0)
+        }
+
+        // Time Warp (use highest values)
+        if (effect.warpRadius !== undefined) {
+            result.warpRadius = Math.max(result.warpRadius, effect.warpRadius)
+            result.slowFactor = Math.max(result.slowFactor, effect.slowFactor || 0)
         }
     }
 

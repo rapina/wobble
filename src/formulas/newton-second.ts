@@ -112,4 +112,14 @@ export const newtonSecond: Formula = {
             condition: (vars) => vars['m'] <= 5 && vars['a'] >= 18,
         },
     ],
+    getInsight: (vars) => {
+        const F = vars['F']
+        if (F < 1) return { ko: '깃털처럼 가벼운 힘이야!', en: 'Light as a feather!' }
+        if (F < 10) return { ko: '종이컵을 밀 수 있는 힘이야', en: 'Enough to push a paper cup' }
+        if (F < 50) return { ko: '문을 여는 정도의 힘이야', en: 'About the force to open a door' }
+        if (F < 100) return { ko: '의자를 밀 수 있는 힘이야', en: 'Enough to push a chair' }
+        if (F < 500) return { ko: '자전거를 밀 수 있는 힘이야', en: 'Enough to push a bicycle' }
+        if (F < 1000) return { ko: '성인 한 명을 밀 수 있는 힘!', en: 'Enough to push an adult!' }
+        return { ko: '엄청난 힘이야! 차도 밀 수 있어', en: 'Massive force! Could push a car' }
+    },
 }

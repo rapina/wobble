@@ -99,6 +99,16 @@ export const standingWave: Formula = {
             },
         ],
     },
+    getInsight: (vars) => {
+        const lambda = vars['λ']
+        const n = Math.round(vars['n'] ?? 1)
+        if (n === 1) return { ko: '기본 진동수! 가장 낮은 음이야', en: 'Fundamental frequency! The lowest pitch' }
+        if (n === 2) return { ko: '2배음! 한 옥타브 높은 음이야', en: '2nd harmonic! One octave higher' }
+        if (n === 3) return { ko: '3배음! 풍부한 음색을 만들어', en: '3rd harmonic! Creates rich timbre' }
+        if (lambda < 0.5) return { ko: '짧은 파장의 높은 음이야', en: 'Short wavelength, high pitch' }
+        if (lambda < 1) return { ko: '기타 줄 정도의 파장이야', en: 'Wavelength like a guitar string' }
+        return { ko: '긴 파장의 낮은 음이야', en: 'Long wavelength, low pitch' }
+    },
     discoveries: [
         {
             id: 'fundamental',

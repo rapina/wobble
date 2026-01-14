@@ -125,4 +125,12 @@ export const pendulum: Formula = {
             condition: (vars) => vars['g'] <= 2,
         },
     ],
+    getInsight: (vars) => {
+        const T = vars['T']
+        if (T < 1) return { ko: '째깍째깍 빠른 시계야', en: 'Fast ticking clock' }
+        if (T < 2) return { ko: '심장 박동 정도야', en: 'Like a heartbeat' }
+        if (T < 3) return { ko: '괘종시계 정도야', en: 'Like a grandfather clock' }
+        if (T < 5) return { ko: '그네 타는 느낌이야', en: 'Like swinging on a swing' }
+        return { ko: '아주 느린 진동이야', en: 'Very slow oscillation' }
+    },
 }

@@ -135,6 +135,16 @@ export const tunneling: Formula = {
             },
         ],
     },
+    getInsight: (vars) => {
+        const T = vars['T']
+        const E = vars['E'] ?? 8
+        const V = vars['V'] ?? 10
+        if (E >= V) return { ko: '고전적 통과! 장벽을 넘었어', en: 'Classical transmission! Over the barrier' }
+        if (T >= 50) return { ko: '절반 이상 통과! 양자 효과가 강해', en: 'Over half tunnel through! Strong quantum effect' }
+        if (T >= 10) return { ko: '상당한 터널링! 플래시 메모리 수준', en: 'Significant tunneling! Flash memory level' }
+        if (T >= 1) return { ko: '약한 터널링! STM 현미경 수준', en: 'Weak tunneling! STM microscope level' }
+        return { ko: '거의 반사! 터널링 확률 매우 낮아', en: 'Almost reflected! Very low tunneling probability' }
+    },
     discoveries: [
         {
             id: 'high-probability',

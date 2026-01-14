@@ -116,6 +116,15 @@ export const torque: Formula = {
             { type: 'var', symbol: 'θ' },
         ],
     },
+    getInsight: (vars) => {
+        const tau = vars['τ']
+        if (tau < 5) return { ko: '문고리 살짝 돌리는 정도야', en: 'Barely turning a door handle' }
+        if (tau < 20) return { ko: '병뚜껑 여는 정도야', en: 'Opening a bottle cap' }
+        if (tau < 50) return { ko: '렌치로 볼트 조이는 힘이야', en: 'Tightening a bolt with a wrench' }
+        if (tau < 100) return { ko: '자전거 페달 밟는 힘이야', en: 'Pedaling a bicycle' }
+        if (tau < 200) return { ko: '무거운 문을 여는 힘이야', en: 'Opening a heavy door' }
+        return { ko: '엔진급 회전력!', en: 'Engine-level torque!' }
+    },
     discoveries: [
         {
             id: 'lever-arm',

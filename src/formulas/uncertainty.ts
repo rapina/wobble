@@ -86,6 +86,15 @@ export const uncertainty: Formula = {
             },
         ],
     },
+    getInsight: (vars) => {
+        const Dx = vars['Δx']
+        const Dp = vars['Δp']
+        if (Dx < 0.5) return { ko: '원자 크기보다 작은 위치 정밀도!', en: 'Smaller than atomic size precision!' }
+        if (Dx < 2) return { ko: '원자 수준의 위치 정밀도야', en: 'Atomic level position precision' }
+        if (Dx < 5) return { ko: '분자 수준의 위치 정밀도야', en: 'Molecular level position precision' }
+        if (Dp < 0.1) return { ko: '운동량이 꽤 정확해!', en: 'Momentum is fairly precise!' }
+        return { ko: '거시적 수준의 불확정성이야', en: 'Macroscopic level uncertainty' }
+    },
     discoveries: [
         {
             id: 'precise-position',

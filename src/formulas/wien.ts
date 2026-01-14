@@ -83,6 +83,15 @@ export const wien: Formula = {
             },
         ],
     },
+    getInsight: (vars) => {
+        const lambda = vars['λmax']
+        if (lambda < 400) return { ko: '자외선 영역! 파란 별이야', en: 'Ultraviolet region! A blue star' }
+        if (lambda < 500) return { ko: '파란색 가시광선! 뜨거운 별이야', en: 'Blue visible light! A hot star' }
+        if (lambda < 600) return { ko: '노란색! 태양과 비슷한 온도야', en: 'Yellow! Similar temperature to the Sun' }
+        if (lambda < 700) return { ko: '주황~빨간색! 차가운 별이야', en: 'Orange-red! A cool star' }
+        if (lambda < 1000) return { ko: '적외선 영역! 적색왜성이야', en: 'Infrared region! A red dwarf' }
+        return { ko: '먼 적외선! 매우 차가운 천체야', en: 'Far infrared! A very cold object' }
+    },
     discoveries: [
         {
             id: 'sun-temperature',

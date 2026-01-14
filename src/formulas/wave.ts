@@ -112,4 +112,12 @@ export const wave: Formula = {
             condition: (vars) => vars['λ'] >= 8,
         },
     ],
+    getInsight: (vars) => {
+        const v = vars['v']
+        if (v < 5) return { ko: '걷는 속도 정도야', en: 'Walking speed' }
+        if (v < 15) return { ko: '자전거 속도 정도야', en: 'Like cycling speed' }
+        if (v < 30) return { ko: '달리는 자동차 속도야', en: 'Like a car speed' }
+        if (v < 40) return { ko: '고속도로 속도야', en: 'Highway speed' }
+        return { ko: '빠른 파동이야!', en: 'Fast wave!' }
+    },
 }

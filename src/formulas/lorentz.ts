@@ -131,4 +131,12 @@ export const lorentz: Formula = {
             condition: (vars) => vars['v'] >= 15 && vars['q'] >= 50,
         },
     ],
+    getInsight: (vars) => {
+        const F = vars['F']
+        if (F < 10) return { ko: '아주 약한 로렌츠 힘이야', en: 'Very weak Lorentz force' }
+        if (F < 100) return { ko: '나침반 바늘 움직이는 힘이야', en: 'Force to move compass needle' }
+        if (F < 500) return { ko: '작은 모터의 힘이야', en: 'Small motor force' }
+        if (F < 1500) return { ko: '선풍기 모터 정도야', en: 'Like a fan motor' }
+        return { ko: '산업용 모터급 힘!', en: 'Industrial motor level force!' }
+    },
 }

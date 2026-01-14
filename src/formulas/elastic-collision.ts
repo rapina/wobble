@@ -149,6 +149,15 @@ export const elasticCollision: Formula = {
             },
         ],
     },
+    getInsight: (vars) => {
+        const v1Prime = vars["v₁'"]
+        const e = vars['e']
+        if (e >= 0.95) return { ko: '거의 완전 탄성! 당구공처럼 튕겨', en: 'Nearly perfect elastic! Bounces like billiard balls' }
+        if (e <= 0.1) return { ko: '거의 완전 비탄성! 찰흙처럼 붙어', en: 'Nearly inelastic! Sticks like clay' }
+        if (v1Prime < 0) return { ko: '반대 방향으로 튕겨나갔어!', en: 'Bounced back in opposite direction!' }
+        if (v1Prime < 1) return { ko: '거의 멈췄어! 에너지 대부분 전달됐어', en: 'Nearly stopped! Most energy transferred' }
+        return { ko: '일부 에너지가 전달됐어', en: 'Some energy was transferred' }
+    },
     discoveries: [
         {
             id: 'perfect-elastic',

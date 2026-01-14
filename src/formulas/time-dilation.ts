@@ -121,4 +121,14 @@ export const timeDilation: Formula = {
             condition: (vars) => vars['v'] >= 0.99,
         },
     ],
+    getInsight: (vars) => {
+        const t = vars['t']
+        const t0 = vars['t₀'] ?? 1
+        const ratio = t / t0
+        if (ratio < 1.01) return { ko: '시간이 거의 똑같아', en: 'Time is almost the same' }
+        if (ratio < 1.2) return { ko: '시간이 살짝 느려져', en: 'Time slows slightly' }
+        if (ratio < 2) return { ko: '시간이 눈에 띄게 느려져', en: 'Time noticeably slower' }
+        if (ratio < 5) return { ko: '시간이 많이 느려져!', en: 'Time slows significantly!' }
+        return { ko: '시간이 완전 느려져! 우주여행 수준!', en: 'Extreme time dilation! Space travel level!' }
+    },
 }

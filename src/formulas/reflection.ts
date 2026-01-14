@@ -73,6 +73,14 @@ export const reflection: Formula = {
         output: 'θᵣ',
         expression: [{ type: 'var', symbol: 'θᵢ' }],
     },
+    getInsight: (vars) => {
+        const theta = vars['θᵣ']
+        if (theta < 10) return { ko: '거의 수직으로 반사되는 빛이야', en: 'Light reflecting almost straight back' }
+        if (theta < 30) return { ko: '거울을 약간 기울인 반사야', en: 'Mirror tilted slightly' }
+        if (theta < 50) return { ko: '일반적인 거울 반사각이야', en: 'Typical mirror reflection angle' }
+        if (theta < 70) return { ko: '비스듬히 반사되는 빛이야', en: 'Light reflecting at an angle' }
+        return { ko: '수면에서 반짝이는 빛처럼 스치듯 반사!', en: 'Grazing reflection like light sparkling on water!' }
+    },
     discoveries: [
         {
             id: 'grazing-angle',

@@ -106,6 +106,14 @@ export const debroglie: Formula = {
             },
         ],
     },
+    getInsight: (vars) => {
+        const lambda = vars['λ']
+        if (lambda > 1) return { ko: '긴 파장! 파동성이 뚜렷해', en: 'Long wavelength! Clear wave behavior' }
+        if (lambda > 0.1) return { ko: '전자현미경 수준의 파장이야', en: 'Electron microscope level wavelength' }
+        if (lambda > 0.01) return { ko: '원자 크기 수준의 파장이야', en: 'Atomic scale wavelength' }
+        if (lambda > 0.001) return { ko: '핵 크기 수준! 매우 짧은 파장', en: 'Nuclear scale! Very short wavelength' }
+        return { ko: '입자성이 지배적! 파동을 관측하기 어려워', en: 'Particle behavior dominates! Hard to observe waves' }
+    },
     discoveries: [
         {
             id: 'electron-wave',

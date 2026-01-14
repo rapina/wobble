@@ -106,6 +106,15 @@ export const infiniteWell: Formula = {
             },
         ],
     },
+    getInsight: (vars) => {
+        const E = vars['E']
+        const n = Math.round(vars['n'] ?? 1)
+        if (n === 1 && E < 0.5) return { ko: '바닥상태의 낮은 에너지야', en: 'Low energy ground state' }
+        if (E < 1) return { ko: '적외선 정도의 에너지야', en: 'Infrared level energy' }
+        if (E < 3) return { ko: '가시광선 정도의 에너지야', en: 'Visible light level energy' }
+        if (E < 5) return { ko: '자외선 정도의 에너지야', en: 'Ultraviolet level energy' }
+        return { ko: 'X선급 높은 에너지!', en: 'X-ray level high energy!' }
+    },
     discoveries: [
         {
             id: 'narrow-well',

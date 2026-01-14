@@ -118,4 +118,12 @@ export const entropy: Formula = {
             condition: (vars) => vars['T'] >= 500,
         },
     ],
+    getInsight: (vars) => {
+        const dS = vars['ΔS']
+        if (dS < 1) return { ko: '질서가 거의 유지돼', en: 'Order mostly maintained' }
+        if (dS < 2) return { ko: '약간의 무질서 증가', en: 'Slight increase in disorder' }
+        if (dS < 4) return { ko: '무질서가 증가하고 있어', en: 'Disorder is increasing' }
+        if (dS < 6) return { ko: '꽤 무질서해지고 있어!', en: 'Getting quite disordered!' }
+        return { ko: '엄청난 엔트로피 증가!', en: 'Massive entropy increase!' }
+    },
 }

@@ -141,4 +141,12 @@ export const gravity: Formula = {
             condition: (vars) => vars.m1 >= 90 && vars.m2 >= 45,
         },
     ],
+    getInsight: (vars) => {
+        const F = vars['F']
+        if (F < 10) return { ko: '미세한 중력이야', en: 'Tiny gravitational pull' }
+        if (F < 50) return { ko: '작은 위성의 중력 정도야', en: 'Like a small moon\'s gravity' }
+        if (F < 200) return { ko: '지구-달 중력 수준이야', en: 'Earth-Moon level gravity' }
+        if (F < 500) return { ko: '행성급 중력이야!', en: 'Planetary-level gravity!' }
+        return { ko: '항성급 강력한 중력!', en: 'Stellar-level strong gravity!' }
+    },
 }

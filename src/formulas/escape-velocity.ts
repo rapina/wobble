@@ -115,6 +115,15 @@ export const escapeVelocity: Formula = {
             },
         ],
     },
+    getInsight: (vars) => {
+        const v = vars['v']
+        if (v < 3) return { ko: '달 정도의 탈출속도야', en: 'Escape velocity like the Moon' }
+        if (v < 8) return { ko: '화성 정도의 탈출속도야', en: 'Escape velocity like Mars' }
+        if (v < 15) return { ko: '지구 정도의 탈출속도야', en: 'Escape velocity like Earth' }
+        if (v < 40) return { ko: '가스 행성 정도의 탈출속도야', en: 'Gas giant level escape velocity' }
+        if (v < 100) return { ko: '태양 정도의 탈출속도야', en: 'Sun level escape velocity' }
+        return { ko: '중성자별급! 광속에 가까워', en: 'Neutron star level! Close to light speed' }
+    },
     discoveries: [
         {
             id: 'earth-escape',

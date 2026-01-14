@@ -112,4 +112,13 @@ export const electricPower: Formula = {
             condition: (vars) => vars['V'] * vars['I'] >= 3000,
         },
     ],
+    getInsight: (vars) => {
+        const P = vars['P']
+        if (P < 10) return { ko: 'LED 전구 하나 정도야', en: 'Like one LED bulb' }
+        if (P < 100) return { ko: '노트북 충전기 정도야', en: 'Like a laptop charger' }
+        if (P < 500) return { ko: '선풍기 정도야', en: 'Like a fan' }
+        if (P < 1500) return { ko: '전자레인지 정도야', en: 'Like a microwave' }
+        if (P < 3000) return { ko: '에어컨 정도야', en: 'Like an air conditioner' }
+        return { ko: '전기차 충전기급!', en: 'EV charger level!' }
+    },
 }

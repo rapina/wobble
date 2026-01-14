@@ -116,4 +116,13 @@ export const freeFall: Formula = {
             condition: (vars) => vars['g'] >= 24,
         },
     ],
+    getInsight: (vars) => {
+        const h = vars['h']
+        if (h < 5) return { ko: '2층 높이 정도야', en: 'About 2 stories high' }
+        if (h < 20) return { ko: '5층 건물 높이야', en: 'Like a 5-story building' }
+        if (h < 50) return { ko: '10층 아파트 높이야', en: 'Like a 10-story apartment' }
+        if (h < 150) return { ko: '자유의 여신상 높이야!', en: 'Statue of Liberty height!' }
+        if (h < 300) return { ko: '에펠탑 높이야!', en: 'Eiffel Tower height!' }
+        return { ko: '스카이다이빙 높이야!', en: 'Skydiving height!' }
+    },
 }

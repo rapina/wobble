@@ -99,6 +99,14 @@ export const stefanBoltzmann: Formula = {
             { type: 'text', value: '²' },
         ],
     },
+    getInsight: (vars) => {
+        const P = vars['P']
+        if (P < 1000) return { ko: '촛불 정도의 복사 에너지야', en: 'Candle level radiant energy' }
+        if (P < 10000) return { ko: '전구 정도의 복사 에너지야', en: 'Light bulb level radiant energy' }
+        if (P < 50000) return { ko: '히터 정도의 복사 에너지야', en: 'Heater level radiant energy' }
+        if (P < 200000) return { ko: '용광로 정도의 복사 에너지야', en: 'Furnace level radiant energy' }
+        return { ko: '태양급 복사 에너지!', en: 'Sun level radiant energy!' }
+    },
     discoveries: [
         {
             id: 'sun-temperature',

@@ -119,4 +119,12 @@ export const pressure: Formula = {
             condition: (vars) => vars['A'] >= 90,
         },
     ],
+    getInsight: (vars) => {
+        const P = vars['P']
+        if (P < 50) return { ko: '손바닥으로 누르는 정도야', en: 'Like pressing with palm' }
+        if (P < 200) return { ko: '손가락으로 누르는 힘이야', en: 'Like pressing with finger' }
+        if (P < 500) return { ko: '볼펜 끝 압력이야', en: 'Ballpoint pen tip pressure' }
+        if (P < 1000) return { ko: '압정 끝 압력이야!', en: 'Thumbtack tip pressure!' }
+        return { ko: '칼날 수준의 압력!', en: 'Knife blade level pressure!' }
+    },
 }

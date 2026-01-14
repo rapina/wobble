@@ -129,4 +129,12 @@ export const heat: Formula = {
             condition: (vars) => vars['c'] <= 600,
         },
     ],
+    getInsight: (vars) => {
+        const Q = vars['Q']
+        if (Q < 10) return { ko: '커피 한 잔 식히는 열량이야', en: 'Heat to cool a cup of coffee' }
+        if (Q < 50) return { ko: '샤워할 물 데우는 열량이야', en: 'Heat for shower water' }
+        if (Q < 200) return { ko: '냄비 물 끓이는 열량이야', en: 'Heat to boil a pot' }
+        if (Q < 500) return { ko: '욕조 물 데우는 열량이야', en: 'Heat for a bathtub' }
+        return { ko: '수영장 데우는 열량이야!', en: 'Pool heating level!' }
+    },
 }

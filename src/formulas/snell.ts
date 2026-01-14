@@ -171,4 +171,12 @@ export const snell: Formula = {
             condition: (vars) => vars['n₂'] >= 2,
         },
     ],
+    getInsight: (vars) => {
+        const theta2 = vars['θ₂']
+        if (theta2 >= 90) return { ko: '전반사! 빛이 완전히 반사돼', en: 'Total reflection! Light bounces back' }
+        if (theta2 < 10) return { ko: '빛이 거의 직진해', en: 'Light goes almost straight' }
+        if (theta2 < 30) return { ko: '빛이 살짝 꺾여', en: 'Light bends slightly' }
+        if (theta2 < 50) return { ko: '빛이 많이 꺾여', en: 'Light bends noticeably' }
+        return { ko: '빛이 크게 굴절해!', en: 'Light refracts significantly!' }
+    },
 }

@@ -112,4 +112,12 @@ export const hooke: Formula = {
             condition: (vars) => vars['x'] >= 1.8,
         },
     ],
+    getInsight: (vars) => {
+        const F = vars['F']
+        if (F < 5) return { ko: '고무줄 살짝 당기는 힘이야', en: 'Lightly pulling a rubber band' }
+        if (F < 20) return { ko: '문구용 스프링 정도야', en: 'Like an office spring' }
+        if (F < 50) return { ko: '볼펜 스프링 정도야', en: 'Like a pen spring' }
+        if (F < 100) return { ko: '침대 스프링 정도야', en: 'Like a bed spring' }
+        return { ko: '트램폴린 스프링급 힘!', en: 'Trampoline spring level force!' }
+    },
 }

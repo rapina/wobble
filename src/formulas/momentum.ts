@@ -112,4 +112,13 @@ export const momentum: Formula = {
             condition: (vars) => vars['m'] <= 10 && vars['v'] >= 18,
         },
     ],
+    getInsight: (vars) => {
+        const p = vars['p']
+        if (p < 5) return { ko: '걷는 개미의 운동량이야', en: 'Momentum of a walking ant' }
+        if (p < 20) return { ko: '던진 야구공 정도야', en: 'Like a thrown baseball' }
+        if (p < 100) return { ko: '달리는 사람의 운동량이야', en: "A running person's momentum" }
+        if (p < 300) return { ko: '자전거 타는 사람 정도야', en: 'Like a cyclist' }
+        if (p < 600) return { ko: '달리는 사슴의 운동량이야', en: "A running deer's momentum" }
+        return { ko: '오토바이급 운동량이야!', en: 'Motorcycle-level momentum!' }
+    },
 }

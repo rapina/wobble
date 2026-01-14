@@ -112,4 +112,13 @@ export const ohm: Formula = {
             condition: (vars) => vars['I'] >= 8,
         },
     ],
+    getInsight: (vars) => {
+        const V = vars['V']
+        if (V < 5) return { ko: 'USB 충전기 정도야', en: 'Like a USB charger' }
+        if (V < 15) return { ko: '자동차 배터리 정도야', en: 'Like a car battery' }
+        if (V < 50) return { ko: '저전압 전원이야', en: 'Low voltage power' }
+        if (V < 120) return { ko: '미국 가정용 전압이야', en: 'US household voltage' }
+        if (V < 250) return { ko: '한국 가정용 전압이야', en: 'Korean household voltage' }
+        return { ko: '산업용 고전압이야!', en: 'Industrial high voltage!' }
+    },
 }

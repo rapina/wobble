@@ -10,6 +10,7 @@ interface PixiCanvasProps {
     variables: Record<string, number>
     width?: number | string
     height?: number | string
+    paused?: boolean
 }
 
 export interface PixiCanvasHandle {
@@ -21,7 +22,7 @@ export interface PixiCanvasHandle {
 }
 
 export const PixiCanvas = forwardRef<PixiCanvasHandle, PixiCanvasProps>(function PixiCanvas(
-    { formulaId, variables, width = '100%', height = '100%' },
+    { formulaId, variables, width = '100%', height = '100%', paused = false },
     ref
 ) {
     const containerRef = useRef<HTMLDivElement>(null)
@@ -123,6 +124,17 @@ export const PixiCanvas = forwardRef<PixiCanvasHandle, PixiCanvasProps>(function
             }
         }
     }, [variables])
+
+    // Pause/resume ticker based on paused prop
+    useEffect(() => {
+        if (!app) return
+
+        if (paused) {
+            app.ticker.stop()
+        } else {
+            app.ticker.start()
+        }
+    }, [app, paused])
 
     return (
         <div

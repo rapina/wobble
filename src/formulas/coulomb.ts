@@ -148,4 +148,12 @@ export const coulomb: Formula = {
             condition: (vars) => vars['q₁'] >= 80 && vars['q₂'] >= 80,
         },
     ],
+    getInsight: (vars) => {
+        const F = vars['F']
+        if (F < 1) return { ko: '정전기 정도의 약한 힘이야', en: 'Weak like static electricity' }
+        if (F < 10) return { ko: '머리카락 끌어당기는 힘이야', en: 'Hair-attracting force' }
+        if (F < 100) return { ko: '풍선 정전기 정도야', en: 'Like balloon static' }
+        if (F < 500) return { ko: '상당한 전기력이야', en: 'Significant electric force' }
+        return { ko: '번개급 강력한 전기력!', en: 'Lightning-level electric force!' }
+    },
 }

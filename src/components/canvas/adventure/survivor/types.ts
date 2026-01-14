@@ -168,6 +168,12 @@ export interface Projectile {
     maxPierces: number // 최대 관통 가능 횟수
     hitEnemyIds: Set<number> // 이미 맞춘 적 ID (중복 히트 방지)
     scale: number // 현재 크기 배율 (튕길수록 감소)
+    homingTurnRate?: number // 유도 회전율 (라디안/초)
+    // Elastic return properties
+    originX?: number // Origin point for return calculation
+    originY?: number
+    returning?: boolean // Is projectile returning to origin
+    returnDamageMultiplier?: number // Damage multiplier when returning
 }
 
 export interface Enemy {
@@ -228,6 +234,42 @@ export interface PlayerStats {
     shockwaveRadius: number
     shockwaveKnockback: number
 
+    // === NEW SKILLS ===
+
+    // Elastic Return - projectiles return like spring
+    returnDistance: number // Max distance before return, 0 = disabled
+    returnDamageMultiplier: number
+
+    // Magnetic Shield - deflects enemy movement
+    shieldRadius: number // 0 = disabled
+    deflectionStrength: number
+
+    // Static Repulsion - constant push aura
+    repulsionRadius: number // 0 = disabled
+    repulsionForce: number
+
+    // Buoyant Bomb - float then drop
+    floatDuration: number // 0 = disabled
+    dropRadius: number
+    dropDamage: number
+
+    // Quantum Tunnel - phase through enemies
+    tunnelChance: number // 0-1, 0 = disabled
+    tunnelDamageBonus: number
+
+    // Pendulum Rhythm - oscillating damage
+    rhythmPeriod: number // 0 = disabled
+    peakDamageBonus: number
+
+    // Torque Slash - spinning blade aura
+    slashRadius: number // 0 = disabled
+    slashDamage: number
+    slashSpeed: number
+
+    // Time Warp - slow nearby enemies
+    warpRadius: number // 0 = disabled
+    slowFactor: number
+
     // Passive-derived stats
     damageReduction: number // 0-1, damage reduction percentage
     critChance: number // 0-1, chance to crit
@@ -258,6 +300,26 @@ export const DEFAULT_PLAYER_STATS: PlayerStats = {
     shockwaveInterval: 0,
     shockwaveRadius: 0,
     shockwaveKnockback: 0,
+
+    // New skills defaults
+    returnDistance: 0,
+    returnDamageMultiplier: 0,
+    shieldRadius: 0,
+    deflectionStrength: 0,
+    repulsionRadius: 0,
+    repulsionForce: 0,
+    floatDuration: 0,
+    dropRadius: 0,
+    dropDamage: 0,
+    tunnelChance: 0,
+    tunnelDamageBonus: 0,
+    rhythmPeriod: 0,
+    peakDamageBonus: 0,
+    slashRadius: 0,
+    slashDamage: 0,
+    slashSpeed: 0,
+    warpRadius: 0,
+    slowFactor: 0,
 
     damageReduction: 0,
     critChance: 0,

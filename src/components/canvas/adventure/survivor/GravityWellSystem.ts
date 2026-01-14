@@ -172,7 +172,7 @@ export class GravityWellSystem {
     /**
      * Get player speed multiplier based on proximity to gravity wells
      * Player can escape but moves slower near wells
-     * Returns a value between 0.3 (very close) and 1.0 (outside range)
+     * Returns a value between 0.6 (very close) and 1.0 (outside range)
      */
     getPlayerSpeedMultiplier(playerX: number, playerY: number): number {
         if (!this.isActive) return 1.0
@@ -192,14 +192,15 @@ export class GravityWellSystem {
             }
         }
 
-        // Speed ranges from 1.0 (no slowdown) to 0.3 (max slowdown near center)
-        return 1.0 - maxSlowdown * 0.7
+        // Speed ranges from 1.0 (no slowdown) to 0.6 (max slowdown near center)
+        // Player should always be able to escape with effort
+        return 1.0 - maxSlowdown * 0.4
     }
 
     /**
      * Apply drift toward nearest well
-     * - Strong enough to pull idle player toward center
-     * - Weak enough that moving player can escape
+     * - Noticeable pull that affects idle player
+     * - Moving player can always escape with effort
      * Returns velocity nudge
      */
     applyPlayerDrift(playerX: number, playerY: number, deltaSeconds: number): { dvx: number; dvy: number } {
@@ -214,9 +215,9 @@ export class GravityWellSystem {
             const dist = Math.sqrt(dx * dx + dy * dy)
 
             if (dist < well.pullRadius && dist > well.radius) {
-                // Noticeable drift - pulls idle player, but escapable when moving
+                // Gentle drift - noticeable but always escapable
                 const normalizedDist = (dist - well.radius) / (well.pullRadius - well.radius)
-                const driftStrength = (1 - normalizedDist) * 0.5 // Noticeable pull
+                const driftStrength = (1 - normalizedDist) * 0.15 // Reduced from 0.5
 
                 dvx += (dx / dist) * driftStrength * deltaSeconds * 60
                 dvy += (dy / dist) * driftStrength * deltaSeconds * 60

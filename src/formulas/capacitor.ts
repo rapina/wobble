@@ -116,4 +116,12 @@ export const capacitor: Formula = {
             condition: (vars) => vars['C'] >= 8,
         },
     ],
+    getInsight: (vars) => {
+        const E = vars['E']
+        if (E < 5) return { ko: 'LED 전구 잠깐 켜는 에너지야', en: 'Energy to flash an LED briefly' }
+        if (E < 20) return { ko: '카메라 플래시 정도야', en: 'Like a camera flash' }
+        if (E < 100) return { ko: '제세동기 충격 정도야', en: 'Like a defibrillator shock' }
+        if (E < 300) return { ko: '전기차 회생제동 에너지야', en: 'EV regenerative braking energy' }
+        return { ko: '산업용 축전기급 에너지!', en: 'Industrial capacitor energy!' }
+    },
 }

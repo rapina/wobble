@@ -13,6 +13,7 @@ interface FormulaLayoutProps {
     values: Record<string, number>
     selectedCard: string | null
     onSelectCard: (symbol: string | null) => void
+    highlightedSymbols?: string[] // Symbols to highlight for challenges
 }
 
 export function FormulaLayout({
@@ -21,49 +22,89 @@ export function FormulaLayout({
     values,
     selectedCard,
     onSelectCard,
+    highlightedSymbols = [],
 }: FormulaLayoutProps) {
+    const isHighlighted = (symbol: string) => highlightedSymbols.includes(symbol)
     const getVariable = (symbol: string) => variables.find((v) => v.symbol === symbol)
     const outputVar = getVariable(displayLayout.output)
 
     const renderCard = (symbol: string, showSquare?: boolean, compact?: boolean) => {
         const variable = getVariable(symbol)
         if (!variable) return null
+        const highlighted = isHighlighted(symbol)
 
         if (variable.role === 'output') {
             return (
-                <OutputCard
+                <div
                     key={symbol}
-                    variables={[
-                        {
-                            symbol: showSquare ? `${variable.symbol}` : variable.symbol,
-                            name: variable.name,
-                            unit: variable.unit,
-                            color: variable.visual.color,
-                        },
-                    ]}
-                    values={values}
-                    compact={compact}
-                />
+                    className={highlighted ? 'relative' : ''}
+                    style={highlighted ? {
+                        animation: 'challenge-pulse 1.5s ease-in-out infinite',
+                    } : undefined}
+                >
+                    {highlighted && (
+                        <div
+                            className="absolute -inset-1 rounded-xl opacity-60"
+                            style={{
+                                background: 'linear-gradient(135deg, #f59e0b, #fbbf24)',
+                                filter: 'blur(4px)',
+                                animation: 'challenge-glow 1.5s ease-in-out infinite',
+                            }}
+                        />
+                    )}
+                    <div className="relative">
+                        <OutputCard
+                            variables={[
+                                {
+                                    symbol: showSquare ? `${variable.symbol}` : variable.symbol,
+                                    name: variable.name,
+                                    unit: variable.unit,
+                                    color: variable.visual.color,
+                                },
+                            ]}
+                            values={values}
+                            compact={compact}
+                        />
+                    </div>
+                </div>
             )
         }
 
         return (
-            <div key={symbol} className="relative">
-                <ParameterCard
-                    symbol={variable.symbol}
-                    name={variable.name}
-                    value={values[variable.symbol] ?? variable.default}
-                    unit={variable.unit}
-                    color={variable.visual.color}
-                    isSelected={selectedCard === variable.symbol}
-                    onSelect={() =>
-                        onSelectCard(selectedCard === variable.symbol ? null : variable.symbol)
-                    }
-                    compact={compact}
-                />
+            <div
+                key={symbol}
+                className="relative"
+                style={highlighted ? {
+                    animation: 'challenge-pulse 1.5s ease-in-out infinite',
+                } : undefined}
+            >
+                {highlighted && (
+                    <div
+                        className="absolute -inset-1 rounded-xl opacity-60"
+                        style={{
+                            background: 'linear-gradient(135deg, #f59e0b, #fbbf24)',
+                            filter: 'blur(4px)',
+                            animation: 'challenge-glow 1.5s ease-in-out infinite',
+                        }}
+                    />
+                )}
+                <div className="relative">
+                    <ParameterCard
+                        symbol={variable.symbol}
+                        name={variable.name}
+                        value={values[variable.symbol] ?? variable.default}
+                        unit={variable.unit}
+                        color={variable.visual.color}
+                        isSelected={selectedCard === variable.symbol}
+                        onSelect={() =>
+                            onSelectCard(selectedCard === variable.symbol ? null : variable.symbol)
+                        }
+                        compact={compact}
+                    />
+                </div>
                 {showSquare && (
                     <span
-                        className="absolute -top-1 -right-1 text-xs font-black"
+                        className="absolute -top-1 -right-1 text-xs font-black z-10"
                         style={{ color: theme.gold }}
                     >
                         2

@@ -138,4 +138,12 @@ export const centripetal: Formula = {
             condition: (vars) => vars['r'] >= 9,
         },
     ],
+    getInsight: (vars) => {
+        const F = vars['F']
+        if (F < 10) return { ko: '요요 돌리는 힘 정도야', en: 'Like spinning a yo-yo' }
+        if (F < 50) return { ko: '줄에 공 돌리는 힘이야', en: 'Like spinning a ball on string' }
+        if (F < 150) return { ko: '회전목마의 힘이야', en: 'Like a carousel' }
+        if (F < 300) return { ko: '자동차 커브 도는 힘이야', en: 'Car turning a curve' }
+        return { ko: '롤러코스터급 힘이야!', en: 'Roller coaster level force!' }
+    },
 }

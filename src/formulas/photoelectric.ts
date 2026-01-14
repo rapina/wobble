@@ -104,6 +104,17 @@ export const photoelectric: Formula = {
             { type: 'var', symbol: 'W' },
         ],
     },
+    getInsight: (vars) => {
+        const Ek = vars['Ek']
+        const f = vars['f'] ?? 7
+        const W = vars['W'] ?? 2.3
+        const h = 0.4136
+        if (h * f < W) return { ko: '문턱 이하! 전자가 방출되지 않아', en: 'Below threshold! No electron emission' }
+        if (Ek < 0.5) return { ko: '느린 전자가 방출됐어', en: 'Slow electrons emitted' }
+        if (Ek < 1.5) return { ko: '태양전지 수준의 전자 에너지야', en: 'Solar cell level electron energy' }
+        if (Ek < 3) return { ko: '가시광선급 광전자야', en: 'Visible light level photoelectron' }
+        return { ko: '고에너지 광전자! 자외선급이야', en: 'High energy photoelectron! UV level' }
+    },
     discoveries: [
         {
             id: 'threshold-frequency',

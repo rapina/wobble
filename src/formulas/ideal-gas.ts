@@ -143,4 +143,13 @@ export const idealGas: Formula = {
             condition: (vars) => vars['T'] <= 220,
         },
     ],
+    getInsight: (vars) => {
+        const P = vars['P']
+        if (P < 50) return { ko: '진공에 가까운 저압이야', en: 'Near-vacuum low pressure' }
+        if (P < 100) return { ko: '대기압보다 낮아', en: 'Below atmospheric pressure' }
+        if (P < 150) return { ko: '대기압 근처야', en: 'Near atmospheric pressure' }
+        if (P < 250) return { ko: '자전거 타이어 압력 정도야', en: 'Like a bike tire pressure' }
+        if (P < 400) return { ko: '자동차 타이어 압력이야', en: 'Like a car tire pressure' }
+        return { ko: '압력밥솥 수준이야!', en: 'Pressure cooker level!' }
+    },
 }

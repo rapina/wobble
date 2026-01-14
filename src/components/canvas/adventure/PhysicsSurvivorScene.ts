@@ -73,6 +73,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
     // Shockwave skill timer
     private shockwaveTimer = 0
 
+    // New skill timers and state
+    private pendulumPhase = 0 // Current phase of pendulum rhythm (radians)
+    private pendulumDamageMultiplier = 1 // Current damage multiplier from pendulum rhythm
+    private slashAngle = 0 // Current rotation of torque slash
+    private slashHitCooldowns: Map<number, number> = new Map() // Enemy ID -> cooldown
+
     // Passive state tracking
     private momentumSpeedBonus = 0
     private consecutiveHits = 0
@@ -595,6 +601,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.stats.fireRateMultiplier *= skillStats.fireRateMultiplier
         this.stats.knockbackMultiplier *= skillStats.knockbackMultiplier
 
+        // Original skills
         this.stats.bounceCount = skillStats.bounceCount
         this.stats.piercingCount = skillStats.pierceCount
         this.stats.pierceDamageDecay = skillStats.pierceDamageDecay
@@ -605,6 +612,26 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.stats.shockwaveInterval = skillStats.shockwaveInterval
         this.stats.shockwaveRadius = skillStats.shockwaveRadius
         this.stats.shockwaveKnockback = skillStats.shockwaveKnockback
+
+        // New skills
+        this.stats.returnDistance = skillStats.returnDistance
+        this.stats.returnDamageMultiplier = skillStats.returnDamageMultiplier
+        this.stats.shieldRadius = skillStats.shieldRadius
+        this.stats.deflectionStrength = skillStats.deflectionStrength
+        this.stats.repulsionRadius = skillStats.repulsionRadius
+        this.stats.repulsionForce = skillStats.repulsionForce
+        this.stats.floatDuration = skillStats.floatDuration
+        this.stats.dropRadius = skillStats.dropRadius
+        this.stats.dropDamage = skillStats.dropDamage
+        this.stats.tunnelChance = skillStats.tunnelChance
+        this.stats.tunnelDamageBonus = skillStats.tunnelDamageBonus
+        this.stats.rhythmPeriod = skillStats.rhythmPeriod
+        this.stats.peakDamageBonus = skillStats.peakDamageBonus
+        this.stats.slashRadius = skillStats.slashRadius
+        this.stats.slashDamage = skillStats.slashDamage
+        this.stats.slashSpeed = skillStats.slashSpeed
+        this.stats.warpRadius = skillStats.warpRadius
+        this.stats.slowFactor = skillStats.slowFactor
 
         this.applyPassiveToStats()
     }
@@ -644,11 +671,16 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     private fireProjectile(): void {
-        this.projectileSystem.fire(this.playerX, this.playerY, this.enemySystem.enemies, this.stats)
+        // Apply pendulum rhythm damage multiplier
+        const effectiveStats = {
+            ...this.stats,
+            damageMultiplier: this.stats.damageMultiplier * this.pendulumDamageMultiplier,
+        }
+        this.projectileSystem.fire(this.playerX, this.playerY, this.enemySystem.enemies, effectiveStats)
     }
 
     private updateProjectiles(delta: number): void {
-        this.projectileSystem.update(delta, this.enemySystem.enemies)
+        this.projectileSystem.update(delta, this.enemySystem.enemies, this.stats)
 
         this.projectileSystem.checkCollisions(
             this.enemySystem.enemies,
@@ -961,6 +993,272 @@ export class PhysicsSurvivorScene extends AdventureScene {
         }
     }
 
+    /**
+     * Update shockwave skill (원심력 펄스)
+     */
+    private updateShockwave(deltaSeconds: number): void {
+        // Check if shockwave skill is active
+        if (this.stats.shockwaveInterval <= 0) return
+
+        this.shockwaveTimer += deltaSeconds
+
+        if (this.shockwaveTimer >= this.stats.shockwaveInterval) {
+            this.shockwaveTimer = 0
+            this.triggerShockwave()
+        }
+    }
+
+    /**
+     * Trigger shockwave effect - pushes enemies away from player
+     */
+    private triggerShockwave(): void {
+        const radius = this.stats.shockwaveRadius
+        const knockback = this.stats.shockwaveKnockback
+
+        // Visual effect - expanding ring
+        const ring = new Graphics()
+        ring.circle(0, 0, 10)
+        ring.stroke({ color: 0x2ecc71, width: 4, alpha: 0.8 })
+        ring.position.set(this.playerX, this.playerY)
+        this.effectContainer.addChild(ring)
+
+        // Animate ring expansion
+        let ringRadius = 10
+        const expandSpeed = radius * 4 // Expand to full radius in 0.25 seconds
+        const ringUpdate = () => {
+            ringRadius += expandSpeed / 60
+            const progress = ringRadius / radius
+
+            if (progress >= 1) {
+                this.effectContainer.removeChild(ring)
+                ring.destroy()
+                return
+            }
+
+            ring.clear()
+            ring.circle(0, 0, ringRadius)
+            ring.stroke({
+                color: 0x2ecc71,
+                width: 4 * (1 - progress),
+                alpha: 0.8 * (1 - progress)
+            })
+
+            requestAnimationFrame(ringUpdate)
+        }
+        requestAnimationFrame(ringUpdate)
+
+        // Apply knockback to enemies within radius
+        let hitCount = 0
+        for (const enemy of this.enemySystem.enemies) {
+            const dx = enemy.x - this.playerX
+            const dy = enemy.y - this.playerY
+            const dist = Math.sqrt(dx * dx + dy * dy)
+
+            if (dist < radius && dist > 0) {
+                // Knockback force decreases with distance
+                const distFactor = 1 - (dist / radius)
+                const force = knockback * distFactor / Math.sqrt(enemy.mass)
+
+                // Push away from player
+                const nx = dx / dist
+                const ny = dy / dist
+                enemy.vx += nx * force * 0.1
+                enemy.vy += ny * force * 0.1
+
+                // Small damage
+                const damage = 5 * distFactor * this.stats.damageMultiplier
+                enemy.health -= damage
+                hitCount++
+
+                // Visual feedback
+                if (enemy.wobble) {
+                    this.impactSystem.addScalePunch(enemy.wobble, 0.2, 0.1)
+                }
+            }
+        }
+
+        // Screen shake based on hit count
+        if (hitCount > 0) {
+            this.triggerShake(3 + hitCount * 0.5, 0.15)
+            this.damageTextSystem.spawnCustom(
+                this.playerX,
+                this.playerY - 40,
+                `PULSE!`,
+                'combo'
+            )
+        }
+    }
+
+    // ============================================
+    // NEW SKILL UPDATE METHODS
+    // ============================================
+
+    /**
+     * Pendulum Rhythm - damage oscillates over time
+     * Updates the pendulumDamageMultiplier based on rhythm phase
+     */
+    private updatePendulumRhythm(deltaSeconds: number): void {
+        if (this.stats.rhythmPeriod <= 0) {
+            this.pendulumDamageMultiplier = 1
+            return
+        }
+
+        // Update phase (full cycle = 2π)
+        const angularSpeed = (2 * Math.PI) / this.stats.rhythmPeriod
+        this.pendulumPhase += angularSpeed * deltaSeconds
+        if (this.pendulumPhase > Math.PI * 2) {
+            this.pendulumPhase -= Math.PI * 2
+        }
+
+        // Damage multiplier: 1 at trough, 1 + peakDamageBonus at peak
+        // Using (1 + cos) / 2 to get 0-1 range, then scale
+        const rhythmValue = (1 + Math.cos(this.pendulumPhase)) / 2
+        this.pendulumDamageMultiplier = 1 + this.stats.peakDamageBonus * rhythmValue
+    }
+
+    /**
+     * Static Repulsion - constant push aura (like Coulomb's law)
+     * Pushes enemies away from player continuously
+     */
+    private updateStaticRepulsion(deltaSeconds: number): void {
+        if (this.stats.repulsionRadius <= 0) return
+
+        for (const enemy of this.enemySystem.enemies) {
+            const dx = enemy.x - this.playerX
+            const dy = enemy.y - this.playerY
+            const dist = Math.sqrt(dx * dx + dy * dy)
+
+            if (dist < this.stats.repulsionRadius && dist > 10) {
+                // Coulomb-like force: stronger when closer (1/r²)
+                const normalizedDist = dist / this.stats.repulsionRadius
+                const forceFactor = 1 / (normalizedDist * normalizedDist + 0.1)
+                const force = this.stats.repulsionForce * forceFactor * deltaSeconds
+
+                // Apply force away from player
+                const nx = dx / dist
+                const ny = dy / dist
+                enemy.vx += nx * force / Math.sqrt(enemy.mass)
+                enemy.vy += ny * force / Math.sqrt(enemy.mass)
+            }
+        }
+    }
+
+    /**
+     * Time Warp - slow enemies within radius
+     */
+    private updateTimeWarp(deltaSeconds: number): void {
+        if (this.stats.warpRadius <= 0) return
+
+        for (const enemy of this.enemySystem.enemies) {
+            const dx = enemy.x - this.playerX
+            const dy = enemy.y - this.playerY
+            const dist = Math.sqrt(dx * dx + dy * dy)
+
+            if (dist < this.stats.warpRadius) {
+                // Slow enemy speed
+                const slowAmount = this.stats.slowFactor
+                enemy.speed = enemy.speed * (1 - slowAmount * deltaSeconds * 2)
+                // Minimum speed floor
+                const baseSpeed = 1.0
+                if (enemy.speed < baseSpeed * 0.3) {
+                    enemy.speed = baseSpeed * 0.3
+                }
+            }
+        }
+    }
+
+    /**
+     * Magnetic Shield - deflects enemy movement direction
+     */
+    private updateMagneticShield(deltaSeconds: number): void {
+        if (this.stats.shieldRadius <= 0) return
+
+        for (const enemy of this.enemySystem.enemies) {
+            const dx = enemy.x - this.playerX
+            const dy = enemy.y - this.playerY
+            const dist = Math.sqrt(dx * dx + dy * dy)
+
+            if (dist < this.stats.shieldRadius && dist > 20) {
+                // Calculate tangent direction (perpendicular to radius)
+                const nx = dx / dist
+                const ny = dy / dist
+                const tx = -ny // Tangent (counterclockwise)
+                const ty = nx
+
+                // Current velocity toward player
+                const currentSpeed = Math.sqrt(enemy.vx * enemy.vx + enemy.vy * enemy.vy)
+                if (currentSpeed < 0.1) continue
+
+                // Determine which tangent direction to use (based on which side enemy approaches from)
+                const approachAngle = Math.atan2(enemy.vy, enemy.vx)
+                const radialAngle = Math.atan2(-dy, -dx)
+                let angleDiff = approachAngle - radialAngle
+                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2
+                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2
+
+                const tangentDir = angleDiff > 0 ? 1 : -1
+                const deflectX = tx * tangentDir
+                const deflectY = ty * tangentDir
+
+                // Apply deflection force
+                const deflectStrength = this.stats.deflectionStrength * deltaSeconds * 5
+                const normalizedDist = dist / this.stats.shieldRadius
+                const distFactor = 1 - normalizedDist
+
+                enemy.vx += deflectX * deflectStrength * currentSpeed * distFactor
+                enemy.vy += deflectY * deflectStrength * currentSpeed * distFactor
+            }
+        }
+    }
+
+    /**
+     * Torque Slash - spinning blade damages nearby enemies
+     */
+    private updateTorqueSlash(deltaSeconds: number): void {
+        if (this.stats.slashRadius <= 0) return
+
+        // Update rotation
+        this.slashAngle += this.stats.slashSpeed * Math.PI * 2 * deltaSeconds
+        if (this.slashAngle > Math.PI * 2) {
+            this.slashAngle -= Math.PI * 2
+        }
+
+        // Update cooldowns
+        for (const [enemyId, cooldown] of this.slashHitCooldowns) {
+            const newCooldown = cooldown - deltaSeconds
+            if (newCooldown <= 0) {
+                this.slashHitCooldowns.delete(enemyId)
+            } else {
+                this.slashHitCooldowns.set(enemyId, newCooldown)
+            }
+        }
+
+        // Check collision with enemies
+        for (const enemy of this.enemySystem.enemies) {
+            // Skip if on cooldown
+            if (this.slashHitCooldowns.has(enemy.id)) continue
+
+            const dx = enemy.x - this.playerX
+            const dy = enemy.y - this.playerY
+            const dist = Math.sqrt(dx * dx + dy * dy)
+
+            if (dist < this.stats.slashRadius + enemy.size / 2) {
+                // Hit!
+                enemy.health -= this.stats.slashDamage * this.stats.damageMultiplier
+                this.slashHitCooldowns.set(enemy.id, 0.3) // 0.3s cooldown
+
+                // Small knockback in blade direction
+                const bladeX = Math.cos(this.slashAngle)
+                const bladeY = Math.sin(this.slashAngle)
+                enemy.vx += bladeX * 3
+                enemy.vy += bladeY * 3
+
+                // Visual feedback
+                this.impactSystem.trigger(enemy.x, enemy.y, 'hit')
+            }
+        }
+    }
+
     private updatePlayer(delta: number): void {
         const input = this.joystick.getInput()
         let speed = this.playerBaseSpeed * this.stats.moveSpeedMultiplier
@@ -1204,6 +1502,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.momentumSpeedBonus = 0
         this.consecutiveHits = 0
         this.shockwaveTimer = 0
+        this.pendulumPhase = 0
+        this.pendulumDamageMultiplier = 1
+        this.slashAngle = 0
+        this.slashHitCooldowns.clear()
     }
 
     private applyCharacterStats(): void {
@@ -1359,6 +1661,15 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.updateProjectiles(delta)
         this.updateEnemiesAndMerges(delta, deltaSeconds)
         this.checkPlayerCollisions()
+        this.updateShockwave(deltaSeconds)
+
+        // New skill updates
+        this.updatePendulumRhythm(deltaSeconds)
+        this.updateStaticRepulsion(deltaSeconds)
+        this.updateTimeWarp(deltaSeconds)
+        this.updateMagneticShield(deltaSeconds)
+        this.updateTorqueSlash(deltaSeconds)
+
         this.effectsManager.update(delta)
         // PhysicsSkillVisuals disabled due to PixiJS Batcher conflicts
         // this.physicsSkillVisuals.update(delta)
@@ -1598,6 +1909,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.momentumSpeedBonus = 0
         this.consecutiveHits = 0
         this.shockwaveTimer = 0
+        this.pendulumPhase = 0
+        this.pendulumDamageMultiplier = 1
+        this.slashAngle = 0
+        this.slashHitCooldowns.clear()
         this.resetStats()
         this.fireTimer = 0
         this.spawnTimer = 0

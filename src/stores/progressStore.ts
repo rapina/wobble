@@ -162,6 +162,7 @@ export const lawToFormulaMap: Record<string, string[]> = {
 
 // Physics skill to formula mapping (survivor mode skills)
 export const skillToFormulaMap: Record<string, string[]> = {
+    // Original 8 skills
     'elastic-bounce': ['elastic-collision'],
     'momentum-pierce': ['momentum'],
     'pressure-wave': ['ideal-gas'],
@@ -170,6 +171,15 @@ export const skillToFormulaMap: Record<string, string[]> = {
     'gravity-pull': ['gravity'],
     'refraction-spread': ['snell'],
     'centripetal-pulse': ['centripetal'],
+    // New 8 skills
+    'elastic-return': ['hooke'],
+    'magnetic-shield': ['lorentz'],
+    'static-repulsion': ['coulomb'],
+    'buoyant-bomb': ['buoyancy'],
+    'quantum-tunnel': ['tunneling'],
+    'pendulum-rhythm': ['pendulum'],
+    'torque-slash': ['torque'],
+    'time-warp': ['time-dilation'],
 }
 
 // Check if a physics skill is unlocked based on studied formulas

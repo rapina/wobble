@@ -130,4 +130,12 @@ export const buoyancy: Formula = {
             condition: (vars) => vars['V'] >= 90,
         },
     ],
+    getInsight: (vars) => {
+        const F = vars['F']
+        if (F < 10) return { ko: '작은 장난감이 뜨는 힘이야', en: 'Force to float a small toy' }
+        if (F < 50) return { ko: '수박이 뜨는 힘 정도야', en: 'Force to float a watermelon' }
+        if (F < 100) return { ko: '어린이가 뜨는 부력이야', en: 'Buoyancy to float a child' }
+        if (F < 300) return { ko: '성인이 뜨는 부력이야', en: 'Buoyancy to float an adult' }
+        return { ko: '보트가 뜨는 부력이야!', en: 'Boat-floating buoyancy!' }
+    },
 }

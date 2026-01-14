@@ -114,4 +114,13 @@ export const kineticEnergy: Formula = {
             condition: (vars) => vars['v'] >= 18,
         },
     ],
+    getInsight: (vars) => {
+        const E = vars['E']
+        if (E < 1) return { ko: '날아가는 파리의 에너지야', en: 'Energy of a flying fly' }
+        if (E < 10) return { ko: '던진 공의 에너지 정도야', en: 'Like a thrown ball' }
+        if (E < 100) return { ko: '달리는 사람의 에너지야', en: "A running person's energy" }
+        if (E < 1000) return { ko: '자전거 타는 사람의 에너지야', en: "A cyclist's energy" }
+        if (E < 5000) return { ko: '달리는 오토바이의 에너지야', en: "A motorcycle's energy" }
+        return { ko: '달리는 자동차의 에너지야!', en: "A moving car's energy!" }
+    },
 }

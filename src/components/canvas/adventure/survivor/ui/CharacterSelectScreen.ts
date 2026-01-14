@@ -56,6 +56,9 @@ export class CharacterSelectScreen {
     private selectedSkills: string[] = []
     private readonly MAX_SKILLS = 5
 
+    // Focused skill for description display
+    private focusedSkillId: string | null = null
+
     // Drag and drop state
     private draggingSkillId: string | null = null
     private dragGhost: Container | null = null
@@ -183,6 +186,7 @@ export class CharacterSelectScreen {
         this.selectedCharacterIndex = 0
         this.selectedStageIndex = 0
         this.selectedSkills = []
+        this.focusedSkillId = null
         this.animPhase = 0
         this.previewParticles = []
     }
@@ -230,7 +234,7 @@ export class CharacterSelectScreen {
         this.previewParticles = []
 
         const previewWidth = this.width - 60
-        const previewHeight = 160
+        const previewHeight = 100
 
         switch (stage.id) {
             case 'normal':
@@ -320,7 +324,7 @@ export class CharacterSelectScreen {
 
         const stage = STAGES[this.selectedStageIndex]
         const previewWidth = this.width - 60
-        const previewHeight = 160
+        const previewHeight = 100
 
         // Use clear() - the Batcher issue was fixed in usePixiApp.ts
         this.stagePreviewGraphics.clear()
@@ -821,12 +825,14 @@ export class CharacterSelectScreen {
                 name.position.set(slotSize / 2, slotSize - 8)
                 slotContainer.addChild(name)
 
-                // Tap to remove from slot
+                // Tap to show description, double tap or hold to remove
                 slotContainer.eventMode = 'static'
                 slotContainer.cursor = 'pointer'
                 slotContainer.on('pointerdown', () => {
                     if (!this.isDragging) {
-                        this.removeSkillFromSlot(i)
+                        // Show skill description
+                        this.focusedSkillId = selectedSkillId!
+                        this.createUI()
                     }
                 })
             } else {
@@ -978,10 +984,10 @@ export class CharacterSelectScreen {
                 skillCard.addChild(checkText)
             }
 
-            // Store skill info for event handling
+            // Store skill info for event handling (all skills are clickable for description)
             skillCard.name = skillDef.id
             skillCard.eventMode = 'static'
-            skillCard.cursor = isUnlocked ? 'pointer' : 'default'
+            skillCard.cursor = 'pointer'
         })
 
         // Edge fade for vertical scroll
@@ -1056,8 +1062,10 @@ export class CharacterSelectScreen {
                 if (index < allSkills.length) {
                     const skillDef = allSkills[index]
                     const isUnlocked = isSkillUnlocked(skillDef.id, studiedFormulas)
+                    // Always set pointerStartSkillId for description display
+                    pointerStartSkillId = skillDef.id
+                    // Only allow dragging for unlocked skills
                     if (isUnlocked) {
-                        pointerStartSkillId = skillDef.id
                         this.draggingSkillId = skillDef.id
                         this.isDragging = false
                     }
@@ -1100,12 +1108,13 @@ export class CharacterSelectScreen {
         })
 
         gridWrapper.on('pointerup', (e) => {
-            if (this.draggingSkillId) {
-                if (this.isDragging) {
-                    this.handleDrop(e.global.x, e.global.y)
-                } else if (!isScrolling && pointerStartSkillId) {
-                    this.toggleSkillSelection(pointerStartSkillId)
-                }
+            // Handle drag drop for unlocked skills
+            if (this.draggingSkillId && this.isDragging) {
+                this.handleDrop(e.global.x, e.global.y)
+            }
+            // Handle tap on any skill (locked or unlocked) for description/selection
+            else if (!isScrolling && pointerStartSkillId) {
+                this.toggleSkillSelection(pointerStartSkillId)
             }
             this.cleanupDrag()
             scrollStartY = 0
@@ -1139,35 +1148,141 @@ export class CharacterSelectScreen {
             this.cleanupDrag()
         })
 
-        // ========== 4. PASSIVE SECTION ==========
-        const passiveSectionY = gridY + visibleHeight + 15
+        // ========== 4. SKILL DESCRIPTION SECTION ==========
+        const skillDescSectionY = gridY + visibleHeight + 10
+        const focusedSkill = this.focusedSkillId ? SKILL_DEFINITIONS[this.focusedSkillId] : null
+        const isFocusedSkillUnlocked = this.focusedSkillId
+            ? isSkillUnlocked(this.focusedSkillId, studiedFormulas)
+            : true
+        const skillDescHeight = focusedSkill && !isFocusedSkillUnlocked ? 62 : 50
+
+        // Skill description box
+        const skillDescContainer = new Container()
+        skillDescContainer.position.set(cardX + 15, skillDescSectionY)
+        this.screenContainer.addChild(skillDescContainer)
+
+        const descBoxWidth = cardWidth - 30
+        const descBoxHeight = skillDescHeight
+
+        // Background color based on lock status
+        const descBgColor = focusedSkill
+            ? isFocusedSkillUnlocked
+                ? focusedSkill.color
+                : 0x888888
+            : textMuted
+
+        const descBg = new Graphics()
+        descBg.roundRect(0, 0, descBoxWidth, descBoxHeight, 8)
+        descBg.fill({ color: descBgColor, alpha: 0.08 })
+        descBg.roundRect(0, 0, descBoxWidth, descBoxHeight, 8)
+        descBg.stroke({ color: descBgColor, width: 1, alpha: 0.2 })
+        skillDescContainer.addChild(descBg)
+
+        if (focusedSkill) {
+            // Skill icon and name
+            const skillIcon = new Text({
+                text: focusedSkill.icon,
+                style: new TextStyle({
+                    fontSize: 18,
+                    fill: isFocusedSkillUnlocked ? focusedSkill.color : 0x888888,
+                }),
+            })
+            skillIcon.anchor.set(0, 0.5)
+            skillIcon.position.set(12, 16)
+            skillDescContainer.addChild(skillIcon)
+
+            const skillName = new Text({
+                text: focusedSkill.nameKo,
+                style: new TextStyle({
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 11,
+                    fontWeight: 'bold',
+                    fill: isFocusedSkillUnlocked ? textDark : 0x666666,
+                }),
+            })
+            skillName.anchor.set(0, 0.5)
+            skillName.position.set(36, 16)
+            skillDescContainer.addChild(skillName)
+
+            // Lock icon for locked skills
+            if (!isFocusedSkillUnlocked) {
+                const lockIcon = new Text({
+                    text: '🔒',
+                    style: new TextStyle({ fontSize: 10 }),
+                })
+                lockIcon.anchor.set(0, 0.5)
+                lockIcon.position.set(skillName.x + skillName.width + 6, 16)
+                skillDescContainer.addChild(lockIcon)
+            }
+
+            // Skill description
+            const skillDesc = new Text({
+                text: focusedSkill.descriptionKo,
+                style: new TextStyle({
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 9,
+                    fill: textMuted,
+                    wordWrap: true,
+                    wordWrapWidth: descBoxWidth - 24,
+                }),
+            })
+            skillDesc.anchor.set(0, 0)
+            skillDesc.position.set(12, 28)
+            skillDescContainer.addChild(skillDesc)
+
+            // Unlock condition for locked skills
+            if (!isFocusedSkillUnlocked) {
+                const requiredFormulas = skillToFormulaMap[this.focusedSkillId!] || []
+                const formulaNames = requiredFormulas
+                    .map((fId) => {
+                        const f = getFormula(fId)
+                        return f ? f.name : fId
+                    })
+                    .join(', ')
+
+                const unlockText = new Text({
+                    text: `해금: "${formulaNames}" 공식 학습 필요`,
+                    style: new TextStyle({
+                        fontFamily: 'Arial, sans-serif',
+                        fontSize: 8,
+                        fill: 0xc75050,
+                        fontWeight: 'bold',
+                    }),
+                })
+                unlockText.anchor.set(0, 0)
+                unlockText.position.set(12, descBoxHeight - 14)
+                skillDescContainer.addChild(unlockText)
+            }
+        } else {
+            // Placeholder text
+            const placeholder = new Text({
+                text: '스킬을 선택하면 설명이 표시됩니다',
+                style: new TextStyle({
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 10,
+                    fill: textMuted,
+                }),
+            })
+            placeholder.anchor.set(0.5)
+            placeholder.position.set(descBoxWidth / 2, descBoxHeight / 2)
+            placeholder.alpha = 0.6
+            skillDescContainer.addChild(placeholder)
+        }
+
+        // ========== 5. PASSIVE SECTION ==========
+        const passiveSectionY = skillDescSectionY + skillDescHeight + 10
         const passiveDef = PASSIVE_DEFINITIONS[skillConfig.passive]
 
-        // Passive label
-        const passiveLabel = new Text({
-            text: 'PASSIVE',
-            style: new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 10,
-                fontWeight: 'bold',
-                fill: textMuted,
-                letterSpacing: 1,
-            }),
-        })
-        passiveLabel.anchor.set(0.5)
-        passiveLabel.position.set(this.centerX, passiveSectionY)
-        this.screenContainer.addChild(passiveLabel)
-
-        // Passive pill
-        const passivePillY = passiveSectionY + 18
+        // Passive pill (compact - no label)
+        const passivePillY = passiveSectionY
         if (passiveDef) {
             const passiveNameText = `${passiveDef.icon} ${passiveDef.nameKo}`
             const passivePillWidth = 120
 
             const passivePill = new Graphics()
-            passivePill.roundRect(this.centerX - passivePillWidth / 2, passivePillY, passivePillWidth, 28, 14)
+            passivePill.roundRect(this.centerX - passivePillWidth / 2, passivePillY, passivePillWidth, 26, 13)
             passivePill.fill({ color: passiveDef.color, alpha: 0.15 })
-            passivePill.roundRect(this.centerX - passivePillWidth / 2, passivePillY, passivePillWidth, 28, 14)
+            passivePill.roundRect(this.centerX - passivePillWidth / 2, passivePillY, passivePillWidth, 26, 13)
             passivePill.stroke({ color: passiveDef.color, width: 1.5, alpha: 0.6 })
             this.screenContainer.addChild(passivePill)
 
@@ -1175,49 +1290,34 @@ export class CharacterSelectScreen {
                 text: passiveNameText,
                 style: new TextStyle({
                     fontFamily: 'Arial, sans-serif',
-                    fontSize: 11,
+                    fontSize: 10,
                     fontWeight: 'bold',
                     fill: textDark,
                 }),
             })
             passiveText.anchor.set(0.5)
-            passiveText.position.set(this.centerX, passivePillY + 14)
+            passiveText.position.set(this.centerX, passivePillY + 13)
             this.screenContainer.addChild(passiveText)
-
-            // Passive description
-            const passiveDescY = passivePillY + 34
-            const passiveDesc = new Text({
-                text: passiveDef.descriptionKo,
+        } else {
+            const noPassiveText = new Text({
+                text: '- 패시브 없음 -',
                 style: new TextStyle({
                     fontFamily: 'Arial, sans-serif',
                     fontSize: 10,
                     fill: textMuted,
-                    wordWrap: true,
-                    wordWrapWidth: this.width - 80,
-                    align: 'center',
-                }),
-            })
-            passiveDesc.anchor.set(0.5, 0)
-            passiveDesc.position.set(this.centerX, passiveDescY)
-            this.screenContainer.addChild(passiveDesc)
-        } else {
-            const noPassiveText = new Text({
-                text: '-',
-                style: new TextStyle({
-                    fontFamily: 'Arial, sans-serif',
-                    fontSize: 12,
-                    fill: textMuted,
                 }),
             })
             noPassiveText.anchor.set(0.5)
-            noPassiveText.position.set(this.centerX, passivePillY + 14)
+            noPassiveText.position.set(this.centerX, passivePillY + 13)
+            noPassiveText.alpha = 0.6
             this.screenContainer.addChild(noPassiveText)
         }
 
-        // ========== 5. STAGE/BACKGROUND SECTION (BOTTOM) ==========
-        const stageSectionY = passiveSectionY + 80
+        // ========== 6. STAGE/BACKGROUND SECTION (BOTTOM) ==========
+        const passiveHeight = 26
+        const stageSectionY = passiveSectionY + passiveHeight + 10
         const previewWidth = cardWidth - 20
-        const previewHeight = 160
+        const previewHeight = 100
 
         // Section label
         const stageLabel = new Text({
@@ -1516,14 +1616,24 @@ export class CharacterSelectScreen {
     }
 
     private toggleSkillSelection(skillId: string): void {
-        const index = this.selectedSkills.indexOf(skillId)
-        if (index >= 0) {
-            // Deselect
-            this.selectedSkills.splice(index, 1)
-        } else if (this.selectedSkills.length < this.MAX_SKILLS) {
-            // Select (if under limit)
-            this.selectedSkills.push(skillId)
+        const studiedFormulas = useProgressStore.getState().studiedFormulas
+        const isUnlocked = isSkillUnlocked(skillId, studiedFormulas)
+
+        // Set focused skill for description display (always, even for locked skills)
+        this.focusedSkillId = skillId
+
+        // Only allow selection for unlocked skills
+        if (isUnlocked) {
+            const index = this.selectedSkills.indexOf(skillId)
+            if (index >= 0) {
+                // Deselect
+                this.selectedSkills.splice(index, 1)
+            } else if (this.selectedSkills.length < this.MAX_SKILLS) {
+                // Select (if under limit)
+                this.selectedSkills.push(skillId)
+            }
         }
+
         // Refresh UI
         this.createUI()
     }
