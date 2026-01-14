@@ -133,8 +133,9 @@ export class ProjectileSystem {
             proj.x += proj.vx * delta
             proj.y += proj.vy * delta
 
-            // Wall bounce - from stage physics or skill bounce
-            const effectiveBounce = bounce > 0 ? bounce : proj.maxBounces > 0 ? 0.95 : 0
+            // Wall bounce - only from stage physics (elastic, momentum stages)
+            // Note: proj.maxBounces is for enemy-to-enemy bouncing (skill), NOT wall bouncing
+            const effectiveBounce = bounce
             if (effectiveBounce > 0) {
                 if (proj.x < 0 || proj.x > width) {
                     proj.vx *= -effectiveBounce
