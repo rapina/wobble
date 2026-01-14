@@ -1050,33 +1050,18 @@ export class CharacterSelectScreen {
             const cellY = localY - row * (skillCardSize + gridGap)
             const inCell = cellX >= 0 && cellX < skillCardSize && cellY >= 0 && cellY < skillCardSize
 
-            console.log('[DRAG DEBUG] pointerdown:', {
-                global: { x: e.global.x, y: e.global.y },
-                wrapperPos: { x: gridWrapperX, y: gridWrapperY },
-                local: { x: localX, y: localY },
-                gridScrollY,
-                col, row,
-                cell: { x: cellX, y: cellY },
-                inCell,
-                skillCardSize, gridGap
-            })
-
             // Check if within grid bounds and inside a cell
             if (col >= 0 && col < gridCols && row >= 0 && row < gridRows && inCell) {
                 const index = row * gridCols + col
                 if (index < allSkills.length) {
                     const skillDef = allSkills[index]
                     const isUnlocked = isSkillUnlocked(skillDef.id, studiedFormulas)
-                    console.log('[DRAG DEBUG] skill found:', { index, skillId: skillDef.id, isUnlocked })
                     if (isUnlocked) {
                         pointerStartSkillId = skillDef.id
                         this.draggingSkillId = skillDef.id
                         this.isDragging = false
-                        console.log('[DRAG DEBUG] drag started for:', skillDef.id)
                     }
                 }
-            } else {
-                console.log('[DRAG DEBUG] outside grid or in gap')
             }
         })
 
@@ -1091,12 +1076,10 @@ export class CharacterSelectScreen {
             if (!isScrolling && !this.isDragging) {
                 // If a skill is selected, prioritize drag over scroll
                 if (this.draggingSkillId && distance > 10) {
-                    console.log('[DRAG DEBUG] pointermove: switching to DRAG mode (skill selected)', { distance, skillId: this.draggingSkillId })
                     this.isDragging = true
                     this.createDragGhost(this.draggingSkillId, e.global.x, e.global.y)
                 } else if (!this.draggingSkillId && Math.abs(dy) > 8) {
                     // No skill selected, allow scroll
-                    console.log('[DRAG DEBUG] pointermove: switching to SCROLL mode (no skill)', { dy, dx })
                     isScrolling = true
                 }
             }
@@ -1117,20 +1100,10 @@ export class CharacterSelectScreen {
         })
 
         gridWrapper.on('pointerup', (e) => {
-            console.log('[DRAG DEBUG] pointerup:', {
-                draggingSkillId: this.draggingSkillId,
-                isDragging: this.isDragging,
-                isScrolling,
-                pointerStartSkillId
-            })
             if (this.draggingSkillId) {
                 if (this.isDragging) {
-                    // Drop on slot
-                    console.log('[DRAG DEBUG] pointerup: dropping skill')
                     this.handleDrop(e.global.x, e.global.y)
                 } else if (!isScrolling && pointerStartSkillId) {
-                    // Tap - toggle selection
-                    console.log('[DRAG DEBUG] pointerup: tap to toggle', pointerStartSkillId)
                     this.toggleSkillSelection(pointerStartSkillId)
                 }
             }
