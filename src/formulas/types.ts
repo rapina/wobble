@@ -1,3 +1,5 @@
+import { LocalizedText, LocalizedArray } from '@/utils/localization'
+
 export type VisualProperty =
     | 'size'
     | 'speed'
@@ -15,8 +17,7 @@ export interface VisualMapping {
 
 export interface Variable {
     symbol: string
-    name: string
-    nameEn?: string
+    name: LocalizedText
     role: 'input' | 'output'
     unit: string
     range: [number, number]
@@ -84,33 +85,24 @@ export interface DisplayLayout {
 /** 시뮬레이션에서 발견할 수 있는 미션 */
 export interface Discovery {
     id: string
-    mission: string // "v를 0.95c까지 올려봐"
-    missionEn: string
-    result: string // "광속에 가까워지면 시간이 3배 이상 느려져!"
-    resultEn: string
-    icon: string // "⏰" 또는 "🌟"
+    mission: LocalizedText
+    result: LocalizedText
+    icon: string
     condition: (variables: Record<string, number>) => boolean
 }
 
 /** 결과값에 대한 실생활 인사이트 */
-export interface Insight {
-    ko: string
-    en: string
-}
+export type Insight = LocalizedText
 
 export interface Formula {
     id: string
-    name: string
-    nameEn?: string
+    name: LocalizedText
     expression: string
-    description: string
-    descriptionEn?: string
+    description: LocalizedText
     /** 시뮬레이션이 무엇을 보여주는지 설명 (배너에 표시) */
-    simulationHint?: string
-    simulationHintEn?: string
+    simulationHint?: LocalizedText
     /** 실생활에서 이 공식이 사용되는 예시들 */
-    applications?: string[]
-    applicationsEn?: string[]
+    applications?: LocalizedArray
     category: FormulaCategory
     variables: Variable[]
     calculate: (inputs: Record<string, number>) => Record<string, number>

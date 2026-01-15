@@ -8,6 +8,7 @@ import {
 } from '../skills'
 import { easeOutBack } from '../utils'
 import { WaveText } from '../../WaveText'
+import { t } from '@/utils/localization'
 
 export interface SkillSelectionContext {
     container: Container
@@ -289,7 +290,7 @@ export class SkillSelectionScreen {
 
         // Skill name - white text for dark background
         const nameText = new Text({
-            text: skillDef.nameKo,
+            text: t(skillDef.name, 'ko'),
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 14,

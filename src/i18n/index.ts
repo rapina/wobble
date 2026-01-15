@@ -4,17 +4,21 @@ import LanguageDetector from 'i18next-browser-languagedetector'
 
 import en from './locales/en.json'
 import ko from './locales/ko.json'
+import ja from './locales/ja.json'
 
 const resources = {
     en: { translation: en },
     ko: { translation: ko },
+    ja: { translation: ja },
 }
 
-// Normalize language code (ko-KR -> ko, en-US -> en)
+// Normalize language code (ko-KR -> ko, en-US -> en, ja-JP -> ja)
 const normalizeLanguage = (lng: string | undefined): string => {
     if (!lng) return 'ko'
     const base = lng.split('-')[0].toLowerCase()
-    return base === 'en' ? 'en' : 'ko'
+    if (base === 'en') return 'en'
+    if (base === 'ja') return 'ja'
+    return 'ko'
 }
 
 // Get initial language from localStorage or navigator
@@ -28,7 +32,7 @@ i18n.use(initReactI18next).init({
     resources,
     lng: getInitialLanguage(),
     fallbackLng: 'ko',
-    supportedLngs: ['ko', 'en'],
+    supportedLngs: ['ko', 'en', 'ja'],
     debug: import.meta.env.DEV,
     interpolation: {
         escapeValue: false,

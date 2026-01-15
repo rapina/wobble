@@ -6,6 +6,7 @@ import { STAGES, StageConfig } from '../PhysicsModifiers'
 import { useCollectionStore } from '@/stores/collectionStore'
 import { useProgressStore, isSkillUnlocked, skillToFormulaMap } from '@/stores/progressStore'
 import { getFormula } from '@/formulas/registry'
+import { t } from '@/utils/localization'
 
 export interface CharacterSelectContext {
     container: Container
@@ -691,7 +692,7 @@ export class CharacterSelectScreen {
 
         // Character name (below wobble)
         const charNameText = new Text({
-            text: selectedChar.nameKo,
+            text: t(selectedChar.name, 'ko'),
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 15,
@@ -826,7 +827,7 @@ export class CharacterSelectScreen {
                 slotContainer.addChild(icon)
 
                 const name = new Text({
-                    text: skillDef.nameKo.slice(0, 4),
+                    text: t(skillDef.name, 'ko').slice(0, 4),
                     style: new TextStyle({ fontSize: 8, fill: textDark, fontWeight: 'bold' }),
                 })
                 name.anchor.set(0.5)
@@ -867,7 +868,7 @@ export class CharacterSelectScreen {
         const gridGap = slotGap
         const skillCardSize = slotSize // Same size as slots
         const gridPadding = (cardWidth - (gridCols * skillCardSize + (gridCols - 1) * gridGap)) / 2
-        const visibleRows = 3 // Show 3 rows at a time
+        const visibleRows = 5 // Show 5 rows at a time
         const visibleHeight = visibleRows * skillCardSize + (visibleRows - 1) * gridGap
         const gridRows = Math.ceil(allSkills.length / gridCols)
         const totalGridHeight = gridRows * skillCardSize + (gridRows - 1) * gridGap
@@ -930,7 +931,7 @@ export class CharacterSelectScreen {
                 skillCard.addChild(icon)
 
                 const name = new Text({
-                    text: skillDef.nameKo.slice(0, 4),
+                    text: t(skillDef.name, 'ko').slice(0, 4),
                     style: new TextStyle({
                         fontSize: 8,
                         fill: textDark,
@@ -1157,12 +1158,12 @@ export class CharacterSelectScreen {
         })
 
         // ========== 4. SKILL DESCRIPTION SECTION ==========
-        const skillDescSectionY = gridY + visibleHeight + 10
+        const skillDescSectionY = gridY + visibleHeight + 8
         const focusedSkill = this.focusedSkillId ? SKILL_DEFINITIONS[this.focusedSkillId] : null
         const isFocusedSkillUnlocked = this.focusedSkillId
             ? isSkillUnlocked(this.focusedSkillId, studiedFormulas)
             : true
-        const skillDescHeight = focusedSkill && !isFocusedSkillUnlocked ? 62 : 50
+        const skillDescHeight = focusedSkill && !isFocusedSkillUnlocked ? 52 : 42
 
         // Skill description box
         const skillDescContainer = new Container()
@@ -1200,7 +1201,7 @@ export class CharacterSelectScreen {
             skillDescContainer.addChild(skillIcon)
 
             const skillName = new Text({
-                text: focusedSkill.nameKo,
+                text: t(focusedSkill.name, 'ko'),
                 style: new TextStyle({
                     fontFamily: 'Arial, sans-serif',
                     fontSize: 11,
@@ -1225,7 +1226,7 @@ export class CharacterSelectScreen {
 
             // Skill description
             const skillDesc = new Text({
-                text: focusedSkill.descriptionKo,
+                text: t(focusedSkill.description, 'ko'),
                 style: new TextStyle({
                     fontFamily: 'Arial, sans-serif',
                     fontSize: 9,
@@ -1282,7 +1283,7 @@ export class CharacterSelectScreen {
         const passivePillY = cardY + cardHeight - 35 - 25 - 60 - 10 - 26
         const passiveDef = PASSIVE_DEFINITIONS[skillConfig.passive]
         if (passiveDef) {
-            const passiveNameText = `${passiveDef.icon} ${passiveDef.nameKo}`
+            const passiveNameText = `${passiveDef.icon} ${t(passiveDef.name, 'ko')}`
             const passivePillWidth = 120
 
             const passivePill = new Graphics()
@@ -1361,7 +1362,7 @@ export class CharacterSelectScreen {
 
         // Stage name + formula + trait stacked
         const stageNameText = new Text({
-            text: selectedStage.nameKo,
+            text: t(selectedStage.name, 'ko'),
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 13,
@@ -1651,7 +1652,7 @@ export class CharacterSelectScreen {
         this.dragGhost.addChild(icon)
 
         const name = new Text({
-            text: skillDef.nameKo.slice(0, 4),
+            text: t(skillDef.name, 'ko').slice(0, 4),
             style: new TextStyle({ fontSize: 8, fill: 0xffffff, fontWeight: 'bold' }),
         })
         name.anchor.set(0.5)

@@ -1,0 +1,95 @@
+{
+    "home": {
+        "title": "WOBBLE",
+        "sandbox": "サンドボックス",
+        "sandboxDesc": "物理を自由に探索",
+        "collection": "コレクション",
+        "collectionDesc": "キャラ、学習、記録",
+        "game": "ゲーム",
+        "gameDesc": "新エピソード公開中！",
+        "soon": "SOON",
+        "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
+        "disclaimer": "Wobbleは物理を楽しく探索するゲームです。\n実際の計算とは異なる場合があります。"
+    },
+    "simulation": {
+        "loading": "読み込み中...",
+        "categories": {
+            "all": "すべて",
+            "mechanics": "力学",
+            "wave": "波動",
+            "gravity": "重力",
+            "thermodynamics": "熱力学",
+            "electricity": "電気",
+            "special": "特殊",
+            "quantum": "量子",
+            "chemistry": "化学"
+        },
+        "emptyCategory": "このカテゴリには公式がありません",
+        "info": {
+            "title": "どこで使われる？",
+            "applicationsLabel": "実生活での活用例",
+            "dontShowAgain": "この公式は自動表示しない"
+        },
+        "welcome": {
+            "title": "WOBBLE",
+            "description": "Wobbleへようこそ！\n物理公式を選んでシミュレーションを探索しよう。",
+            "openingDesc": "物理公式を選んで\n変数を調整しながら\nシミュレーションを探索しよう！",
+            "tapToStart": "タップして開始",
+            "selectFormula": "公式を選択"
+        }
+    },
+    "tutorial": {
+        "stepMessage": "{{symbol}}カードをタップして{{name}}の値を調整しよう。スライダーでシミュレーションがどう変わるか確認しよう！",
+        "next": "次へ",
+        "skip": "スキップ",
+        "done": "わかった！",
+        "startButton": "使い方を見る"
+    },
+    "settings": {
+        "title": "設定",
+        "removeAds": "広告を削除",
+        "removeAdsDesc": "1回の購入で永久適用",
+        "adFree": "広告削除済み",
+        "adFreeDesc": "広告なしでお楽しみください！",
+        "buyFor": "購入する",
+        "restore": "購入を復元",
+        "loading": "読み込み中...",
+        "loadingProduct": "商品情報を取得中...",
+        "webOnly": "モバイルアプリで購入できます"
+    },
+    "game": {
+        "title": "ゲーム",
+        "selectAdventure": "ゲームを選択",
+        "wobbleAdventure": "ワブルサバイバー",
+        "wobbleAdventureEpisode": "EP.1",
+        "wobbleAdventureDesc": "世界のルールが消えていく！ワビはシャドウの侵攻を生き延び、ワブル星の秩序を取り戻さなければならない！",
+        "comingSoon": "準備中",
+        "levelSelect": "レベル選択",
+        "completed": "完了",
+        "locked": "ロック中",
+        "success": "成功！",
+        "cleared": "クリア！",
+        "nextLevel": "次のレベル",
+        "levels": "レベル選択",
+        "target": "目標",
+        "tapToContinue": "タップして続ける",
+        "tapForNext": "タップして次へ",
+        "tryAgain": "もう一度",
+        "play": "プレイ",
+        "newWobbleUnlocked": "新しいワブル解放！",
+        "formulaLearned": "今日学んだ公式",
+        "formulaUsed": "ミニゲームで使った公式だよ！",
+        "realWorldUse": "実生活での応用",
+        "continue": "続ける"
+    },
+    "share": {
+        "title": "結果をシェア",
+        "button": "シェア",
+        "gameResult": "Wobbleサバイバーで{{rank}}ランク達成！\n\nレベル{{level}} | {{kills}}体撃破 | {{time}}生存\n\n物理公式で戦うサバイバーゲーム！\n#Wobble #物理ゲーム #サバイバー"
+    },
+    "achievements": {
+        "title": "実績",
+        "unlocked": "実績達成！",
+        "progress": "{{unlocked}}/{{total}} 達成"
+    }
+}

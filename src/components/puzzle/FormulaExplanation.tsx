@@ -3,6 +3,7 @@ import { BookOpen, Home, RotateCcw } from 'lucide-react'
 import { getFormula } from '@/formulas/registry'
 import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
 import { cn } from '@/lib/utils'
+import { t, tArray } from '@/utils/localization'
 
 interface FormulaExplanationProps {
     formulaIds: string[]
@@ -12,7 +13,7 @@ interface FormulaExplanationProps {
 
 export function FormulaExplanation({ formulaIds, onBack, onPlayAgain }: FormulaExplanationProps) {
     const { i18n } = useTranslation()
-    const isKorean = i18n.language === 'ko'
+    const lang = i18n.language
 
     const formulas = formulaIds.map((id) => getFormula(id)).filter((f) => f !== undefined)
 
@@ -45,11 +46,13 @@ export function FormulaExplanation({ formulaIds, onBack, onPlayAgain }: FormulaE
                     <WobbleDisplay size={50} shape="circle" expression="happy" />
                     <div>
                         <h2 className="text-xl font-bold text-white">
-                            {isKorean ? '오늘 배운 공식' : 'Physics You Used'}
+                            {lang === 'ko' ? '오늘 배운 공식' : lang === 'ja' ? '今日学んだ公式' : 'Physics You Used'}
                         </h2>
                         <p className="text-white/60 text-sm">
-                            {isKorean
+                            {lang === 'ko'
                                 ? '방금 미니게임에서 사용된 공식이에요!'
+                                : lang === 'ja'
+                                ? 'ミニゲームで使った公式だよ！'
                                 : 'These formulas powered your game!'}
                         </p>
                     </div>
@@ -66,7 +69,7 @@ export function FormulaExplanation({ formulaIds, onBack, onPlayAgain }: FormulaE
                             <div className="flex items-center gap-2 mb-2">
                                 <BookOpen className="w-4 h-4 text-blue-400" />
                                 <h3 className="text-white font-semibold">
-                                    {isKorean ? formula.name : formula.nameEn}
+                                    {t(formula.name, lang)}
                                 </h3>
                             </div>
 
@@ -84,20 +87,17 @@ export function FormulaExplanation({ formulaIds, onBack, onPlayAgain }: FormulaE
 
                             {/* Description */}
                             <p className="text-white/70 text-sm">
-                                {isKorean ? formula.description : formula.descriptionEn}
+                                {t(formula.description, lang)}
                             </p>
 
                             {/* Application hint */}
-                            {formula.applications && formula.applications.length > 0 && (
+                            {formula.applications && (
                                 <div className="mt-3 pt-3 border-t border-white/10">
                                     <p className="text-white/50 text-xs mb-1">
-                                        {isKorean ? '실생활 적용' : 'Real-world use'}
+                                        {lang === 'ko' ? '실생활 적용' : lang === 'ja' ? '実生活での応用' : 'Real-world use'}
                                     </p>
                                     <p className="text-white/60 text-sm">
-                                        {isKorean
-                                            ? formula.applications[0]
-                                            : formula.applicationsEn?.[0] ||
-                                              formula.applications[0]}
+                                        {tArray(formula.applications, lang)[0]}
                                     </p>
                                 </div>
                             )}
@@ -118,7 +118,7 @@ export function FormulaExplanation({ formulaIds, onBack, onPlayAgain }: FormulaE
                         )}
                     >
                         <Home className="w-5 h-5" />
-                        <span>{isKorean ? '메뉴로' : 'Menu'}</span>
+                        <span>{lang === 'ko' ? '메뉴로' : lang === 'ja' ? 'メニュー' : 'Menu'}</span>
                     </button>
 
                     <button
@@ -133,7 +133,7 @@ export function FormulaExplanation({ formulaIds, onBack, onPlayAgain }: FormulaE
                         )}
                     >
                         <RotateCcw className="w-5 h-5" />
-                        <span>{isKorean ? '다시 하기' : 'Play Again'}</span>
+                        <span>{lang === 'ko' ? '다시 하기' : lang === 'ja' ? 'もう一度' : 'Play Again'}</span>
                     </button>
                 </div>
             </div>

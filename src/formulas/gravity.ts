@@ -3,31 +3,35 @@ import { colors } from '../styles/colors'
 
 export const gravity: Formula = {
     id: 'gravity',
-    name: '만유인력',
-    nameEn: 'Universal Gravitation',
+    name: { ko: '만유인력', en: 'Universal Gravitation', ja: '万有引力' },
     expression: 'F = Gm₁m₂/r²',
-    description: '두 물체 사이에 작용하는 중력',
-    descriptionEn: 'The gravitational force between two objects',
-    simulationHint: '두 물체가 질량과 거리에 따라 서로 끌어당기는 모습',
-    simulationHintEn: 'Shows two objects attracting each other based on mass and distance',
-    applications: [
-        '행성과 위성의 공전 궤도 계산',
-        'GPS 위성의 정확한 위치 보정',
-        '로켓이 지구 중력을 탈출하는 데 필요한 속도 계산',
-        '조석(밀물/썰물) 현상 예측',
-    ],
-    applicationsEn: [
-        'Calculating planetary and satellite orbits',
-        'GPS satellite position correction',
-        'Calculating rocket escape velocity',
-        'Predicting tides (high/low tide)',
-    ],
+    description: { ko: '두 물체 사이에 작용하는 중력', en: 'The gravitational force between two objects', ja: '二つの物体間に働く重力' },
+    simulationHint: { ko: '두 물체가 질량과 거리에 따라 서로 끌어당기는 모습', en: 'Shows two objects attracting each other based on mass and distance', ja: '質量と距離に応じて二つの物体が引き合う様子' },
+    applications: {
+        ko: [
+            '행성과 위성의 공전 궤도 계산',
+            'GPS 위성의 정확한 위치 보정',
+            '로켓이 지구 중력을 탈출하는 데 필요한 속도 계산',
+            '조석(밀물/썰물) 현상 예측',
+        ],
+        en: [
+            'Calculating planetary and satellite orbits',
+            'GPS satellite position correction',
+            'Calculating rocket escape velocity',
+            'Predicting tides (high/low tide)',
+        ],
+        ja: [
+            '惑星や衛星の軌道計算',
+            'GPS衛星の位置補正',
+            'ロケットの脱出速度計算',
+            '潮汐（満潮/干潮）の予測',
+        ],
+    },
     category: 'mechanics',
     variables: [
         {
             symbol: 'm1',
-            name: '질량 1',
-            nameEn: 'Mass 1',
+            name: { ko: '질량 1', en: 'Mass 1', ja: '質量1' },
             role: 'input',
             unit: '×10²⁴kg',
             range: [1, 100],
@@ -40,8 +44,7 @@ export const gravity: Formula = {
         },
         {
             symbol: 'm2',
-            name: '질량 2',
-            nameEn: 'Mass 2',
+            name: { ko: '질량 2', en: 'Mass 2', ja: '質量2' },
             role: 'input',
             unit: '×10²²kg',
             range: [1, 50],
@@ -54,8 +57,7 @@ export const gravity: Formula = {
         },
         {
             symbol: 'r',
-            name: '거리',
-            nameEn: 'Distance',
+            name: { ko: '거리', en: 'Distance', ja: '距離' },
             role: 'input',
             unit: '×10⁸m',
             range: [1, 10],
@@ -68,8 +70,7 @@ export const gravity: Formula = {
         },
         {
             symbol: 'F',
-            name: '중력',
-            nameEn: 'Gravitational Force',
+            name: { ko: '중력', en: 'Gravitational Force', ja: '重力' },
             role: 'output',
             unit: '×10²⁰N',
             range: [0, 1000],
@@ -124,29 +125,25 @@ export const gravity: Formula = {
     discoveries: [
         {
             id: 'close-encounter',
-            mission: '거리 r을 2 이하로 줄여봐!',
-            missionEn: 'Reduce distance r below 2!',
-            result: '거리가 반으로 줄면 중력은 4배가 돼!',
-            resultEn: 'Halving the distance quadruples the gravity!',
+            mission: { ko: '거리 r을 2 이하로 줄여봐!', en: 'Reduce distance r below 2!', ja: '距離rを2以下に減らしてみよう！' },
+            result: { ko: '거리가 반으로 줄면 중력은 4배가 돼!', en: 'Halving the distance quadruples the gravity!', ja: '距離が半分になると重力は4倍になる！' },
             icon: '🌍',
             condition: (vars) => vars.r <= 2,
         },
         {
             id: 'massive-gravity',
-            mission: '질량을 둘 다 최대로 올려봐!',
-            missionEn: 'Max out both masses!',
-            result: '거대한 질량이 만드는 엄청난 중력!',
-            resultEn: 'Massive objects create enormous gravity!',
+            mission: { ko: '질량을 둘 다 최대로 올려봐!', en: 'Max out both masses!', ja: '両方の質量を最大にしてみよう！' },
+            result: { ko: '거대한 질량이 만드는 엄청난 중력!', en: 'Massive objects create enormous gravity!', ja: '巨大な質量が生み出す強大な重力！' },
             icon: '⭐',
             condition: (vars) => vars.m1 >= 90 && vars.m2 >= 45,
         },
     ],
     getInsight: (vars) => {
         const F = vars['F']
-        if (F < 10) return { ko: '미세한 중력이야', en: 'Tiny gravitational pull' }
-        if (F < 50) return { ko: '작은 위성의 중력 정도야', en: 'Like a small moon\'s gravity' }
-        if (F < 200) return { ko: '지구-달 중력 수준이야', en: 'Earth-Moon level gravity' }
-        if (F < 500) return { ko: '행성급 중력이야!', en: 'Planetary-level gravity!' }
-        return { ko: '항성급 강력한 중력!', en: 'Stellar-level strong gravity!' }
+        if (F < 10) return { ko: '미세한 중력이야', en: 'Tiny gravitational pull', ja: '微小な重力' }
+        if (F < 50) return { ko: '작은 위성의 중력 정도야', en: "Like a small moon's gravity", ja: '小さな衛星の重力くらい' }
+        if (F < 200) return { ko: '지구-달 중력 수준이야', en: 'Earth-Moon level gravity', ja: '地球-月レベルの重力' }
+        if (F < 500) return { ko: '행성급 중력이야!', en: 'Planetary-level gravity!', ja: '惑星級の重力！' }
+        return { ko: '항성급 강력한 중력!', en: 'Stellar-level strong gravity!', ja: '恒星級の強力な重力！' }
     },
 }

@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Formula, Variable } from '@/formulas/types'
+import { t, tArray, LocalizedText } from '@/utils/localization'
 
 export interface LocalizedFormula {
     name: string
@@ -8,37 +9,31 @@ export interface LocalizedFormula {
     applications: string[]
 }
 
-export interface LocalizedVariable extends Variable {
+export interface LocalizedVariable extends Omit<Variable, 'name'> {
+    name: LocalizedText
     localizedName: string
 }
 
 export function useLocalizedFormula(formula: Formula | null): LocalizedFormula | null {
     const { i18n } = useTranslation()
-    const isEnglish = i18n.language === 'en'
+    const lang = i18n.language
 
     if (!formula) return null
 
     return {
-        name: isEnglish && formula.nameEn ? formula.nameEn : formula.name,
-        description:
-            isEnglish && formula.descriptionEn ? formula.descriptionEn : formula.description,
-        simulationHint:
-            isEnglish && formula.simulationHintEn
-                ? formula.simulationHintEn
-                : formula.simulationHint,
-        applications:
-            isEnglish && formula.applicationsEn
-                ? formula.applicationsEn
-                : (formula.applications ?? []),
+        name: t(formula.name, lang),
+        description: t(formula.description, lang),
+        simulationHint: formula.simulationHint ? t(formula.simulationHint, lang) : undefined,
+        applications: tArray(formula.applications, lang),
     }
 }
 
 export function useLocalizedVariables(variables: Variable[]): LocalizedVariable[] {
     const { i18n } = useTranslation()
-    const isEnglish = i18n.language === 'en'
+    const lang = i18n.language
 
     return variables.map((v) => ({
         ...v,
-        localizedName: isEnglish && v.nameEn ? v.nameEn : v.name,
+        localizedName: t(v.name, lang),
     }))
 }

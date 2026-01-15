@@ -3,6 +3,8 @@
  * Each stage applies different physics rules to create unique gameplay
  */
 
+import { LocalizedText } from '@/utils/localization'
+
 export interface PhysicsModifiers {
     gravity: number // Downward force (0 = none, 0.5 = low, 1 = standard)
     friction: number // Velocity decay (0.98 = standard, 0.95 = icy)
@@ -14,8 +16,7 @@ export interface PhysicsModifiers {
 
 export interface StageConfig {
     id: string
-    name: string
-    nameKo: string
+    name: LocalizedText
     icon: string
     physics: PhysicsModifiers
     formula: string // Related physics formula ID (app connection)
@@ -36,8 +37,7 @@ export const DEFAULT_PHYSICS: PhysicsModifiers = {
 export const STAGES: StageConfig[] = [
     {
         id: 'normal',
-        name: 'Normal',
-        nameKo: '균형의 세계',
+        name: { ko: '균형의 세계', en: 'Normal' },
         icon: '~',
         physics: {
             gravity: 0,
@@ -54,8 +54,7 @@ export const STAGES: StageConfig[] = [
     },
     {
         id: 'low-gravity',
-        name: 'Gravity Wells',
-        nameKo: '끌어당기는 자',
+        name: { ko: '끌어당기는 자', en: 'Gravity Wells' },
         icon: '◎',
         physics: {
             gravity: 0.15,
@@ -72,8 +71,7 @@ export const STAGES: StageConfig[] = [
     },
     {
         id: 'elastic',
-        name: 'Repulsion',
-        nameKo: '튕겨내는 자',
+        name: { ko: '튕겨내는 자', en: 'Repulsion' },
         icon: '◇',
         physics: {
             gravity: 0,
@@ -90,8 +88,7 @@ export const STAGES: StageConfig[] = [
     },
     {
         id: 'momentum',
-        name: 'Crushers',
-        nameKo: '밀어붙이는 자',
+        name: { ko: '밀어붙이는 자', en: 'Crushers' },
         icon: '▣',
         physics: {
             gravity: 0,
@@ -108,8 +105,7 @@ export const STAGES: StageConfig[] = [
     },
     {
         id: 'vortex',
-        name: 'Devourer',
-        nameKo: '삼켜버리는 자',
+        name: { ko: '삼켜버리는 자', en: 'Devourer' },
         icon: '●',
         physics: {
             gravity: 0,

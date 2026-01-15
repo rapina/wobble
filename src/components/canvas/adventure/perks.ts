@@ -1,15 +1,15 @@
 // Perk system - each perk is tied to a physics formula
 // Names are derived from the physics laws/concepts
 
+import { LocalizedText } from '@/utils/localization'
+
 // Physics themes - like Balatro decks
 export type PhysicsTheme = 'mechanics' | 'thermodynamics' | 'waves' | 'gravity'
 
 export interface ThemeDefinition {
     id: PhysicsTheme
-    nameKo: string
-    nameEn: string
-    descriptionKo: string
-    descriptionEn: string
+    name: LocalizedText
+    description: LocalizedText
     color: number
     icon: string // Icon identifier for UI
 }
@@ -17,37 +17,29 @@ export interface ThemeDefinition {
 export const PHYSICS_THEMES: ThemeDefinition[] = [
     {
         id: 'mechanics',
-        nameKo: '역학',
-        nameEn: 'Mechanics',
-        descriptionKo: '힘과 운동의 법칙',
-        descriptionEn: 'Laws of force and motion',
+        name: { ko: '역학', en: 'Mechanics' },
+        description: { ko: '힘과 운동의 법칙', en: 'Laws of force and motion' },
         color: 0xe74c3c,
         icon: 'force',
     },
     {
         id: 'thermodynamics',
-        nameKo: '열역학',
-        nameEn: 'Thermodynamics',
-        descriptionKo: '열과 에너지의 흐름',
-        descriptionEn: 'Heat and energy flow',
+        name: { ko: '열역학', en: 'Thermodynamics' },
+        description: { ko: '열과 에너지의 흐름', en: 'Heat and energy flow' },
         color: 0xe67e22,
         icon: 'heat',
     },
     {
         id: 'waves',
-        nameKo: '파동',
-        nameEn: 'Waves',
-        descriptionKo: '진동과 빛의 성질',
-        descriptionEn: 'Vibration and light properties',
+        name: { ko: '파동', en: 'Waves' },
+        description: { ko: '진동과 빛의 성질', en: 'Vibration and light properties' },
         color: 0x3498db,
         icon: 'wave',
     },
     {
         id: 'gravity',
-        nameKo: '중력',
-        nameEn: 'Gravity',
-        descriptionKo: '만유인력과 낙하운동',
-        descriptionEn: 'Gravitation and falling motion',
+        name: { ko: '중력', en: 'Gravity' },
+        description: { ko: '만유인력과 낙하운동', en: 'Gravitation and falling motion' },
         color: 0x9b59b6,
         icon: 'gravity',
     },
@@ -57,10 +49,8 @@ export interface PerkDefinition {
     id: string
     formulaId: string // Required formula to unlock this perk
     theme: PhysicsTheme // Physics theme this perk belongs to
-    nameKo: string
-    nameEn: string
-    descriptionKo: string
-    descriptionEn: string
+    name: LocalizedText
+    description: LocalizedText
     color: number
     // Stat modifications (min-max range for random generation)
     effects: PerkEffect[]
@@ -101,10 +91,8 @@ export const perkDefinitions: PerkDefinition[] = [
         id: 'newton-second-perk',
         formulaId: 'newton-second',
         theme: 'mechanics',
-        nameKo: 'F = ma',
-        nameEn: "Newton's 2nd Law",
-        descriptionKo: '질량이 클수록 가속도는 작아진다',
-        descriptionEn: 'Greater mass means less acceleration',
+        name: { ko: 'F = ma', en: "Newton's 2nd Law" },
+        description: { ko: '질량이 클수록 가속도는 작아진다', en: 'Greater mass means less acceleration' },
         color: 0xe74c3c,
         effects: [
             { stat: 'damage', min: 20, max: 40, isPercent: true },
@@ -117,10 +105,8 @@ export const perkDefinitions: PerkDefinition[] = [
         id: 'momentum-perk',
         formulaId: 'momentum',
         theme: 'mechanics',
-        nameKo: 'p = mv',
-        nameEn: 'Momentum',
-        descriptionKo: '운동량은 질량과 속도의 곱이다',
-        descriptionEn: 'Momentum equals mass times velocity',
+        name: { ko: 'p = mv', en: 'Momentum' },
+        description: { ko: '운동량은 질량과 속도의 곱이다', en: 'Momentum equals mass times velocity' },
         color: 0xe74c3c,
         effects: [{ stat: 'knockback', min: 40, max: 80, isPercent: true }],
     },
@@ -130,10 +116,8 @@ export const perkDefinitions: PerkDefinition[] = [
         id: 'kinetic-energy-perk',
         formulaId: 'kinetic-energy',
         theme: 'mechanics',
-        nameKo: 'KE = ½mv²',
-        nameEn: 'Kinetic Energy',
-        descriptionKo: '속도의 제곱에 비례하는 에너지',
-        descriptionEn: 'Energy proportional to velocity squared',
+        name: { ko: 'KE = ½mv²', en: 'Kinetic Energy' },
+        description: { ko: '속도의 제곱에 비례하는 에너지', en: 'Energy proportional to velocity squared' },
         color: 0xe74c3c,
         effects: [
             { stat: 'projectileSpeed', min: 25, max: 50, isPercent: true },
@@ -146,10 +130,8 @@ export const perkDefinitions: PerkDefinition[] = [
         id: 'centripetal-perk',
         formulaId: 'centripetal',
         theme: 'mechanics',
-        nameKo: '구심력',
-        nameEn: 'Centripetal Force',
-        descriptionKo: '원운동을 유지하는 힘',
-        descriptionEn: 'Force maintaining circular motion',
+        name: { ko: '구심력', en: 'Centripetal Force' },
+        description: { ko: '원운동을 유지하는 힘', en: 'Force maintaining circular motion' },
         color: 0xe74c3c,
         effects: [
             { stat: 'projectileSize', min: 20, max: 40, isPercent: true },
@@ -166,10 +148,8 @@ export const perkDefinitions: PerkDefinition[] = [
         id: 'pressure-perk',
         formulaId: 'pressure',
         theme: 'thermodynamics',
-        nameKo: '압력',
-        nameEn: 'Pressure',
-        descriptionKo: '단위 면적당 작용하는 힘',
-        descriptionEn: 'Force per unit area',
+        name: { ko: '압력', en: 'Pressure' },
+        description: { ko: '단위 면적당 작용하는 힘', en: 'Force per unit area' },
         color: 0xe67e22,
         effects: [
             { stat: 'explosionRadius', min: 25, max: 50, isPercent: false },
@@ -182,10 +162,8 @@ export const perkDefinitions: PerkDefinition[] = [
         id: 'heat-perk',
         formulaId: 'heat',
         theme: 'thermodynamics',
-        nameKo: '열에너지',
-        nameEn: 'Heat Energy',
-        descriptionKo: '온도 변화에 필요한 에너지',
-        descriptionEn: 'Energy needed for temperature change',
+        name: { ko: '열에너지', en: 'Heat Energy' },
+        description: { ko: '온도 변화에 필요한 에너지', en: 'Energy needed for temperature change' },
         color: 0xe67e22,
         effects: [{ stat: 'damage', min: 30, max: 50, isPercent: true }],
     },
@@ -195,10 +173,8 @@ export const perkDefinitions: PerkDefinition[] = [
         id: 'ideal-gas-perk',
         formulaId: 'ideal-gas',
         theme: 'thermodynamics',
-        nameKo: '이상기체',
-        nameEn: 'Ideal Gas Law',
-        descriptionKo: '압력과 부피의 관계',
-        descriptionEn: 'Relationship of pressure and volume',
+        name: { ko: '이상기체', en: 'Ideal Gas Law' },
+        description: { ko: '압력과 부피의 관계', en: 'Relationship of pressure and volume' },
         color: 0xe67e22,
         effects: [{ stat: 'projectileSize', min: 30, max: 50, isPercent: true }],
     },
@@ -208,10 +184,8 @@ export const perkDefinitions: PerkDefinition[] = [
         id: 'electric-power-perk',
         formulaId: 'electric-power',
         theme: 'thermodynamics',
-        nameKo: '전력',
-        nameEn: 'Electric Power',
-        descriptionKo: '전류와 전압의 곱',
-        descriptionEn: 'Product of current and voltage',
+        name: { ko: '전력', en: 'Electric Power' },
+        description: { ko: '전류와 전압의 곱', en: 'Product of current and voltage' },
         color: 0xe67e22,
         effects: [{ stat: 'fireRate', min: -30, max: -15, isPercent: true }],
     },
@@ -225,10 +199,8 @@ export const perkDefinitions: PerkDefinition[] = [
         id: 'elastic-collision-perk',
         formulaId: 'elastic-collision',
         theme: 'waves',
-        nameKo: '탄성 충돌',
-        nameEn: 'Elastic Collision',
-        descriptionKo: '에너지가 보존되어 튕겨나간다',
-        descriptionEn: 'Energy is conserved through bouncing',
+        name: { ko: '탄성 충돌', en: 'Elastic Collision' },
+        description: { ko: '에너지가 보존되어 튕겨나간다', en: 'Energy is conserved through bouncing' },
         color: 0x3498db,
         effects: [{ stat: 'bounce', min: 2, max: 4, isPercent: false }],
     },
@@ -238,10 +210,8 @@ export const perkDefinitions: PerkDefinition[] = [
         id: 'hooke-perk',
         formulaId: 'hooke',
         theme: 'waves',
-        nameKo: '훅의 법칙',
-        nameEn: "Hooke's Law",
-        descriptionKo: '탄성력은 변형에 비례한다',
-        descriptionEn: 'Elastic force proportional to displacement',
+        name: { ko: '훅의 법칙', en: "Hooke's Law" },
+        description: { ko: '탄성력은 변형에 비례한다', en: 'Elastic force proportional to displacement' },
         color: 0x3498db,
         effects: [
             { stat: 'bounce', min: 1, max: 2, isPercent: false },
@@ -254,10 +224,8 @@ export const perkDefinitions: PerkDefinition[] = [
         id: 'wave-perk',
         formulaId: 'wave',
         theme: 'waves',
-        nameKo: '파동',
-        nameEn: 'Wave Motion',
-        descriptionKo: '속도는 진동수와 파장의 곱',
-        descriptionEn: 'Velocity equals frequency times wavelength',
+        name: { ko: '파동', en: 'Wave Motion' },
+        description: { ko: '속도는 진동수와 파장의 곱', en: 'Velocity equals frequency times wavelength' },
         color: 0x3498db,
         effects: [
             { stat: 'piercing', min: 1, max: 2, isPercent: false },
@@ -270,10 +238,8 @@ export const perkDefinitions: PerkDefinition[] = [
         id: 'snell-perk',
         formulaId: 'snell',
         theme: 'waves',
-        nameKo: '굴절의 법칙',
-        nameEn: "Snell's Law",
-        descriptionKo: '빛이 굴절되는 원리',
-        descriptionEn: 'Principle of light refraction',
+        name: { ko: '굴절의 법칙', en: "Snell's Law" },
+        description: { ko: '빛이 굴절되는 원리', en: 'Principle of light refraction' },
         color: 0x3498db,
         effects: [
             { stat: 'bounce', min: 1, max: 3, isPercent: false },
@@ -290,10 +256,8 @@ export const perkDefinitions: PerkDefinition[] = [
         id: 'gravity-perk',
         formulaId: 'gravity',
         theme: 'gravity',
-        nameKo: '만유인력',
-        nameEn: 'Gravitation',
-        descriptionKo: '모든 물체는 서로 끌어당긴다',
-        descriptionEn: 'All objects attract each other',
+        name: { ko: '만유인력', en: 'Gravitation' },
+        description: { ko: '모든 물체는 서로 끌어당긴다', en: 'All objects attract each other' },
         color: 0x9b59b6,
         effects: [
             { stat: 'damage', min: 10, max: 25, isPercent: true },
@@ -306,10 +270,8 @@ export const perkDefinitions: PerkDefinition[] = [
         id: 'projectile-perk',
         formulaId: 'projectile',
         theme: 'gravity',
-        nameKo: '포물선 운동',
-        nameEn: 'Projectile Motion',
-        descriptionKo: '중력에 의한 곡선 궤도',
-        descriptionEn: 'Curved path due to gravity',
+        name: { ko: '포물선 운동', en: 'Projectile Motion' },
+        description: { ko: '중력에 의한 곡선 궤도', en: 'Curved path due to gravity' },
         color: 0x9b59b6,
         effects: [{ stat: 'explosionRadius', min: 30, max: 60, isPercent: false }],
     },
@@ -319,10 +281,8 @@ export const perkDefinitions: PerkDefinition[] = [
         id: 'free-fall-perk',
         formulaId: 'free-fall',
         theme: 'gravity',
-        nameKo: '자유 낙하',
-        nameEn: 'Free Fall',
-        descriptionKo: '중력 가속도에 의한 운동',
-        descriptionEn: 'Motion under gravitational acceleration',
+        name: { ko: '자유 낙하', en: 'Free Fall' },
+        description: { ko: '중력 가속도에 의한 운동', en: 'Motion under gravitational acceleration' },
         color: 0x9b59b6,
         effects: [
             { stat: 'damage', min: 20, max: 35, isPercent: true },
@@ -335,10 +295,8 @@ export const perkDefinitions: PerkDefinition[] = [
         id: 'buoyancy-perk',
         formulaId: 'buoyancy',
         theme: 'gravity',
-        nameKo: '부력',
-        nameEn: 'Buoyancy',
-        descriptionKo: '유체에서 위로 작용하는 힘',
-        descriptionEn: 'Upward force in fluid',
+        name: { ko: '부력', en: 'Buoyancy' },
+        description: { ko: '유체에서 위로 작용하는 힘', en: 'Upward force in fluid' },
         color: 0x9b59b6,
         effects: [{ stat: 'moveSpeed', min: 20, max: 40, isPercent: true }],
     },
@@ -414,7 +372,7 @@ export function getRandomPerks(
 // Format perk effect for display
 export function formatPerkEffect(
     effect: { stat: PerkStat; value: number; isPercent?: boolean },
-    isKorean: boolean
+    lang: string
 ): string {
     const statNames: Record<PerkStat, { ko: string; en: string }> = {
         damage: { ko: '데미지', en: 'Damage' },
@@ -428,6 +386,7 @@ export function formatPerkEffect(
         moveSpeed: { ko: '이동 속도', en: 'Move Speed' },
     }
 
+    const isKorean = lang === 'ko'
     const name = isKorean ? statNames[effect.stat].ko : statNames[effect.stat].en
     const sign = effect.value >= 0 ? '+' : ''
     const suffix = effect.isPercent ? '%' : ''

@@ -23,6 +23,7 @@ import { Formula, FormulaCategory } from '../../formulas/types'
 import { WobbleShape } from '../canvas/Wobble'
 import { WobbleDisplay } from '../canvas/WobbleDisplay'
 import Balatro from '@/components/Balatro'
+import { t as localizeText } from '@/utils/localization'
 
 // Balatro-inspired color palette
 const categoryColors: Record<FormulaCategory, string> = {
@@ -194,7 +195,7 @@ export function SandboxScreen({
         // Check if info popup needs to be shown for this formula
         const needsInfoPopup =
             formula?.applications &&
-            formula.applications.length > 0 &&
+            Object.keys(formula.applications).length > 0 &&
             !dontShowInfoFormulas.has(formulaId)
 
         // Don't start if tutorial already completed globally, active, or shown this session
@@ -459,7 +460,7 @@ export function SandboxScreen({
         // Check if info popup needs to be shown
         const needsInfoPopup =
             formula?.applications &&
-            formula.applications.length > 0 &&
+            Object.keys(formula.applications).length > 0 &&
             !dontShowInfoFormulas.has(formulaId)
         if (needsInfoPopup && !infoPopupShownOnce) return
 
@@ -474,7 +475,7 @@ export function SandboxScreen({
                 setDiscoveryShownThisSession(true)
                 canvasRef.current.showNewWobbleDiscovery(
                     pendingNewWobbles,
-                    i18n.language === 'ko',
+                    i18n.language,
                     () => setPendingNewWobbles([])
                 )
             }
@@ -504,7 +505,7 @@ export function SandboxScreen({
 
         if (
             formula?.applications &&
-            formula.applications.length > 0 &&
+            Object.keys(formula.applications).length > 0 &&
             !dontShowInfoFormulas.has(formulaId)
         ) {
             const timer = setTimeout(() => setShowInfoPopup(true), 300)
@@ -880,8 +881,7 @@ export function SandboxScreen({
                             {filteredFormulas.map((f) => {
                                 const fColor = categoryColors[f.category]
                                 const isSelected = f.id === formulaId
-                                const fName =
-                                    i18n.language === 'en' && f.nameEn ? f.nameEn : f.name
+                                const fName = localizeText(f.name, i18n.language)
                                 const isNew = !seenFormulas.has(f.id)
                                 const isLocked = !isAdFree && !isUnlocked(f.id)
                                 return (
@@ -948,7 +948,7 @@ export function SandboxScreen({
                                                         }}
                                                     >
                                                         <Lock className="w-2.5 h-2.5" />
-                                                        {i18n.language === 'ko' ? prereq?.name : prereq?.nameEn}
+                                                        {prereq && localizeText(prereq.name, i18n.language)}
                                                     </div>
                                                 )
                                             }
@@ -1048,8 +1048,10 @@ export function SandboxScreen({
                                     </div>
                                     <p className="text-white/60 text-xs leading-relaxed">
                                         {i18n.language === 'ko'
-                                            ? `"${prerequisiteFormula.name}"에서 챌린지를 완료하세요`
-                                            : `Complete a challenge in "${prerequisiteFormula.nameEn}"`}
+                                            ? `"${localizeText(prerequisiteFormula.name, 'ko')}"에서 챌린지를 완료하세요`
+                                            : i18n.language === 'ja'
+                                            ? `"${localizeText(prerequisiteFormula.name, 'ja')}"でチャレンジを完了してください`
+                                            : `Complete a challenge in "${localizeText(prerequisiteFormula.name, 'en')}"`}
                                     </p>
                                 </div>
                             ) : (
@@ -1114,7 +1116,7 @@ export function SandboxScreen({
                         </div>
 
                         {/* Info Button - Hidden when locked */}
-                        {formula.applications && formula.applications.length > 0 && !isCurrentFormulaLocked && (
+                        {formula.applications && Object.keys(formula.applications).length > 0 && !isCurrentFormulaLocked && (
                             <button
                                 onClick={() => setShowInfoPopup(true)}
                                 className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95"
@@ -1365,7 +1367,7 @@ export function SandboxScreen({
                         return (
                             <ParameterControl
                                 symbol={selectedVar.symbol}
-                                name={localizedVar?.localizedName ?? selectedVar.name}
+                                name={localizedVar?.localizedName ?? localizeText(selectedVar.name, i18n.language)}
                                 value={variables[selectedVar.symbol] ?? selectedVar.default}
                                 min={selectedVar.range[0]}
                                 max={selectedVar.range[1]}
@@ -1559,8 +1561,7 @@ export function SandboxScreen({
                                     {filteredFormulas.map((f) => {
                                         const fColor = categoryColors[f.category]
                                         const isSelected = f.id === formulaId
-                                        const fName =
-                                            i18n.language === 'en' && f.nameEn ? f.nameEn : f.name
+                                        const fName = localizeText(f.name, i18n.language)
                                         const isNew = !seenFormulas.has(f.id)
                                         const isLocked = !isAdFree && !isUnlocked(f.id)
                                         return (
@@ -1630,7 +1631,7 @@ export function SandboxScreen({
                                                                 }}
                                                             >
                                                                 <Lock className="w-2.5 h-2.5" />
-                                                                {i18n.language === 'ko' ? prereq?.name : prereq?.nameEn}
+                                                                {prereq && localizeText(prereq.name, i18n.language)}
                                                             </div>
                                                         )
                                                     }

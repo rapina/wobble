@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { X, Sparkles } from 'lucide-react'
 import { WOBBLE_CHARACTERS, WobbleShape } from '@/components/canvas/Wobble'
 import { cn } from '@/lib/utils'
+import { t as localizeText } from '@/utils/localization'
 
 const theme = {
     bg: '#0a0a12',
@@ -211,10 +212,17 @@ export function NewWobbleAlert({ shapes, onClose }: NewWobbleAlertProps) {
                 {/* Title */}
                 <div className="text-center mb-4">
                     <p className="text-white/60 text-sm mb-1">
-                        {isKorean ? '새로운 주민 발견!' : 'New Resident Found!'}
+                        {localizeText(
+                            {
+                                ko: '새로운 주민 발견!',
+                                en: 'New Resident Found!',
+                                ja: '新しい住民を発見！',
+                            },
+                            i18n.language
+                        )}
                     </p>
                     <h2 className="text-2xl font-black" style={{ color: theme.gold }}>
-                        {isKorean ? character.nameKo : character.name}
+                        {localizeText(character.name, i18n.language)}
                     </h2>
                 </div>
 
@@ -233,7 +241,7 @@ export function NewWobbleAlert({ shapes, onClose }: NewWobbleAlertProps) {
 
                 {/* Personality */}
                 <p className="text-center text-white/70 text-sm mb-5 leading-relaxed">
-                    {isKorean ? character.personalityKo : character.personality}
+                    {localizeText(character.personality, i18n.language)}
                 </p>
 
                 {/* Action button */}
@@ -246,12 +254,22 @@ export function NewWobbleAlert({ shapes, onClose }: NewWobbleAlertProps) {
                     }}
                 >
                     {shapes.length > 1 && currentIndex < shapes.length - 1
-                        ? isKorean
-                            ? `다음 (${currentIndex + 1}/${shapes.length})`
-                            : `Next (${currentIndex + 1}/${shapes.length})`
-                        : isKorean
-                          ? '반가워!'
-                          : 'Nice to meet you!'}
+                        ? localizeText(
+                              {
+                                  ko: `다음 (${currentIndex + 1}/${shapes.length})`,
+                                  en: `Next (${currentIndex + 1}/${shapes.length})`,
+                                  ja: `次へ (${currentIndex + 1}/${shapes.length})`,
+                              },
+                              i18n.language
+                          )
+                        : localizeText(
+                              {
+                                  ko: '반가워!',
+                                  en: 'Nice to meet you!',
+                                  ja: 'よろしくね！',
+                              },
+                              i18n.language
+                          )}
                 </button>
             </div>
         </div>

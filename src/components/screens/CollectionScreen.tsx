@@ -8,6 +8,7 @@ import { useProgressStore, GameStats } from '@/stores/progressStore'
 import { WOBBLE_CHARACTERS, WobbleShape, WobbleExpression } from '@/components/canvas/Wobble'
 import { formulas } from '@/formulas/registry'
 import { cn } from '@/lib/utils'
+import { t as localizeText } from '@/utils/localization'
 
 const ALL_SHAPES: WobbleShape[] = [
     'circle',
@@ -19,17 +20,19 @@ const ALL_SHAPES: WobbleShape[] = [
     'shadow',
 ]
 
-// Balatro theme
+// Balatro theme - HomeScreen과 동일
 const theme = {
-    bg: '#3d6b59',
+    bg: '#1a1a2e',
+    felt: '#3d6b59',
     bgPanel: '#374244',
     bgPanelLight: '#4a5658',
     border: '#1a1a1a',
     gold: '#c9a227',
+    red: '#e85d4c',
+    blue: '#4a9eff',
     green: '#2ecc71',
-    blue: '#3498db',
-    red: '#e74c3c',
     purple: '#9b59b6',
+    pink: '#FF6B9D',
 }
 
 type TabType = 'characters' | 'formulas' | 'records'
@@ -105,33 +108,41 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
     ]
 
     return (
-        <div className="relative w-full h-full overflow-hidden bg-[#0a0a12]">
-            {/* Balatro Background */}
-            <div className="absolute inset-0 opacity-60">
+        <div className="relative w-full h-full overflow-hidden" style={{ background: theme.felt }}>
+            {/* Balatro Background - HomeScreen과 동일한 스타일 */}
+            <div className="absolute inset-0 opacity-40">
                 <Balatro
-                    color1="#c9a227"
-                    color2="#4a9eff"
-                    color3="#1a1a2e"
-                    spinSpeed={2}
+                    color1="#2d5a4a"
+                    color2="#1a4035"
+                    color3="#0d2018"
+                    spinSpeed={1.5}
                     spinRotation={-1}
-                    contrast={2.5}
-                    lighting={0.3}
-                    spinAmount={0.15}
-                    pixelFilter={800}
+                    contrast={2}
+                    lighting={0.2}
+                    spinAmount={0.1}
+                    pixelFilter={600}
                     isRotate={true}
                     mouseInteraction={false}
                 />
             </div>
 
-            {/* Vignette overlay */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)]" />
+            {/* Felt texture overlay */}
+            <div
+                className="absolute inset-0 pointer-events-none opacity-30"
+                style={{
+                    backgroundImage: 'radial-gradient(circle at 50% 50%, transparent 20%, rgba(0,0,0,0.3) 100%)',
+                }}
+            />
 
-            {/* Header - Back button only */}
+            {/* Vignette overlay */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)] pointer-events-none" />
+
+            {/* Header - Back button */}
             <div
                 className="absolute z-20"
                 style={{
-                    top: 'max(env(safe-area-inset-top, 0px), 12px)',
-                    left: 'max(env(safe-area-inset-left, 0px), 12px)',
+                    top: 'max(env(safe-area-inset-top, 0px), 16px)',
+                    left: 'max(env(safe-area-inset-left, 0px), 16px)',
                 }}
             >
                 <button
@@ -147,54 +158,85 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                 </button>
             </div>
 
+            {/* Title */}
+            <div
+                className="absolute z-20 left-1/2 -translate-x-1/2"
+                style={{
+                    top: 'max(env(safe-area-inset-top, 0px), 16px)',
+                }}
+            >
+                <div
+                    className="px-5 py-2 rounded-lg"
+                    style={{
+                        background: theme.bgPanel,
+                        border: `3px solid ${theme.border}`,
+                        boxShadow: `0 4px 0 ${theme.border}`,
+                    }}
+                >
+                    <h1
+                        className="text-lg font-black tracking-wider"
+                        style={{
+                            color: theme.gold,
+                            textShadow: '0 2px 0 #8a6d1a',
+                        }}
+                    >
+                        {isKorean ? '컬렉션' : 'COLLECTION'}
+                    </h1>
+                </div>
+            </div>
+
             {/* Tab Bar */}
             <div
                 className="absolute z-20 w-full flex justify-center gap-2"
                 style={{
-                    top: 'calc(max(env(safe-area-inset-top, 0px), 12px) + 52px)',
-                    paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
-                    paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
+                    top: 'calc(max(env(safe-area-inset-top, 0px), 16px) + 56px)',
+                    paddingLeft: 'max(env(safe-area-inset-left, 0px), 16px)',
+                    paddingRight: 'max(env(safe-area-inset-right, 0px), 16px)',
                 }}
             >
-                {tabs.map((tab) => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={cn(
-                            'flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all',
-                            activeTab === tab.id ? '' : 'opacity-60',
-                            'active:scale-95'
-                        )}
-                        style={{
-                            background: activeTab === tab.id ? theme.gold : theme.bgPanel,
-                            border: `2px solid ${theme.border}`,
-                            boxShadow: `0 3px 0 ${theme.border}`,
-                        }}
-                    >
-                        <span
+                {tabs.map((tab) => {
+                    const isActive = activeTab === tab.id
+                    const tabColor = tab.id === 'characters' ? theme.blue : tab.id === 'formulas' ? theme.gold : theme.red
+                    return (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={cn(
+                                'flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all',
+                                'active:scale-95'
+                            )}
                             style={{
-                                color: activeTab === tab.id ? '#1a1a1a' : 'rgba(255,255,255,0.6)',
+                                background: isActive ? tabColor : theme.bgPanel,
+                                border: `2px solid ${theme.border}`,
+                                boxShadow: `0 3px 0 ${theme.border}`,
+                                opacity: isActive ? 1 : 0.7,
                             }}
                         >
-                            {tab.icon}
-                        </span>
-                        <span
-                            className="text-sm font-bold"
-                            style={{
-                                color: activeTab === tab.id ? '#1a1a1a' : 'rgba(255,255,255,0.7)',
-                            }}
-                        >
-                            {tab.label}
-                        </span>
-                    </button>
-                ))}
+                            <span
+                                style={{
+                                    color: isActive ? (tab.id === 'formulas' ? '#1a1a1a' : 'white') : 'rgba(255,255,255,0.6)',
+                                }}
+                            >
+                                {tab.icon}
+                            </span>
+                            <span
+                                className="text-sm font-bold"
+                                style={{
+                                    color: isActive ? (tab.id === 'formulas' ? '#1a1a1a' : 'white') : 'rgba(255,255,255,0.7)',
+                                }}
+                            >
+                                {tab.label}
+                            </span>
+                        </button>
+                    )
+                })}
             </div>
 
             {/* Content */}
             <div
                 className="absolute z-10 overflow-y-auto"
                 style={{
-                    top: 'calc(max(env(safe-area-inset-top, 0px), 12px) + 110px)',
+                    top: 'calc(max(env(safe-area-inset-top, 0px), 16px) + 120px)',
                     bottom: 0,
                     left: 0,
                     right: 0,
@@ -207,7 +249,7 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                 {activeTab === 'characters' && (
                     <CharactersTab
                         mounted={mounted}
-                        isKorean={isKorean}
+                        lang={i18n.language}
                         isUnlocked={isUnlocked}
                         selectedWobble={selectedWobble}
                         demoExpression={demoExpression}
@@ -234,7 +276,7 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
 // Characters Tab Component
 function CharactersTab({
     mounted,
-    isKorean,
+    lang,
     isUnlocked,
     selectedWobble,
     demoExpression,
@@ -242,7 +284,7 @@ function CharactersTab({
     progress,
 }: {
     mounted: boolean
-    isKorean: boolean
+    lang: string
     isUnlocked: (shape: WobbleShape) => boolean
     selectedWobble: WobbleShape | null
     demoExpression: WobbleExpression
@@ -254,22 +296,23 @@ function CharactersTab({
             {/* Progress Badge */}
             <div
                 className={cn(
-                    'flex justify-center mb-4',
+                    'flex justify-center mb-5',
                     'transition-all duration-500',
                     mounted ? 'opacity-100' : 'opacity-0'
                 )}
             >
-                <span
-                    className="px-4 py-1.5 rounded-full text-sm font-bold"
+                <div
+                    className="px-5 py-2 rounded-lg"
                     style={{
-                        background: theme.gold,
-                        color: '#1a1a1a',
-                        border: `2px solid ${theme.border}`,
-                        boxShadow: `0 3px 0 ${theme.border}`,
+                        background: theme.blue,
+                        border: `3px solid ${theme.border}`,
+                        boxShadow: `0 4px 0 ${theme.border}`,
                     }}
                 >
-                    {progress.unlocked} / {progress.total}
-                </span>
+                    <span className="text-sm font-black text-white tracking-wide">
+                        {progress.unlocked} / {progress.total}
+                    </span>
+                </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -285,29 +328,39 @@ function CharactersTab({
                                 'transition-all duration-300',
                                 mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                             )}
-                            style={{ transitionDelay: `${index * 100}ms` }}
+                            style={{ transitionDelay: `${index * 80}ms` }}
                         >
                             <button
                                 onClick={() => onCardClick(shape)}
                                 disabled={!unlocked}
                                 className={cn(
-                                    'w-full transition-all relative rounded-xl',
-                                    unlocked ? 'active:scale-95' : 'cursor-not-allowed'
+                                    'w-full transition-all relative rounded-xl overflow-hidden',
+                                    unlocked ? 'active:scale-[0.97]' : 'cursor-not-allowed'
                                 )}
                                 style={{
-                                    background: unlocked ? theme.bgPanelLight : theme.bgPanel,
-                                    border: `2px solid ${isSelected ? theme.gold : theme.border}`,
+                                    background: unlocked ? theme.bgPanel : 'rgba(0,0,0,0.3)',
+                                    border: `3px solid ${isSelected ? theme.gold : theme.border}`,
                                     boxShadow: isSelected
-                                        ? `0 3px 0 ${theme.border}, 0 0 0 2px ${theme.gold}`
-                                        : `0 3px 0 ${theme.border}`,
-                                    opacity: unlocked ? 1 : 0.5,
+                                        ? `0 4px 0 ${theme.border}, 0 0 12px ${theme.gold}40`
+                                        : `0 4px 0 ${theme.border}`,
+                                    opacity: unlocked ? 1 : 0.6,
                                 }}
                             >
-                                <div className="flex justify-center pt-4 pb-2">
+                                {/* Card shine effect for unlocked */}
+                                {unlocked && (
+                                    <div
+                                        className="absolute inset-0 opacity-20"
+                                        style={{
+                                            background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%, transparent 100%)',
+                                        }}
+                                    />
+                                )}
+
+                                <div className="flex justify-center pt-5 pb-2">
                                     <WobbleDisplay
-                                        size={60}
+                                        size={65}
                                         shape={shape}
-                                        color={unlocked ? character.color : 0x1a1a1a}
+                                        color={unlocked ? character.color : 0x333333}
                                         expression={
                                             unlocked
                                                 ? isSelected
@@ -318,47 +371,49 @@ function CharactersTab({
                                     />
                                 </div>
 
-                                <div className="px-3 pb-3 text-center">
+                                <div className="px-3 pb-4 text-center">
                                     <h3
-                                        className="text-base font-bold mb-1"
+                                        className="text-base font-black mb-1"
                                         style={{
-                                            color: unlocked ? theme.gold : 'rgba(255,255,255,0.3)',
+                                            color: unlocked ? theme.gold : 'rgba(255,255,255,0.25)',
+                                            textShadow: unlocked ? '0 1px 0 #8a6d1a' : 'none',
                                         }}
                                     >
                                         {unlocked
-                                            ? isKorean
-                                                ? character.nameKo
-                                                : character.name
+                                            ? localizeText(character.name, lang)
                                             : '???'}
                                     </h3>
                                     <p
-                                        className="text-xs leading-tight"
+                                        className="text-xs leading-tight font-medium"
                                         style={{
                                             color: unlocked
-                                                ? 'rgba(255,255,255,0.6)'
+                                                ? 'rgba(255,255,255,0.65)'
                                                 : 'rgba(255,255,255,0.2)',
                                         }}
                                     >
                                         {unlocked
-                                            ? isKorean
-                                                ? character.personalityKo
-                                                : character.personality
-                                            : isKorean
-                                              ? '아직 만나지 못했어요'
-                                              : 'Not yet discovered'}
+                                            ? localizeText(character.personality, lang)
+                                            : localizeText(
+                                                  {
+                                                      ko: '아직 만나지 못했어요',
+                                                      en: 'Not yet discovered',
+                                                      ja: 'まだ発見していません',
+                                                  },
+                                                  lang
+                                              )}
                                     </p>
                                 </div>
 
                                 {isSelected && (
                                     <div
-                                        className="absolute -top-1.5 -right-1.5 w-6 h-6 flex items-center justify-center rounded-md"
+                                        className="absolute -top-1 -right-1 w-7 h-7 flex items-center justify-center rounded-lg"
                                         style={{
                                             background: theme.gold,
                                             border: `2px solid ${theme.border}`,
                                             boxShadow: `0 2px 0 ${theme.border}`,
                                         }}
                                     >
-                                        <Sparkles className="w-3.5 h-3.5 text-black" />
+                                        <Sparkles className="w-4 h-4 text-black" />
                                     </div>
                                 )}
                             </button>
@@ -382,8 +437,6 @@ function FormulasTab({
     studiedFormulas: string[]
     totalFormulas: number
 }) {
-    const formulaEntries = Object.entries(formulas)
-
     // Group formulas by category
     const categories = [
         {
@@ -468,22 +521,23 @@ function FormulasTab({
             {/* Progress Badge */}
             <div
                 className={cn(
-                    'flex justify-center mb-4',
+                    'flex justify-center mb-5',
                     'transition-all duration-500',
                     mounted ? 'opacity-100' : 'opacity-0'
                 )}
             >
-                <span
-                    className="px-4 py-1.5 rounded-full text-sm font-bold"
+                <div
+                    className="px-5 py-2 rounded-lg"
                     style={{
-                        background: theme.blue,
-                        color: 'white',
-                        border: `2px solid ${theme.border}`,
-                        boxShadow: `0 3px 0 ${theme.border}`,
+                        background: theme.gold,
+                        border: `3px solid ${theme.border}`,
+                        boxShadow: `0 4px 0 ${theme.border}`,
                     }}
                 >
-                    {studiedFormulas.length} / {totalFormulas}
-                </span>
+                    <span className="text-sm font-black text-black tracking-wide">
+                        {studiedFormulas.length} / {totalFormulas}
+                    </span>
+                </div>
             </div>
 
             <div className="space-y-4">
@@ -491,6 +545,7 @@ function FormulasTab({
                     const studiedInCategory = category.formulas.filter((f) =>
                         studiedFormulas.includes(f)
                     ).length
+                    const allStudied = studiedInCategory === category.formulas.length
 
                     return (
                         <div
@@ -499,39 +554,55 @@ function FormulasTab({
                                 'transition-all duration-300',
                                 mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                             )}
-                            style={{ transitionDelay: `${catIndex * 100}ms` }}
+                            style={{ transitionDelay: `${catIndex * 80}ms` }}
                         >
                             <div
-                                className="p-3 rounded-xl"
+                                className="p-4 rounded-xl relative overflow-hidden"
                                 style={{
                                     background: theme.bgPanel,
-                                    border: `2px solid ${theme.border}`,
-                                    boxShadow: `0 3px 0 ${theme.border}`,
+                                    border: `3px solid ${allStudied ? category.color : theme.border}`,
+                                    boxShadow: allStudied
+                                        ? `0 4px 0 ${theme.border}, 0 0 12px ${category.color}40`
+                                        : `0 4px 0 ${theme.border}`,
                                 }}
                             >
+                                {/* Shine effect when all studied */}
+                                {allStudied && (
+                                    <div
+                                        className="absolute inset-0 opacity-10"
+                                        style={{
+                                            background: `linear-gradient(135deg, ${category.color} 0%, transparent 50%, transparent 100%)`,
+                                        }}
+                                    />
+                                )}
+
                                 {/* Category Header */}
                                 <div className="flex items-center justify-between mb-3">
                                     <h3
-                                        className="font-bold text-sm"
-                                        style={{ color: category.color }}
+                                        className="font-black text-sm tracking-wide"
+                                        style={{
+                                            color: category.color,
+                                            textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                                        }}
                                     >
                                         {category.name}
                                     </h3>
-                                    <span
-                                        className="text-xs px-1.5 py-0.5 font-bold rounded"
+                                    <div
+                                        className="px-2.5 py-1 rounded-md"
                                         style={{
                                             background: category.color,
-                                            color: 'white',
                                             border: `2px solid ${theme.border}`,
                                             boxShadow: `0 2px 0 ${theme.border}`,
                                         }}
                                     >
-                                        {studiedInCategory}/{category.formulas.length}
-                                    </span>
+                                        <span className="text-xs font-black text-white">
+                                            {studiedInCategory}/{category.formulas.length}
+                                        </span>
+                                    </div>
                                 </div>
 
                                 {/* Formula Pills */}
-                                <div className="flex flex-wrap gap-1.5">
+                                <div className="flex flex-wrap gap-2">
                                     {category.formulas.map((formulaId) => {
                                         const formula = formulas[formulaId]
                                         const studied = studiedFormulas.includes(formulaId)
@@ -539,22 +610,20 @@ function FormulasTab({
                                         return (
                                             <div
                                                 key={formulaId}
-                                                className="px-2 py-0.5 text-xs font-medium rounded"
+                                                className="px-2.5 py-1 text-xs font-bold rounded-md transition-all"
                                                 style={{
                                                     background: studied
                                                         ? category.color
-                                                        : theme.bgPanelLight,
+                                                        : 'rgba(0,0,0,0.3)',
                                                     color: studied
                                                         ? 'white'
-                                                        : 'rgba(255,255,255,0.4)',
-                                                    border: `1px solid ${studied ? category.color : theme.border}`,
-                                                    opacity: studied ? 1 : 0.7,
+                                                        : 'rgba(255,255,255,0.35)',
+                                                    border: `2px solid ${studied ? theme.border : 'rgba(255,255,255,0.1)'}`,
+                                                    boxShadow: studied ? `0 2px 0 ${theme.border}` : 'none',
                                                 }}
                                             >
                                                 {formula
-                                                    ? isKorean
-                                                        ? formula.name
-                                                        : formula.nameEn || formula.name
+                                                    ? localizeText(formula.name, isKorean ? 'ko' : 'en')
                                                     : formulaId}
                                             </div>
                                         )
@@ -588,7 +657,7 @@ function RecordsTab({
     const rankColors: Record<string, string> = {
         S: '#ffd700',
         A: '#9b59b6',
-        B: '#3498db',
+        B: '#4a9eff',
         C: '#2ecc71',
         D: '#95a5a6',
     }
@@ -602,7 +671,7 @@ function RecordsTab({
         },
         {
             icon: '⏱',
-            label: isKorean ? '총 플레이 시간' : 'Total Play Time',
+            label: isKorean ? '총 플레이 시간' : 'Play Time',
             value: formatTime(gameStats.totalPlayTime),
             color: theme.green,
         },
@@ -614,7 +683,7 @@ function RecordsTab({
         },
         {
             icon: '🏆',
-            label: isKorean ? '최고 생존 시간' : 'Best Survival',
+            label: isKorean ? '최고 생존' : 'Best Survival',
             value: formatTime(gameStats.bestTime),
             color: theme.gold,
         },
@@ -630,24 +699,24 @@ function RecordsTab({
         return (
             <div
                 className={cn(
-                    'flex flex-col items-center justify-center py-12',
+                    'flex flex-col items-center justify-center py-16',
                     'transition-all duration-500',
                     mounted ? 'opacity-100' : 'opacity-0'
                 )}
             >
                 <div
-                    className="w-16 h-16 flex items-center justify-center mb-4 rounded-xl"
+                    className="w-20 h-20 flex items-center justify-center mb-5 rounded-xl"
                     style={{
                         background: theme.bgPanel,
-                        border: `2px solid ${theme.border}`,
-                        boxShadow: `0 3px 0 ${theme.border}`,
+                        border: `3px solid ${theme.border}`,
+                        boxShadow: `0 4px 0 ${theme.border}`,
                     }}
                 >
-                    <Trophy className="w-8 h-8 text-white/30" />
+                    <Trophy className="w-10 h-10 text-white/25" />
                 </div>
                 <p
-                    className="text-center text-sm whitespace-pre-line"
-                    style={{ color: 'rgba(255,255,255,0.5)' }}
+                    className="text-center text-sm font-medium whitespace-pre-line"
+                    style={{ color: 'rgba(255,255,255,0.45)' }}
                 >
                     {isKorean
                         ? '아직 게임 기록이 없습니다.\n서바이버 모드를 플레이해보세요!'
@@ -667,38 +736,56 @@ function RecordsTab({
                 )}
             >
                 <div
-                    className="p-5 text-center mb-4 rounded-xl"
+                    className="p-6 text-center mb-5 rounded-xl relative overflow-hidden"
                     style={{
                         background: theme.bgPanel,
-                        border: `2px solid ${theme.border}`,
-                        boxShadow: `0 3px 0 ${theme.border}`,
+                        border: `3px solid ${rankColors[gameStats.bestRank] || theme.border}`,
+                        boxShadow: `0 4px 0 ${theme.border}, 0 0 20px ${rankColors[gameStats.bestRank]}30`,
                     }}
                 >
-                    <p className="text-xs mb-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                        {isKorean ? '최고 랭크' : 'Best Rank'}
+                    {/* Shine effect */}
+                    <div
+                        className="absolute inset-0 opacity-10"
+                        style={{
+                            background: `linear-gradient(135deg, ${rankColors[gameStats.bestRank]} 0%, transparent 50%, transparent 100%)`,
+                        }}
+                    />
+
+                    <p
+                        className="text-xs font-bold mb-2 tracking-wider"
+                        style={{ color: 'rgba(255,255,255,0.5)' }}
+                    >
+                        {isKorean ? '최고 랭크' : 'BEST RANK'}
                     </p>
                     <div
-                        className="text-6xl font-black"
+                        className="text-7xl font-black"
                         style={{
                             color: rankColors[gameStats.bestRank] || 'white',
+                            textShadow: `0 4px 0 rgba(0,0,0,0.3), 0 0 20px ${rankColors[gameStats.bestRank]}50`,
                         }}
                     >
                         {gameStats.bestRank}
                     </div>
-                    <span
-                        className="text-xs font-bold mt-2 inline-block"
-                        style={{ color: rankColors[gameStats.bestRank] || 'white' }}
+                    <div
+                        className="mt-2 inline-block px-3 py-1 rounded-md"
+                        style={{
+                            background: rankColors[gameStats.bestRank],
+                            border: `2px solid ${theme.border}`,
+                            boxShadow: `0 2px 0 ${theme.border}`,
+                        }}
                     >
-                        {gameStats.bestRank === 'S'
-                            ? 'PERFECT'
-                            : gameStats.bestRank === 'A'
-                              ? 'EXCELLENT'
-                              : gameStats.bestRank === 'B'
-                                ? 'GREAT'
-                                : gameStats.bestRank === 'C'
-                                  ? 'GOOD'
-                                  : 'NICE TRY'}
-                    </span>
+                        <span className="text-xs font-black text-white tracking-wide">
+                            {gameStats.bestRank === 'S'
+                                ? 'PERFECT'
+                                : gameStats.bestRank === 'A'
+                                  ? 'EXCELLENT'
+                                  : gameStats.bestRank === 'B'
+                                    ? 'GREAT'
+                                    : gameStats.bestRank === 'C'
+                                      ? 'GOOD'
+                                      : 'NICE TRY'}
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -711,21 +798,27 @@ function RecordsTab({
                             'transition-all duration-300',
                             mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                         )}
-                        style={{ transitionDelay: `${(index + 1) * 100}ms` }}
+                        style={{ transitionDelay: `${(index + 1) * 80}ms` }}
                     >
                         <div
-                            className="p-3 rounded-xl"
+                            className="p-4 rounded-xl"
                             style={{
                                 background: theme.bgPanel,
-                                border: `2px solid ${theme.border}`,
-                                boxShadow: `0 3px 0 ${theme.border}`,
+                                border: `3px solid ${theme.border}`,
+                                boxShadow: `0 4px 0 ${theme.border}`,
                             }}
                         >
-                            <div className="flex items-center gap-2 mb-1.5">
-                                <span className="text-base">{stat.icon}</span>
-                                <span className="text-white/60 text-xs">{stat.label}</span>
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="text-lg">{stat.icon}</span>
+                                <span className="text-white/55 text-xs font-medium">{stat.label}</span>
                             </div>
-                            <div className="text-xl font-bold" style={{ color: stat.color }}>
+                            <div
+                                className="text-2xl font-black"
+                                style={{
+                                    color: stat.color,
+                                    textShadow: '0 2px 0 rgba(0,0,0,0.2)',
+                                }}
+                            >
                                 {stat.value}
                             </div>
                         </div>
@@ -737,7 +830,7 @@ function RecordsTab({
             {gameStats.lastPlayedAt && (
                 <p
                     className={cn(
-                        'text-center text-white/40 text-xs mt-6',
+                        'text-center text-white/35 text-xs font-medium mt-6',
                         'transition-all duration-500 delay-700',
                         mounted ? 'opacity-100' : 'opacity-0'
                     )}

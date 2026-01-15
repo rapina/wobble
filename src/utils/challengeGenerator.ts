@@ -1,5 +1,6 @@
 import { Formula, Variable } from '../formulas/types'
 import { Challenge, ChallengeType } from '../stores/challengeStore'
+import { t } from './localization'
 
 // Condition templates for 'condition' type challenges
 interface ConditionTemplate {
@@ -84,14 +85,14 @@ function generateTargetChallenge(
     const tolerance = (max - min) * 0.05
 
     const displayValue = formatNumber(targetValue)
-    const varName = targetVar.name
-    const varNameEn = targetVar.nameEn || targetVar.name
+    const varNameKo = t(targetVar.name, 'ko')
+    const varNameEn = t(targetVar.name, 'en')
 
     return {
         id: generateId(),
         type: 'target',
         formulaId: formula.id,
-        mission: `${varName}을(를) ${displayValue}${targetVar.unit}로 맞춰봐!`,
+        mission: `${varNameKo}을(를) ${displayValue}${targetVar.unit}로 맞춰봐!`,
         missionEn: `Set ${varNameEn} to ${displayValue}${targetVar.unit}!`,
         condition: (vars) => Math.abs(vars[targetVar.symbol] - targetValue) <= tolerance,
         targetVariables: [targetVar.symbol],
@@ -118,8 +119,8 @@ function generateRangeChallenge(
 
     const displayStart = formatNumber(roundToNiceNumber(rangeStart, targetVar.range))
     const displayEnd = formatNumber(roundToNiceNumber(rangeEnd, targetVar.range))
-    const varName = targetVar.name
-    const varNameEn = targetVar.nameEn || targetVar.name
+    const varNameKo = t(targetVar.name, 'ko')
+    const varNameEn = t(targetVar.name, 'en')
 
     // Store actual values for condition check
     const actualStart = roundToNiceNumber(rangeStart, targetVar.range)
@@ -129,7 +130,7 @@ function generateRangeChallenge(
         id: generateId(),
         type: 'range',
         formulaId: formula.id,
-        mission: `${varName}을(를) ${displayStart}~${displayEnd} 사이로!`,
+        mission: `${varNameKo}을(를) ${displayStart}~${displayEnd} 사이로!`,
         missionEn: `Get ${varNameEn} between ${displayStart}-${displayEnd}!`,
         condition: (vars) => {
             const value = vars[targetVar.symbol]
@@ -160,19 +161,19 @@ function generateConditionChallenge(
         ? CONDITION_TEMPLATES[Math.floor(Math.random() * CONDITION_TEMPLATES.length)]
         : null
 
-    const var1Name = var1.name
-    const var1NameEn = var1.nameEn || var1.name
+    const var1NameKo = t(var1.name, 'ko')
+    const var1NameEn = t(var1.name, 'en')
 
     let mission: string
     let missionEn: string
 
     if (var2 && cond2) {
-        const var2Name = var2.name
-        const var2NameEn = var2.nameEn || var2.name
-        mission = `${var1Name}은 ${cond1.ko}, ${var2Name}은 ${cond2.ko}!`
+        const var2NameKo = t(var2.name, 'ko')
+        const var2NameEn = t(var2.name, 'en')
+        mission = `${var1NameKo}은 ${cond1.ko}, ${var2NameKo}은 ${cond2.ko}!`
         missionEn = `${var1NameEn} to ${cond1.en}, ${var2NameEn} to ${cond2.en}!`
     } else {
-        mission = `${var1Name}을(를) ${cond1.ko}!`
+        mission = `${var1NameKo}을(를) ${cond1.ko}!`
         missionEn = `Set ${var1NameEn} to ${cond1.en}!`
     }
 

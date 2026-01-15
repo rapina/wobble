@@ -2,6 +2,7 @@ import { Container, Graphics, Text, TextStyle } from 'pixi.js'
 import { Wobble, WobbleShape, WOBBLE_CHARACTERS } from '../../../Wobble'
 import { easeOutBack, easeOutQuad } from '../utils'
 import { StageConfig, getDefaultStage } from '../PhysicsModifiers'
+import { t } from '@/utils/localization'
 
 export interface OpeningScreenContext {
     container: Container
@@ -136,7 +137,7 @@ export class OpeningScreen {
 
         // Stage name text (large)
         this.titleText = new Text({
-            text: this.selectedStage.nameKo,
+            text: t(this.selectedStage.name, 'ko'),
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 32,

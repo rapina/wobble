@@ -1,4 +1,4 @@
-# Wobble App Analysis for 10M+ Downloads
+스# Wobble App Analysis for 10M+ Downloads
 
 > Analysis Date: 2026-01-10
 > Target Audience: Students / Science Enthusiasts

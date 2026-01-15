@@ -3,21 +3,25 @@ import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Check, Star, Zap, Target, Crown } from 'lucide-react'
 import Balatro from '@/components/Balatro'
 import { useAchievementStore, AchievementProgress } from '@/stores/achievementStore'
-import { ACHIEVEMENTS, CATEGORY_INFO, AchievementCategory } from '@/data/achievements'
+import { ACHIEVEMENTS, CATEGORY_INFO, AchievementCategory, Achievement } from '@/data/achievements'
+import { t } from '@/utils/localization'
 import { cn } from '@/lib/utils'
 
-// Theme matching SimulationScreen
+// Balatro theme - HomeScreen과 동일
 const theme = {
-    bg: '#0a0a12',
+    bg: '#1a1a2e',
+    felt: '#3d6b59',
     bgPanel: '#374244',
     bgPanelLight: '#4a5658',
     border: '#1a1a1a',
     gold: '#c9a227',
     red: '#e85d4c',
     blue: '#4a9eff',
+    green: '#2ecc71',
+    purple: '#9b59b6',
 }
 
-// Category icons (no emojis)
+// Category icons
 const CATEGORY_ICONS: Record<AchievementCategory, React.ReactNode> = {
     learning: <Star className="w-5 h-5" />,
     combat: <Zap className="w-5 h-5" />,
@@ -31,7 +35,7 @@ interface AchievementsScreenProps {
 
 export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
     const { i18n } = useTranslation()
-    const isKorean = i18n.language === 'ko'
+    const lang = i18n.language
     const { isUnlocked, getProgress, getAchievementProgress } = useAchievementStore()
     const progress = getProgress()
     const [mounted, setMounted] = useState(false)
@@ -44,33 +48,41 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
     const categories: AchievementCategory[] = ['learning', 'combat', 'collection', 'mastery']
 
     return (
-        <div className="relative w-full h-full overflow-hidden bg-[#0a0a12]">
-            {/* Balatro Background */}
-            <div className="absolute inset-0 opacity-60">
+        <div className="relative w-full h-full overflow-hidden" style={{ background: theme.felt }}>
+            {/* Balatro Background - HomeScreen과 동일한 스타일 */}
+            <div className="absolute inset-0 opacity-40">
                 <Balatro
-                    color1="#c9a227"
-                    color2="#4a9eff"
-                    color3="#1a1a2e"
-                    spinSpeed={2}
+                    color1="#2d5a4a"
+                    color2="#1a4035"
+                    color3="#0d2018"
+                    spinSpeed={1.5}
                     spinRotation={-1}
-                    contrast={2.5}
-                    lighting={0.3}
-                    spinAmount={0.15}
-                    pixelFilter={800}
+                    contrast={2}
+                    lighting={0.2}
+                    spinAmount={0.1}
+                    pixelFilter={600}
                     isRotate={true}
                     mouseInteraction={false}
                 />
             </div>
 
-            {/* Vignette overlay */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.5)_100%)] pointer-events-none" />
+            {/* Felt texture overlay */}
+            <div
+                className="absolute inset-0 pointer-events-none opacity-30"
+                style={{
+                    backgroundImage: 'radial-gradient(circle at 50% 50%, transparent 20%, rgba(0,0,0,0.3) 100%)',
+                }}
+            />
 
-            {/* Header - Back button only */}
+            {/* Vignette overlay */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)] pointer-events-none" />
+
+            {/* Header - Back button */}
             <div
                 className="absolute z-20"
                 style={{
-                    top: 'max(env(safe-area-inset-top, 0px), 12px)',
-                    left: 'max(env(safe-area-inset-left, 0px), 12px)',
+                    top: 'max(env(safe-area-inset-top, 0px), 16px)',
+                    left: 'max(env(safe-area-inset-left, 0px), 16px)',
                 }}
             >
                 <button
@@ -86,43 +98,95 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
                 </button>
             </div>
 
+            {/* Title */}
+            <div
+                className="absolute z-20 left-1/2 -translate-x-1/2"
+                style={{
+                    top: 'max(env(safe-area-inset-top, 0px), 16px)',
+                }}
+            >
+                <div
+                    className="px-5 py-2 rounded-lg"
+                    style={{
+                        background: theme.bgPanel,
+                        border: `3px solid ${theme.border}`,
+                        boxShadow: `0 4px 0 ${theme.border}`,
+                    }}
+                >
+                    <h1
+                        className="text-lg font-black tracking-wider"
+                        style={{
+                            color: theme.gold,
+                            textShadow: '0 2px 0 #8a6d1a',
+                        }}
+                    >
+                        {lang === 'ko' ? '업적' : lang === 'ja' ? '実績' : 'ACHIEVEMENTS'}
+                    </h1>
+                </div>
+            </div>
+
             {/* Content */}
             <div
                 className="relative z-10 h-full overflow-y-auto"
                 style={{
-                    paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 12px) + 60px)',
-                    paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 100px)',
-                    paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
-                    paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
+                    paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 16px) + 70px)',
+                    paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), 24px) + 60px)',
+                    paddingLeft: 'max(env(safe-area-inset-left, 0px), 16px)',
+                    paddingRight: 'max(env(safe-area-inset-right, 0px), 16px)',
                 }}
             >
-                {/* Overall Progress */}
+                {/* Overall Progress Card */}
                 <div
                     className={cn(
-                        'mb-4 p-3 rounded-xl',
+                        'mb-5 p-4 rounded-xl relative overflow-hidden',
                         'transition-all duration-500',
                         mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
                     )}
                     style={{
                         background: theme.bgPanel,
-                        border: `2px solid ${theme.border}`,
-                        boxShadow: `0 3px 0 ${theme.border}`,
+                        border: `3px solid ${theme.gold}`,
+                        boxShadow: `0 4px 0 ${theme.border}, 0 0 20px ${theme.gold}30`,
                     }}
                 >
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-white/60 text-sm">
-                            {isKorean ? '전체 진행률' : 'Overall Progress'}
+                    {/* Shine effect */}
+                    <div
+                        className="absolute inset-0 opacity-10"
+                        style={{
+                            background: `linear-gradient(135deg, ${theme.gold} 0%, transparent 50%, transparent 100%)`,
+                        }}
+                    />
+
+                    <div className="relative flex items-center justify-between mb-3">
+                        <span className="text-white/60 text-sm font-bold">
+                            {lang === 'ko' ? '전체 진행률' : lang === 'ja' ? '全体の進捗' : 'Overall Progress'}
                         </span>
-                        <span className="text-white font-bold">
-                            {progress.unlocked}/{progress.total}
-                        </span>
-                    </div>
-                    <div className="h-2 rounded-full bg-white/10 overflow-hidden">
                         <div
-                            className="h-full rounded-full transition-all duration-500"
+                            className="px-3 py-1 rounded-lg"
+                            style={{
+                                background: theme.gold,
+                                border: `2px solid ${theme.border}`,
+                                boxShadow: `0 2px 0 ${theme.border}`,
+                            }}
+                        >
+                            <span className="text-sm font-black text-black">
+                                {progress.unlocked} / {progress.total}
+                            </span>
+                        </div>
+                    </div>
+                    <div
+                        className="h-4 rounded-lg overflow-hidden"
+                        style={{
+                            background: theme.bgPanelLight,
+                            border: `2px solid ${theme.border}`,
+                            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3)',
+                        }}
+                    >
+                        <div
+                            className="h-full rounded transition-all duration-700"
                             style={{
                                 width: `${(progress.unlocked / progress.total) * 100}%`,
                                 background: `linear-gradient(90deg, ${theme.gold}, #e6b84a)`,
+                                boxShadow: '0 1px 0 rgba(255,255,255,0.3)',
                             }}
                         />
                     </div>
@@ -138,6 +202,7 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
                         const unlockedCount = categoryAchievements.filter((a) =>
                             isUnlocked(a.id)
                         ).length
+                        const allUnlocked = unlockedCount === categoryAchievements.length
 
                         return (
                             <div
@@ -148,35 +213,64 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
                                         ? 'opacity-100 translate-y-0'
                                         : 'opacity-0 translate-y-4'
                                 )}
-                                style={{ transitionDelay: `${catIndex * 100 + 100}ms` }}
+                                style={{ transitionDelay: `${catIndex * 80 + 100}ms` }}
                             >
                                 <div
-                                    className="rounded-xl p-3"
+                                    className="rounded-xl p-4 relative overflow-hidden"
                                     style={{
                                         background: theme.bgPanel,
-                                        border: `2px solid ${theme.border}`,
-                                        boxShadow: `0 3px 0 ${theme.border}`,
+                                        border: `3px solid ${allUnlocked ? categoryInfo.color : theme.border}`,
+                                        boxShadow: allUnlocked
+                                            ? `0 4px 0 ${theme.border}, 0 0 12px ${categoryInfo.color}40`
+                                            : `0 4px 0 ${theme.border}`,
                                     }}
                                 >
+                                    {/* Shine effect when all unlocked */}
+                                    {allUnlocked && (
+                                        <div
+                                            className="absolute inset-0 opacity-10"
+                                            style={{
+                                                background: `linear-gradient(135deg, ${categoryInfo.color} 0%, transparent 50%, transparent 100%)`,
+                                            }}
+                                        />
+                                    )}
+
                                     {/* Category Header */}
-                                    <div className="flex items-center justify-between mb-3">
-                                        <h3
-                                            className="font-bold"
-                                            style={{ color: categoryInfo.color }}
-                                        >
-                                            {isKorean ? categoryInfo.nameKo : categoryInfo.nameEn}
-                                        </h3>
-                                        <span
-                                            className="text-xs px-2 py-0.5 rounded font-bold"
+                                    <div className="relative flex items-center justify-between mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div
+                                                className="w-10 h-10 rounded-lg flex items-center justify-center"
+                                                style={{
+                                                    background: categoryInfo.color,
+                                                    border: `2px solid ${theme.border}`,
+                                                    boxShadow: `0 2px 0 ${theme.border}`,
+                                                    color: 'white',
+                                                }}
+                                            >
+                                                {CATEGORY_ICONS[category]}
+                                            </div>
+                                            <h3
+                                                className="font-black tracking-wide"
+                                                style={{
+                                                    color: categoryInfo.color,
+                                                    textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                                                }}
+                                            >
+                                                {t(categoryInfo.name, lang)}
+                                            </h3>
+                                        </div>
+                                        <div
+                                            className="px-2.5 py-1 rounded-md"
                                             style={{
                                                 background: categoryInfo.color,
-                                                color: 'white',
                                                 border: `2px solid ${theme.border}`,
                                                 boxShadow: `0 2px 0 ${theme.border}`,
                                             }}
                                         >
-                                            {unlockedCount}/{categoryAchievements.length}
-                                        </span>
+                                            <span className="text-xs font-black text-white">
+                                                {unlockedCount}/{categoryAchievements.length}
+                                            </span>
+                                        </div>
                                     </div>
 
                                     {/* Achievement List */}
@@ -191,14 +285,11 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
                                                 <AchievementItem
                                                     key={achievement.id}
                                                     category={category}
-                                                    nameKo={achievement.nameKo}
-                                                    nameEn={achievement.nameEn}
-                                                    descriptionKo={achievement.descriptionKo}
-                                                    descriptionEn={achievement.descriptionEn}
+                                                    achievement={achievement}
                                                     unlocked={unlocked}
                                                     progress={achievementProg}
                                                     categoryColor={categoryInfo.color}
-                                                    isKorean={isKorean}
+                                                    lang={lang}
                                                 />
                                             )
                                         })}
@@ -213,14 +304,16 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
                 {progress.unlocked < progress.total && (
                     <p
                         className={cn(
-                            'text-center text-white/40 text-xs mt-6',
+                            'text-center text-white/35 text-xs font-medium mt-6',
                             'transition-all duration-500 delay-700',
                             mounted ? 'opacity-100' : 'opacity-0'
                         )}
                     >
-                        {isKorean
+                        {lang === 'ko'
                             ? '물리 탐험을 계속하며 업적을 달성해보세요!'
-                            : 'Keep exploring physics to unlock more achievements!'}
+                            : lang === 'ja'
+                              ? '物理の探検を続けて実績を達成しよう！'
+                              : 'Keep exploring physics to unlock more achievements!'}
                     </p>
                 )}
             </div>
@@ -231,109 +324,118 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
 // Individual Achievement Item Component
 function AchievementItem({
     category,
-    nameKo,
-    nameEn,
-    descriptionKo,
-    descriptionEn,
+    achievement,
     unlocked,
     progress,
     categoryColor,
-    isKorean,
+    lang,
 }: {
     category: AchievementCategory
-    nameKo: string
-    nameEn: string
-    descriptionKo: string
-    descriptionEn: string
+    achievement: Achievement
     unlocked: boolean
     progress: AchievementProgress | null
     categoryColor: string
-    isKorean: boolean
+    lang: string
 }) {
     return (
         <div
-            className="p-2 rounded-lg transition-all"
+            className="p-3 rounded-xl transition-all relative overflow-hidden"
             style={{
-                background: unlocked ? `${categoryColor}20` : theme.bgPanelLight,
+                background: unlocked ? `${categoryColor}15` : theme.bgPanelLight,
                 border: `2px solid ${unlocked ? categoryColor : theme.border}`,
-                boxShadow: unlocked ? `0 3px 0 ${categoryColor}80` : `0 3px 0 ${theme.border}`,
-                opacity: unlocked ? 1 : 0.85,
+                boxShadow: unlocked
+                    ? `0 2px 0 ${theme.border}, 0 0 8px ${categoryColor}30`
+                    : `0 2px 0 ${theme.border}`,
             }}
         >
-            <div className="flex items-center gap-3">
+            {/* Shine effect when unlocked */}
+            {unlocked && (
+                <div
+                    className="absolute inset-0 opacity-20"
+                    style={{
+                        background: `linear-gradient(135deg, ${categoryColor} 0%, transparent 50%, transparent 100%)`,
+                    }}
+                />
+            )}
+
+            <div className="relative flex items-center gap-3">
                 {/* Icon */}
                 <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                    className="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{
-                        background: unlocked ? `${categoryColor}30` : 'rgba(255,255,255,0.1)',
-                        border: `2px solid ${unlocked ? categoryColor : theme.border}`,
-                        boxShadow: `0 2px 0 ${unlocked ? categoryColor : theme.border}`,
-                        color: unlocked ? categoryColor : 'rgba(255,255,255,0.3)',
+                        background: unlocked ? categoryColor : theme.bgPanel,
+                        border: `2px solid ${theme.border}`,
+                        boxShadow: `0 2px 0 ${theme.border}`,
+                        color: unlocked ? 'white' : 'rgba(255,255,255,0.3)',
                     }}
                 >
-                    {unlocked ? CATEGORY_ICONS[category] : '?'}
+                    {unlocked ? CATEGORY_ICONS[category] : <span className="text-lg font-bold">?</span>}
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                     <p
-                        className="font-bold text-sm truncate"
+                        className="font-black text-sm truncate"
                         style={{
                             color: unlocked ? 'white' : 'rgba(255,255,255,0.5)',
+                            textShadow: unlocked ? '0 1px 0 rgba(0,0,0,0.2)' : 'none',
                         }}
                     >
-                        {isKorean ? nameKo : nameEn}
+                        {t(achievement.name, lang)}
                     </p>
                     <p
-                        className="text-xs truncate"
+                        className="text-xs truncate font-medium"
                         style={{
-                            color: unlocked ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)',
+                            color: unlocked ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.35)',
                         }}
                     >
-                        {isKorean ? descriptionKo : descriptionEn}
+                        {t(achievement.description, lang)}
                     </p>
                 </div>
 
                 {/* Check mark or Progress */}
                 {unlocked ? (
                     <div
-                        className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                         style={{
                             background: categoryColor,
                             border: `2px solid ${theme.border}`,
                             boxShadow: `0 2px 0 ${theme.border}`,
                         }}
                     >
-                        <Check className="w-4 h-4 text-white" />
+                        <Check className="w-5 h-5 text-white" />
                     </div>
                 ) : (
                     progress && (
-                        <span
-                            className="text-xs font-mono flex-shrink-0"
-                            style={{ color: 'rgba(255,255,255,0.4)' }}
+                        <div
+                            className="px-2 py-1 rounded-md flex-shrink-0"
+                            style={{
+                                background: theme.bgPanel,
+                                border: `2px solid ${theme.border}`,
+                            }}
                         >
-                            {progress.current}/{progress.target}
-                        </span>
+                            <span className="text-xs font-bold text-white/40">
+                                {progress.current}/{progress.target}
+                            </span>
+                        </div>
                     )
                 )}
             </div>
 
-            {/* Progress Bar for unlocked items */}
+            {/* Progress Bar for locked items */}
             {!unlocked && progress && (
                 <div
-                    className="mt-2 h-2 rounded-full overflow-hidden"
+                    className="relative mt-3 h-3 rounded-md overflow-hidden"
                     style={{
                         background: theme.bgPanel,
                         border: `2px solid ${theme.border}`,
-                        boxShadow: `inset 0 2px 4px rgba(0,0,0,0.3)`,
                     }}
                 >
                     <div
-                        className="h-full rounded-full transition-all duration-300"
+                        className="h-full rounded transition-all duration-500"
                         style={{
                             width: `${progress.percentage}%`,
                             background: `linear-gradient(90deg, ${categoryColor}80, ${categoryColor})`,
-                            boxShadow: `0 1px 0 rgba(255,255,255,0.2)`,
                         }}
                     />
                 </div>

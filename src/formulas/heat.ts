@@ -3,31 +3,43 @@ import { colors } from '../styles/colors'
 
 export const heat: Formula = {
     id: 'heat',
-    name: '열량',
-    nameEn: 'Heat Transfer',
+    name: { ko: '열량', en: 'Heat Transfer', ja: '熱量' },
     expression: 'Q = mcΔT',
-    description: '물체의 온도를 변화시키는 데 필요한 열에너지',
-    descriptionEn: "The heat energy required to change an object's temperature",
-    simulationHint: '물체에 열이 가해지면서 온도가 올라가는 모습',
-    simulationHintEn: 'Shows temperature rising as heat is applied to an object',
-    applications: [
-        '물을 끓이는 데 필요한 에너지 계산',
-        '냉난방 시스템 용량 설계',
-        '요리할 때 조리 시간 예측',
-        '수영장 온수 가열 비용 계산',
-    ],
-    applicationsEn: [
-        'Calculating energy needed to boil water',
-        'Designing HVAC system capacity',
-        'Estimating cooking times',
-        'Calculating pool heating costs',
-    ],
+    description: {
+        ko: '물체의 온도를 변화시키는 데 필요한 열에너지',
+        en: "The heat energy required to change an object's temperature",
+        ja: '物体の温度を変化させるのに必要な熱エネルギー',
+    },
+    simulationHint: {
+        ko: '물체에 열이 가해지면서 온도가 올라가는 모습',
+        en: 'Shows temperature rising as heat is applied to an object',
+        ja: '物体に熱が加わり温度が上がる様子',
+    },
+    applications: {
+        ko: [
+            '물을 끓이는 데 필요한 에너지 계산',
+            '냉난방 시스템 용량 설계',
+            '요리할 때 조리 시간 예측',
+            '수영장 온수 가열 비용 계산',
+        ],
+        en: [
+            'Calculating energy needed to boil water',
+            'Designing HVAC system capacity',
+            'Estimating cooking times',
+            'Calculating pool heating costs',
+        ],
+        ja: [
+            'お湯を沸かすのに必要なエネルギー計算',
+            '空調システムの容量設計',
+            '調理時間の予測',
+            'プール温水の加熱費計算',
+        ],
+    },
     category: 'thermodynamics',
     variables: [
         {
             symbol: 'm',
-            name: '질량',
-            nameEn: 'Mass',
+            name: { ko: '질량', en: 'Mass', ja: '質量' },
             role: 'input',
             unit: 'kg',
             range: [0.5, 10],
@@ -40,8 +52,7 @@ export const heat: Formula = {
         },
         {
             symbol: 'c',
-            name: '비열',
-            nameEn: 'Specific Heat',
+            name: { ko: '비열', en: 'Specific Heat', ja: '比熱' },
             role: 'input',
             unit: 'J/kg·K',
             range: [500, 4200],
@@ -54,8 +65,7 @@ export const heat: Formula = {
         },
         {
             symbol: 'ΔT',
-            name: '온도 변화',
-            nameEn: 'Temperature Change',
+            name: { ko: '온도 변화', en: 'Temperature Change', ja: '温度変化' },
             role: 'input',
             unit: 'K',
             range: [1, 50],
@@ -68,8 +78,7 @@ export const heat: Formula = {
         },
         {
             symbol: 'Q',
-            name: '열량',
-            nameEn: 'Heat',
+            name: { ko: '열량', en: 'Heat', ja: '熱量' },
             role: 'output',
             unit: 'kJ',
             range: [0, 2000],
@@ -112,29 +121,41 @@ export const heat: Formula = {
     discoveries: [
         {
             id: 'water-high-capacity',
-            mission: '비열 c를 최대(4200)로 설정해봐! (물의 비열)',
-            missionEn: 'Set specific heat c to maximum (4200)! (water)',
-            result: '물은 비열이 높아서 많은 열을 흡수해! 바다가 기후를 조절하는 이유야.',
-            resultEn: 'Water has high specific heat and absorbs lots of heat! This is why oceans regulate climate.',
+            mission: {
+                ko: '비열 c를 최대(4200)로 설정해봐! (물의 비열)',
+                en: 'Set specific heat c to maximum (4200)! (water)',
+                ja: '比熱cを最大（4200）に設定してみて！（水の比熱）',
+            },
+            result: {
+                ko: '물은 비열이 높아서 많은 열을 흡수해! 바다가 기후를 조절하는 이유야.',
+                en: 'Water has high specific heat and absorbs lots of heat! This is why oceans regulate climate.',
+                ja: '水は比熱が高くて多くの熱を吸収する！海が気候を調節する理由だよ。',
+            },
             icon: '🌊',
             condition: (vars) => vars['c'] >= 4000,
         },
         {
             id: 'metal-low-capacity',
-            mission: '비열 c를 600 이하로 낮춰봐! (금속)',
-            missionEn: 'Lower specific heat c below 600! (metal)',
-            result: '금속은 비열이 낮아 빨리 뜨거워지고 빨리 식어! 프라이팬이 빨리 달궈지는 이유야.',
-            resultEn: 'Metals have low specific heat - they heat up and cool down quickly! Why frying pans heat fast.',
+            mission: {
+                ko: '비열 c를 600 이하로 낮춰봐! (금속)',
+                en: 'Lower specific heat c below 600! (metal)',
+                ja: '比熱cを600以下に下げてみて！（金属）',
+            },
+            result: {
+                ko: '금속은 비열이 낮아 빨리 뜨거워지고 빨리 식어! 프라이팬이 빨리 달궈지는 이유야.',
+                en: 'Metals have low specific heat - they heat up and cool down quickly! Why frying pans heat fast.',
+                ja: '金属は比熱が低いから早く熱くなって早く冷める！フライパンが早く熱くなる理由だよ。',
+            },
             icon: '🍳',
             condition: (vars) => vars['c'] <= 600,
         },
     ],
     getInsight: (vars) => {
         const Q = vars['Q']
-        if (Q < 10) return { ko: '커피 한 잔 식히는 열량이야', en: 'Heat to cool a cup of coffee' }
-        if (Q < 50) return { ko: '샤워할 물 데우는 열량이야', en: 'Heat for shower water' }
-        if (Q < 200) return { ko: '냄비 물 끓이는 열량이야', en: 'Heat to boil a pot' }
-        if (Q < 500) return { ko: '욕조 물 데우는 열량이야', en: 'Heat for a bathtub' }
-        return { ko: '수영장 데우는 열량이야!', en: 'Pool heating level!' }
+        if (Q < 10) return { ko: '커피 한 잔 식히는 열량이야', en: 'Heat to cool a cup of coffee', ja: 'コーヒー1杯を冷ます熱量だよ' }
+        if (Q < 50) return { ko: '샤워할 물 데우는 열량이야', en: 'Heat for shower water', ja: 'シャワーのお湯を温める熱量だよ' }
+        if (Q < 200) return { ko: '냄비 물 끓이는 열량이야', en: 'Heat to boil a pot', ja: '鍋のお湯を沸かす熱量だよ' }
+        if (Q < 500) return { ko: '욕조 물 데우는 열량이야', en: 'Heat for a bathtub', ja: '浴槽のお湯を温める熱量だよ' }
+        return { ko: '수영장 데우는 열량이야!', en: 'Pool heating level!', ja: 'プールを温める熱量だよ！' }
     },
 }

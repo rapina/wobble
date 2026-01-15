@@ -5,7 +5,6 @@ const theme = {
 
 interface ParameterCardProps {
     symbol: string
-    name: string
     value: number
     unit: string
     color: string

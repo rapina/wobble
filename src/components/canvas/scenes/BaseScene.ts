@@ -1,6 +1,7 @@
 import { Application, Container, Ticker, Graphics, Text, TextStyle } from 'pixi.js'
 import { pixiColors } from '../../../utils/pixiHelpers'
 import { Wobble, WobbleShape, WOBBLE_CHARACTERS } from '../Wobble'
+import { t } from '@/utils/localization'
 
 let sceneIdCounter = 0
 
@@ -250,17 +251,17 @@ export abstract class BaseScene {
      */
     public showNewWobbleDiscovery(
         shapes: WobbleShape[],
-        isKorean: boolean,
+        lang: string,
         onComplete?: () => void
     ): void {
         if (shapes.length === 0) return
 
         this.discoveryQueue = [...shapes]
         this.onDiscoveryComplete = onComplete || null
-        this.showNextDiscovery(isKorean)
+        this.showNextDiscovery(lang)
     }
 
-    private showNextDiscovery(isKorean: boolean): void {
+    private showNextDiscovery(lang: string): void {
         if (this.discoveryQueue.length === 0) {
             this.hideDiscovery()
             if (this.onDiscoveryComplete) {
@@ -284,11 +285,11 @@ export abstract class BaseScene {
         this.discoveryOverlay.eventMode = 'static'
         this.discoveryOverlay.cursor = 'pointer'
 
-        // Store isKorean for tap handler
-        const storedIsKorean = isKorean
+        // Store lang for tap handler
+        const storedLang = lang
         this.discoveryOverlay.on('pointertap', () => {
             if (this.discoveryQueue.length > 0) {
-                this.showNextDiscovery(storedIsKorean)
+                this.showNextDiscovery(storedLang)
             } else {
                 this.hideDiscovery()
                 if (this.onDiscoveryComplete) {
@@ -323,8 +324,13 @@ export abstract class BaseScene {
             fill: 0xffffff,
             align: 'center',
         })
+        const discoveryTitle = {
+            ko: '새로운 주민 발견!',
+            en: 'New Resident Found!',
+            ja: '新しい住民を発見！',
+        }
         const titleText = new Text({
-            text: isKorean ? '새로운 주민 발견!' : 'New Resident Found!',
+            text: t(discoveryTitle, lang),
             style: titleStyle,
         })
         titleText.anchor.set(0.5)
@@ -341,7 +347,7 @@ export abstract class BaseScene {
             align: 'center',
         })
         const nameText = new Text({
-            text: isKorean ? character.nameKo : character.name,
+            text: t(character.name, lang),
             style: nameStyle,
         })
         nameText.anchor.set(0.5)
@@ -359,7 +365,7 @@ export abstract class BaseScene {
             wordWrapWidth: this.width * 0.7,
         })
         const personalityText = new Text({
-            text: isKorean ? character.personalityKo : character.personality,
+            text: t(character.personality, lang),
             style: personalityStyle,
         })
         personalityText.anchor.set(0.5)
@@ -375,15 +381,18 @@ export abstract class BaseScene {
             align: 'center',
         })
         const remaining = this.discoveryQueue.length
+        const tapNextHint = {
+            ko: `탭하여 다음 (${remaining}명 남음)`,
+            en: `Tap for next (${remaining} more)`,
+            ja: `タップで次へ (残り${remaining}人)`,
+        }
+        const tapContinueHint = {
+            ko: '탭하여 계속',
+            en: 'Tap to continue',
+            ja: 'タップで続行',
+        }
         const hintText = new Text({
-            text:
-                remaining > 0
-                    ? isKorean
-                        ? `탭하여 다음 (${remaining}명 남음)`
-                        : `Tap for next (${remaining} more)`
-                    : isKorean
-                      ? '탭하여 계속'
-                      : 'Tap to continue',
+            text: remaining > 0 ? t(tapNextHint, lang) : t(tapContinueHint, lang),
             style: hintStyle,
         })
         hintText.anchor.set(0.5)

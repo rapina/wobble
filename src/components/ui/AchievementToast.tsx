@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Trophy } from 'lucide-react'
 import { onAchievementUnlock } from '@/stores/achievementStore'
 import { getAchievement, Achievement } from '@/data/achievements'
+import { t } from '@/utils/localization'
 import { cn } from '@/lib/utils'
 
 interface ToastItem {
@@ -13,7 +14,7 @@ interface ToastItem {
 
 export function AchievementToast() {
     const { i18n } = useTranslation()
-    const isKorean = i18n.language === 'ko' || i18n.language.startsWith('ko')
+    const lang = i18n.language
     const [toasts, setToasts] = useState<ToastItem[]>([])
 
     const addToast = useCallback((achievementId: string) => {
@@ -84,11 +85,11 @@ export function AchievementToast() {
                         <div className="flex items-center gap-1.5 mb-0.5">
                             <Trophy className="w-3.5 h-3.5 text-[#F5B041]" />
                             <span className="text-xs font-medium text-[#F5B041]">
-                                {isKorean ? '업적 달성!' : 'Achievement Unlocked!'}
+                                {lang === 'ko' ? '업적 달성!' : lang === 'ja' ? '実績達成！' : 'Achievement Unlocked!'}
                             </span>
                         </div>
                         <p className="text-white font-bold truncate">
-                            {isKorean ? toast.achievement.nameKo : toast.achievement.nameEn}
+                            {t(toast.achievement.name, lang)}
                         </p>
                     </div>
                 </div>

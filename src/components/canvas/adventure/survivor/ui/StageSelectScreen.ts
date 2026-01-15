@@ -1,5 +1,6 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js'
 import { STAGES, StageConfig } from '../PhysicsModifiers'
+import { t } from '@/utils/localization'
 
 export interface StageSelectContext {
     container: Container
@@ -232,7 +233,7 @@ export class StageSelectScreen {
 
         // Stage name
         this.stageNameText = new Text({
-            text: stage.nameKo.toUpperCase(),
+            text: t(stage.name, 'ko').toUpperCase(),
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 16,

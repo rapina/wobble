@@ -1,5 +1,6 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js'
 import { PlayerSkill, SKILL_DEFINITIONS, getCurrentLevelDescription } from '../skills'
+import { t } from '@/utils/localization'
 
 export interface PauseScreenContext {
     container: Container
@@ -94,7 +95,7 @@ export class PauseScreen {
         const cardWidth = this.width - cardPadding * 2
         // Calculate height based on content: stats + xp + skills + buttons
         const hasSkills = data.skills.length > 0
-        const skillRows = Math.min(3, data.skills.length)
+        const skillRows = data.skills.length // Show all skills
         const baseHeight = 180 // Stats + XP bar
         const skillsHeight = hasSkills ? 30 + skillRows * 33 : 0
         const buttonsHeight = 60
@@ -255,10 +256,9 @@ export class PauseScreen {
             const skillItemHeight = 28
             const skillItemGap = 5
             const skillStartY = skillsY + 20
-            const maxVisibleSkills = 3
 
-            const visibleSkills = data.skills.slice(0, maxVisibleSkills)
-            visibleSkills.forEach((skill, i) => {
+            // Show all skills
+            data.skills.forEach((skill, i) => {
                 const skillDef = SKILL_DEFINITIONS[skill.skillId]
                 if (!skillDef) return
 
@@ -295,7 +295,7 @@ export class PauseScreen {
 
                 // Skill name and level
                 const skillNameText = new Text({
-                    text: `${skillDef.nameKo} Lv.${skill.level}`,
+                    text: `${t(skillDef.name, 'ko')} Lv.${skill.level}`,
                     style: new TextStyle({
                         fontFamily: 'Arial, sans-serif',
                         fontSize: 11,
@@ -325,22 +325,6 @@ export class PauseScreen {
                     }
                 }
             })
-
-            // Show "+N more" if there are more skills
-            if (data.skills.length > maxVisibleSkills) {
-                const moreY = skillStartY + maxVisibleSkills * (skillItemHeight + skillItemGap)
-                const moreText = new Text({
-                    text: `+${data.skills.length - maxVisibleSkills} more`,
-                    style: new TextStyle({
-                        fontFamily: 'Arial, sans-serif',
-                        fontSize: 9,
-                        fill: 0xaaaaaa,
-                    }),
-                })
-                moreText.anchor.set(0.5)
-                moreText.position.set(this.centerX, moreY + 3)
-                this.screenContainer.addChild(moreText)
-            }
         }
 
         // Action buttons - inside card at bottom

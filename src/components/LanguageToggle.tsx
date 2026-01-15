@@ -1,11 +1,14 @@
 import { useTranslation } from 'react-i18next'
 
+const LANGUAGES = ['ko', 'en', 'ja'] as const
+
 export function LanguageToggle() {
     const { i18n } = useTranslation()
 
     const toggleLanguage = () => {
-        const newLang = i18n.language === 'ko' ? 'en' : 'ko'
-        i18n.changeLanguage(newLang)
+        const currentIndex = LANGUAGES.indexOf(i18n.language as typeof LANGUAGES[number])
+        const nextIndex = (currentIndex + 1) % LANGUAGES.length
+        i18n.changeLanguage(LANGUAGES[nextIndex])
     }
 
     return (

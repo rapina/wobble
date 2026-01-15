@@ -3,32 +3,43 @@ import { colors } from '../styles/colors'
 
 export const bernoulli: Formula = {
     id: 'bernoulli',
-    name: '베르누이 방정식',
-    nameEn: "Bernoulli's Equation",
+    name: { ko: '베르누이 방정식', en: "Bernoulli's Equation", ja: 'ベルヌーイの定理' },
     expression: 'P + ½ρv² = const',
-    description: '유체의 속도가 빨라지면 압력이 낮아진다',
-    descriptionEn:
-        'As the speed of a fluid increases, its pressure decreases',
-    simulationHint: '좁은 곳을 지날 때 유체 속도와 압력 변화를 관찰하세요',
-    simulationHintEn: 'Watch how fluid speed and pressure change in narrow sections',
-    applications: [
-        '비행기 날개 - 윗면 공기가 빨라 압력이 낮아져 양력 발생',
-        '분무기 - 빠른 공기 흐름이 액체를 빨아올림',
-        '카뷰레터 - 연료를 공기와 혼합',
-        '벤투리 효과 - 파이프 좁은 부분에서 속도 증가',
-    ],
-    applicationsEn: [
-        'Airplane wings - faster air above creates lift due to lower pressure',
-        'Spray bottles - fast air flow draws liquid up',
-        'Carburetor - mixes fuel with air',
-        'Venturi effect - speed increases in narrow pipe sections',
-    ],
+    description: {
+        ko: '유체의 속도가 빨라지면 압력이 낮아진다',
+        en: 'As the speed of a fluid increases, its pressure decreases',
+        ja: '流体の速度が速くなると圧力が低くなる',
+    },
+    simulationHint: {
+        ko: '좁은 곳을 지날 때 유체 속도와 압력 변화를 관찰하세요',
+        en: 'Watch how fluid speed and pressure change in narrow sections',
+        ja: '狭い部分を通る時の流体速度と圧力変化を観察',
+    },
+    applications: {
+        ko: [
+            '비행기 날개 - 윗면 공기가 빨라 압력이 낮아져 양력 발생',
+            '분무기 - 빠른 공기 흐름이 액체를 빨아올림',
+            '카뷰레터 - 연료를 공기와 혼합',
+            '벤투리 효과 - 파이프 좁은 부분에서 속도 증가',
+        ],
+        en: [
+            'Airplane wings - faster air above creates lift due to lower pressure',
+            'Spray bottles - fast air flow draws liquid up',
+            'Carburetor - mixes fuel with air',
+            'Venturi effect - speed increases in narrow pipe sections',
+        ],
+        ja: [
+            '飛行機の翼 - 上面の空気が速く圧力が低くなり揚力が発生',
+            '霧吹き - 速い空気の流れが液体を吸い上げる',
+            'キャブレター - 燃料と空気を混合',
+            'ベンチュリ効果 - パイプの狭い部分で速度増加',
+        ],
+    },
     category: 'mechanics',
     variables: [
         {
             symbol: 'v₁',
-            name: '입구 속도',
-            nameEn: 'Inlet velocity',
+            name: { ko: '입구 속도', en: 'Inlet velocity', ja: '入口速度' },
             role: 'input',
             unit: 'm/s',
             range: [1, 10],
@@ -41,8 +52,7 @@ export const bernoulli: Formula = {
         },
         {
             symbol: 'A₁',
-            name: '입구 면적',
-            nameEn: 'Inlet area',
+            name: { ko: '입구 면적', en: 'Inlet area', ja: '入口面積' },
             role: 'input',
             unit: 'm²',
             range: [2, 10],
@@ -55,8 +65,7 @@ export const bernoulli: Formula = {
         },
         {
             symbol: 'A₂',
-            name: '출구 면적',
-            nameEn: 'Outlet area',
+            name: { ko: '출구 면적', en: 'Outlet area', ja: '出口面積' },
             role: 'input',
             unit: 'm²',
             range: [1, 8],
@@ -69,8 +78,7 @@ export const bernoulli: Formula = {
         },
         {
             symbol: 'v₂',
-            name: '출구 속도',
-            nameEn: 'Outlet velocity',
+            name: { ko: '출구 속도', en: 'Outlet velocity', ja: '出口速度' },
             role: 'output',
             unit: 'm/s',
             range: [1, 50],
@@ -123,10 +131,16 @@ export const bernoulli: Formula = {
     discoveries: [
         {
             id: 'venturi-effect',
-            mission: 'A₂를 A₁보다 훨씬 작게 해봐',
-            missionEn: 'Make A₂ much smaller than A₁',
-            result: '좁은 곳에서 유체가 빨라지는 벤투리 효과!',
-            resultEn: 'Venturi effect - fluid speeds up in narrow sections!',
+            mission: {
+                ko: 'A₂를 A₁보다 훨씬 작게 해봐',
+                en: 'Make A₂ much smaller than A₁',
+                ja: 'A₂をA₁よりずっと小さくしてみよう',
+            },
+            result: {
+                ko: '좁은 곳에서 유체가 빨라지는 벤투리 효과!',
+                en: 'Venturi effect - fluid speeds up in narrow sections!',
+                ja: '狭い場所で流体が速くなるベンチュリ効果！',
+            },
             icon: '💨',
             condition: (vars) => {
                 const A1 = vars['A₁'] || 6
@@ -137,10 +151,16 @@ export const bernoulli: Formula = {
         },
         {
             id: 'airplane-lift',
-            mission: '높은 속도로 양력 원리를 체험해봐',
-            missionEn: 'Experience lift principle with high speed',
-            result: '빠른 공기 = 낮은 압력 = 위로 뜨는 힘!',
-            resultEn: 'Fast air = low pressure = upward lift!',
+            mission: {
+                ko: '높은 속도로 양력 원리를 체험해봐',
+                en: 'Experience lift principle with high speed',
+                ja: '高速で揚力の原理を体験しよう',
+            },
+            result: {
+                ko: '빠른 공기 = 낮은 압력 = 위로 뜨는 힘!',
+                en: 'Fast air = low pressure = upward lift!',
+                ja: '速い空気 = 低い圧力 = 上向きの揚力！',
+            },
             icon: '✈️',
             condition: (vars) => {
                 const v2 = vars['v₂'] || 9
@@ -149,10 +169,16 @@ export const bernoulli: Formula = {
         },
         {
             id: 'equal-flow',
-            mission: 'A₁과 A₂를 비슷하게 맞춰봐',
-            missionEn: 'Make A₁ and A₂ similar',
-            result: '면적이 같으면 속도도 같아!',
-            resultEn: 'Equal areas mean equal velocities!',
+            mission: {
+                ko: 'A₁과 A₂를 비슷하게 맞춰봐',
+                en: 'Make A₁ and A₂ similar',
+                ja: 'A₁とA₂を同じくらいにしてみよう',
+            },
+            result: {
+                ko: '면적이 같으면 속도도 같아!',
+                en: 'Equal areas mean equal velocities!',
+                ja: '面積が同じなら速度も同じ！',
+            },
             icon: '⚖️',
             condition: (vars) => {
                 const A1 = vars['A₁'] || 6
@@ -176,6 +202,7 @@ export const bernoulli: Formula = {
             return {
                 ko: `출구 속도가 ${speedRatio.toFixed(1)}배 빨라졌어요! 비행기 날개 위 공기도 이렇게 빨라져요.`,
                 en: `Exit speed increased ${speedRatio.toFixed(1)}x! Air above airplane wings speeds up similarly.`,
+                ja: `出口速度が${speedRatio.toFixed(1)}倍速くなりました！飛行機の翼上の空気も同様に速くなります。`,
             }
         }
 
@@ -183,12 +210,14 @@ export const bernoulli: Formula = {
             return {
                 ko: `면적이 ${areaRatio.toFixed(1)}배 좁아지면 속도가 그만큼 빨라져요. 호스 끝을 막으면 물이 세게 나오는 원리!`,
                 en: `Area reduced ${areaRatio.toFixed(1)}x means speed increases proportionally. Like squeezing a hose!`,
+                ja: `面積が${areaRatio.toFixed(1)}倍狭くなると速度もその分速くなります。ホースの先を絞ると水が勢いよく出る原理！`,
             }
         }
 
         return {
             ko: `연속 방정식: A₁v₁ = A₂v₂. 유체는 좁은 곳에서 빨라져요!`,
             en: `Continuity equation: A₁v₁ = A₂v₂. Fluids speed up in narrow sections!`,
+            ja: `連続の方程式：A₁v₁ = A₂v₂。流体は狭い場所で速くなります！`,
         }
     },
 }

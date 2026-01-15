@@ -1,4 +1,5 @@
 import { WobbleShape } from '../../Wobble'
+import { LocalizedText } from '@/utils/localization'
 
 // Skill effect types for each level
 export interface SkillLevelEffect {
@@ -70,10 +71,8 @@ export interface SkillLevelEffect {
 
 export interface SkillDefinition {
     id: string
-    nameEn: string
-    nameKo: string
-    descriptionEn: string
-    descriptionKo: string
+    name: LocalizedText
+    description: LocalizedText
     icon: string
     color: number
     maxLevel: number
@@ -89,10 +88,8 @@ export interface PlayerSkill {
 
 export interface PassiveDefinition {
     id: string
-    nameEn: string
-    nameKo: string
-    descriptionEn: string
-    descriptionKo: string
+    name: LocalizedText
+    description: LocalizedText
     icon: string
     color: number
 }
@@ -110,10 +107,8 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     // 탄성 충돌 (Elastic Collision) - 운동량 보존 법칙
     'elastic-bounce': {
         id: 'elastic-bounce',
-        nameEn: 'Elastic Collision',
-        nameKo: '탄성 충돌',
-        descriptionEn: 'Projectiles conserve momentum when bouncing',
-        descriptionKo: '운동량을 보존하며 튕겨갑니다',
+        name: { ko: '탄성 충돌', en: 'Elastic Collision' },
+        description: { ko: '운동량을 보존하며 튕겨갑니다', en: 'Projectiles conserve momentum when bouncing' },
         icon: '◎',
         color: 0x3498db,
         maxLevel: 5,
@@ -131,10 +126,8 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     // 운동량 관통 (Momentum Pierce) - p = mv
     'momentum-pierce': {
         id: 'momentum-pierce',
-        nameEn: 'Momentum Pierce',
-        nameKo: '운동량 관통',
-        descriptionEn: 'Heavy projectiles push through enemies',
-        descriptionKo: '무거운 탄환이 적을 밀고 지나갑니다',
+        name: { ko: '운동량 관통', en: 'Momentum Pierce' },
+        description: { ko: '무거운 탄환이 적을 밀고 지나갑니다', en: 'Heavy projectiles push through enemies' },
         icon: '➤',
         color: 0xe74c3c,
         maxLevel: 5,
@@ -152,10 +145,8 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     // 압력파 (Pressure Wave) - PV = nRT
     'pressure-wave': {
         id: 'pressure-wave',
-        nameEn: 'Pressure Wave',
-        nameKo: '압력파',
-        descriptionEn: 'Gas expansion creates explosive pressure',
-        descriptionKo: '기체 팽창으로 폭발적 압력을 만듭니다',
+        name: { ko: '압력파', en: 'Pressure Wave' },
+        description: { ko: '기체 팽창으로 폭발적 압력을 만듭니다', en: 'Gas expansion creates explosive pressure' },
         icon: '✸',
         color: 0xf39c12,
         maxLevel: 5,
@@ -173,10 +164,8 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     // 진동수 증폭 (Frequency Burst) - E = hf
     'frequency-burst': {
         id: 'frequency-burst',
-        nameEn: 'Frequency Burst',
-        nameKo: '진동수 증폭',
-        descriptionEn: 'Higher frequency means faster fire rate',
-        descriptionKo: '높은 진동수로 빠르게 발사합니다',
+        name: { ko: '진동수 증폭', en: 'Frequency Burst' },
+        description: { ko: '높은 진동수로 빠르게 발사합니다', en: 'Higher frequency means faster fire rate' },
         icon: '⚡',
         color: 0xf1c40f,
         maxLevel: 5,
@@ -194,10 +183,8 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     // F=ma 충격 (F=ma Impact) - 뉴턴 제2법칙
     'fma-impact': {
         id: 'fma-impact',
-        nameEn: 'F=ma Impact',
-        nameKo: 'F=ma 충격',
-        descriptionEn: 'Greater mass means greater force',
-        descriptionKo: '큰 질량이 큰 힘을 만듭니다',
+        name: { ko: 'F=ma 충격', en: 'F=ma Impact' },
+        description: { ko: '큰 질량이 큰 힘을 만듭니다', en: 'Greater mass means greater force' },
         icon: '⬤',
         color: 0x9b59b6,
         maxLevel: 5,
@@ -215,10 +202,8 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     // 중력 유도 (Gravity Pull) - F = GMm/r²
     'gravity-pull': {
         id: 'gravity-pull',
-        nameEn: 'Gravity Pull',
-        nameKo: '중력 유도',
-        descriptionEn: 'Projectiles curve toward enemies',
-        descriptionKo: '중력으로 적을 향해 휘어집니다',
+        name: { ko: '중력 유도', en: 'Gravity Pull' },
+        description: { ko: '중력으로 적을 향해 휘어집니다', en: 'Projectiles curve toward enemies' },
         icon: '◇',
         color: 0x1abc9c,
         maxLevel: 5,
@@ -236,10 +221,8 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     // 굴절 분산 (Refraction Spread) - 스넬의 법칙
     'refraction-spread': {
         id: 'refraction-spread',
-        nameEn: 'Refraction Spread',
-        nameKo: '굴절 분산',
-        descriptionEn: 'Light refracts into multiple beams',
-        descriptionKo: '빛이 여러 각도로 굴절됩니다',
+        name: { ko: '굴절 분산', en: 'Refraction Spread' },
+        description: { ko: '빛이 여러 각도로 굴절됩니다', en: 'Light refracts into multiple beams' },
         icon: '⁂',
         color: 0xe67e22,
         maxLevel: 5,
@@ -257,10 +240,8 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     // 원심력 펄스 (Centripetal Pulse) - F = mv²/r
     'centripetal-pulse': {
         id: 'centripetal-pulse',
-        nameEn: 'Centripetal Pulse',
-        nameKo: '원심력 펄스',
-        descriptionEn: 'Rotating force pushes enemies away',
-        descriptionKo: '회전하는 힘이 적을 밀어냅니다',
+        name: { ko: '원심력 펄스', en: 'Centripetal Pulse' },
+        description: { ko: '회전하는 힘이 적을 밀어냅니다', en: 'Rotating force pushes enemies away' },
         icon: '◯',
         color: 0x2ecc71,
         maxLevel: 5,
@@ -282,10 +263,8 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     // 탄성 회귀 (Elastic Return) - F = -kx (훅의 법칙)
     'elastic-return': {
         id: 'elastic-return',
-        nameEn: 'Elastic Return',
-        nameKo: '탄성 회귀',
-        descriptionEn: 'Projectiles return like a spring',
-        descriptionKo: '스프링처럼 발사체가 되돌아옵니다',
+        name: { ko: '탄성 회귀', en: 'Elastic Return' },
+        description: { ko: '스프링처럼 발사체가 되돌아옵니다', en: 'Projectiles return like a spring' },
         icon: '⟳',
         color: 0x9b59b6,
         maxLevel: 5,
@@ -303,10 +282,8 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     // 자기장 방어 (Magnetic Shield) - F = qvB (로렌츠 힘)
     'magnetic-shield': {
         id: 'magnetic-shield',
-        nameEn: 'Magnetic Shield',
-        nameKo: '자기장 방어',
-        descriptionEn: 'Magnetic field deflects enemies',
-        descriptionKo: '자기장이 적의 경로를 휘게 합니다',
+        name: { ko: '자기장 방어', en: 'Magnetic Shield' },
+        description: { ko: '자기장이 적의 경로를 휘게 합니다', en: 'Magnetic field deflects enemies' },
         icon: '⊛',
         color: 0x3498db,
         maxLevel: 5,
@@ -324,10 +301,8 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     // 정전기 반발 (Static Repulsion) - F = kq₁q₂/r² (쿨롱의 법칙)
     'static-repulsion': {
         id: 'static-repulsion',
-        nameEn: 'Static Repulsion',
-        nameKo: '정전기 반발',
-        descriptionEn: 'Electric charge pushes enemies away',
-        descriptionKo: '전하가 적을 지속적으로 밀어냅니다',
+        name: { ko: '정전기 반발', en: 'Static Repulsion' },
+        description: { ko: '전하가 적을 지속적으로 밀어냅니다', en: 'Electric charge pushes enemies away' },
         icon: '⊕',
         color: 0xf1c40f,
         maxLevel: 5,
@@ -345,10 +320,8 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     // 부력 폭탄 (Buoyant Bomb) - F = ρVg (부력)
     'buoyant-bomb': {
         id: 'buoyant-bomb',
-        nameEn: 'Buoyant Bomb',
-        nameKo: '부력 폭탄',
-        descriptionEn: 'Projectiles float up then drop explosively',
-        descriptionKo: '발사체가 떠올랐다 떨어지며 폭발합니다',
+        name: { ko: '부력 폭탄', en: 'Buoyant Bomb' },
+        description: { ko: '발사체가 떠올랐다 떨어지며 폭발합니다', en: 'Projectiles float up then drop explosively' },
         icon: '◠',
         color: 0x1abc9c,
         maxLevel: 5,
@@ -366,10 +339,8 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     // 양자 터널링 (Quantum Tunnel) - T ≈ e^(-2κL) (터널링 확률)
     'quantum-tunnel': {
         id: 'quantum-tunnel',
-        nameEn: 'Quantum Tunnel',
-        nameKo: '양자 터널링',
-        descriptionEn: 'Projectiles may phase through enemies',
-        descriptionKo: '확률적으로 적을 투과하며 추가 데미지',
+        name: { ko: '양자 터널링', en: 'Quantum Tunnel' },
+        description: { ko: '확률적으로 적을 투과하며 추가 데미지', en: 'Projectiles may phase through enemies' },
         icon: '⫘',
         color: 0x8e44ad,
         maxLevel: 5,
@@ -387,10 +358,8 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     // 진자 리듬 (Pendulum Rhythm) - T = 2π√(L/g) (진자 주기)
     'pendulum-rhythm': {
         id: 'pendulum-rhythm',
-        nameEn: 'Pendulum Rhythm',
-        nameKo: '진자 리듬',
-        descriptionEn: 'Damage oscillates with timing',
-        descriptionKo: '주기적으로 공격력이 최대가 됩니다',
+        name: { ko: '진자 리듬', en: 'Pendulum Rhythm' },
+        description: { ko: '주기적으로 공격력이 최대가 됩니다', en: 'Damage oscillates with timing' },
         icon: '◷',
         color: 0xe67e22,
         maxLevel: 5,
@@ -408,10 +377,8 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     // 토크 회전참 (Torque Slash) - τ = rF sin θ (토크)
     'torque-slash': {
         id: 'torque-slash',
-        nameEn: 'Torque Slash',
-        nameKo: '토크 회전참',
-        descriptionEn: 'Spinning blade damages nearby enemies',
-        descriptionKo: '회전하는 칼날이 주변 적을 벱니다',
+        name: { ko: '토크 회전참', en: 'Torque Slash' },
+        description: { ko: '회전하는 칼날이 주변 적을 벱니다', en: 'Spinning blade damages nearby enemies' },
         icon: '↻',
         color: 0xc0392b,
         maxLevel: 5,
@@ -429,10 +396,8 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     // 시간 왜곡 (Time Warp) - t = t₀/√(1-v²/c²) (시간 지연)
     'time-warp': {
         id: 'time-warp',
-        nameEn: 'Time Warp',
-        nameKo: '시간 왜곡',
-        descriptionEn: 'Slow down nearby enemies',
-        descriptionKo: '주변 적의 시간을 느리게 합니다',
+        name: { ko: '시간 왜곡', en: 'Time Warp' },
+        description: { ko: '주변 적의 시간을 느리게 합니다', en: 'Slow down nearby enemies' },
         icon: '◐',
         color: 0x2c3e50,
         maxLevel: 5,
@@ -455,60 +420,48 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
 export const PASSIVE_DEFINITIONS: Record<string, PassiveDefinition> = {
     momentum: {
         id: 'momentum',
-        nameEn: 'Momentum',
-        nameKo: '모멘텀',
-        descriptionEn: 'Speed up while moving (+5%/sec, max +30%). Damage scales with speed.',
-        descriptionKo: '이동 시 속도 +5%/초 (최대 +30%), 속도에 비례해 데미지 증가',
+        name: { ko: '모멘텀', en: 'Momentum' },
+        description: { ko: '이동 시 속도 +5%/초 (최대 +30%), 속도에 비례해 데미지 증가', en: 'Speed up while moving (+5%/sec, max +30%). Damage scales with speed.' },
         icon: '→',
         color: 0xf5b041,
     },
 
     fortitude: {
         id: 'fortitude',
-        nameEn: 'Fortitude',
-        nameKo: '불굴',
-        descriptionEn: 'Take 15% less damage. +2% damage reduction per level.',
-        descriptionKo: '받는 피해 -15%, 레벨당 +2% 방어력',
+        name: { ko: '불굴', en: 'Fortitude' },
+        description: { ko: '받는 피해 -15%, 레벨당 +2% 방어력', en: 'Take 15% less damage. +2% damage reduction per level.' },
         icon: '■',
         color: 0x5dade2,
     },
 
     'critical-edge': {
         id: 'critical-edge',
-        nameEn: 'Critical Edge',
-        nameKo: '날카로운 일격',
-        descriptionEn: '+15% crit chance. Crits deal 2.5x damage.',
-        descriptionKo: '치명타 확률 +15%, 치명타 2.5배 데미지',
+        name: { ko: '날카로운 일격', en: 'Critical Edge' },
+        description: { ko: '치명타 확률 +15%, 치명타 2.5배 데미지', en: '+15% crit chance. Crits deal 2.5x damage.' },
         icon: '▲',
         color: 0xe74c3c,
     },
 
     'lucky-star': {
         id: 'lucky-star',
-        nameEn: 'Lucky Star',
-        nameKo: '행운의 별',
-        descriptionEn: '+20% XP gain. 10% chance for double XP orbs.',
-        descriptionKo: 'XP +20%, 10% 확률로 2배 XP',
+        name: { ko: '행운의 별', en: 'Lucky Star' },
+        description: { ko: 'XP +20%, 10% 확률로 2배 XP', en: '+20% XP gain. 10% chance for double XP orbs.' },
         icon: '★',
         color: 0xffd700,
     },
 
     precision: {
         id: 'precision',
-        nameEn: 'Precision',
-        nameKo: '정밀',
-        descriptionEn: '+10% damage per consecutive hit (resets on miss).',
-        descriptionKo: '연속 명중 시 데미지 +10% 누적 (빗나가면 초기화)',
+        name: { ko: '정밀', en: 'Precision' },
+        description: { ko: '연속 명중 시 데미지 +10% 누적 (빗나가면 초기화)', en: '+10% damage per consecutive hit (resets on miss).' },
         icon: '◆',
         color: 0xbb8fce,
     },
 
     'guardian-aura': {
         id: 'guardian-aura',
-        nameEn: 'Guardian Aura',
-        nameKo: '수호 오라',
-        descriptionEn: 'Nearby enemies deal 20% less damage.',
-        descriptionKo: '근접 적의 공격력 -20%',
+        name: { ko: '수호 오라', en: 'Guardian Aura' },
+        description: { ko: '근접 적의 공격력 -20%', en: 'Nearby enemies deal 20% less damage.' },
         icon: '⬠',
         color: 0x82e0aa,
     },

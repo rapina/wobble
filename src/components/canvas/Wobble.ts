@@ -1,5 +1,6 @@
 import { Container, Graphics, BlurFilter } from 'pixi.js'
 import { cssToHex, pixiColors } from '../../utils/pixiHelpers'
+import { LocalizedText } from '@/utils/localization'
 
 export type WobbleExpression =
     | 'happy'
@@ -50,10 +51,8 @@ export const SHAPE_ROLES = {
 /** 워블 캐릭터 정보 인터페이스 */
 export interface WobbleCharacter {
     shape: WobbleShape
-    name: string
-    nameKo: string
-    personality: string
-    personalityKo: string
+    name: LocalizedText
+    personality: LocalizedText
     role: string
     color: number
 }
@@ -62,64 +61,78 @@ export interface WobbleCharacter {
 export const WOBBLE_CHARACTERS: Record<WobbleShape, WobbleCharacter> = {
     circle: {
         shape: 'circle',
-        name: 'Wobi',
-        nameKo: '워비',
-        personality: 'Curious and energetic protagonist',
-        personalityKo: '호기심 많고 활발한 주인공',
+        name: { ko: '워비', en: 'Wobi', ja: 'ウォビ' },
+        personality: {
+            ko: '호기심 많고 활발한 주인공',
+            en: 'Curious and energetic protagonist',
+            ja: '好奇心旺盛で元気な主人公',
+        },
         role: 'protagonist',
         color: 0xf5b041,
     },
     square: {
         shape: 'square',
-        name: 'Boxy',
-        nameKo: '박시',
-        personality: 'Gentle and often gets pushed around',
-        personalityKo: '순하고 자주 당하는 타입',
+        name: { ko: '박시', en: 'Boxy', ja: 'ボクシー' },
+        personality: {
+            ko: '순하고 자주 당하는 타입',
+            en: 'Gentle and often gets pushed around',
+            ja: '穏やかでよく押されるタイプ',
+        },
         role: 'victim',
         color: 0x5dade2,
     },
     triangle: {
         shape: 'triangle',
-        name: 'Spike',
-        nameKo: '스파이크',
-        personality: 'Sharp and competitive challenger',
-        personalityKo: '날카롭고 도전적인 성격',
+        name: { ko: '스파이크', en: 'Spike', ja: 'スパイク' },
+        personality: {
+            ko: '날카롭고 도전적인 성격',
+            en: 'Sharp and competitive challenger',
+            ja: '鋭くて挑戦的な性格',
+        },
         role: 'attacker',
         color: 0xe74c3c,
     },
     star: {
         shape: 'star',
-        name: 'Twinkle',
-        nameKo: '트윙클',
-        personality: 'Special and brings good luck',
-        personalityKo: '특별하고 행운을 가져다주는 존재',
+        name: { ko: '트윙클', en: 'Twinkle', ja: 'トゥインクル' },
+        personality: {
+            ko: '특별하고 행운을 가져다주는 존재',
+            en: 'Special and brings good luck',
+            ja: '特別で幸運をもたらす存在',
+        },
         role: 'bonus',
         color: 0xffd700,
     },
     diamond: {
         shape: 'diamond',
-        name: 'Gem',
-        nameKo: '젬',
-        personality: 'Precious and goal-oriented',
-        personalityKo: '귀하고 우아한 목표 지향적 성격',
+        name: { ko: '젬', en: 'Gem', ja: 'ジェム' },
+        personality: {
+            ko: '귀하고 우아한 목표 지향적 성격',
+            en: 'Precious and goal-oriented',
+            ja: '貴重で目標志向の性格',
+        },
         role: 'goal',
         color: 0xbb8fce,
     },
     pentagon: {
         shape: 'pentagon',
-        name: 'Penta',
-        nameKo: '펜타',
-        personality: 'Reliable protector and supporter',
-        personalityKo: '믿음직하고 든든한 보호자',
+        name: { ko: '펜타', en: 'Penta', ja: 'ペンタ' },
+        personality: {
+            ko: '믿음직하고 든든한 보호자',
+            en: 'Reliable protector and supporter',
+            ja: '頼りになる守護者',
+        },
         role: 'defender',
         color: 0x82e0aa,
     },
     shadow: {
         shape: 'shadow',
-        name: 'Shadow',
-        nameKo: '섀도우',
-        personality: 'Dark law destroyer from the void',
-        personalityKo: '어둠에서 온 법칙 파괴자',
+        name: { ko: '섀도우', en: 'Shadow', ja: 'シャドウ' },
+        personality: {
+            ko: '어둠에서 온 법칙 파괴자',
+            en: 'Dark law destroyer from the void',
+            ja: '闇から来た法則の破壊者',
+        },
         role: 'enemy',
         color: 0x1a1a1a,
     },

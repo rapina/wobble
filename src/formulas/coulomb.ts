@@ -3,31 +3,43 @@ import { colors } from '../styles/colors'
 
 export const coulomb: Formula = {
     id: 'coulomb',
-    name: '쿨롱의 법칙',
-    nameEn: "Coulomb's Law",
+    name: { ko: '쿨롱의 법칙', en: "Coulomb's Law", ja: 'クーロンの法則' },
     expression: 'F = kq₁q₂/r²',
-    description: '두 전하 사이에 작용하는 전기력',
-    descriptionEn: 'The electric force between two charges',
-    simulationHint: '두 전하가 같은 부호면 밀어내고, 다른 부호면 끌어당기는 모습',
-    simulationHintEn: 'Shows charges repelling when same sign, attracting when opposite',
-    applications: [
-        '정전기 방지 제품 설계',
-        '복사기와 레이저 프린터의 토너 부착 원리',
-        '번개와 정전기 방전 현상 이해',
-        '원자 내 전자와 핵 사이의 결합력 계산',
-    ],
-    applicationsEn: [
-        'Designing anti-static products',
-        'Toner adhesion in copiers and laser printers',
-        'Understanding lightning and static discharge',
-        'Calculating electron-nucleus binding force in atoms',
-    ],
+    description: {
+        ko: '두 전하 사이에 작용하는 전기력',
+        en: 'The electric force between two charges',
+        ja: '二つの電荷間に働く電気力',
+    },
+    simulationHint: {
+        ko: '두 전하가 같은 부호면 밀어내고, 다른 부호면 끌어당기는 모습',
+        en: 'Shows charges repelling when same sign, attracting when opposite',
+        ja: '同じ符号の電荷は反発し、異なる符号は引き合う様子',
+    },
+    applications: {
+        ko: [
+            '정전기 방지 제품 설계',
+            '복사기와 레이저 프린터의 토너 부착 원리',
+            '번개와 정전기 방전 현상 이해',
+            '원자 내 전자와 핵 사이의 결합력 계산',
+        ],
+        en: [
+            'Designing anti-static products',
+            'Toner adhesion in copiers and laser printers',
+            'Understanding lightning and static discharge',
+            'Calculating electron-nucleus binding force in atoms',
+        ],
+        ja: [
+            '静電気防止製品の設計',
+            'コピー機やレーザープリンターのトナー付着原理',
+            '雷と静電気放電の理解',
+            '原子内の電子と核の結合力計算',
+        ],
+    },
     category: 'electricity',
     variables: [
         {
             symbol: 'q₁',
-            name: '전하 1',
-            nameEn: 'Charge 1',
+            name: { ko: '전하 1', en: 'Charge 1', ja: '電荷1' },
             role: 'input',
             unit: 'μC',
             range: [1, 100],
@@ -40,8 +52,7 @@ export const coulomb: Formula = {
         },
         {
             symbol: 'q₂',
-            name: '전하 2',
-            nameEn: 'Charge 2',
+            name: { ko: '전하 2', en: 'Charge 2', ja: '電荷2' },
             role: 'input',
             unit: 'μC',
             range: [1, 100],
@@ -54,8 +65,7 @@ export const coulomb: Formula = {
         },
         {
             symbol: 'r',
-            name: '거리',
-            nameEn: 'Distance',
+            name: { ko: '거리', en: 'Distance', ja: '距離' },
             role: 'input',
             unit: 'cm',
             range: [1, 50],
@@ -68,8 +78,7 @@ export const coulomb: Formula = {
         },
         {
             symbol: 'F',
-            name: '전기력',
-            nameEn: 'Electric Force',
+            name: { ko: '전기력', en: 'Electric Force', ja: '電気力' },
             role: 'output',
             unit: 'N',
             range: [0, 1000],
@@ -131,29 +140,41 @@ export const coulomb: Formula = {
     discoveries: [
         {
             id: 'close-charges',
-            mission: '거리 r을 3cm 이하로 줄여봐!',
-            missionEn: 'Reduce distance r below 3cm!',
-            result: '전하가 가까우면 힘이 급격히 커져! 역제곱 법칙 때문이야.',
-            resultEn: 'Close charges experience huge force! Due to the inverse square law.',
+            mission: {
+                ko: '거리 r을 3cm 이하로 줄여봐!',
+                en: 'Reduce distance r below 3cm!',
+                ja: '距離rを3cm以下に減らしてみて！',
+            },
+            result: {
+                ko: '전하가 가까우면 힘이 급격히 커져! 역제곱 법칙 때문이야.',
+                en: 'Close charges experience huge force! Due to the inverse square law.',
+                ja: '電荷が近いと力が急激に大きくなる！逆二乗法則のためだよ。',
+            },
             icon: '⚡',
             condition: (vars) => vars['r'] <= 3,
         },
         {
             id: 'large-charges',
-            mission: '두 전하 q₁과 q₂를 모두 80μC 이상으로 올려봐!',
-            missionEn: 'Raise both charges q1 and q2 above 80 microcoulombs!',
-            result: '큰 전하는 강한 전기력! 번개가 무서운 에너지를 갖는 이유야.',
-            resultEn: 'Large charges mean strong electric force! This is why lightning has tremendous energy.',
+            mission: {
+                ko: '두 전하 q₁과 q₂를 모두 80μC 이상으로 올려봐!',
+                en: 'Raise both charges q1 and q2 above 80 microcoulombs!',
+                ja: '両方の電荷q₁とq₂を80μC以上に上げてみて！',
+            },
+            result: {
+                ko: '큰 전하는 강한 전기력! 번개가 무서운 에너지를 갖는 이유야.',
+                en: 'Large charges mean strong electric force! This is why lightning has tremendous energy.',
+                ja: '大きな電荷は強い電気力！雷がすごいエネルギーを持つ理由だよ。',
+            },
             icon: '🌩️',
             condition: (vars) => vars['q₁'] >= 80 && vars['q₂'] >= 80,
         },
     ],
     getInsight: (vars) => {
         const F = vars['F']
-        if (F < 1) return { ko: '정전기 정도의 약한 힘이야', en: 'Weak like static electricity' }
-        if (F < 10) return { ko: '머리카락 끌어당기는 힘이야', en: 'Hair-attracting force' }
-        if (F < 100) return { ko: '풍선 정전기 정도야', en: 'Like balloon static' }
-        if (F < 500) return { ko: '상당한 전기력이야', en: 'Significant electric force' }
-        return { ko: '번개급 강력한 전기력!', en: 'Lightning-level electric force!' }
+        if (F < 1) return { ko: '정전기 정도의 약한 힘이야', en: 'Weak like static electricity', ja: '静電気程度の弱い力だよ' }
+        if (F < 10) return { ko: '머리카락 끌어당기는 힘이야', en: 'Hair-attracting force', ja: '髪の毛を引き寄せる力だよ' }
+        if (F < 100) return { ko: '풍선 정전기 정도야', en: 'Like balloon static', ja: '風船の静電気くらいだよ' }
+        if (F < 500) return { ko: '상당한 전기력이야', en: 'Significant electric force', ja: 'かなりの電気力だよ' }
+        return { ko: '번개급 강력한 전기력!', en: 'Lightning-level electric force!', ja: '雷レベルの強力な電気力だよ！' }
     },
 }

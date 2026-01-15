@@ -57,7 +57,6 @@ export function FormulaLayout({
                             variables={[
                                 {
                                     symbol: showSquare ? `${variable.symbol}` : variable.symbol,
-                                    name: variable.name,
                                     unit: variable.unit,
                                     color: variable.visual.color,
                                 },
@@ -91,7 +90,6 @@ export function FormulaLayout({
                 <div className="relative">
                     <ParameterCard
                         symbol={variable.symbol}
-                        name={variable.name}
                         value={values[variable.symbol] ?? variable.default}
                         unit={variable.unit}
                         color={variable.visual.color}

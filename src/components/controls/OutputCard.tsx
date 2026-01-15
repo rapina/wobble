@@ -5,7 +5,6 @@ const theme = {
 
 interface OutputVariable {
     symbol: string
-    name: string
     unit: string
     color: string
 }

@@ -16,7 +16,7 @@ interface PixiCanvasProps {
 export interface PixiCanvasHandle {
     showNewWobbleDiscovery: (
         shapes: WobbleShape[],
-        isKorean: boolean,
+        lang: string,
         onComplete?: () => void
     ) => void
 }
@@ -51,12 +51,12 @@ export const PixiCanvas = forwardRef<PixiCanvasHandle, PixiCanvasProps>(function
         () => ({
             showNewWobbleDiscovery: (
                 shapes: WobbleShape[],
-                isKorean: boolean,
+                lang: string,
                 onComplete?: () => void
             ) => {
                 if (sceneRef.current) {
                     try {
-                        sceneRef.current.showNewWobbleDiscovery(shapes, isKorean, onComplete)
+                        sceneRef.current.showNewWobbleDiscovery(shapes, lang, onComplete)
                     } catch (e) {
                         console.error('[PixiCanvas] showNewWobbleDiscovery error:', e)
                     }
