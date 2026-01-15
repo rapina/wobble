@@ -191,7 +191,7 @@ export class InverseSquareScene extends BaseScene {
         // 1/4 markers to show inverse square
         for (let i = 1; i <= 3; i++) {
             const markerRatio = 1 / Math.pow(2, i * 2) // 1/4, 1/16, 1/64
-            const markerX = meterX + meterWidth * (markerRatio * maxI / maxI)
+            const markerX = meterX + meterWidth * ((markerRatio * maxI) / maxI)
             if (markerX > meterX + 5) {
                 g.moveTo(markerX, meterY)
                 g.lineTo(markerX, meterY + meterHeight)

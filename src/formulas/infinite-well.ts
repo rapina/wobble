@@ -82,13 +82,13 @@ export const infiniteWell: Formula = {
         const L = inputs.L ?? 1 // nm
         // E_n = n²ℏ²π²/(2mL²)
         // For electron: E_n = 0.376 * n² / L² eV (L in nm)
-        const E = 0.376 * n * n / (L * L)
+        const E = (0.376 * n * n) / (L * L)
         return { E }
     },
     formatCalculation: (inputs: Record<string, number>) => {
         const n = Math.round(inputs.n ?? 1)
         const L = inputs.L ?? 1
-        const E = 0.376 * n * n / (L * L)
+        const E = (0.376 * n * n) / (L * L)
         return `E = 0.376×${n}²/${L.toFixed(1)}² = ${E.toFixed(3)} eV`
     },
     layout: {
@@ -118,24 +118,64 @@ export const infiniteWell: Formula = {
     getInsight: (vars) => {
         const E = vars['E']
         const n = Math.round(vars['n'] ?? 1)
-        if (n === 1 && E < 0.5) return { ko: '바닥상태의 낮은 에너지야', en: 'Low energy ground state', ja: '基底状態の低エネルギーだよ' }
-        if (E < 1) return { ko: '적외선 정도의 에너지야', en: 'Infrared level energy', ja: '赤外線程度のエネルギーだよ' }
-        if (E < 3) return { ko: '가시광선 정도의 에너지야', en: 'Visible light level energy', ja: '可視光線程度のエネルギーだよ' }
-        if (E < 5) return { ko: '자외선 정도의 에너지야', en: 'Ultraviolet level energy', ja: '紫外線程度のエネルギーだよ' }
-        return { ko: 'X선급 높은 에너지!', en: 'X-ray level high energy!', ja: 'X線級の高エネルギー！' }
+        if (n === 1 && E < 0.5)
+            return {
+                ko: '바닥상태의 낮은 에너지야',
+                en: 'Low energy ground state',
+                ja: '基底状態の低エネルギーだよ',
+            }
+        if (E < 1)
+            return {
+                ko: '적외선 정도의 에너지야',
+                en: 'Infrared level energy',
+                ja: '赤外線程度のエネルギーだよ',
+            }
+        if (E < 3)
+            return {
+                ko: '가시광선 정도의 에너지야',
+                en: 'Visible light level energy',
+                ja: '可視光線程度のエネルギーだよ',
+            }
+        if (E < 5)
+            return {
+                ko: '자외선 정도의 에너지야',
+                en: 'Ultraviolet level energy',
+                ja: '紫外線程度のエネルギーだよ',
+            }
+        return {
+            ko: 'X선급 높은 에너지!',
+            en: 'X-ray level high energy!',
+            ja: 'X線級の高エネルギー！',
+        }
     },
     discoveries: [
         {
             id: 'narrow-well',
-            mission: { ko: '우물 너비 L을 0.7nm 이하로 줄여봐!', en: 'Reduce well width L below 0.7nm!', ja: '井戸の幅Lを0.7nm以下に減らしてみて！' },
-            result: { ko: '좁은 우물은 높은 에너지! 양자점이 작을수록 더 높은 에너지 빛을 내.', en: 'Narrow well means higher energy! Smaller quantum dots emit higher energy light.', ja: '狭い井戸は高エネルギー！量子ドットが小さいほど高エネルギーの光を出すよ。' },
+            mission: {
+                ko: '우물 너비 L을 0.7nm 이하로 줄여봐!',
+                en: 'Reduce well width L below 0.7nm!',
+                ja: '井戸の幅Lを0.7nm以下に減らしてみて！',
+            },
+            result: {
+                ko: '좁은 우물은 높은 에너지! 양자점이 작을수록 더 높은 에너지 빛을 내.',
+                en: 'Narrow well means higher energy! Smaller quantum dots emit higher energy light.',
+                ja: '狭い井戸は高エネルギー！量子ドットが小さいほど高エネルギーの光を出すよ。',
+            },
             icon: '💡',
             condition: (vars) => vars['L'] <= 0.7,
         },
         {
             id: 'excited-state',
-            mission: { ko: '양자수 n을 4 이상으로 올려봐!', en: 'Raise quantum number n above 4!', ja: '量子数nを4以上に上げてみて！' },
-            result: { ko: '높은 양자수는 에너지가 n²에 비례해서 급격히 증가! 양자 레이저의 원리야.', en: 'Higher quantum number means energy increases as n squared! The principle of quantum lasers.', ja: '高い量子数はエネルギーがn²に比例して急激に増加！量子レーザーの原理だよ。' },
+            mission: {
+                ko: '양자수 n을 4 이상으로 올려봐!',
+                en: 'Raise quantum number n above 4!',
+                ja: '量子数nを4以上に上げてみて！',
+            },
+            result: {
+                ko: '높은 양자수는 에너지가 n²에 비례해서 급격히 증가! 양자 레이저의 원리야.',
+                en: 'Higher quantum number means energy increases as n squared! The principle of quantum lasers.',
+                ja: '高い量子数はエネルギーがn²に比例して急激に増加！量子レーザーの原理だよ。',
+            },
             icon: '🔬',
             condition: (vars) => Math.round(vars['n']) >= 4,
         },

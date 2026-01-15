@@ -123,7 +123,13 @@ export class ProjectileSystem {
     }
 
     // Update projectile positions
-    update(delta: number, enemies: Enemy[] = [], stats?: PlayerStats, cameraX: number = 0, cameraY: number = 0): void {
+    update(
+        delta: number,
+        enemies: Enemy[] = [],
+        stats?: PlayerStats,
+        cameraX: number = 0,
+        cameraY: number = 0
+    ): void {
         const { width, height } = this.context
         const bounce = this.physicsModifiers.bounce
         const returnDistance = stats?.returnDistance || 0
@@ -287,7 +293,7 @@ export class ProjectileSystem {
         while (angleDiff < -Math.PI) angleDiff += Math.PI * 2
 
         // Apply turn rate (radians per second)
-        const maxTurn = proj.homingTurnRate * delta / 60
+        const maxTurn = (proj.homingTurnRate * delta) / 60
         const turn = Math.max(-maxTurn, Math.min(maxTurn, angleDiff))
 
         // Update velocity direction
@@ -359,7 +365,12 @@ export class ProjectileSystem {
                         // Critical hit chance (10% base)
                         const isCritical = Math.random() < 0.1
                         const finalDamage = isCritical ? damage * 1.5 : damage
-                        onDamageDealt(enemy.x, enemy.y - enemy.size / 2, finalDamage, isCritical || tunneled)
+                        onDamageDealt(
+                            enemy.x,
+                            enemy.y - enemy.size / 2,
+                            finalDamage,
+                            isCritical || tunneled
+                        )
                     }
 
                     // Explosion effect
@@ -484,13 +495,24 @@ export class ProjectileSystem {
      * Used for Elastic stage repulsion barriers
      */
     checkBarrierCollisions(
-        checkCollision: (x: number, y: number, vx: number, vy: number, radius: number) =>
-            { vx: number; vy: number; bounced: boolean; barrierIndex: number } | null
+        checkCollision: (
+            x: number,
+            y: number,
+            vx: number,
+            vy: number,
+            radius: number
+        ) => { vx: number; vy: number; bounced: boolean; barrierIndex: number } | null
     ): void {
         const projectileRadius = this.baseSize
 
         for (const proj of this.projectiles) {
-            const result = checkCollision(proj.x, proj.y, proj.vx, proj.vy, projectileRadius * proj.scale)
+            const result = checkCollision(
+                proj.x,
+                proj.y,
+                proj.vx,
+                proj.vy,
+                projectileRadius * proj.scale
+            )
             if (result && result.bounced) {
                 proj.vx = result.vx
                 proj.vy = result.vy

@@ -497,12 +497,22 @@ export class OpeningScreen {
 
             // Draw rotated rectangle
             this.drawRotatedRect(
-                barrier.x, barrier.y, width + 10, height + 10,
-                barrier.angle, 0xff69b4, alpha * 0.3
+                barrier.x,
+                barrier.y,
+                width + 10,
+                height + 10,
+                barrier.angle,
+                0xff69b4,
+                alpha * 0.3
             )
             this.drawRotatedRect(
-                barrier.x, barrier.y, width, height,
-                barrier.angle, 0xff69b4, alpha * 0.9
+                barrier.x,
+                barrier.y,
+                width,
+                height,
+                barrier.angle,
+                0xff69b4,
+                alpha * 0.9
             )
 
             // End caps
@@ -542,39 +552,68 @@ export class OpeningScreen {
             // Warning ring (pulsing)
             const warningPulse = Math.sin(t * 6) * 0.5 + 0.5
             this.entityGraphics.circle(drawX, drawY, crusher.size * 0.7)
-            this.entityGraphics.stroke({ color: 0xff0000, width: 2, alpha: alpha * warningPulse * 0.5 })
+            this.entityGraphics.stroke({
+                color: 0xff0000,
+                width: 2,
+                alpha: alpha * warningPulse * 0.5,
+            })
 
             // Shadow
             this.entityGraphics.roundRect(
-                drawX - halfSize + 4, drawY - halfSize + 6,
-                crusher.size * pulse, crusher.size * pulse, 8
+                drawX - halfSize + 4,
+                drawY - halfSize + 6,
+                crusher.size * pulse,
+                crusher.size * pulse,
+                8
             )
             this.entityGraphics.fill({ color: 0x000000, alpha: alpha * 0.3 })
 
             // Main body
             this.entityGraphics.roundRect(
-                drawX - halfSize, drawY - halfSize,
-                crusher.size * pulse, crusher.size * pulse, 8
+                drawX - halfSize,
+                drawY - halfSize,
+                crusher.size * pulse,
+                crusher.size * pulse,
+                8
             )
             this.entityGraphics.fill({ color: 0x666666, alpha: alpha * 0.95 })
 
             // Border
             this.entityGraphics.roundRect(
-                drawX - halfSize, drawY - halfSize,
-                crusher.size * pulse, crusher.size * pulse, 8
+                drawX - halfSize,
+                drawY - halfSize,
+                crusher.size * pulse,
+                crusher.size * pulse,
+                8
             )
             this.entityGraphics.stroke({ color: 0x444444, width: 3, alpha: alpha })
 
             // Face - eyes
             const faceSize = crusher.size * 0.3
-            this.entityGraphics.circle(drawX - faceSize * 0.5, drawY - faceSize * 0.2, faceSize * 0.25)
+            this.entityGraphics.circle(
+                drawX - faceSize * 0.5,
+                drawY - faceSize * 0.2,
+                faceSize * 0.25
+            )
             this.entityGraphics.fill({ color: 0xffaa00, alpha: alpha * 0.9 })
-            this.entityGraphics.circle(drawX - faceSize * 0.5, drawY - faceSize * 0.2, faceSize * 0.12)
+            this.entityGraphics.circle(
+                drawX - faceSize * 0.5,
+                drawY - faceSize * 0.2,
+                faceSize * 0.12
+            )
             this.entityGraphics.fill({ color: 0x000000, alpha: alpha * 0.9 })
 
-            this.entityGraphics.circle(drawX + faceSize * 0.5, drawY - faceSize * 0.2, faceSize * 0.25)
+            this.entityGraphics.circle(
+                drawX + faceSize * 0.5,
+                drawY - faceSize * 0.2,
+                faceSize * 0.25
+            )
             this.entityGraphics.fill({ color: 0xffaa00, alpha: alpha * 0.9 })
-            this.entityGraphics.circle(drawX + faceSize * 0.5, drawY - faceSize * 0.2, faceSize * 0.12)
+            this.entityGraphics.circle(
+                drawX + faceSize * 0.5,
+                drawY - faceSize * 0.2,
+                faceSize * 0.12
+            )
             this.entityGraphics.fill({ color: 0x000000, alpha: alpha * 0.9 })
 
             // Mouth
@@ -638,10 +677,13 @@ export class OpeningScreen {
     }
 
     private drawRotatedRect(
-        cx: number, cy: number,
-        width: number, height: number,
+        cx: number,
+        cy: number,
+        width: number,
+        height: number,
         angle: number,
-        color: number, alpha: number
+        color: number,
+        alpha: number
     ): void {
         if (!this.entityGraphics) return
 
@@ -672,13 +714,34 @@ export class OpeningScreen {
         const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
         const m = l - c / 2
 
-        let r = 0, g = 0, b = 0
-        if (h < 60) { r = c; g = x; b = 0 }
-        else if (h < 120) { r = x; g = c; b = 0 }
-        else if (h < 180) { r = 0; g = c; b = x }
-        else if (h < 240) { r = 0; g = x; b = c }
-        else if (h < 300) { r = x; g = 0; b = c }
-        else { r = c; g = 0; b = x }
+        let r = 0,
+            g = 0,
+            b = 0
+        if (h < 60) {
+            r = c
+            g = x
+            b = 0
+        } else if (h < 120) {
+            r = x
+            g = c
+            b = 0
+        } else if (h < 180) {
+            r = 0
+            g = c
+            b = x
+        } else if (h < 240) {
+            r = 0
+            g = x
+            b = c
+        } else if (h < 300) {
+            r = x
+            g = 0
+            b = c
+        } else {
+            r = c
+            g = 0
+            b = x
+        }
 
         const toHex = (v: number) => Math.round((v + m) * 255)
         return (toHex(r) << 16) | (toHex(g) << 8) | toHex(b)

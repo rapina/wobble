@@ -130,7 +130,8 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
             <div
                 className="absolute inset-0 pointer-events-none opacity-30"
                 style={{
-                    backgroundImage: 'radial-gradient(circle at 50% 50%, transparent 20%, rgba(0,0,0,0.3) 100%)',
+                    backgroundImage:
+                        'radial-gradient(circle at 50% 50%, transparent 20%, rgba(0,0,0,0.3) 100%)',
                 }}
             />
 
@@ -196,7 +197,12 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
             >
                 {tabs.map((tab) => {
                     const isActive = activeTab === tab.id
-                    const tabColor = tab.id === 'characters' ? theme.blue : tab.id === 'formulas' ? theme.gold : theme.red
+                    const tabColor =
+                        tab.id === 'characters'
+                            ? theme.blue
+                            : tab.id === 'formulas'
+                              ? theme.gold
+                              : theme.red
                     return (
                         <button
                             key={tab.id}
@@ -214,7 +220,11 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                         >
                             <span
                                 style={{
-                                    color: isActive ? (tab.id === 'formulas' ? '#1a1a1a' : 'white') : 'rgba(255,255,255,0.6)',
+                                    color: isActive
+                                        ? tab.id === 'formulas'
+                                            ? '#1a1a1a'
+                                            : 'white'
+                                        : 'rgba(255,255,255,0.6)',
                                 }}
                             >
                                 {tab.icon}
@@ -222,7 +232,11 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                             <span
                                 className="text-sm font-bold"
                                 style={{
-                                    color: isActive ? (tab.id === 'formulas' ? '#1a1a1a' : 'white') : 'rgba(255,255,255,0.7)',
+                                    color: isActive
+                                        ? tab.id === 'formulas'
+                                            ? '#1a1a1a'
+                                            : 'white'
+                                        : 'rgba(255,255,255,0.7)',
                                 }}
                             >
                                 {tab.label}
@@ -351,7 +365,8 @@ function CharactersTab({
                                     <div
                                         className="absolute inset-0 opacity-20"
                                         style={{
-                                            background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%, transparent 100%)',
+                                            background:
+                                                'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%, transparent 100%)',
                                         }}
                                     />
                                 )}
@@ -379,9 +394,7 @@ function CharactersTab({
                                             textShadow: unlocked ? '0 1px 0 #8a6d1a' : 'none',
                                         }}
                                     >
-                                        {unlocked
-                                            ? localizeText(character.name, lang)
-                                            : '???'}
+                                        {unlocked ? localizeText(character.name, lang) : '???'}
                                     </h3>
                                     <p
                                         className="text-xs leading-tight font-medium"
@@ -474,7 +487,16 @@ function FormulasTab({
             id: 'waves',
             name: isKorean ? '파동 & 광학' : 'Waves & Optics',
             color: theme.blue,
-            formulas: ['wave', 'reflection', 'snell', 'lens', 'standing-wave', 'doppler', 'inverse-square', 'beat-frequency'],
+            formulas: [
+                'wave',
+                'reflection',
+                'snell',
+                'lens',
+                'standing-wave',
+                'doppler',
+                'inverse-square',
+                'beat-frequency',
+            ],
         },
         {
             id: 'thermo',
@@ -494,7 +516,15 @@ function FormulasTab({
             id: 'electricity',
             name: isKorean ? '전자기' : 'Electricity',
             color: '#f1c40f',
-            formulas: ['ohm', 'coulomb', 'electric-power', 'lorentz', 'capacitor', 'faraday', 'magnetic-field'],
+            formulas: [
+                'ohm',
+                'coulomb',
+                'electric-power',
+                'lorentz',
+                'capacitor',
+                'faraday',
+                'magnetic-field',
+            ],
         },
         {
             id: 'modern',
@@ -619,11 +649,16 @@ function FormulasTab({
                                                         ? 'white'
                                                         : 'rgba(255,255,255,0.35)',
                                                     border: `2px solid ${studied ? theme.border : 'rgba(255,255,255,0.1)'}`,
-                                                    boxShadow: studied ? `0 2px 0 ${theme.border}` : 'none',
+                                                    boxShadow: studied
+                                                        ? `0 2px 0 ${theme.border}`
+                                                        : 'none',
                                                 }}
                                             >
                                                 {formula
-                                                    ? localizeText(formula.name, isKorean ? 'ko' : 'en')
+                                                    ? localizeText(
+                                                          formula.name,
+                                                          isKorean ? 'ko' : 'en'
+                                                      )
                                                     : formulaId}
                                             </div>
                                         )
@@ -810,7 +845,9 @@ function RecordsTab({
                         >
                             <div className="flex items-center gap-2 mb-2">
                                 <span className="text-lg">{stat.icon}</span>
-                                <span className="text-white/55 text-xs font-medium">{stat.label}</span>
+                                <span className="text-white/55 text-xs font-medium">
+                                    {stat.label}
+                                </span>
                             </div>
                             <div
                                 className="text-2xl font-black"

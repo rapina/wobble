@@ -35,8 +35,8 @@ const COLOR_THEMES: ColorTheme[] = [
         bgTop: 0x4d7b69, // lighter felt
         bgBottom: 0x3d6b59, // felt green
         accent1: 0xc9a227, // Balatro gold
-        accent2: 0xFF6B9D, // Balatro pink
-        particles: [0x5d8b79, 0x6d9b89, 0xc9a227, 0xFF6B9D],
+        accent2: 0xff6b9d, // Balatro pink
+        particles: [0x5d8b79, 0x6d9b89, 0xc9a227, 0xff6b9d],
     },
     {
         // Balatro Night
@@ -62,8 +62,8 @@ const COLOR_THEMES: ColorTheme[] = [
         bgTop: 0x3d5a5a, // teal felt
         bgBottom: 0x2d4a4a, // dark teal
         accent1: 0xe85d4c, // Balatro red
-        accent2: 0xFF6B9D, // Balatro pink
-        particles: [0x4d6b6b, 0x5d7b7b, 0xe85d4c, 0xFF6B9D],
+        accent2: 0xff6b9d, // Balatro pink
+        particles: [0x4d6b6b, 0x5d7b7b, 0xe85d4c, 0xff6b9d],
     },
 ]
 
@@ -197,8 +197,14 @@ export class BackgroundSystem {
     }
 
     private lightenColor(color: number, factor: number): number {
-        const r = Math.min(255, Math.round(((color >> 16) & 0xff) + (255 - ((color >> 16) & 0xff)) * factor))
-        const g = Math.min(255, Math.round(((color >> 8) & 0xff) + (255 - ((color >> 8) & 0xff)) * factor))
+        const r = Math.min(
+            255,
+            Math.round(((color >> 16) & 0xff) + (255 - ((color >> 16) & 0xff)) * factor)
+        )
+        const g = Math.min(
+            255,
+            Math.round(((color >> 8) & 0xff) + (255 - ((color >> 8) & 0xff)) * factor)
+        )
         const b = Math.min(255, Math.round((color & 0xff) + (255 - (color & 0xff)) * factor))
         return (r << 16) | (g << 8) | b
     }
@@ -247,7 +253,13 @@ export class BackgroundSystem {
     }
 
     // Update all background effects
-    update(delta: number, activePerksCount: number, gameTime: number = 0, cameraX: number = 0, cameraY: number = 0): void {
+    update(
+        delta: number,
+        activePerksCount: number,
+        gameTime: number = 0,
+        cameraX: number = 0,
+        cameraY: number = 0
+    ): void {
         const deltaSeconds = delta / 60
         this.animTime += deltaSeconds
 
@@ -287,7 +299,13 @@ export class BackgroundSystem {
     }
 
     // Draw solid background at world coordinates around camera
-    private drawGradient(from: ColorTheme, to: ColorTheme, t: number, cameraX: number, cameraY: number): void {
+    private drawGradient(
+        from: ColorTheme,
+        to: ColorTheme,
+        t: number,
+        cameraX: number,
+        cameraY: number
+    ): void {
         this.gradientGraphics.clear()
 
         // Use blended background color (average of top and bottom)
@@ -332,7 +350,13 @@ export class BackgroundSystem {
     }
 
     // Waves disabled - keeping method for potential future use
-    private drawWaves(from: ColorTheme, to: ColorTheme, t: number, cameraX: number, cameraY: number): void {
+    private drawWaves(
+        from: ColorTheme,
+        to: ColorTheme,
+        t: number,
+        cameraX: number,
+        cameraY: number
+    ): void {
         this.waveGraphics.clear()
         // Waves removed for cleaner look
     }

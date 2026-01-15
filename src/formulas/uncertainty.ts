@@ -70,7 +70,7 @@ export const uncertainty: Formula = {
         // Δp ≥ ℏ/(2Δx) = 1.055×10⁻³⁴ / (2 × Δx × 10⁻⁹)
         // = 0.528 × 10⁻²⁵ / Δx (in units of 10⁻²⁵ kg·m/s)
         const Dp = 0.528 / Dx
-        return { 'Δp': Dp }
+        return { Δp: Dp }
     },
     formatCalculation: (inputs: Record<string, number>) => {
         const Dx = inputs['Δx'] ?? 1
@@ -99,24 +99,64 @@ export const uncertainty: Formula = {
     getInsight: (vars) => {
         const Dx = vars['Δx']
         const Dp = vars['Δp']
-        if (Dx < 0.5) return { ko: '원자 크기보다 작은 위치 정밀도!', en: 'Smaller than atomic size precision!', ja: '原子サイズより小さい位置精度！' }
-        if (Dx < 2) return { ko: '원자 수준의 위치 정밀도야', en: 'Atomic level position precision', ja: '原子レベルの位置精度だよ' }
-        if (Dx < 5) return { ko: '분자 수준의 위치 정밀도야', en: 'Molecular level position precision', ja: '分子レベルの位置精度だよ' }
-        if (Dp < 0.1) return { ko: '운동량이 꽤 정확해!', en: 'Momentum is fairly precise!', ja: '運動量がかなり正確！' }
-        return { ko: '거시적 수준의 불확정성이야', en: 'Macroscopic level uncertainty', ja: '巨視的レベルの不確定性だよ' }
+        if (Dx < 0.5)
+            return {
+                ko: '원자 크기보다 작은 위치 정밀도!',
+                en: 'Smaller than atomic size precision!',
+                ja: '原子サイズより小さい位置精度！',
+            }
+        if (Dx < 2)
+            return {
+                ko: '원자 수준의 위치 정밀도야',
+                en: 'Atomic level position precision',
+                ja: '原子レベルの位置精度だよ',
+            }
+        if (Dx < 5)
+            return {
+                ko: '분자 수준의 위치 정밀도야',
+                en: 'Molecular level position precision',
+                ja: '分子レベルの位置精度だよ',
+            }
+        if (Dp < 0.1)
+            return {
+                ko: '운동량이 꽤 정확해!',
+                en: 'Momentum is fairly precise!',
+                ja: '運動量がかなり正確！',
+            }
+        return {
+            ko: '거시적 수준의 불확정성이야',
+            en: 'Macroscopic level uncertainty',
+            ja: '巨視的レベルの不確定性だよ',
+        }
     },
     discoveries: [
         {
             id: 'precise-position',
-            mission: { ko: '위치 불확정성 Δx를 0.3nm 이하로 줄여봐!', en: 'Reduce position uncertainty below 0.3nm!', ja: '位置の不確定性Δxを0.3nm以下に減らしてみて！' },
-            result: { ko: '위치를 정확히 알수록 운동량이 더 불확실해져! 양자역학의 핵심 원리야.', en: 'More precise position means more uncertain momentum! A core principle of quantum mechanics.', ja: '位置を正確に知るほど運動量がより不確かになる！量子力学の核心原理だよ。' },
+            mission: {
+                ko: '위치 불확정성 Δx를 0.3nm 이하로 줄여봐!',
+                en: 'Reduce position uncertainty below 0.3nm!',
+                ja: '位置の不確定性Δxを0.3nm以下に減らしてみて！',
+            },
+            result: {
+                ko: '위치를 정확히 알수록 운동량이 더 불확실해져! 양자역학의 핵심 원리야.',
+                en: 'More precise position means more uncertain momentum! A core principle of quantum mechanics.',
+                ja: '位置を正確に知るほど運動量がより不確かになる！量子力学の核心原理だよ。',
+            },
             icon: '🎯',
             condition: (vars) => vars['Δx'] <= 0.3,
         },
         {
             id: 'uncertain-position',
-            mission: { ko: '위치 불확정성 Δx를 8nm 이상으로 늘려봐!', en: 'Increase position uncertainty above 8nm!', ja: '位置の不確定性Δxを8nm以上に増やしてみて！' },
-            result: { ko: '위치가 불확실하면 운동량은 꽤 정확히 알 수 있어! 두 가지를 동시에 정확히 알 수 없어.', en: 'Uncertain position allows more precise momentum! Cannot know both precisely at once.', ja: '位置が不確かなら運動量はかなり正確にわかる！両方を同時に正確に知ることはできないよ。' },
+            mission: {
+                ko: '위치 불확정성 Δx를 8nm 이상으로 늘려봐!',
+                en: 'Increase position uncertainty above 8nm!',
+                ja: '位置の不確定性Δxを8nm以上に増やしてみて！',
+            },
+            result: {
+                ko: '위치가 불확실하면 운동량은 꽤 정확히 알 수 있어! 두 가지를 동시에 정확히 알 수 없어.',
+                en: 'Uncertain position allows more precise momentum! Cannot know both precisely at once.',
+                ja: '位置が不確かなら運動量はかなり正確にわかる！両方を同時に正確に知ることはできないよ。',
+            },
             icon: '🌊',
             condition: (vars) => vars['Δx'] >= 8,
         },

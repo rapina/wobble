@@ -14,11 +14,7 @@ interface PixiCanvasProps {
 }
 
 export interface PixiCanvasHandle {
-    showNewWobbleDiscovery: (
-        shapes: WobbleShape[],
-        lang: string,
-        onComplete?: () => void
-    ) => void
+    showNewWobbleDiscovery: (shapes: WobbleShape[], lang: string, onComplete?: () => void) => void
 }
 
 export const PixiCanvas = forwardRef<PixiCanvasHandle, PixiCanvasProps>(function PixiCanvas(

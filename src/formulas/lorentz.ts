@@ -154,10 +154,26 @@ export const lorentz: Formula = {
     ],
     getInsight: (vars) => {
         const F = vars['F']
-        if (F < 10) return { ko: '아주 약한 로렌츠 힘이야', en: 'Very weak Lorentz force', ja: 'とても弱いローレンツ力' }
-        if (F < 100) return { ko: '나침반 바늘 움직이는 힘이야', en: 'Force to move compass needle', ja: '方位磁針を動かす力' }
-        if (F < 500) return { ko: '작은 모터의 힘이야', en: 'Small motor force', ja: '小さいモーターの力' }
-        if (F < 1500) return { ko: '선풍기 모터 정도야', en: 'Like a fan motor', ja: '扇風機モーター程度' }
-        return { ko: '산업용 모터급 힘!', en: 'Industrial motor level force!', ja: '産業用モーター級の力！' }
+        if (F < 10)
+            return {
+                ko: '아주 약한 로렌츠 힘이야',
+                en: 'Very weak Lorentz force',
+                ja: 'とても弱いローレンツ力',
+            }
+        if (F < 100)
+            return {
+                ko: '나침반 바늘 움직이는 힘이야',
+                en: 'Force to move compass needle',
+                ja: '方位磁針を動かす力',
+            }
+        if (F < 500)
+            return { ko: '작은 모터의 힘이야', en: 'Small motor force', ja: '小さいモーターの力' }
+        if (F < 1500)
+            return { ko: '선풍기 모터 정도야', en: 'Like a fan motor', ja: '扇風機モーター程度' }
+        return {
+            ko: '산업용 모터급 힘!',
+            en: 'Industrial motor level force!',
+            ja: '産業用モーター級の力！',
+        }
     },
 }

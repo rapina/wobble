@@ -52,13 +52,16 @@ export function GameScreen({ onBack }: MinigameScreenProps) {
     }, [])
 
     // Handle play complete
-    const handlePlayComplete = useCallback((result: PlayResult) => {
-        setPlayResult(result)
-        if (result === 'success') {
-            // Exit was triggered from pause menu
-            onBack()
-        }
-    }, [onBack])
+    const handlePlayComplete = useCallback(
+        (result: PlayResult) => {
+            setPlayResult(result)
+            if (result === 'success') {
+                // Exit was triggered from pause menu
+                onBack()
+            }
+        },
+        [onBack]
+    )
 
     // Handle reset
     const handleReset = () => {

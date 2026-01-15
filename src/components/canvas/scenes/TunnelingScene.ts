@@ -116,7 +116,14 @@ export class TunnelingScene extends BaseScene {
         this.updateStatusLabel(T)
     }
 
-    private updateParticles(delta: number, barrierX: number, barrierWidth: number, barrierY: number, E: number, V: number): void {
+    private updateParticles(
+        delta: number,
+        barrierX: number,
+        barrierWidth: number,
+        barrierY: number,
+        E: number,
+        V: number
+    ): void {
         const barrierEndX = barrierX + barrierWidth
 
         this.particles.forEach((p) => {
@@ -163,12 +170,17 @@ export class TunnelingScene extends BaseScene {
         })
 
         // Remove off-screen particles
-        this.particles = this.particles.filter((p) =>
-            p.x > -100 && p.x < this.width + 50
-        )
+        this.particles = this.particles.filter((p) => p.x > -100 && p.x < this.width + 50)
     }
 
-    private drawWaveFunction(barrierX: number, barrierWidth: number, barrierY: number, E: number, V: number, L: number): void {
+    private drawWaveFunction(
+        barrierX: number,
+        barrierWidth: number,
+        barrierY: number,
+        E: number,
+        V: number,
+        L: number
+    ): void {
         const g = this.waveGraphics
         g.clear()
 
@@ -228,7 +240,14 @@ export class TunnelingScene extends BaseScene {
         g.stroke({ color: 0x444466, width: 1, alpha: 0.3 })
     }
 
-    private drawBarrier(barrierX: number, barrierWidth: number, barrierHeight: number, barrierY: number, V: number, E: number): void {
+    private drawBarrier(
+        barrierX: number,
+        barrierWidth: number,
+        barrierHeight: number,
+        barrierY: number,
+        V: number,
+        E: number
+    ): void {
         const g = this.barrierGraphics
         g.clear()
 
@@ -256,13 +275,7 @@ export class TunnelingScene extends BaseScene {
         // Barrier gradient effect
         for (let i = 0; i < 5; i++) {
             const alpha = 0.08 - i * 0.015
-            g.roundRect(
-                barrierX + i * 3,
-                topY,
-                barrierWidth - i * 6,
-                barrierHeight,
-                6
-            )
+            g.roundRect(barrierX + i * 3, topY, barrierWidth - i * 6, barrierHeight, 6)
             g.fill({ color: 0x9b59b6, alpha })
         }
 
@@ -347,7 +360,13 @@ export class TunnelingScene extends BaseScene {
         })
     }
 
-    private drawIndicators(T: number, barrierX: number, barrierWidth: number, barrierHeight: number, barrierY: number): void {
+    private drawIndicators(
+        T: number,
+        barrierX: number,
+        barrierWidth: number,
+        barrierHeight: number,
+        barrierY: number
+    ): void {
         const g = this.indicatorGraphics
         g.clear()
 
@@ -406,9 +425,8 @@ export class TunnelingScene extends BaseScene {
     }
 
     private updateStatusLabel(T: number): void {
-        const ratio = this.totalCount > 0
-            ? Math.round((this.transmittedCount / this.totalCount) * 100)
-            : 0
+        const ratio =
+            this.totalCount > 0 ? Math.round((this.transmittedCount / this.totalCount) * 100) : 0
         this.statusLabel.text = `투과: ${this.transmittedCount}/${this.totalCount} (이론: ${T.toFixed(0)}%)`
         this.statusLabel.style.fill = T > 50 ? 0x58d68d : T > 20 ? 0xf39c12 : 0xff6b6b
     }

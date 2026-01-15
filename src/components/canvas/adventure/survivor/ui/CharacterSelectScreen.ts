@@ -1,7 +1,12 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js'
 import { Wobble, WobbleShape, WOBBLE_CHARACTERS } from '../../../Wobble'
 import { PLAYABLE_CHARACTERS, WOBBLE_STATS } from '../types'
-import { SKILL_DEFINITIONS, PASSIVE_DEFINITIONS, getCharacterSkillConfig, SkillDefinition } from '../skills'
+import {
+    SKILL_DEFINITIONS,
+    PASSIVE_DEFINITIONS,
+    getCharacterSkillConfig,
+    SkillDefinition,
+} from '../skills'
 import { STAGES, StageConfig } from '../PhysicsModifiers'
 import { useCollectionStore } from '@/stores/collectionStore'
 import { useProgressStore, isSkillUnlocked, skillToFormulaMap } from '@/stores/progressStore'
@@ -110,7 +115,9 @@ export class CharacterSelectScreen {
         console.log('[CharacterSelectScreen] Calling createUI...')
         this.createUI()
         this.initStagePreviewParticles()
-        console.log(`[CharacterSelectScreen] show() COMPLETED - visible: ${this.screenContainer.visible}, children: ${this.screenContainer.children.length}`)
+        console.log(
+            `[CharacterSelectScreen] show() COMPLETED - visible: ${this.screenContainer.visible}, children: ${this.screenContainer.children.length}`
+        )
     }
 
     /**
@@ -443,7 +450,10 @@ export class CharacterSelectScreen {
                         const x = centerX + Math.cos(angle) * dist
                         const y = centerY + Math.sin(angle) * dist
                         this.stagePreviewGraphics.circle(x, y, 1)
-                        this.stagePreviewGraphics.fill({ color: stage.particleColor, alpha: 0.3 * (1 - t) })
+                        this.stagePreviewGraphics.fill({
+                            color: stage.particleColor,
+                            alpha: 0.3 * (1 - t),
+                        })
                     }
                 }
                 break
@@ -589,9 +599,13 @@ export class CharacterSelectScreen {
     }
 
     private createUI(): void {
-        console.log(`[CharacterSelectScreen] createUI() CALLED - children before remove: ${this.screenContainer.children.length}`)
+        console.log(
+            `[CharacterSelectScreen] createUI() CALLED - children before remove: ${this.screenContainer.children.length}`
+        )
         this.screenContainer.removeChildren()
-        console.log(`[CharacterSelectScreen] removeChildren done - children: ${this.screenContainer.children.length}`)
+        console.log(
+            `[CharacterSelectScreen] removeChildren done - children: ${this.screenContainer.children.length}`
+        )
 
         // === BALATRO THEME COLORS ===
         const bgTopColor = 0x3d6b59 // Felt green
@@ -1063,7 +1077,8 @@ export class CharacterSelectScreen {
             // Check if within cell (not in gap)
             const cellX = localX - col * (skillCardSize + gridGap)
             const cellY = localY - row * (skillCardSize + gridGap)
-            const inCell = cellX >= 0 && cellX < skillCardSize && cellY >= 0 && cellY < skillCardSize
+            const inCell =
+                cellX >= 0 && cellX < skillCardSize && cellY >= 0 && cellY < skillCardSize
 
             // Check if within grid bounds and inside a cell
             if (col >= 0 && col < gridCols && row >= 0 && row < gridRows && inCell) {
@@ -1287,9 +1302,21 @@ export class CharacterSelectScreen {
             const passivePillWidth = 120
 
             const passivePill = new Graphics()
-            passivePill.roundRect(this.centerX - passivePillWidth / 2, passivePillY, passivePillWidth, 26, 13)
+            passivePill.roundRect(
+                this.centerX - passivePillWidth / 2,
+                passivePillY,
+                passivePillWidth,
+                26,
+                13
+            )
             passivePill.fill({ color: passiveDef.color, alpha: 0.15 })
-            passivePill.roundRect(this.centerX - passivePillWidth / 2, passivePillY, passivePillWidth, 26, 13)
+            passivePill.roundRect(
+                this.centerX - passivePillWidth / 2,
+                passivePillY,
+                passivePillWidth,
+                26,
+                13
+            )
             passivePill.stroke({ color: passiveDef.color, width: 1.5, alpha: 0.6 })
             this.screenContainer.addChild(passivePill)
 
@@ -1409,14 +1436,24 @@ export class CharacterSelectScreen {
         })
 
         // Stage arrows
-        this.stageLeftArrowBtn = this.createSmallArrowButton('<', cardX + 22, previewY + previewHeight / 2, () => {
-            this.selectPrevStage()
-        })
+        this.stageLeftArrowBtn = this.createSmallArrowButton(
+            '<',
+            cardX + 22,
+            previewY + previewHeight / 2,
+            () => {
+                this.selectPrevStage()
+            }
+        )
         this.screenContainer.addChild(this.stageLeftArrowBtn)
 
-        this.stageRightArrowBtn = this.createSmallArrowButton('>', cardX + cardWidth - 22, previewY + previewHeight / 2, () => {
-            this.selectNextStage()
-        })
+        this.stageRightArrowBtn = this.createSmallArrowButton(
+            '>',
+            cardX + cardWidth - 22,
+            previewY + previewHeight / 2,
+            () => {
+                this.selectNextStage()
+            }
+        )
         this.screenContainer.addChild(this.stageRightArrowBtn)
 
         // ========== ACTION BUTTONS (inside card at bottom) ==========
@@ -1446,10 +1483,17 @@ export class CharacterSelectScreen {
         )
         this.screenContainer.addChild(this.exitButton)
 
-        console.log(`[CharacterSelectScreen] createUI() COMPLETED - children: ${this.screenContainer.children.length}`)
+        console.log(
+            `[CharacterSelectScreen] createUI() COMPLETED - children: ${this.screenContainer.children.length}`
+        )
     }
 
-    private createArrowButton(symbol: string, x: number, y: number, onClick: () => void): Container {
+    private createArrowButton(
+        symbol: string,
+        x: number,
+        y: number,
+        onClick: () => void
+    ): Container {
         const btn = new Container()
         btn.position.set(x, y)
         btn.eventMode = 'static'
@@ -1493,7 +1537,12 @@ export class CharacterSelectScreen {
         return btn
     }
 
-    private createSmallArrowButton(symbol: string, x: number, y: number, onClick: () => void): Container {
+    private createSmallArrowButton(
+        symbol: string,
+        x: number,
+        y: number,
+        onClick: () => void
+    ): Container {
         const btn = new Container()
         btn.position.set(x, y)
         btn.eventMode = 'static'

@@ -152,10 +152,34 @@ export const heat: Formula = {
     ],
     getInsight: (vars) => {
         const Q = vars['Q']
-        if (Q < 10) return { ko: '커피 한 잔 식히는 열량이야', en: 'Heat to cool a cup of coffee', ja: 'コーヒー1杯を冷ます熱量だよ' }
-        if (Q < 50) return { ko: '샤워할 물 데우는 열량이야', en: 'Heat for shower water', ja: 'シャワーのお湯を温める熱量だよ' }
-        if (Q < 200) return { ko: '냄비 물 끓이는 열량이야', en: 'Heat to boil a pot', ja: '鍋のお湯を沸かす熱量だよ' }
-        if (Q < 500) return { ko: '욕조 물 데우는 열량이야', en: 'Heat for a bathtub', ja: '浴槽のお湯を温める熱量だよ' }
-        return { ko: '수영장 데우는 열량이야!', en: 'Pool heating level!', ja: 'プールを温める熱量だよ！' }
+        if (Q < 10)
+            return {
+                ko: '커피 한 잔 식히는 열량이야',
+                en: 'Heat to cool a cup of coffee',
+                ja: 'コーヒー1杯を冷ます熱量だよ',
+            }
+        if (Q < 50)
+            return {
+                ko: '샤워할 물 데우는 열량이야',
+                en: 'Heat for shower water',
+                ja: 'シャワーのお湯を温める熱量だよ',
+            }
+        if (Q < 200)
+            return {
+                ko: '냄비 물 끓이는 열량이야',
+                en: 'Heat to boil a pot',
+                ja: '鍋のお湯を沸かす熱量だよ',
+            }
+        if (Q < 500)
+            return {
+                ko: '욕조 물 데우는 열량이야',
+                en: 'Heat for a bathtub',
+                ja: '浴槽のお湯を温める熱量だよ',
+            }
+        return {
+            ko: '수영장 데우는 열량이야!',
+            en: 'Pool heating level!',
+            ja: 'プールを温める熱量だよ！',
+        }
     },
 }

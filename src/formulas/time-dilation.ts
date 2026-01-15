@@ -52,7 +52,11 @@ export const timeDilation: Formula = {
         },
         {
             symbol: 'v',
-            name: { ko: '속도 (광속의 비율)', en: 'Velocity (fraction of c)', ja: '速度（光速の比率）' },
+            name: {
+                ko: '속도 (광속의 비율)',
+                en: 'Velocity (fraction of c)',
+                ja: '速度（光速の比率）',
+            },
             role: 'input',
             unit: 'c',
             range: [0, 0.99],
@@ -147,10 +151,34 @@ export const timeDilation: Formula = {
         const t = vars['t']
         const t0 = vars['t₀'] ?? 1
         const ratio = t / t0
-        if (ratio < 1.01) return { ko: '시간이 거의 똑같아', en: 'Time is almost the same', ja: '時間はほぼ同じだよ' }
-        if (ratio < 1.2) return { ko: '시간이 살짝 느려져', en: 'Time slows slightly', ja: '時間が少し遅くなるよ' }
-        if (ratio < 2) return { ko: '시간이 눈에 띄게 느려져', en: 'Time noticeably slower', ja: '時間が目に見えて遅くなるよ' }
-        if (ratio < 5) return { ko: '시간이 많이 느려져!', en: 'Time slows significantly!', ja: '時間がかなり遅くなる！' }
-        return { ko: '시간이 완전 느려져! 우주여행 수준!', en: 'Extreme time dilation! Space travel level!', ja: '時間が大幅に遅くなる！宇宙旅行レベル！' }
+        if (ratio < 1.01)
+            return {
+                ko: '시간이 거의 똑같아',
+                en: 'Time is almost the same',
+                ja: '時間はほぼ同じだよ',
+            }
+        if (ratio < 1.2)
+            return {
+                ko: '시간이 살짝 느려져',
+                en: 'Time slows slightly',
+                ja: '時間が少し遅くなるよ',
+            }
+        if (ratio < 2)
+            return {
+                ko: '시간이 눈에 띄게 느려져',
+                en: 'Time noticeably slower',
+                ja: '時間が目に見えて遅くなるよ',
+            }
+        if (ratio < 5)
+            return {
+                ko: '시간이 많이 느려져!',
+                en: 'Time slows significantly!',
+                ja: '時間がかなり遅くなる！',
+            }
+        return {
+            ko: '시간이 완전 느려져! 우주여행 수준!',
+            en: 'Extreme time dilation! Space travel level!',
+            ja: '時間が大幅に遅くなる！宇宙旅行レベル！',
+        }
     },
 }

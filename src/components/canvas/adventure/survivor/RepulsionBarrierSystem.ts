@@ -98,7 +98,8 @@ export class RepulsionBarrierSystem {
     }
 
     private createBarrier(): RepulsionBarrier {
-        const width = this.config.minWidth + Math.random() * (this.config.maxWidth - this.config.minWidth)
+        const width =
+            this.config.minWidth + Math.random() * (this.config.maxWidth - this.config.minWidth)
         // Spawn at random angle around player (infinite map)
         const spawnAngle = Math.random() * Math.PI * 2
         const distance = this.config.spawnDistance * (0.5 + Math.random() * 0.5)
@@ -253,34 +254,46 @@ export class RepulsionBarrierSystem {
             const glowWidth = barrier.width * pulse + 10
             const glowHeight = barrier.height * pulse + 10
             this.drawRotatedRect(
-                barrier.x, barrier.y,
-                glowWidth, glowHeight,
+                barrier.x,
+                barrier.y,
+                glowWidth,
+                glowHeight,
                 barrier.angle,
-                0xff69b4, glowAlpha * 0.3
+                0xff69b4,
+                glowAlpha * 0.3
             )
 
             // Draw outer border
             this.drawRotatedRect(
-                barrier.x, barrier.y,
-                barrier.width * pulse + 4, barrier.height * pulse + 4,
+                barrier.x,
+                barrier.y,
+                barrier.width * pulse + 4,
+                barrier.height * pulse + 4,
                 barrier.angle,
-                0xffaacc, 0.8
+                0xffaacc,
+                0.8
             )
 
             // Draw main barrier
             this.drawRotatedRect(
-                barrier.x, barrier.y,
-                barrier.width * pulse, barrier.height * pulse,
+                barrier.x,
+                barrier.y,
+                barrier.width * pulse,
+                barrier.height * pulse,
                 barrier.angle,
-                0xff69b4, 0.9
+                0xff69b4,
+                0.9
             )
 
             // Draw highlight line
             this.drawRotatedRect(
-                barrier.x, barrier.y - barrier.height * 0.2,
-                barrier.width * 0.8 * pulse, 2,
+                barrier.x,
+                barrier.y - barrier.height * 0.2,
+                barrier.width * 0.8 * pulse,
+                2,
                 barrier.angle,
-                0xffffff, 0.5
+                0xffffff,
+                0.5
             )
 
             // Draw end caps (circles)
@@ -290,18 +303,21 @@ export class RepulsionBarrierSystem {
             const rightX = barrier.x + endOffset * cos
             const rightY = barrier.y + endOffset * sin
 
-            this.graphics.circle(leftX, leftY, barrier.height / 2 * pulse)
+            this.graphics.circle(leftX, leftY, (barrier.height / 2) * pulse)
             this.graphics.fill({ color: 0xffaacc, alpha: 0.9 })
-            this.graphics.circle(rightX, rightY, barrier.height / 2 * pulse)
+            this.graphics.circle(rightX, rightY, (barrier.height / 2) * pulse)
             this.graphics.fill({ color: 0xffaacc, alpha: 0.9 })
         }
     }
 
     private drawRotatedRect(
-        cx: number, cy: number,
-        width: number, height: number,
+        cx: number,
+        cy: number,
+        width: number,
+        height: number,
         angle: number,
-        color: number, alpha: number
+        color: number,
+        alpha: number
     ): void {
         const cos = Math.cos(angle)
         const sin = Math.sin(angle)

@@ -159,24 +159,64 @@ export const elasticCollision: Formula = {
     getInsight: (vars) => {
         const v1Prime = vars["v₁'"]
         const e = vars['e']
-        if (e >= 0.95) return { ko: '거의 완전 탄성! 당구공처럼 튕겨', en: 'Nearly perfect elastic! Bounces like billiard balls', ja: 'ほぼ完全弾性！ビリヤードボールのように弾む' }
-        if (e <= 0.1) return { ko: '거의 완전 비탄성! 찰흙처럼 붙어', en: 'Nearly inelastic! Sticks like clay', ja: 'ほぼ完全非弾性！粘土のようにくっつく' }
-        if (v1Prime < 0) return { ko: '반대 방향으로 튕겨나갔어!', en: 'Bounced back in opposite direction!', ja: '反対方向に跳ね返った！' }
-        if (v1Prime < 1) return { ko: '거의 멈췄어! 에너지 대부분 전달됐어', en: 'Nearly stopped! Most energy transferred', ja: 'ほぼ停止！エネルギーの大部分が移った' }
-        return { ko: '일부 에너지가 전달됐어', en: 'Some energy was transferred', ja: '一部のエネルギーが移った' }
+        if (e >= 0.95)
+            return {
+                ko: '거의 완전 탄성! 당구공처럼 튕겨',
+                en: 'Nearly perfect elastic! Bounces like billiard balls',
+                ja: 'ほぼ完全弾性！ビリヤードボールのように弾む',
+            }
+        if (e <= 0.1)
+            return {
+                ko: '거의 완전 비탄성! 찰흙처럼 붙어',
+                en: 'Nearly inelastic! Sticks like clay',
+                ja: 'ほぼ完全非弾性！粘土のようにくっつく',
+            }
+        if (v1Prime < 0)
+            return {
+                ko: '반대 방향으로 튕겨나갔어!',
+                en: 'Bounced back in opposite direction!',
+                ja: '反対方向に跳ね返った！',
+            }
+        if (v1Prime < 1)
+            return {
+                ko: '거의 멈췄어! 에너지 대부분 전달됐어',
+                en: 'Nearly stopped! Most energy transferred',
+                ja: 'ほぼ停止！エネルギーの大部分が移った',
+            }
+        return {
+            ko: '일부 에너지가 전달됐어',
+            en: 'Some energy was transferred',
+            ja: '一部のエネルギーが移った',
+        }
     },
     discoveries: [
         {
             id: 'perfect-elastic',
-            mission: { ko: '반발 계수 e를 1로 설정해봐! (완전 탄성 충돌)', en: 'Set restitution coefficient e to 1! (perfectly elastic collision)', ja: '反発係数eを1に設定してみて！（完全弾性衝突）' },
-            result: { ko: '반발 계수 1이면 에너지 손실 없이 완전히 튕겨! 이상적인 당구공 충돌이야.', en: 'With e=1, energy is fully conserved! This is an ideal billiard ball collision.', ja: '反発係数1ならエネルギー損失なく完全に弾む！理想的なビリヤードボールの衝突だよ。' },
+            mission: {
+                ko: '반발 계수 e를 1로 설정해봐! (완전 탄성 충돌)',
+                en: 'Set restitution coefficient e to 1! (perfectly elastic collision)',
+                ja: '反発係数eを1に設定してみて！（完全弾性衝突）',
+            },
+            result: {
+                ko: '반발 계수 1이면 에너지 손실 없이 완전히 튕겨! 이상적인 당구공 충돌이야.',
+                en: 'With e=1, energy is fully conserved! This is an ideal billiard ball collision.',
+                ja: '反発係数1ならエネルギー損失なく完全に弾む！理想的なビリヤードボールの衝突だよ。',
+            },
             icon: '🎱',
             condition: (vars) => vars['e'] >= 0.98,
         },
         {
             id: 'inelastic',
-            mission: { ko: '반발 계수 e를 0.2 이하로 낮춰봐! (비탄성 충돌)', en: 'Lower restitution coefficient e below 0.2! (inelastic collision)', ja: '反発係数eを0.2以下に下げてみて！（非弾性衝突）' },
-            result: { ko: '반발 계수가 낮으면 에너지가 흡수돼! 자동차 범퍼가 충격을 줄이는 방법이야.', en: 'Low restitution absorbs energy! This is how car bumpers reduce impact.', ja: '反発係数が低いとエネルギーが吸収される！車のバンパーが衝撃を減らす方法だよ。' },
+            mission: {
+                ko: '반발 계수 e를 0.2 이하로 낮춰봐! (비탄성 충돌)',
+                en: 'Lower restitution coefficient e below 0.2! (inelastic collision)',
+                ja: '反発係数eを0.2以下に下げてみて！（非弾性衝突）',
+            },
+            result: {
+                ko: '반발 계수가 낮으면 에너지가 흡수돼! 자동차 범퍼가 충격을 줄이는 방법이야.',
+                en: 'Low restitution absorbs energy! This is how car bumpers reduce impact.',
+                ja: '反発係数が低いとエネルギーが吸収される！車のバンパーが衝撃を減らす方法だよ。',
+            },
             icon: '🚗',
             condition: (vars) => vars['e'] <= 0.2,
         },

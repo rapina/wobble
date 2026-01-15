@@ -163,11 +163,32 @@ export const projectile: Formula = {
     ],
     getInsight: (vars) => {
         const R = vars['R']
-        if (R < 10) return { ko: '공 던지기 정도야', en: 'Like throwing a ball', ja: 'ボールを投げるくらいだよ' }
-        if (R < 30) return { ko: '농구 슛 거리야', en: 'Basketball shot distance', ja: 'バスケのシュート距離だよ' }
-        if (R < 60) return { ko: '축구장 절반 거리야', en: 'Half a soccer field', ja: 'サッカー場の半分だよ' }
-        if (R < 100) return { ko: '축구장 길이야', en: 'Soccer field length', ja: 'サッカー場の長さだよ' }
-        if (R < 200) return { ko: '골프 드라이버 샷이야!', en: 'Golf driver shot!', ja: 'ゴルフのドライバーショットだよ！' }
+        if (R < 10)
+            return {
+                ko: '공 던지기 정도야',
+                en: 'Like throwing a ball',
+                ja: 'ボールを投げるくらいだよ',
+            }
+        if (R < 30)
+            return {
+                ko: '농구 슛 거리야',
+                en: 'Basketball shot distance',
+                ja: 'バスケのシュート距離だよ',
+            }
+        if (R < 60)
+            return {
+                ko: '축구장 절반 거리야',
+                en: 'Half a soccer field',
+                ja: 'サッカー場の半分だよ',
+            }
+        if (R < 100)
+            return { ko: '축구장 길이야', en: 'Soccer field length', ja: 'サッカー場の長さだよ' }
+        if (R < 200)
+            return {
+                ko: '골프 드라이버 샷이야!',
+                en: 'Golf driver shot!',
+                ja: 'ゴルフのドライバーショットだよ！',
+            }
         return { ko: '대포 사거리야!', en: 'Cannon range!', ja: '大砲の射程だよ！' }
     },
 }

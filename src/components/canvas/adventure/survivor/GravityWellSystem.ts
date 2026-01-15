@@ -93,10 +93,14 @@ export class GravityWellSystem {
         this.wells = []
 
         for (let i = 0; i < this.config.wellCount; i++) {
-            const radius = this.config.minRadius + Math.random() * (this.config.maxRadius - this.config.minRadius)
+            const radius =
+                this.config.minRadius +
+                Math.random() * (this.config.maxRadius - this.config.minRadius)
             // Spawn at random angle around player (infinite map)
             const angle = Math.random() * Math.PI * 2
-            const distance = this.config.spawnDistance + Math.random() * (this.config.orbitDistance - this.config.spawnDistance)
+            const distance =
+                this.config.spawnDistance +
+                Math.random() * (this.config.orbitDistance - this.config.spawnDistance)
             const x = this.playerX + Math.cos(angle) * distance
             const y = this.playerY + Math.sin(angle) * distance
 
@@ -152,7 +156,9 @@ export class GravityWellSystem {
     private pickNewTarget(well: GravityWell): void {
         // Pick new target within orbit distance of player (infinite map)
         const angle = Math.random() * Math.PI * 2
-        const distance = this.config.spawnDistance + Math.random() * (this.config.orbitDistance - this.config.spawnDistance)
+        const distance =
+            this.config.spawnDistance +
+            Math.random() * (this.config.orbitDistance - this.config.spawnDistance)
         well.targetX = this.playerX + Math.cos(angle) * distance
         well.targetY = this.playerY + Math.sin(angle) * distance
     }
@@ -161,7 +167,13 @@ export class GravityWellSystem {
      * Apply gravity pull to an object (enemies/projectiles)
      * Returns the velocity adjustment
      */
-    applyGravityPull(x: number, y: number, vx: number, vy: number, deltaSeconds: number): { vx: number; vy: number } {
+    applyGravityPull(
+        x: number,
+        y: number,
+        vx: number,
+        vy: number,
+        deltaSeconds: number
+    ): { vx: number; vy: number } {
         if (!this.isActive) return { vx, vy }
 
         let newVx = vx
@@ -221,7 +233,11 @@ export class GravityWellSystem {
      * - Moving player can always escape with effort
      * Returns velocity nudge
      */
-    applyPlayerDrift(playerX: number, playerY: number, deltaSeconds: number): { dvx: number; dvy: number } {
+    applyPlayerDrift(
+        playerX: number,
+        playerY: number,
+        deltaSeconds: number
+    ): { dvx: number; dvy: number } {
         if (!this.isActive) return { dvx: 0, dvy: 0 }
 
         let dvx = 0
@@ -309,7 +325,11 @@ export class GravityWellSystem {
             this.graphics.fill({ color: 0x6666ff, alpha: 0.9 })
 
             // Draw highlight
-            this.graphics.circle(well.x - well.radius * 0.2, well.y - well.radius * 0.2, well.radius * 0.2)
+            this.graphics.circle(
+                well.x - well.radius * 0.2,
+                well.y - well.radius * 0.2,
+                well.radius * 0.2
+            )
             this.graphics.fill({ color: 0xffffff, alpha: 0.4 })
         }
     }

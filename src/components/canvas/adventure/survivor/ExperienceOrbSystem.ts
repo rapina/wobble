@@ -233,9 +233,8 @@ export class ExperienceOrbSystem {
      */
     private mergeNearbyOrbs(): void {
         // Use larger merge radius if too many orbs
-        const mergeRadius = this._orbs.length > this.MAX_ORBS
-            ? this.MERGE_RADIUS * 1.5
-            : this.MERGE_RADIUS
+        const mergeRadius =
+            this._orbs.length > this.MAX_ORBS ? this.MERGE_RADIUS * 1.5 : this.MERGE_RADIUS
 
         // Track which orbs have been merged (to skip them)
         const merged = new Set<number>()
@@ -338,12 +337,18 @@ export class ExperienceOrbSystem {
      * Update orbs and check collection
      * @param blackHole Optional black hole that sucks in orbs (for vortex stage)
      */
-    update(deltaSeconds: number, playerX: number, playerY: number, blackHole?: BlackHoleInfo): void {
+    update(
+        deltaSeconds: number,
+        playerX: number,
+        playerY: number,
+        blackHole?: BlackHoleInfo
+    ): void {
         // Periodically merge nearby orbs
         this.mergeTimer += deltaSeconds
         if (this.mergeTimer >= this.MERGE_INTERVAL) {
             this.mergeTimer = 0
-            if (this._orbs.length > 10) { // Only merge if there are enough orbs
+            if (this._orbs.length > 10) {
+                // Only merge if there are enough orbs
                 this.mergeNearbyOrbs()
             }
         }
@@ -408,7 +413,8 @@ export class ExperienceOrbSystem {
                     orb.y += orb.vy
 
                     // Update graphics with spiral effect
-                    const spiralAngle = Math.atan2(bhDy, bhDx) + (1 - bhDist / blackHole.pullRadius) * Math.PI
+                    const spiralAngle =
+                        Math.atan2(bhDy, bhDx) + (1 - bhDist / blackHole.pullRadius) * Math.PI
                     const bobAmount = Math.sin((orb.maxLife - orb.life) * 8 + orb.animOffset) * 3
                     orb.graphics.position.set(orb.x + Math.cos(spiralAngle) * 2, orb.y + bobAmount)
                     orb.graphics.rotation += deltaSeconds * 5 // Fast spin when being sucked

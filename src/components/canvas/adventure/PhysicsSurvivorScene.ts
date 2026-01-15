@@ -213,7 +213,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Track scene instances
         PhysicsSurvivorScene.instanceCounter++
         this.instanceId = PhysicsSurvivorScene.instanceCounter
-        console.log(`[SCENE #${this.instanceId}] PhysicsSurvivorScene CREATED (total created: ${PhysicsSurvivorScene.instanceCounter})`)
+        console.log(
+            `[SCENE #${this.instanceId}] PhysicsSurvivorScene CREATED (total created: ${PhysicsSurvivorScene.instanceCounter})`
+        )
 
         if (options?.studiedFormulas) {
             this.studiedFormulas = options.studiedFormulas
@@ -422,7 +424,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
             height: this.height,
         })
         this.characterSelectScreen.onStartGame = (character, stageId, selectedSkills) => {
-            this.debugLog(`characterSelectScreen.onStartGame: ${character}, ${stageId}, skills: ${selectedSkills.join(', ')}`)
+            this.debugLog(
+                `characterSelectScreen.onStartGame: ${character}, ${stageId}, skills: ${selectedSkills.join(', ')}`
+            )
             this.startWithStage(character, stageId, selectedSkills)
         }
         this.characterSelectScreen.onExit = () => {
@@ -486,7 +490,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private createDebugDomOverlay(): void {
         // Remove ALL existing debug overlays (including from other scene instances)
         const existingOverlays = document.querySelectorAll('#survivor-debug-overlay')
-        existingOverlays.forEach(el => el.remove())
+        existingOverlays.forEach((el) => el.remove())
         console.log(`[DEBUG] Removed ${existingOverlays.length} existing overlay(s)`)
 
         if (this.debugDomElement) {
@@ -713,10 +717,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         })
 
         // Update combo display
-        this.hudSystem.updateCombo(
-            this.comboSystem.getState(),
-            this.comboSystem.getComboWindow()
-        )
+        this.hudSystem.updateCombo(this.comboSystem.getState(), this.comboSystem.getComboWindow())
     }
 
     private fireProjectile(): void {
@@ -725,11 +726,22 @@ export class PhysicsSurvivorScene extends AdventureScene {
             ...this.stats,
             damageMultiplier: this.stats.damageMultiplier * this.pendulumDamageMultiplier,
         }
-        this.projectileSystem.fire(this.playerX, this.playerY, this.enemySystem.enemies, effectiveStats)
+        this.projectileSystem.fire(
+            this.playerX,
+            this.playerY,
+            this.enemySystem.enemies,
+            effectiveStats
+        )
     }
 
     private updateProjectiles(delta: number): void {
-        this.projectileSystem.update(delta, this.enemySystem.enemies, this.stats, this.cameraX, this.cameraY)
+        this.projectileSystem.update(
+            delta,
+            this.enemySystem.enemies,
+            this.stats,
+            this.cameraX,
+            this.cameraY
+        )
 
         this.projectileSystem.checkCollisions(
             this.enemySystem.enemies,
@@ -767,8 +779,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
         if (this.gravityWellSystem.getIsActive()) {
             for (const enemy of this.enemySystem.enemies) {
                 const pull = this.gravityWellSystem.applyGravityPull(
-                    enemy.x, enemy.y,
-                    enemy.vx, enemy.vy,
+                    enemy.x,
+                    enemy.y,
+                    enemy.vx,
+                    enemy.vy,
                     deltaSeconds
                 )
                 enemy.vx = pull.vx
@@ -991,9 +1005,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
             }
 
             // Check player proximity and apply damage
-            const bhProximity = this.blackHoleSystem.getPlayerProximityEffect(this.playerX, this.playerY)
+            const bhProximity = this.blackHoleSystem.getPlayerProximityEffect(
+                this.playerX,
+                this.playerY
+            )
             if (bhProximity > 0) {
-                const damage = this.blackHoleSystem.getDamagePerSecond() * bhProximity * deltaSeconds
+                const damage =
+                    this.blackHoleSystem.getDamagePerSecond() * bhProximity * deltaSeconds
                 this.takeDamage(damage)
             }
             totalProximityEffect = Math.max(totalProximityEffect, bhProximity)
@@ -1005,14 +1023,18 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
             // Apply gentle drift to player (can escape, but pulled slightly)
             const drift = this.gravityWellSystem.applyPlayerDrift(
-                this.playerX, this.playerY,
+                this.playerX,
+                this.playerY,
                 deltaSeconds
             )
             this.externalVx += drift.dvx
             this.externalVy += drift.dvy
 
             // Check player proximity for visual effect
-            const gwProximity = this.gravityWellSystem.getPlayerProximityEffect(this.playerX, this.playerY)
+            const gwProximity = this.gravityWellSystem.getPlayerProximityEffect(
+                this.playerX,
+                this.playerY
+            )
             totalProximityEffect = Math.max(totalProximityEffect, gwProximity)
         }
 
@@ -1024,8 +1046,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
             const totalVx = this.playerVx + this.externalVx
             const totalVy = this.playerVy + this.externalVy
             const barrierCollision = this.repulsionBarrierSystem.checkCollision(
-                this.playerX, this.playerY,
-                totalVx, totalVy,
+                this.playerX,
+                this.playerY,
+                totalVx,
+                totalVy,
                 25 // Player radius
             )
             if (barrierCollision && barrierCollision.bounced) {
@@ -1041,7 +1065,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
             )
 
             // Check player proximity for visual effect
-            const rbProximity = this.repulsionBarrierSystem.getPlayerProximityEffect(this.playerX, this.playerY)
+            const rbProximity = this.repulsionBarrierSystem.getPlayerProximityEffect(
+                this.playerX,
+                this.playerY
+            )
             totalProximityEffect = Math.max(totalProximityEffect, rbProximity)
         }
 
@@ -1050,7 +1077,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.crusherSystem.update(deltaSeconds, this.playerX, this.playerY)
 
             // Check player collision with crushers
-            const crusherCollision = this.crusherSystem.checkCollision(this.playerX, this.playerY, 25)
+            const crusherCollision = this.crusherSystem.checkCollision(
+                this.playerX,
+                this.playerY,
+                25
+            )
             if (crusherCollision) {
                 // Apply push to external velocity
                 this.externalVx += crusherCollision.pushVx
@@ -1061,7 +1092,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
             }
 
             // Check player proximity for visual effect
-            const crProximity = this.crusherSystem.getPlayerProximityEffect(this.playerX, this.playerY)
+            const crProximity = this.crusherSystem.getPlayerProximityEffect(
+                this.playerX,
+                this.playerY
+            )
             totalProximityEffect = Math.max(totalProximityEffect, crProximity)
         }
 
@@ -1200,7 +1234,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
             ring.stroke({
                 color: 0x2ecc71,
                 width: 4 * (1 - progress),
-                alpha: 0.8 * (1 - progress)
+                alpha: 0.8 * (1 - progress),
             })
 
             requestAnimationFrame(ringUpdate)
@@ -1216,8 +1250,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
             if (dist < radius && dist > 0) {
                 // Knockback force decreases with distance
-                const distFactor = 1 - (dist / radius)
-                const force = knockback * distFactor / Math.sqrt(enemy.mass)
+                const distFactor = 1 - dist / radius
+                const force = (knockback * distFactor) / Math.sqrt(enemy.mass)
 
                 // Push away from player
                 const nx = dx / dist
@@ -1240,12 +1274,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Screen shake based on hit count
         if (hitCount > 0) {
             this.triggerShake(3 + hitCount * 0.5, 0.15)
-            this.damageTextSystem.spawnCustom(
-                this.playerX,
-                this.playerY - 40,
-                `PULSE!`,
-                'combo'
-            )
+            this.damageTextSystem.spawnCustom(this.playerX, this.playerY - 40, `PULSE!`, 'combo')
         }
     }
 
@@ -1297,8 +1326,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 // Apply force away from player
                 const nx = dx / dist
                 const ny = dy / dist
-                enemy.vx += nx * force / Math.sqrt(enemy.mass)
-                enemy.vy += ny * force / Math.sqrt(enemy.mass)
+                enemy.vx += (nx * force) / Math.sqrt(enemy.mass)
+                enemy.vy += (ny * force) / Math.sqrt(enemy.mass)
             }
         }
     }
@@ -1425,7 +1454,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         // Apply gravity well slowdown (player can escape but moves slower)
         if (this.gravityWellSystem.getIsActive()) {
-            const gravitySpeedMult = this.gravityWellSystem.getPlayerSpeedMultiplier(this.playerX, this.playerY)
+            const gravitySpeedMult = this.gravityWellSystem.getPlayerSpeedMultiplier(
+                this.playerX,
+                this.playerY
+            )
             speed *= gravitySpeedMult
         }
 
@@ -1621,8 +1653,14 @@ export class PhysicsSurvivorScene extends AdventureScene {
     // Player-selected skills from character select screen
     private playerSelectedSkills: string[] = []
 
-    private startWithStage(character: WobbleShape, stageId: string, selectedSkills: string[] = []): void {
-        this.debugLog(`startWithStage: ${character}, stage: ${stageId}, skills: ${selectedSkills.length}`)
+    private startWithStage(
+        character: WobbleShape,
+        stageId: string,
+        selectedSkills: string[] = []
+    ): void {
+        this.debugLog(
+            `startWithStage: ${character}, stage: ${stageId}, skills: ${selectedSkills.length}`
+        )
         this.selectedCharacter = character
         this.currentStage = getStageById(stageId) || getDefaultStage()
         this.playerSelectedSkills = selectedSkills
@@ -1758,7 +1796,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.gridFilter.setPlayerPosition(this.playerX, this.playerY)
         }
 
-        this.backgroundSystem.update(delta, this.playerSkills.length, this.gameTime, this.cameraX, this.cameraY)
+        this.backgroundSystem.update(
+            delta,
+            this.playerSkills.length,
+            this.gameTime,
+            this.cameraX,
+            this.cameraY
+        )
 
         if (this.gameState === 'skill-selection') {
             this.skillSelectionScreen.update(deltaSeconds)
@@ -1870,7 +1914,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.updateGridGravitySources()
         }
 
-        this.backgroundSystem.update(delta, this.playerSkills.length, this.gameTime, this.cameraX, this.cameraY)
+        this.backgroundSystem.update(
+            delta,
+            this.playerSkills.length,
+            this.gameTime,
+            this.cameraX,
+            this.cameraY
+        )
 
         // Update world entities and their effects
         this.updateWorldEntities(deltaSeconds)
@@ -1973,7 +2023,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     protected onPlayStart(): void {
-        console.log(`[SCENE #${this.instanceId}] onPlayStart CALLED - isDestroyed: ${this.isDestroyed}, isPlaying: ${this.isPlaying}`)
+        console.log(
+            `[SCENE #${this.instanceId}] onPlayStart CALLED - isDestroyed: ${this.isDestroyed}, isPlaying: ${this.isPlaying}`
+        )
 
         // Prevent operation on destroyed scene
         if (this.isDestroyed) {
@@ -1988,7 +2040,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Full reset before starting to ensure clean state
         console.log(`[SCENE #${this.instanceId}] Calling onReset...`)
         this.onReset()
-        console.log(`[SCENE #${this.instanceId}] onReset completed, now calling characterSelectScreen.show()`)
+        console.log(
+            `[SCENE #${this.instanceId}] onReset completed, now calling characterSelectScreen.show()`
+        )
 
         // Verify characterSelectScreen exists before calling show()
         if (!this.characterSelectScreen) {
@@ -2001,12 +2055,18 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.characterSelectScreen.show()
 
         // Check both the internal flag and the actual PixiJS container state
-        const charScreen = this.characterSelectScreen as unknown as { screenContainer?: { visible?: boolean; parent?: unknown; children?: unknown[] } }
+        const charScreen = this.characterSelectScreen as unknown as {
+            screenContainer?: { visible?: boolean; parent?: unknown; children?: unknown[] }
+        }
         const containerVisible = charScreen.screenContainer?.visible ?? 'N/A'
         const hasParent = !!charScreen.screenContainer?.parent
         const childCount = charScreen.screenContainer?.children?.length ?? 0
-        console.log(`[SCENE #${this.instanceId}] characterSelectScreen.show() completed - visible: ${containerVisible}, children: ${childCount}, hasParent: ${hasParent}`)
-        this.debugLog(`characterSelectScreen.show() completed - flag: ${this.characterSelectScreen.visible}, container: ${containerVisible}, hasParent: ${hasParent}, children: ${childCount}`)
+        console.log(
+            `[SCENE #${this.instanceId}] characterSelectScreen.show() completed - visible: ${containerVisible}, children: ${childCount}, hasParent: ${hasParent}`
+        )
+        this.debugLog(
+            `characterSelectScreen.show() completed - flag: ${this.characterSelectScreen.visible}, container: ${containerVisible}, hasParent: ${hasParent}, children: ${childCount}`
+        )
     }
 
     private resetStats(): void {
@@ -2104,10 +2164,14 @@ export class PhysicsSurvivorScene extends AdventureScene {
             .filter(([, exists]) => !exists)
             .map(([name]) => name)
 
-        console.log(`[SCENE #${this.instanceId}] onReset safety check - missing: ${missingSystems.length > 0 ? missingSystems.join(', ') : 'none'}`)
+        console.log(
+            `[SCENE #${this.instanceId}] onReset safety check - missing: ${missingSystems.length > 0 ? missingSystems.join(', ') : 'none'}`
+        )
 
         if (missingSystems.length > 0) {
-            console.error(`[SCENE #${this.instanceId}] onReset ABORTING - systems not initialized: ${missingSystems.join(', ')}`)
+            console.error(
+                `[SCENE #${this.instanceId}] onReset ABORTING - systems not initialized: ${missingSystems.join(', ')}`
+            )
             this.debugLog(`ERROR: Systems not initialized: ${missingSystems.join(', ')}`)
             return
         }
@@ -2230,9 +2294,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
         }
 
         // Access private screenContainer via any cast for debugging
-        const getScreenInfo = (screen: unknown): { visible: boolean; children: number; hasParent: boolean } => {
+        const getScreenInfo = (
+            screen: unknown
+        ): { visible: boolean; children: number; hasParent: boolean } => {
             try {
-                const s = screen as { screenContainer?: { visible?: boolean; children?: unknown[]; parent?: unknown } }
+                const s = screen as {
+                    screenContainer?: { visible?: boolean; children?: unknown[]; parent?: unknown }
+                }
                 return {
                     visible: s.screenContainer?.visible ?? false,
                     children: s.screenContainer?.children?.length ?? 0,
@@ -2263,7 +2331,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
             `result: ${resultInfo.visible}/${resultInfo.children}/${resultInfo.hasParent}`,
             `skillSelect: ${skillInfo.visible}/${skillInfo.children}/${skillInfo.hasParent}`,
             `<span style="color:#888">--- History ---</span>`,
-            ...this.debugStateHistory.slice(-5).map(h => `<span style="color:#aaa">${h}</span>`),
+            ...this.debugStateHistory.slice(-5).map((h) => `<span style="color:#aaa">${h}</span>`),
         ]
 
         if (this.debugDomElement) {

@@ -127,25 +127,71 @@ export const escapeVelocity: Formula = {
     },
     getInsight: (vars) => {
         const v = vars['v']
-        if (v < 3) return { ko: '달 정도의 탈출속도야', en: 'Escape velocity like the Moon', ja: '月程度の脱出速度だよ' }
-        if (v < 8) return { ko: '화성 정도의 탈출속도야', en: 'Escape velocity like Mars', ja: '火星程度の脱出速度だよ' }
-        if (v < 15) return { ko: '지구 정도의 탈출속도야', en: 'Escape velocity like Earth', ja: '地球程度の脱出速度だよ' }
-        if (v < 40) return { ko: '가스 행성 정도의 탈출속도야', en: 'Gas giant level escape velocity', ja: 'ガス惑星程度の脱出速度だよ' }
-        if (v < 100) return { ko: '태양 정도의 탈출속도야', en: 'Sun level escape velocity', ja: '太陽程度の脱出速度だよ' }
-        return { ko: '중성자별급! 광속에 가까워', en: 'Neutron star level! Close to light speed', ja: '中性子星級！光速に近いよ' }
+        if (v < 3)
+            return {
+                ko: '달 정도의 탈출속도야',
+                en: 'Escape velocity like the Moon',
+                ja: '月程度の脱出速度だよ',
+            }
+        if (v < 8)
+            return {
+                ko: '화성 정도의 탈출속도야',
+                en: 'Escape velocity like Mars',
+                ja: '火星程度の脱出速度だよ',
+            }
+        if (v < 15)
+            return {
+                ko: '지구 정도의 탈출속도야',
+                en: 'Escape velocity like Earth',
+                ja: '地球程度の脱出速度だよ',
+            }
+        if (v < 40)
+            return {
+                ko: '가스 행성 정도의 탈출속도야',
+                en: 'Gas giant level escape velocity',
+                ja: 'ガス惑星程度の脱出速度だよ',
+            }
+        if (v < 100)
+            return {
+                ko: '태양 정도의 탈출속도야',
+                en: 'Sun level escape velocity',
+                ja: '太陽程度の脱出速度だよ',
+            }
+        return {
+            ko: '중성자별급! 광속에 가까워',
+            en: 'Neutron star level! Close to light speed',
+            ja: '中性子星級！光速に近いよ',
+        }
     },
     discoveries: [
         {
             id: 'earth-escape',
-            mission: { ko: '지구 값 (M=5.97, r=6.37)을 설정해봐!', en: 'Set Earth values (M=5.97, r=6.37)!', ja: '地球の値（M=5.97, r=6.37）を設定してみて！' },
-            result: { ko: '지구 탈출속도는 약 11.2km/s! 로켓이 이 속도를 내야 우주로 갈 수 있어.', en: 'Earth escape velocity is about 11.2km/s! Rockets must reach this speed to go to space.', ja: '地球の脱出速度は約11.2km/s！ロケットがこの速度を出さないと宇宙に行けないよ。' },
+            mission: {
+                ko: '지구 값 (M=5.97, r=6.37)을 설정해봐!',
+                en: 'Set Earth values (M=5.97, r=6.37)!',
+                ja: '地球の値（M=5.97, r=6.37）を設定してみて！',
+            },
+            result: {
+                ko: '지구 탈출속도는 약 11.2km/s! 로켓이 이 속도를 내야 우주로 갈 수 있어.',
+                en: 'Earth escape velocity is about 11.2km/s! Rockets must reach this speed to go to space.',
+                ja: '地球の脱出速度は約11.2km/s！ロケットがこの速度を出さないと宇宙に行けないよ。',
+            },
             icon: '🚀',
-            condition: (vars) => vars['M'] >= 5.5 && vars['M'] <= 6.5 && vars['r'] >= 6 && vars['r'] <= 7,
+            condition: (vars) =>
+                vars['M'] >= 5.5 && vars['M'] <= 6.5 && vars['r'] >= 6 && vars['r'] <= 7,
         },
         {
             id: 'black-hole',
-            mission: { ko: '질량 M을 최대로 올리고 반지름 r을 최소로 줄여봐!', en: 'Maximize mass M and minimize radius r!', ja: '質量Mを最大にして半径rを最小にしてみて！' },
-            result: { ko: '질량이 크고 반지름이 작으면 탈출속도가 광속에 가까워져! 블랙홀의 원리야.', en: 'Large mass and small radius means escape velocity approaches light speed! The principle of black holes.', ja: '質量が大きく半径が小さいと脱出速度が光速に近づく！ブラックホールの原理だよ。' },
+            mission: {
+                ko: '질량 M을 최대로 올리고 반지름 r을 최소로 줄여봐!',
+                en: 'Maximize mass M and minimize radius r!',
+                ja: '質量Mを最大にして半径rを最小にしてみて！',
+            },
+            result: {
+                ko: '질량이 크고 반지름이 작으면 탈출속도가 광속에 가까워져! 블랙홀의 원리야.',
+                en: 'Large mass and small radius means escape velocity approaches light speed! The principle of black holes.',
+                ja: '質量が大きく半径が小さいと脱出速度が光速に近づく！ブラックホールの原理だよ。',
+            },
             icon: '🕳️',
             condition: (vars) => vars['M'] >= 180 && vars['r'] <= 5,
         },

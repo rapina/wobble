@@ -85,7 +85,9 @@ export class InfiniteWellScene extends BaseScene {
 
         // Particle follows probability maximum with some wobble
         const amplitude = 35
-        const waveY = wellCenterY + this.getWaveValue(maxProbX, wellStartX, wellEndX, n, temporalTerm) * amplitude * 0.3
+        const waveY =
+            wellCenterY +
+            this.getWaveValue(maxProbX, wellStartX, wellEndX, n, temporalTerm) * amplitude * 0.3
 
         this.particleWobble.setPosition(maxProbX, waveY)
         this.particleWobble.updateOptions({
@@ -102,14 +104,25 @@ export class InfiniteWellScene extends BaseScene {
         this.drawNodeMarkers(n, wellStartX, wellEndX, wellCenterY)
     }
 
-    private getWaveValue(x: number, startX: number, endX: number, n: number, temporalTerm: number): number {
+    private getWaveValue(
+        x: number,
+        startX: number,
+        endX: number,
+        n: number,
+        temporalTerm: number
+    ): number {
         const wellWidth = endX - startX
         const normalizedX = (x - startX) / wellWidth
         if (normalizedX < 0 || normalizedX > 1) return 0
         return Math.sin(normalizedX * n * Math.PI) * temporalTerm
     }
 
-    private findProbabilityMaximum(n: number, startX: number, endX: number, temporalTerm: number): number {
+    private findProbabilityMaximum(
+        n: number,
+        startX: number,
+        endX: number,
+        temporalTerm: number
+    ): number {
         // Find the antinode (probability maximum) closest to current position
         // For n states, there are n antinodes at positions (k+0.5)/n for k=0,1,...,n-1
         const wellWidth = endX - startX
@@ -160,7 +173,13 @@ export class InfiniteWellScene extends BaseScene {
         g.stroke({ color: 0x444466, width: 1, alpha: 0.5 })
     }
 
-    private drawProbabilityDensity(n: number, startX: number, endX: number, centerY: number, temporalTerm: number): void {
+    private drawProbabilityDensity(
+        n: number,
+        startX: number,
+        endX: number,
+        centerY: number,
+        temporalTerm: number
+    ): void {
         const g = this.probabilityGraphics
         g.clear()
 
@@ -181,7 +200,13 @@ export class InfiniteWellScene extends BaseScene {
         }
     }
 
-    private drawWaveFunction(n: number, startX: number, endX: number, centerY: number, temporalTerm: number): void {
+    private drawWaveFunction(
+        n: number,
+        startX: number,
+        endX: number,
+        centerY: number,
+        temporalTerm: number
+    ): void {
         const g = this.waveGraphics
         g.clear()
 
@@ -191,13 +216,16 @@ export class InfiniteWellScene extends BaseScene {
         // Draw motion blur trails
         for (let frame = 0; frame < 2; frame++) {
             const timeOffset = frame * 0.1
-            const frameTemporalTerm = Math.cos((this.time - timeOffset) * (1 + Math.sqrt(n) * 0.3) * Math.PI)
+            const frameTemporalTerm = Math.cos(
+                (this.time - timeOffset) * (1 + Math.sqrt(n) * 0.3) * Math.PI
+            )
             const alpha = 0.25 - frame * 0.1
 
             g.moveTo(startX, centerY)
             for (let x = startX; x <= endX; x += 2) {
                 const normalizedX = (x - startX) / wellWidth
-                const y = centerY + Math.sin(normalizedX * n * Math.PI) * frameTemporalTerm * amplitude
+                const y =
+                    centerY + Math.sin(normalizedX * n * Math.PI) * frameTemporalTerm * amplitude
                 g.lineTo(x, y)
             }
             g.stroke({ color: pixiColors.wavelength, width: 3 - frame, alpha })
@@ -260,7 +288,7 @@ export class InfiniteWellScene extends BaseScene {
         }
 
         // Current energy indicator arrow
-        const currentLevelY = diagramBottom - (currentN * currentN / 25) * diagramHeight
+        const currentLevelY = diagramBottom - ((currentN * currentN) / 25) * diagramHeight
         g.moveTo(diagramX - 15, currentLevelY)
         g.lineTo(diagramX - 5, currentLevelY - 5)
         g.lineTo(diagramX - 5, currentLevelY + 5)

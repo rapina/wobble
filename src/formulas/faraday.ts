@@ -94,14 +94,14 @@ export const faraday: Formula = {
         const N = inputs['N'] || 50
         const dPhi = inputs['ΔΦ'] || 0.2
         const dt = inputs['Δt'] || 0.1
-        const EMF = Math.abs(N * dPhi / dt)
+        const EMF = Math.abs((N * dPhi) / dt)
         return { EMF: Math.round(EMF * 10) / 10 }
     },
     formatCalculation: (inputs) => {
         const N = inputs['N'] || 50
         const dPhi = inputs['ΔΦ'] || 0.2
         const dt = inputs['Δt'] || 0.1
-        const EMF = Math.abs(N * dPhi / dt)
+        const EMF = Math.abs((N * dPhi) / dt)
         return `EMF = ${N} × ${dPhi}/${dt} = ${EMF.toFixed(1)} V`
     },
     layout: {

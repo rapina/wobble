@@ -133,25 +133,71 @@ export const keplerThird: Formula = {
     },
     getInsight: (vars) => {
         const T = vars['T']
-        if (T < 0.1) return { ko: '저궤도 위성 정도야 (90분)', en: 'Low orbit satellite (90 min)', ja: '低軌道衛星程度（90分）' }
-        if (T < 1) return { ko: '정지궤도 위성 정도야 (24시간)', en: 'Geostationary satellite (24 hours)', ja: '静止軌道衛星程度（24時間）' }
-        if (T < 30) return { ko: '달의 공전주기 정도야', en: 'Like the Moon orbital period', ja: '月の公転周期程度だよ' }
-        if (T < 400) return { ko: '지구의 공전주기 정도야', en: 'Like Earth orbital period', ja: '地球の公転周期程度だよ' }
-        if (T < 5000) return { ko: '목성의 공전주기 정도야', en: 'Like Jupiter orbital period', ja: '木星の公転周期程度だよ' }
-        return { ko: '외행성급 긴 공전주기!', en: 'Outer planet level long period!', ja: '外惑星級の長い公転周期！' }
+        if (T < 0.1)
+            return {
+                ko: '저궤도 위성 정도야 (90분)',
+                en: 'Low orbit satellite (90 min)',
+                ja: '低軌道衛星程度（90分）',
+            }
+        if (T < 1)
+            return {
+                ko: '정지궤도 위성 정도야 (24시간)',
+                en: 'Geostationary satellite (24 hours)',
+                ja: '静止軌道衛星程度（24時間）',
+            }
+        if (T < 30)
+            return {
+                ko: '달의 공전주기 정도야',
+                en: 'Like the Moon orbital period',
+                ja: '月の公転周期程度だよ',
+            }
+        if (T < 400)
+            return {
+                ko: '지구의 공전주기 정도야',
+                en: 'Like Earth orbital period',
+                ja: '地球の公転周期程度だよ',
+            }
+        if (T < 5000)
+            return {
+                ko: '목성의 공전주기 정도야',
+                en: 'Like Jupiter orbital period',
+                ja: '木星の公転周期程度だよ',
+            }
+        return {
+            ko: '외행성급 긴 공전주기!',
+            en: 'Outer planet level long period!',
+            ja: '外惑星級の長い公転周期！',
+        }
     },
     discoveries: [
         {
             id: 'moon-orbit',
-            mission: { ko: '지구-달 값 (M=5.97, r=384)을 설정해봐!', en: 'Set Earth-Moon values (M=5.97, r=384)!', ja: '地球-月の値（M=5.97, r=384）を設定してみて！' },
-            result: { ko: '달의 공전주기는 약 27일! 한 달(month)이라는 단어가 여기서 왔어.', en: 'Moon orbital period is about 27 days! The word month comes from Moon.', ja: '月の公転周期は約27日！「month（月）」という言葉はここから来たんだよ。' },
+            mission: {
+                ko: '지구-달 값 (M=5.97, r=384)을 설정해봐!',
+                en: 'Set Earth-Moon values (M=5.97, r=384)!',
+                ja: '地球-月の値（M=5.97, r=384）を設定してみて！',
+            },
+            result: {
+                ko: '달의 공전주기는 약 27일! 한 달(month)이라는 단어가 여기서 왔어.',
+                en: 'Moon orbital period is about 27 days! The word month comes from Moon.',
+                ja: '月の公転周期は約27日！「month（月）」という言葉はここから来たんだよ。',
+            },
             icon: '🌙',
-            condition: (vars) => vars['M'] >= 5 && vars['M'] <= 7 && vars['r'] >= 350 && vars['r'] <= 420,
+            condition: (vars) =>
+                vars['M'] >= 5 && vars['M'] <= 7 && vars['r'] >= 350 && vars['r'] <= 420,
         },
         {
             id: 'far-orbit',
-            mission: { ko: '궤도 반지름 r을 5000 이상으로 늘려봐!', en: 'Extend orbital radius r above 5000!', ja: '軌道半径rを5000以上に伸ばしてみて！' },
-            result: { ko: '멀리 있을수록 공전주기가 훨씬 길어져! 명왕성은 248년이나 걸려.', en: 'Farther away means much longer orbital period! Pluto takes 248 years.', ja: '遠いほど公転周期がずっと長くなる！冥王星は248年もかかるよ。' },
+            mission: {
+                ko: '궤도 반지름 r을 5000 이상으로 늘려봐!',
+                en: 'Extend orbital radius r above 5000!',
+                ja: '軌道半径rを5000以上に伸ばしてみて！',
+            },
+            result: {
+                ko: '멀리 있을수록 공전주기가 훨씬 길어져! 명왕성은 248년이나 걸려.',
+                en: 'Farther away means much longer orbital period! Pluto takes 248 years.',
+                ja: '遠いほど公転周期がずっと長くなる！冥王星は248年もかかるよ。',
+            },
             icon: '🪐',
             condition: (vars) => vars['r'] >= 5000,
         },

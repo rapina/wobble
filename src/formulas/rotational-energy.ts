@@ -106,8 +106,16 @@ export const rotationalEnergy: Formula = {
     discoveries: [
         {
             id: 'fast-spin',
-            mission: { ko: 'ω를 최대로 올려서 엄청난 에너지를 만들어봐', en: 'Maximize ω to create huge energy', ja: 'ωを最大にして巨大なエネルギーを作ってみて' },
-            result: { ko: '속도의 제곱! 2배 빨라지면 4배 에너지!', en: 'Squared speed! 2x faster = 4x energy!', ja: '速度の二乗！2倍速いと4倍のエネルギー！' },
+            mission: {
+                ko: 'ω를 최대로 올려서 엄청난 에너지를 만들어봐',
+                en: 'Maximize ω to create huge energy',
+                ja: 'ωを最大にして巨大なエネルギーを作ってみて',
+            },
+            result: {
+                ko: '속도의 제곱! 2배 빨라지면 4배 에너지!',
+                en: 'Squared speed! 2x faster = 4x energy!',
+                ja: '速度の二乗！2倍速いと4倍のエネルギー！',
+            },
             icon: '🌀',
             condition: (vars) => {
                 const omega = vars['ω'] || 10
@@ -117,8 +125,16 @@ export const rotationalEnergy: Formula = {
         },
         {
             id: 'heavy-flywheel',
-            mission: { ko: 'I를 최대로 올려봐', en: 'Maximize moment of inertia I', ja: '慣性モーメントIを最大にしてみて' },
-            result: { ko: '무거운 플라이휠이 더 많은 에너지를 저장해!', en: 'Heavier flywheel stores more energy!', ja: '重いフライホイールはより多くのエネルギーを蓄える！' },
+            mission: {
+                ko: 'I를 최대로 올려봐',
+                en: 'Maximize moment of inertia I',
+                ja: '慣性モーメントIを最大にしてみて',
+            },
+            result: {
+                ko: '무거운 플라이휠이 더 많은 에너지를 저장해!',
+                en: 'Heavier flywheel stores more energy!',
+                ja: '重いフライホイールはより多くのエネルギーを蓄える！',
+            },
             icon: '⚙️',
             condition: (vars) => {
                 const I = vars['I'] || 2
@@ -127,8 +143,16 @@ export const rotationalEnergy: Formula = {
         },
         {
             id: 'energy-storage',
-            mission: { ko: 'E를 2000J 이상으로 만들어봐', en: 'Create E above 2000J', ja: 'Eを2000J以上にしてみて' },
-            result: { ko: '플라이휠 배터리는 이 원리로 에너지를 저장해!', en: 'Flywheel batteries use this to store energy!', ja: 'フライホイールバッテリーはこの原理でエネルギーを蓄える！' },
+            mission: {
+                ko: 'E를 2000J 이상으로 만들어봐',
+                en: 'Create E above 2000J',
+                ja: 'Eを2000J以上にしてみて',
+            },
+            result: {
+                ko: '플라이휠 배터리는 이 원리로 에너지를 저장해!',
+                en: 'Flywheel batteries use this to store energy!',
+                ja: 'フライホイールバッテリーはこの原理でエネルギーを蓄える！',
+            },
             icon: '🔋',
             condition: (vars) => {
                 const E = vars['E'] || 100

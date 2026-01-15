@@ -85,7 +85,11 @@ export function AchievementToast() {
                         <div className="flex items-center gap-1.5 mb-0.5">
                             <Trophy className="w-3.5 h-3.5 text-[#F5B041]" />
                             <span className="text-xs font-medium text-[#F5B041]">
-                                {lang === 'ko' ? '업적 달성!' : lang === 'ja' ? '実績達成！' : 'Achievement Unlocked!'}
+                                {lang === 'ko'
+                                    ? '업적 달성!'
+                                    : lang === 'ja'
+                                      ? '実績達成！'
+                                      : 'Achievement Unlocked!'}
                             </span>
                         </div>
                         <p className="text-white font-bold truncate">

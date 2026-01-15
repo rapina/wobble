@@ -94,22 +94,28 @@ export function useAdMob(): UseAdMobReturn {
             console.log('Reward ad loaded')
         })
 
-        const rewardFailedListener = AdMob.addListener(RewardAdPluginEvents.FailedToLoad, (error) => {
-            console.error('Reward ad failed to load:', error)
-            setIsRewardAdLoading(false)
-            if (failCallbackRef.current) {
-                failCallbackRef.current()
-                failCallbackRef.current = null
+        const rewardFailedListener = AdMob.addListener(
+            RewardAdPluginEvents.FailedToLoad,
+            (error) => {
+                console.error('Reward ad failed to load:', error)
+                setIsRewardAdLoading(false)
+                if (failCallbackRef.current) {
+                    failCallbackRef.current()
+                    failCallbackRef.current = null
+                }
             }
-        })
+        )
 
-        const rewardedListener = AdMob.addListener(RewardAdPluginEvents.Rewarded, (reward: AdMobRewardItem) => {
-            console.log('User rewarded:', reward)
-            if (rewardCallbackRef.current) {
-                rewardCallbackRef.current()
-                rewardCallbackRef.current = null
+        const rewardedListener = AdMob.addListener(
+            RewardAdPluginEvents.Rewarded,
+            (reward: AdMobRewardItem) => {
+                console.log('User rewarded:', reward)
+                if (rewardCallbackRef.current) {
+                    rewardCallbackRef.current()
+                    rewardCallbackRef.current = null
+                }
             }
-        })
+        )
 
         const rewardDismissedListener = AdMob.addListener(RewardAdPluginEvents.Dismissed, () => {
             console.log('Reward ad dismissed')
@@ -188,50 +194,53 @@ export function useAdMob(): UseAdMobReturn {
         setWebSimulationActive(false)
     }, [])
 
-    const showRewardAd = useCallback(async (onRewarded: () => void, onFailed?: () => void) => {
-        // 웹에서는 시뮬레이션 UI 표시
-        if (!isNative) {
-            console.log('Web: Starting reward ad simulation')
-            webRewardCallbackRef.current = onRewarded
-            webFailCallbackRef.current = onFailed || null
-            setWebSimulationActive(true)
-            return
-        }
-
-        if (!isInitialized) {
-            console.error('AdMob not initialized')
-            onFailed?.()
-            return
-        }
-
-        setIsRewardAdLoading(true)
-        rewardCallbackRef.current = onRewarded
-        failCallbackRef.current = onFailed || null
-
-        try {
-            const isIOS = Capacitor.getPlatform() === 'ios'
-            const adId = IS_AD_TESTING
-                ? isIOS
-                    ? TEST_REWARD_ID_IOS
-                    : TEST_REWARD_ID_ANDROID
-                : isIOS
-                  ? PROD_REWARD_ID_IOS
-                  : PROD_REWARD_ID_ANDROID
-
-            const options: RewardAdOptions = {
-                adId,
-                isTesting: IS_AD_TESTING,
+    const showRewardAd = useCallback(
+        async (onRewarded: () => void, onFailed?: () => void) => {
+            // 웹에서는 시뮬레이션 UI 표시
+            if (!isNative) {
+                console.log('Web: Starting reward ad simulation')
+                webRewardCallbackRef.current = onRewarded
+                webFailCallbackRef.current = onFailed || null
+                setWebSimulationActive(true)
+                return
             }
 
-            await AdMob.prepareRewardVideoAd(options)
-            await AdMob.showRewardVideoAd()
-            console.log('Reward ad shown, testing:', IS_AD_TESTING)
-        } catch (error) {
-            console.error('Failed to show reward ad:', error)
-            setIsRewardAdLoading(false)
-            onFailed?.()
-        }
-    }, [isNative, isInitialized])
+            if (!isInitialized) {
+                console.error('AdMob not initialized')
+                onFailed?.()
+                return
+            }
+
+            setIsRewardAdLoading(true)
+            rewardCallbackRef.current = onRewarded
+            failCallbackRef.current = onFailed || null
+
+            try {
+                const isIOS = Capacitor.getPlatform() === 'ios'
+                const adId = IS_AD_TESTING
+                    ? isIOS
+                        ? TEST_REWARD_ID_IOS
+                        : TEST_REWARD_ID_ANDROID
+                    : isIOS
+                      ? PROD_REWARD_ID_IOS
+                      : PROD_REWARD_ID_ANDROID
+
+                const options: RewardAdOptions = {
+                    adId,
+                    isTesting: IS_AD_TESTING,
+                }
+
+                await AdMob.prepareRewardVideoAd(options)
+                await AdMob.showRewardVideoAd()
+                console.log('Reward ad shown, testing:', IS_AD_TESTING)
+            } catch (error) {
+                console.error('Failed to show reward ad:', error)
+                setIsRewardAdLoading(false)
+                onFailed?.()
+            }
+        },
+        [isNative, isInitialized]
+    )
 
     return {
         isInitialized,

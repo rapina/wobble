@@ -284,7 +284,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                 border: `2px solid ${theme.red}`,
                             }}
                         >
-                            <p className="text-sm text-center font-medium" style={{ color: theme.red }}>
+                            <p
+                                className="text-sm text-center font-medium"
+                                style={{ color: theme.red }}
+                            >
                                 {error}
                             </p>
                         </div>
@@ -341,13 +344,18 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                     <div
                                         className="p-3 rounded-lg cursor-pointer transition-all active:scale-[0.98]"
                                         style={{
-                                            background: debugEnabled ? 'rgba(232, 93, 76, 0.2)' : theme.bgPanel,
+                                            background: debugEnabled
+                                                ? 'rgba(232, 93, 76, 0.2)'
+                                                : theme.bgPanel,
                                             border: `2px solid ${debugEnabled ? theme.red : theme.border}`,
                                         }}
                                         onClick={() => {
                                             const newValue = !debugEnabled
                                             setDebugEnabled(newValue)
-                                            localStorage.setItem('wobble-debug-enabled', String(newValue))
+                                            localStorage.setItem(
+                                                'wobble-debug-enabled',
+                                                String(newValue)
+                                            )
                                         }}
                                     >
                                         <div className="flex items-center justify-between">
@@ -357,7 +365,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                             <div
                                                 className="w-12 h-6 rounded-md relative transition-all"
                                                 style={{
-                                                    background: debugEnabled ? theme.red : theme.bgPanelLight,
+                                                    background: debugEnabled
+                                                        ? theme.red
+                                                        : theme.bgPanelLight,
                                                     border: `2px solid ${theme.border}`,
                                                 }}
                                             >
@@ -406,7 +416,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                             boxShadow: `0 2px 0 ${theme.border}`,
                                         }}
                                     >
-                                        {allUnlocked ? '✓ Unlocked!' : `Unlock All Formulas (${unlockedFormulas.size})`}
+                                        {allUnlocked
+                                            ? '✓ Unlocked!'
+                                            : `Unlock All Formulas (${unlockedFormulas.size})`}
                                     </button>
                                 </div>
                             )}
@@ -466,9 +478,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                 </div>
                                 <div>
                                     <p className="font-black" style={{ color: theme.red }}>
-                                        {isKorean
-                                            ? '정말 초기화하시겠습니까?'
-                                            : 'Are you sure?'}
+                                        {isKorean ? '정말 초기화하시겠습니까?' : 'Are you sure?'}
                                     </p>
                                     <p className="text-xs text-white/50 mt-1 font-medium">
                                         {isKorean

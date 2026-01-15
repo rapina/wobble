@@ -108,7 +108,10 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     'elastic-bounce': {
         id: 'elastic-bounce',
         name: { ko: '탄성 충돌', en: 'Elastic Collision' },
-        description: { ko: '운동량을 보존하며 튕겨갑니다', en: 'Projectiles conserve momentum when bouncing' },
+        description: {
+            ko: '운동량을 보존하며 튕겨갑니다',
+            en: 'Projectiles conserve momentum when bouncing',
+        },
         icon: '◎',
         color: 0x3498db,
         maxLevel: 5,
@@ -127,7 +130,10 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     'momentum-pierce': {
         id: 'momentum-pierce',
         name: { ko: '운동량 관통', en: 'Momentum Pierce' },
-        description: { ko: '무거운 탄환이 적을 밀고 지나갑니다', en: 'Heavy projectiles push through enemies' },
+        description: {
+            ko: '무거운 탄환이 적을 밀고 지나갑니다',
+            en: 'Heavy projectiles push through enemies',
+        },
         icon: '➤',
         color: 0xe74c3c,
         maxLevel: 5,
@@ -146,7 +152,10 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     'pressure-wave': {
         id: 'pressure-wave',
         name: { ko: '압력파', en: 'Pressure Wave' },
-        description: { ko: '기체 팽창으로 폭발적 압력을 만듭니다', en: 'Gas expansion creates explosive pressure' },
+        description: {
+            ko: '기체 팽창으로 폭발적 압력을 만듭니다',
+            en: 'Gas expansion creates explosive pressure',
+        },
         icon: '✸',
         color: 0xf39c12,
         maxLevel: 5,
@@ -165,7 +174,10 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     'frequency-burst': {
         id: 'frequency-burst',
         name: { ko: '진동수 증폭', en: 'Frequency Burst' },
-        description: { ko: '높은 진동수로 빠르게 발사합니다', en: 'Higher frequency means faster fire rate' },
+        description: {
+            ko: '높은 진동수로 빠르게 발사합니다',
+            en: 'Higher frequency means faster fire rate',
+        },
         icon: '⚡',
         color: 0xf1c40f,
         maxLevel: 5,
@@ -203,7 +215,10 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     'gravity-pull': {
         id: 'gravity-pull',
         name: { ko: '중력 유도', en: 'Gravity Pull' },
-        description: { ko: '중력으로 적을 향해 휘어집니다', en: 'Projectiles curve toward enemies' },
+        description: {
+            ko: '중력으로 적을 향해 휘어집니다',
+            en: 'Projectiles curve toward enemies',
+        },
         icon: '◇',
         color: 0x1abc9c,
         maxLevel: 5,
@@ -222,7 +237,10 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     'refraction-spread': {
         id: 'refraction-spread',
         name: { ko: '굴절 분산', en: 'Refraction Spread' },
-        description: { ko: '빛이 여러 각도로 굴절됩니다', en: 'Light refracts into multiple beams' },
+        description: {
+            ko: '빛이 여러 각도로 굴절됩니다',
+            en: 'Light refracts into multiple beams',
+        },
         icon: '⁂',
         color: 0xe67e22,
         maxLevel: 5,
@@ -241,7 +259,10 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     'centripetal-pulse': {
         id: 'centripetal-pulse',
         name: { ko: '원심력 펄스', en: 'Centripetal Pulse' },
-        description: { ko: '회전하는 힘이 적을 밀어냅니다', en: 'Rotating force pushes enemies away' },
+        description: {
+            ko: '회전하는 힘이 적을 밀어냅니다',
+            en: 'Rotating force pushes enemies away',
+        },
         icon: '◯',
         color: 0x2ecc71,
         maxLevel: 5,
@@ -264,7 +285,10 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     'elastic-return': {
         id: 'elastic-return',
         name: { ko: '탄성 회귀', en: 'Elastic Return' },
-        description: { ko: '스프링처럼 발사체가 되돌아옵니다', en: 'Projectiles return like a spring' },
+        description: {
+            ko: '스프링처럼 발사체가 되돌아옵니다',
+            en: 'Projectiles return like a spring',
+        },
         icon: '⟳',
         color: 0x9b59b6,
         maxLevel: 5,
@@ -283,7 +307,10 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     'magnetic-shield': {
         id: 'magnetic-shield',
         name: { ko: '자기장 방어', en: 'Magnetic Shield' },
-        description: { ko: '자기장이 적의 경로를 휘게 합니다', en: 'Magnetic field deflects enemies' },
+        description: {
+            ko: '자기장이 적의 경로를 휘게 합니다',
+            en: 'Magnetic field deflects enemies',
+        },
         icon: '⊛',
         color: 0x3498db,
         maxLevel: 5,
@@ -302,7 +329,10 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     'static-repulsion': {
         id: 'static-repulsion',
         name: { ko: '정전기 반발', en: 'Static Repulsion' },
-        description: { ko: '전하가 적을 지속적으로 밀어냅니다', en: 'Electric charge pushes enemies away' },
+        description: {
+            ko: '전하가 적을 지속적으로 밀어냅니다',
+            en: 'Electric charge pushes enemies away',
+        },
         icon: '⊕',
         color: 0xf1c40f,
         maxLevel: 5,
@@ -321,7 +351,10 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     'buoyant-bomb': {
         id: 'buoyant-bomb',
         name: { ko: '부력 폭탄', en: 'Buoyant Bomb' },
-        description: { ko: '발사체가 떠올랐다 떨어지며 폭발합니다', en: 'Projectiles float up then drop explosively' },
+        description: {
+            ko: '발사체가 떠올랐다 떨어지며 폭발합니다',
+            en: 'Projectiles float up then drop explosively',
+        },
         icon: '◠',
         color: 0x1abc9c,
         maxLevel: 5,
@@ -340,7 +373,10 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     'quantum-tunnel': {
         id: 'quantum-tunnel',
         name: { ko: '양자 터널링', en: 'Quantum Tunnel' },
-        description: { ko: '확률적으로 적을 투과하며 추가 데미지', en: 'Projectiles may phase through enemies' },
+        description: {
+            ko: '확률적으로 적을 투과하며 추가 데미지',
+            en: 'Projectiles may phase through enemies',
+        },
         icon: '⫘',
         color: 0x8e44ad,
         maxLevel: 5,
@@ -359,7 +395,10 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     'pendulum-rhythm': {
         id: 'pendulum-rhythm',
         name: { ko: '진자 리듬', en: 'Pendulum Rhythm' },
-        description: { ko: '주기적으로 공격력이 최대가 됩니다', en: 'Damage oscillates with timing' },
+        description: {
+            ko: '주기적으로 공격력이 최대가 됩니다',
+            en: 'Damage oscillates with timing',
+        },
         icon: '◷',
         color: 0xe67e22,
         maxLevel: 5,
@@ -378,7 +417,10 @@ export const SKILL_DEFINITIONS: Record<string, SkillDefinition> = {
     'torque-slash': {
         id: 'torque-slash',
         name: { ko: '토크 회전참', en: 'Torque Slash' },
-        description: { ko: '회전하는 칼날이 주변 적을 벱니다', en: 'Spinning blade damages nearby enemies' },
+        description: {
+            ko: '회전하는 칼날이 주변 적을 벱니다',
+            en: 'Spinning blade damages nearby enemies',
+        },
         icon: '↻',
         color: 0xc0392b,
         maxLevel: 5,
@@ -421,7 +463,10 @@ export const PASSIVE_DEFINITIONS: Record<string, PassiveDefinition> = {
     momentum: {
         id: 'momentum',
         name: { ko: '모멘텀', en: 'Momentum' },
-        description: { ko: '이동 시 속도 +5%/초 (최대 +30%), 속도에 비례해 데미지 증가', en: 'Speed up while moving (+5%/sec, max +30%). Damage scales with speed.' },
+        description: {
+            ko: '이동 시 속도 +5%/초 (최대 +30%), 속도에 비례해 데미지 증가',
+            en: 'Speed up while moving (+5%/sec, max +30%). Damage scales with speed.',
+        },
         icon: '→',
         color: 0xf5b041,
     },
@@ -429,7 +474,10 @@ export const PASSIVE_DEFINITIONS: Record<string, PassiveDefinition> = {
     fortitude: {
         id: 'fortitude',
         name: { ko: '불굴', en: 'Fortitude' },
-        description: { ko: '받는 피해 -15%, 레벨당 +2% 방어력', en: 'Take 15% less damage. +2% damage reduction per level.' },
+        description: {
+            ko: '받는 피해 -15%, 레벨당 +2% 방어력',
+            en: 'Take 15% less damage. +2% damage reduction per level.',
+        },
         icon: '■',
         color: 0x5dade2,
     },
@@ -437,7 +485,10 @@ export const PASSIVE_DEFINITIONS: Record<string, PassiveDefinition> = {
     'critical-edge': {
         id: 'critical-edge',
         name: { ko: '날카로운 일격', en: 'Critical Edge' },
-        description: { ko: '치명타 확률 +15%, 치명타 2.5배 데미지', en: '+15% crit chance. Crits deal 2.5x damage.' },
+        description: {
+            ko: '치명타 확률 +15%, 치명타 2.5배 데미지',
+            en: '+15% crit chance. Crits deal 2.5x damage.',
+        },
         icon: '▲',
         color: 0xe74c3c,
     },
@@ -445,7 +496,10 @@ export const PASSIVE_DEFINITIONS: Record<string, PassiveDefinition> = {
     'lucky-star': {
         id: 'lucky-star',
         name: { ko: '행운의 별', en: 'Lucky Star' },
-        description: { ko: 'XP +20%, 10% 확률로 2배 XP', en: '+20% XP gain. 10% chance for double XP orbs.' },
+        description: {
+            ko: 'XP +20%, 10% 확률로 2배 XP',
+            en: '+20% XP gain. 10% chance for double XP orbs.',
+        },
         icon: '★',
         color: 0xffd700,
     },
@@ -453,7 +507,10 @@ export const PASSIVE_DEFINITIONS: Record<string, PassiveDefinition> = {
     precision: {
         id: 'precision',
         name: { ko: '정밀', en: 'Precision' },
-        description: { ko: '연속 명중 시 데미지 +10% 누적 (빗나가면 초기화)', en: '+10% damage per consecutive hit (resets on miss).' },
+        description: {
+            ko: '연속 명중 시 데미지 +10% 누적 (빗나가면 초기화)',
+            en: '+10% damage per consecutive hit (resets on miss).',
+        },
         icon: '◆',
         color: 0xbb8fce,
     },
@@ -571,8 +628,7 @@ export function getNextLevelDescription(skillId: string, currentLevel: number): 
     if (effect.slashDamage !== undefined) parts.push(`데미지 ${effect.slashDamage}`)
     if (effect.slashSpeed !== undefined) parts.push(`회전 ${effect.slashSpeed}회/초`)
     if (effect.warpRadius !== undefined) parts.push(`반경 ${effect.warpRadius}`)
-    if (effect.slowFactor !== undefined)
-        parts.push(`감속 ${Math.round(effect.slowFactor * 100)}%`)
+    if (effect.slowFactor !== undefined) parts.push(`감속 ${Math.round(effect.slowFactor * 100)}%`)
 
     return parts.join(', ')
 }

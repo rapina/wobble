@@ -168,7 +168,8 @@ export class BohrScene extends BaseScene {
         const currentRadius = this.getOrbitRadius(this.currentN)
         const targetRadius = this.getOrbitRadius(this.targetN)
         const radius = this.isTransitioning
-            ? currentRadius + (targetRadius - currentRadius) * this.easeInOut(this.transitionProgress)
+            ? currentRadius +
+              (targetRadius - currentRadius) * this.easeInOut(this.transitionProgress)
             : targetRadius
 
         // Orbital speed (faster at lower orbits, like real physics)
@@ -320,8 +321,14 @@ export class BohrScene extends BaseScene {
                 )
                 for (let i = 0; i < 4; i++) {
                     const t = i / 4
-                    const wx = p.x - p.vx * 3 * (1 - t) + perpX * Math.sin(this.time * 10 + i) * amplitude * (1 - t)
-                    const wy = p.y - p.vy * 3 * (1 - t) + perpY * Math.sin(this.time * 10 + i) * amplitude * (1 - t)
+                    const wx =
+                        p.x -
+                        p.vx * 3 * (1 - t) +
+                        perpX * Math.sin(this.time * 10 + i) * amplitude * (1 - t)
+                    const wy =
+                        p.y -
+                        p.vy * 3 * (1 - t) +
+                        perpY * Math.sin(this.time * 10 + i) * amplitude * (1 - t)
                     g.lineTo(wx, wy)
                 }
                 g.stroke({ color: p.color, width: 2 * p.life, alpha: p.life * 0.6 })

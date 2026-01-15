@@ -182,8 +182,7 @@ export const dilution: Formula = {
     getInsight: (vars) => {
         const M2 = vars['M₂']
         const dilutionFactor = vars['M₁'] / M2
-        if (dilutionFactor < 2)
-            return { ko: '약간 희석됨', en: 'Slightly diluted', ja: 'やや希釈' }
+        if (dilutionFactor < 2) return { ko: '약간 희석됨', en: 'Slightly diluted', ja: 'やや希釈' }
         if (dilutionFactor < 5)
             return { ko: '적당히 희석됨', en: 'Moderately diluted', ja: '適度に希釈' }
         if (dilutionFactor < 10)

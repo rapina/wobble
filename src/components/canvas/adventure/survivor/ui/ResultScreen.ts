@@ -433,7 +433,13 @@ export class ResultScreen {
 
         // Rank shadow
         const rankShadow = new Graphics()
-        rankShadow.roundRect(-rankBoxWidth / 2 + 3, -rankBoxHeight / 2 + 4, rankBoxWidth, rankBoxHeight, 12)
+        rankShadow.roundRect(
+            -rankBoxWidth / 2 + 3,
+            -rankBoxHeight / 2 + 4,
+            rankBoxWidth,
+            rankBoxHeight,
+            12
+        )
         rankShadow.fill({ color: cardShadowColor, alpha: 0.3 })
         this.resultRankCard.addChild(rankShadow)
 

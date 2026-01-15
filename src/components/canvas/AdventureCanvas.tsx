@@ -95,7 +95,10 @@ export const AdventureCanvas = forwardRef<AdventureCanvasHandle, AdventureCanvas
             ref,
             () => ({
                 play: () => {
-                    console.log('[AdventureCanvas] play() called, sceneRef.current:', sceneRef.current ? 'exists' : 'null')
+                    console.log(
+                        '[AdventureCanvas] play() called, sceneRef.current:',
+                        sceneRef.current ? 'exists' : 'null'
+                    )
                     sceneRef.current?.play()
                 },
                 reset: () => {
@@ -147,7 +150,12 @@ export const AdventureCanvas = forwardRef<AdventureCanvasHandle, AdventureCanvas
 
         // Create/switch scene based on levelId
         useEffect(() => {
-            console.log('[AdventureCanvas] useEffect triggered - isReady:', isReady, 'levelId:', levelId)
+            console.log(
+                '[AdventureCanvas] useEffect triggered - isReady:',
+                isReady,
+                'levelId:',
+                levelId
+            )
             if (!isReady || !app) return
 
             // Store previous scene for delayed cleanup
@@ -183,7 +191,9 @@ export const AdventureCanvas = forwardRef<AdventureCanvasHandle, AdventureCanvas
                 if (scene) {
                     app.stage.addChild(scene.container)
                     sceneRef.current = scene
-                    console.log('[AdventureCanvas] New scene assigned to sceneRef, calling onSceneReady')
+                    console.log(
+                        '[AdventureCanvas] New scene assigned to sceneRef, calling onSceneReady'
+                    )
                     setSceneError(null)
                     // Notify parent that scene is ready (use setTimeout to ensure state is settled)
                     setTimeout(() => {

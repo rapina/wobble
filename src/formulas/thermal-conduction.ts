@@ -183,10 +183,22 @@ export const thermalConduction: Formula = {
     ],
     getInsight: (vars) => {
         const Q = vars['Q']
-        if (Q < 100) return { ko: '촛불 정도의 열전달이야', en: 'Heat transfer like a candle', ja: 'ろうそく程度の熱伝達' }
-        if (Q < 500) return { ko: '헤어드라이어 정도야', en: 'Like a hair dryer', ja: 'ヘアドライヤー程度' }
-        if (Q < 1500) return { ko: '전기히터 정도야', en: 'Like an electric heater', ja: '電気ヒーター程度' }
-        if (Q < 4000) return { ko: '오븐 정도의 열전달이야', en: 'Like an oven', ja: 'オーブン程度の熱伝達' }
-        return { ko: '용광로급 열전달!', en: 'Furnace-level heat transfer!', ja: '溶鉱炉級の熱伝達！' }
+        if (Q < 100)
+            return {
+                ko: '촛불 정도의 열전달이야',
+                en: 'Heat transfer like a candle',
+                ja: 'ろうそく程度の熱伝達',
+            }
+        if (Q < 500)
+            return { ko: '헤어드라이어 정도야', en: 'Like a hair dryer', ja: 'ヘアドライヤー程度' }
+        if (Q < 1500)
+            return { ko: '전기히터 정도야', en: 'Like an electric heater', ja: '電気ヒーター程度' }
+        if (Q < 4000)
+            return { ko: '오븐 정도의 열전달이야', en: 'Like an oven', ja: 'オーブン程度の熱伝達' }
+        return {
+            ko: '용광로급 열전달!',
+            en: 'Furnace-level heat transfer!',
+            ja: '溶鉱炉級の熱伝達！',
+        }
     },
 }

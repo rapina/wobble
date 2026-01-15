@@ -122,7 +122,13 @@ export class PauseScreen {
         const badgeWidth = 140
         const badgeHeight = 36
         const badgeShadow = new Graphics()
-        badgeShadow.roundRect(this.centerX - badgeWidth / 2 + 2, cardY - 18 + 3, badgeWidth, badgeHeight, 8)
+        badgeShadow.roundRect(
+            this.centerX - badgeWidth / 2 + 2,
+            cardY - 18 + 3,
+            badgeWidth,
+            badgeHeight,
+            8
+        )
         badgeShadow.fill({ color: cardShadowColor, alpha: 0.5 })
         this.screenContainer.addChild(badgeShadow)
 
@@ -268,7 +274,13 @@ export class PauseScreen {
 
                 // Skill pill shadow
                 const pillShadow = new Graphics()
-                pillShadow.roundRect(itemX + 2, itemY + 3, itemWidth, skillItemHeight, skillItemHeight / 2)
+                pillShadow.roundRect(
+                    itemX + 2,
+                    itemY + 3,
+                    itemWidth,
+                    skillItemHeight,
+                    skillItemHeight / 2
+                )
                 pillShadow.fill({ color: 0x1a1a1a, alpha: 0.3 })
                 this.screenContainer.addChild(pillShadow)
 
@@ -333,16 +345,28 @@ export class PauseScreen {
         const btnGap = 15
 
         // Resume button (primary - blue)
-        const resumeBtn = this.createButton('RESUME', -btnWidth / 2 - btnGap / 2, btnWidth, accentBlue, () => {
-            this.onResume?.()
-        })
+        const resumeBtn = this.createButton(
+            'RESUME',
+            -btnWidth / 2 - btnGap / 2,
+            btnWidth,
+            accentBlue,
+            () => {
+                this.onResume?.()
+            }
+        )
         resumeBtn.position.y = btnY
         this.screenContainer.addChild(resumeBtn)
 
         // Exit button (secondary - red)
-        const exitBtn = this.createButton('EXIT', btnWidth / 2 + btnGap / 2, btnWidth, accentRed, () => {
-            this.onExit?.()
-        })
+        const exitBtn = this.createButton(
+            'EXIT',
+            btnWidth / 2 + btnGap / 2,
+            btnWidth,
+            accentRed,
+            () => {
+                this.onExit?.()
+            }
+        )
         exitBtn.position.y = btnY
         this.screenContainer.addChild(exitBtn)
     }

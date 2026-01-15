@@ -110,8 +110,16 @@ export const beatFrequency: Formula = {
     discoveries: [
         {
             id: 'perfect-tune',
-            mission: { ko: 'f₁과 f₂를 같게 맞춰봐', en: 'Match f₁ and f₂ exactly', ja: 'f₁とf₂を同じにしてみて' },
-            result: { ko: '맥놀이가 0이면 완벽한 튜닝! 악기 조율의 원리!', en: 'Zero beats = perfect tuning! This is how instruments are tuned!', ja: 'うなりが0なら完璧なチューニング！楽器の調律の原理！' },
+            mission: {
+                ko: 'f₁과 f₂를 같게 맞춰봐',
+                en: 'Match f₁ and f₂ exactly',
+                ja: 'f₁とf₂を同じにしてみて',
+            },
+            result: {
+                ko: '맥놀이가 0이면 완벽한 튜닝! 악기 조율의 원리!',
+                en: 'Zero beats = perfect tuning! This is how instruments are tuned!',
+                ja: 'うなりが0なら完璧なチューニング！楽器の調律の原理！',
+            },
             icon: '🎵',
             condition: (vars) => {
                 const fbeat = vars['fbeat'] || 5
@@ -120,8 +128,16 @@ export const beatFrequency: Formula = {
         },
         {
             id: 'slow-beat',
-            mission: { ko: '맥놀이를 1-3Hz로 맞춰봐', en: 'Set beat frequency to 1-3Hz', ja: 'うなりを1-3Hzに合わせてみて' },
-            result: { ko: '느린 맥놀이는 귀로 쉽게 들을 수 있어!', en: 'Slow beats are easy to hear!', ja: '遅いうなりは耳で簡単に聞こえる！' },
+            mission: {
+                ko: '맥놀이를 1-3Hz로 맞춰봐',
+                en: 'Set beat frequency to 1-3Hz',
+                ja: 'うなりを1-3Hzに合わせてみて',
+            },
+            result: {
+                ko: '느린 맥놀이는 귀로 쉽게 들을 수 있어!',
+                en: 'Slow beats are easy to hear!',
+                ja: '遅いうなりは耳で簡単に聞こえる！',
+            },
             icon: '👂',
             condition: (vars) => {
                 const fbeat = vars['fbeat'] || 5
@@ -130,8 +146,16 @@ export const beatFrequency: Formula = {
         },
         {
             id: 'large-difference',
-            mission: { ko: '진동수 차이를 50Hz 이상으로 만들어봐', en: 'Create frequency difference over 50Hz', ja: '振動数の差を50Hz以上にしてみて' },
-            result: { ko: '차이가 크면 맥놀이 대신 두 개의 다른 음으로 들려!', en: 'Large difference sounds like two separate notes!', ja: '差が大きいとうなりの代わりに2つの別の音に聞こえる！' },
+            mission: {
+                ko: '진동수 차이를 50Hz 이상으로 만들어봐',
+                en: 'Create frequency difference over 50Hz',
+                ja: '振動数の差を50Hz以上にしてみて',
+            },
+            result: {
+                ko: '차이가 크면 맥놀이 대신 두 개의 다른 음으로 들려!',
+                en: 'Large difference sounds like two separate notes!',
+                ja: '差が大きいとうなりの代わりに2つの別の音に聞こえる！',
+            },
             icon: '🎼',
             condition: (vars) => {
                 const fbeat = vars['fbeat'] || 5

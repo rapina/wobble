@@ -85,11 +85,35 @@ export const reflection: Formula = {
     },
     getInsight: (vars) => {
         const theta = vars['θᵣ']
-        if (theta < 10) return { ko: '거의 수직으로 반사되는 빛이야', en: 'Light reflecting almost straight back', ja: 'ほぼ垂直に反射する光' }
-        if (theta < 30) return { ko: '거울을 약간 기울인 반사야', en: 'Mirror tilted slightly', ja: '鏡を少し傾けた反射' }
-        if (theta < 50) return { ko: '일반적인 거울 반사각이야', en: 'Typical mirror reflection angle', ja: '一般的な鏡の反射角' }
-        if (theta < 70) return { ko: '비스듬히 반사되는 빛이야', en: 'Light reflecting at an angle', ja: '斜めに反射する光' }
-        return { ko: '수면에서 반짝이는 빛처럼 스치듯 반사!', en: 'Grazing reflection like light sparkling on water!', ja: '水面でキラキラ光るように掠めて反射！' }
+        if (theta < 10)
+            return {
+                ko: '거의 수직으로 반사되는 빛이야',
+                en: 'Light reflecting almost straight back',
+                ja: 'ほぼ垂直に反射する光',
+            }
+        if (theta < 30)
+            return {
+                ko: '거울을 약간 기울인 반사야',
+                en: 'Mirror tilted slightly',
+                ja: '鏡を少し傾けた反射',
+            }
+        if (theta < 50)
+            return {
+                ko: '일반적인 거울 반사각이야',
+                en: 'Typical mirror reflection angle',
+                ja: '一般的な鏡の反射角',
+            }
+        if (theta < 70)
+            return {
+                ko: '비스듬히 반사되는 빛이야',
+                en: 'Light reflecting at an angle',
+                ja: '斜めに反射する光',
+            }
+        return {
+            ko: '수면에서 반짝이는 빛처럼 스치듯 반사!',
+            en: 'Grazing reflection like light sparkling on water!',
+            ja: '水面でキラキラ光るように掠めて反射！',
+        }
     },
     discoveries: [
         {

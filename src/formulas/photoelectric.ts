@@ -119,17 +119,49 @@ export const photoelectric: Formula = {
         const f = vars['f'] ?? 7
         const W = vars['W'] ?? 2.3
         const h = 0.4136
-        if (h * f < W) return { ko: '문턱 이하! 전자가 방출되지 않아', en: 'Below threshold! No electron emission', ja: 'しきい値以下！電子が放出されない' }
-        if (Ek < 0.5) return { ko: '느린 전자가 방출됐어', en: 'Slow electrons emitted', ja: '遅い電子が放出されたよ' }
-        if (Ek < 1.5) return { ko: '태양전지 수준의 전자 에너지야', en: 'Solar cell level electron energy', ja: '太陽電池レベルの電子エネルギーだよ' }
-        if (Ek < 3) return { ko: '가시광선급 광전자야', en: 'Visible light level photoelectron', ja: '可視光線級の光電子だよ' }
-        return { ko: '고에너지 광전자! 자외선급이야', en: 'High energy photoelectron! UV level', ja: '高エネルギー光電子！紫外線級だよ' }
+        if (h * f < W)
+            return {
+                ko: '문턱 이하! 전자가 방출되지 않아',
+                en: 'Below threshold! No electron emission',
+                ja: 'しきい値以下！電子が放出されない',
+            }
+        if (Ek < 0.5)
+            return {
+                ko: '느린 전자가 방출됐어',
+                en: 'Slow electrons emitted',
+                ja: '遅い電子が放出されたよ',
+            }
+        if (Ek < 1.5)
+            return {
+                ko: '태양전지 수준의 전자 에너지야',
+                en: 'Solar cell level electron energy',
+                ja: '太陽電池レベルの電子エネルギーだよ',
+            }
+        if (Ek < 3)
+            return {
+                ko: '가시광선급 광전자야',
+                en: 'Visible light level photoelectron',
+                ja: '可視光線級の光電子だよ',
+            }
+        return {
+            ko: '고에너지 광전자! 자외선급이야',
+            en: 'High energy photoelectron! UV level',
+            ja: '高エネルギー光電子！紫外線級だよ',
+        }
     },
     discoveries: [
         {
             id: 'threshold-frequency',
-            mission: { ko: '진동수를 낮춰서 방출이 안 되게 해봐!', en: 'Lower the frequency until emission stops!', ja: '振動数を下げて放出が止まるようにしてみて！' },
-            result: { ko: '문턱 진동수 발견! 아무리 밝아도 전자가 안 나와!', en: 'Threshold frequency found! No emission regardless of intensity!', ja: 'しきい振動数を発見！どんなに明るくても電子が出ない！' },
+            mission: {
+                ko: '진동수를 낮춰서 방출이 안 되게 해봐!',
+                en: 'Lower the frequency until emission stops!',
+                ja: '振動数を下げて放出が止まるようにしてみて！',
+            },
+            result: {
+                ko: '문턱 진동수 발견! 아무리 밝아도 전자가 안 나와!',
+                en: 'Threshold frequency found! No emission regardless of intensity!',
+                ja: 'しきい振動数を発見！どんなに明るくても電子が出ない！',
+            },
             icon: '🚫',
             condition: (vars) => {
                 const f = vars.f ?? 7
@@ -140,8 +172,16 @@ export const photoelectric: Formula = {
         },
         {
             id: 'high-energy-electron',
-            mission: { ko: '진동수를 최대로 올려봐!', en: 'Maximize the frequency!', ja: '振動数を最大にしてみて！' },
-            result: { ko: '고에너지 빛은 빠른 전자를 만들어!', en: 'High-energy light creates fast electrons!', ja: '高エネルギーの光は速い電子を作る！' },
+            mission: {
+                ko: '진동수를 최대로 올려봐!',
+                en: 'Maximize the frequency!',
+                ja: '振動数を最大にしてみて！',
+            },
+            result: {
+                ko: '고에너지 빛은 빠른 전자를 만들어!',
+                en: 'High-energy light creates fast electrons!',
+                ja: '高エネルギーの光は速い電子を作る！',
+            },
             icon: '⚡',
             condition: (vars) => vars.f >= 11,
         },

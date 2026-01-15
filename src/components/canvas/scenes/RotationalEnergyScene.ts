@@ -202,10 +202,7 @@ export class RotationalEnergyScene extends BaseScene {
         // Needle
         const needleAngle = startAngle + rpmRatio * Math.PI * 1.5
         g.moveTo(indicatorX, indicatorY)
-        g.lineTo(
-            indicatorX + Math.cos(needleAngle) * 25,
-            indicatorY + Math.sin(needleAngle) * 25
-        )
+        g.lineTo(indicatorX + Math.cos(needleAngle) * 25, indicatorY + Math.sin(needleAngle) * 25)
         g.stroke({ color: 0xffffff, width: 2, alpha: 0.9 })
 
         // Center

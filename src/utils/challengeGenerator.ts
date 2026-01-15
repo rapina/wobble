@@ -63,10 +63,7 @@ function formatNumber(value: number): string {
 }
 
 // Generate target value challenge
-function generateTargetChallenge(
-    formula: Formula,
-    variables: Variable[]
-): Challenge {
+function generateTargetChallenge(formula: Formula, variables: Variable[]): Challenge {
     if (variables.length === 0) {
         throw new Error('No variables available for target challenge')
     }
@@ -101,10 +98,7 @@ function generateTargetChallenge(
 }
 
 // Generate range challenge
-function generateRangeChallenge(
-    formula: Formula,
-    outputVars: Variable[]
-): Challenge {
+function generateRangeChallenge(formula: Formula, outputVars: Variable[]): Challenge {
     if (outputVars.length === 0) {
         throw new Error('No output variables available for range challenge')
     }
@@ -142,19 +136,17 @@ function generateRangeChallenge(
 }
 
 // Generate condition challenge
-function generateConditionChallenge(
-    formula: Formula,
-    inputVars: Variable[]
-): Challenge {
+function generateConditionChallenge(formula: Formula, inputVars: Variable[]): Challenge {
     if (inputVars.length < 1) {
         throw new Error('Not enough input variables for condition challenge')
     }
 
     const var1 = inputVars[Math.floor(Math.random() * inputVars.length)]
-    const remainingVars = inputVars.filter(v => v !== var1)
-    const var2 = remainingVars.length > 0
-        ? remainingVars[Math.floor(Math.random() * remainingVars.length)]
-        : null
+    const remainingVars = inputVars.filter((v) => v !== var1)
+    const var2 =
+        remainingVars.length > 0
+            ? remainingVars[Math.floor(Math.random() * remainingVars.length)]
+            : null
 
     const cond1 = CONDITION_TEMPLATES[Math.floor(Math.random() * CONDITION_TEMPLATES.length)]
     const cond2 = var2
@@ -191,9 +183,8 @@ function generateConditionChallenge(
         missionEn,
         condition: (vars) => {
             const check1 = cond1.check(vars[var1Symbol], var1Range)
-            const check2 = var2Symbol && var2Range && cond2
-                ? cond2.check(vars[var2Symbol], var2Range)
-                : true
+            const check2 =
+                var2Symbol && var2Range && cond2 ? cond2.check(vars[var2Symbol], var2Range) : true
             return check1 && check2
         },
         targetVariables: [var1Symbol, var2Symbol].filter((s): s is string => Boolean(s)),
@@ -203,8 +194,8 @@ function generateConditionChallenge(
 
 // Main function to generate a random challenge
 export function generateChallenge(formula: Formula): Challenge {
-    const inputVars = formula.variables.filter(v => v.role === 'input')
-    const outputVars = formula.variables.filter(v => v.role === 'output')
+    const inputVars = formula.variables.filter((v) => v.role === 'input')
+    const outputVars = formula.variables.filter((v) => v.role === 'output')
     const allVars = [...inputVars, ...outputVars]
 
     // Determine available challenge types based on formula structure

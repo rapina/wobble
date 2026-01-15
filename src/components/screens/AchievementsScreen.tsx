@@ -70,7 +70,8 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
             <div
                 className="absolute inset-0 pointer-events-none opacity-30"
                 style={{
-                    backgroundImage: 'radial-gradient(circle at 50% 50%, transparent 20%, rgba(0,0,0,0.3) 100%)',
+                    backgroundImage:
+                        'radial-gradient(circle at 50% 50%, transparent 20%, rgba(0,0,0,0.3) 100%)',
                 }}
             />
 
@@ -158,7 +159,11 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
 
                     <div className="relative flex items-center justify-between mb-3">
                         <span className="text-white/60 text-sm font-bold">
-                            {lang === 'ko' ? '전체 진행률' : lang === 'ja' ? '全体の進捗' : 'Overall Progress'}
+                            {lang === 'ko'
+                                ? '전체 진행률'
+                                : lang === 'ja'
+                                  ? '全体の進捗'
+                                  : 'Overall Progress'}
                         </span>
                         <div
                             className="px-3 py-1 rounded-lg"
@@ -369,7 +374,11 @@ function AchievementItem({
                         color: unlocked ? 'white' : 'rgba(255,255,255,0.3)',
                     }}
                 >
-                    {unlocked ? CATEGORY_ICONS[category] : <span className="text-lg font-bold">?</span>}
+                    {unlocked ? (
+                        CATEGORY_ICONS[category]
+                    ) : (
+                        <span className="text-lg font-bold">?</span>
+                    )}
                 </div>
 
                 {/* Content */}

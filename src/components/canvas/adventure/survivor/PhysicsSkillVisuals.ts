@@ -119,7 +119,8 @@ export class PhysicsSkillVisuals {
             container,
             timer: 0.4,
             update: (delta: number) => {
-                const progress = 1 - this.effects.find((e) => e.container === container)!.timer / 0.4
+                const progress =
+                    1 - this.effects.find((e) => e.container === container)!.timer / 0.4
 
                 // Flash shrinks
                 flash.scale.set(1 - progress * 0.5)
@@ -185,7 +186,8 @@ export class PhysicsSkillVisuals {
             container,
             timer: 0.3,
             update: () => {
-                const progress = 1 - this.effects.find((e) => e.container === container)!.timer / 0.3
+                const progress =
+                    1 - this.effects.find((e) => e.container === container)!.timer / 0.3
 
                 // Ring expands and fades
                 ring.scale.set(1 + progress * 0.5)
@@ -241,7 +243,8 @@ export class PhysicsSkillVisuals {
             container,
             timer: 0.5,
             update: () => {
-                const progress = 1 - this.effects.find((e) => e.container === container)!.timer / 0.5
+                const progress =
+                    1 - this.effects.find((e) => e.container === container)!.timer / 0.5
 
                 // Waves expand with delay
                 waves.forEach((wave, i) => {
@@ -299,7 +302,8 @@ export class PhysicsSkillVisuals {
             container,
             timer: 0.25,
             update: () => {
-                const progress = 1 - this.effects.find((e) => e.container === container)!.timer / 0.25
+                const progress =
+                    1 - this.effects.find((e) => e.container === container)!.timer / 0.25
 
                 // Rings pulse outward with frequency
                 rings.forEach((ring, i) => {
@@ -310,7 +314,8 @@ export class PhysicsSkillVisuals {
                 })
 
                 // Shimmer flickers
-                shimmer.alpha = (1 - progress) * (0.5 + Math.sin(progress * Math.PI * (2 + level)) * 0.5)
+                shimmer.alpha =
+                    (1 - progress) * (0.5 + Math.sin(progress * Math.PI * (2 + level)) * 0.5)
                 shimmer.scale.set(1 + progress * 0.3)
 
                 return this.effects.find((e) => e.container === container)!.timer > 0
@@ -358,7 +363,8 @@ export class PhysicsSkillVisuals {
             container,
             timer: 0.35,
             update: () => {
-                const progress = 1 - this.effects.find((e) => e.container === container)!.timer / 0.35
+                const progress =
+                    1 - this.effects.find((e) => e.container === container)!.timer / 0.35
 
                 // Impact expands and fades
                 impact.scale.set(1 + progress * 0.8)
@@ -408,7 +414,8 @@ export class PhysicsSkillVisuals {
             container,
             timer: 0.4,
             update: () => {
-                const progress = 1 - this.effects.find((e) => e.container === container)!.timer / 0.4
+                const progress =
+                    1 - this.effects.find((e) => e.container === container)!.timer / 0.4
 
                 // Draw curved paths
                 fieldLines.forEach((line, i) => {
@@ -420,7 +427,11 @@ export class PhysicsSkillVisuals {
                     // Bezier curve
                     line.moveTo(fromX, fromY)
                     line.quadraticCurveTo(midX, midY, toX, toY)
-                    line.stroke({ color, width: 2 - i * 0.5, alpha: (1 - progress) * (0.5 - i * 0.15) })
+                    line.stroke({
+                        color,
+                        width: 2 - i * 0.5,
+                        alpha: (1 - progress) * (0.5 - i * 0.15),
+                    })
                 })
 
                 // Gravity well pulses
@@ -473,7 +484,8 @@ export class PhysicsSkillVisuals {
             container,
             timer: 0.35,
             update: () => {
-                const progress = 1 - this.effects.find((e) => e.container === container)!.timer / 0.35
+                const progress =
+                    1 - this.effects.find((e) => e.container === container)!.timer / 0.35
 
                 // Prism fades
                 prism.alpha = (1 - progress) * 0.3
@@ -533,7 +545,8 @@ export class PhysicsSkillVisuals {
             container,
             timer: 0.5,
             update: (delta: number) => {
-                const progress = 1 - this.effects.find((e) => e.container === container)!.timer / 0.5
+                const progress =
+                    1 - this.effects.find((e) => e.container === container)!.timer / 0.5
 
                 // Rotate markers
                 rotation += delta * 0.15

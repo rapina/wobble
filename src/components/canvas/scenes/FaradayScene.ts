@@ -52,7 +52,7 @@ export class FaradayScene extends BaseScene {
         const N = this.variables['N'] || 50
         const dPhi = this.variables['ΔΦ'] || 0.2
         const dt = this.variables['Δt'] || 0.1
-        const EMF = Math.abs(N * dPhi / dt)
+        const EMF = Math.abs((N * dPhi) / dt)
 
         // Oscillate magnet through coil
         const oscillationSpeed = (1 / dt) * 0.5

@@ -147,24 +147,64 @@ export const tunneling: Formula = {
         const T = vars['T']
         const E = vars['E'] ?? 8
         const V = vars['V'] ?? 10
-        if (E >= V) return { ko: '고전적 통과! 장벽을 넘었어', en: 'Classical transmission! Over the barrier', ja: '古典的透過！障壁を越えたよ' }
-        if (T >= 50) return { ko: '절반 이상 통과! 양자 효과가 강해', en: 'Over half tunnel through! Strong quantum effect', ja: '半分以上が透過！量子効果が強いよ' }
-        if (T >= 10) return { ko: '상당한 터널링! 플래시 메모리 수준', en: 'Significant tunneling! Flash memory level', ja: 'かなりのトンネリング！フラッシュメモリレベル' }
-        if (T >= 1) return { ko: '약한 터널링! STM 현미경 수준', en: 'Weak tunneling! STM microscope level', ja: '弱いトンネリング！STM顕微鏡レベル' }
-        return { ko: '거의 반사! 터널링 확률 매우 낮아', en: 'Almost reflected! Very low tunneling probability', ja: 'ほぼ反射！トンネリング確率がとても低い' }
+        if (E >= V)
+            return {
+                ko: '고전적 통과! 장벽을 넘었어',
+                en: 'Classical transmission! Over the barrier',
+                ja: '古典的透過！障壁を越えたよ',
+            }
+        if (T >= 50)
+            return {
+                ko: '절반 이상 통과! 양자 효과가 강해',
+                en: 'Over half tunnel through! Strong quantum effect',
+                ja: '半分以上が透過！量子効果が強いよ',
+            }
+        if (T >= 10)
+            return {
+                ko: '상당한 터널링! 플래시 메모리 수준',
+                en: 'Significant tunneling! Flash memory level',
+                ja: 'かなりのトンネリング！フラッシュメモリレベル',
+            }
+        if (T >= 1)
+            return {
+                ko: '약한 터널링! STM 현미경 수준',
+                en: 'Weak tunneling! STM microscope level',
+                ja: '弱いトンネリング！STM顕微鏡レベル',
+            }
+        return {
+            ko: '거의 반사! 터널링 확률 매우 낮아',
+            en: 'Almost reflected! Very low tunneling probability',
+            ja: 'ほぼ反射！トンネリング確率がとても低い',
+        }
     },
     discoveries: [
         {
             id: 'high-probability',
-            mission: { ko: '투과 확률을 50% 이상으로 만들어봐!', en: 'Get transmission probability above 50%!', ja: '透過確率を50%以上にしてみて！' },
-            result: { ko: '절반 이상의 입자가 장벽을 통과해!', en: 'More than half the particles tunnel through!', ja: '半分以上の粒子が障壁を通過する！' },
+            mission: {
+                ko: '투과 확률을 50% 이상으로 만들어봐!',
+                en: 'Get transmission probability above 50%!',
+                ja: '透過確率を50%以上にしてみて！',
+            },
+            result: {
+                ko: '절반 이상의 입자가 장벽을 통과해!',
+                en: 'More than half the particles tunnel through!',
+                ja: '半分以上の粒子が障壁を通過する！',
+            },
             icon: '🎯',
             condition: (vars) => vars.T >= 50,
         },
         {
             id: 'classical-transmission',
-            mission: { ko: '에너지를 장벽 높이 이상으로 올려봐!', en: 'Raise energy above the barrier height!', ja: 'エネルギーを障壁の高さ以上に上げてみて！' },
-            result: { ko: '에너지가 충분하면 100% 통과!', en: 'With enough energy, 100% transmission!', ja: 'エネルギーが十分なら100%透過！' },
+            mission: {
+                ko: '에너지를 장벽 높이 이상으로 올려봐!',
+                en: 'Raise energy above the barrier height!',
+                ja: 'エネルギーを障壁の高さ以上に上げてみて！',
+            },
+            result: {
+                ko: '에너지가 충분하면 100% 통과!',
+                en: 'With enough energy, 100% transmission!',
+                ja: 'エネルギーが十分なら100%透過！',
+            },
             icon: '💥',
             condition: (vars) => vars.E >= vars.V,
         },

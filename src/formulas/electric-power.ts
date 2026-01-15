@@ -116,7 +116,8 @@ export const electricPower: Formula = {
                 ja: '2200W = 2.2kW！エアコンや電子レンジの消費電力だよ。',
             },
             icon: '🏠',
-            condition: (vars) => vars['V'] >= 210 && vars['V'] <= 230 && vars['I'] >= 9 && vars['I'] <= 11,
+            condition: (vars) =>
+                vars['V'] >= 210 && vars['V'] <= 230 && vars['I'] >= 9 && vars['I'] <= 11,
         },
         {
             id: 'high-power',
@@ -136,11 +137,19 @@ export const electricPower: Formula = {
     ],
     getInsight: (vars) => {
         const P = vars['P']
-        if (P < 10) return { ko: 'LED 전구 하나 정도야', en: 'Like one LED bulb', ja: 'LED電球1個程度' }
-        if (P < 100) return { ko: '노트북 충전기 정도야', en: 'Like a laptop charger', ja: 'ノートPC充電器程度' }
+        if (P < 10)
+            return { ko: 'LED 전구 하나 정도야', en: 'Like one LED bulb', ja: 'LED電球1個程度' }
+        if (P < 100)
+            return {
+                ko: '노트북 충전기 정도야',
+                en: 'Like a laptop charger',
+                ja: 'ノートPC充電器程度',
+            }
         if (P < 500) return { ko: '선풍기 정도야', en: 'Like a fan', ja: '扇風機程度' }
-        if (P < 1500) return { ko: '전자레인지 정도야', en: 'Like a microwave', ja: '電子レンジ程度' }
-        if (P < 3000) return { ko: '에어컨 정도야', en: 'Like an air conditioner', ja: 'エアコン程度' }
+        if (P < 1500)
+            return { ko: '전자레인지 정도야', en: 'Like a microwave', ja: '電子レンジ程度' }
+        if (P < 3000)
+            return { ko: '에어컨 정도야', en: 'Like an air conditioner', ja: 'エアコン程度' }
         return { ko: '전기차 충전기급!', en: 'EV charger level!', ja: 'EV充電器レベル！' }
     },
 }

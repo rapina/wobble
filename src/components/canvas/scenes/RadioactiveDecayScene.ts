@@ -128,8 +128,7 @@ export class RadioactiveDecayScene extends BaseScene {
 
         // Update nucleus blob
         const blobSize = 30 + decayRatio * 50
-        const expression =
-            decayRatio > 0.7 ? 'happy' : decayRatio > 0.3 ? 'neutral' : 'worried'
+        const expression = decayRatio > 0.7 ? 'happy' : decayRatio > 0.3 ? 'neutral' : 'worried'
 
         this.nucleusBlob.setPosition(this.centerX, this.centerY - 30)
         this.nucleusBlob.updateOptions({
@@ -161,19 +160,12 @@ export class RadioactiveDecayScene extends BaseScene {
         this.decayFlashes = this.decayFlashes.filter((f) => f.alpha > 0)
 
         // Clean up fully faded particles
-        this.particles = this.particles.filter(
-            (p) => p.alive || p.alpha > 0
-        )
+        this.particles = this.particles.filter((p) => p.alive || p.alpha > 0)
 
         this.drawScene(N0, N, lambda, decayRatio)
     }
 
-    private drawScene(
-        N0: number,
-        N: number,
-        lambda: number,
-        decayRatio: number
-    ): void {
+    private drawScene(N0: number, N: number, lambda: number, decayRatio: number): void {
         const g = this.graphics
         g.clear()
 
@@ -215,11 +207,7 @@ export class RadioactiveDecayScene extends BaseScene {
         this.drawCountBar(g, N0, N, decayRatio)
     }
 
-    private drawDecayCurve(
-        g: Graphics,
-        lambda: number,
-        currentRatio: number
-    ): void {
+    private drawDecayCurve(g: Graphics, lambda: number, currentRatio: number): void {
         const chartLeft = this.centerX - 100
         const chartRight = this.centerX + 100
         const chartTop = this.centerY + 60
@@ -273,12 +261,7 @@ export class RadioactiveDecayScene extends BaseScene {
         g.stroke({ color: 0xe74c3c, width: 1, alpha: 0.5 })
     }
 
-    private drawCountBar(
-        g: Graphics,
-        N0: number,
-        N: number,
-        ratio: number
-    ): void {
+    private drawCountBar(g: Graphics, N0: number, N: number, ratio: number): void {
         const barX = this.centerX - 60
         const barY = this.height - 35
         const barWidth = 120
@@ -291,8 +274,7 @@ export class RadioactiveDecayScene extends BaseScene {
         // Fill
         const fillWidth = barWidth * ratio
         if (fillWidth > 0) {
-            const fillColor =
-                ratio > 0.5 ? 0x9b59b6 : ratio > 0.2 ? 0xf39c12 : 0xe74c3c
+            const fillColor = ratio > 0.5 ? 0x9b59b6 : ratio > 0.2 ? 0xf39c12 : 0xe74c3c
             g.roundRect(barX, barY, fillWidth, barHeight, 5)
             g.fill({ color: fillColor, alpha: 0.85 })
         }

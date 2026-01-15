@@ -5,8 +5,16 @@ export const snell: Formula = {
     id: 'snell',
     name: { ko: '스넬의 법칙', en: "Snell's Law", ja: 'スネルの法則' },
     expression: 'n₁sinθ₁ = n₂sinθ₂',
-    description: { ko: '빛이 다른 매질로 들어갈 때 굴절되는 각도의 관계', en: 'Relationship of refraction angles when light enters a different medium', ja: '光が別の媒質に入るときの屈折角の関係' },
-    simulationHint: { ko: '빛이 물이나 유리에 들어갈 때 꺾이는 모습', en: 'Shows light bending as it enters water or glass', ja: '光が水やガラスに入るときに曲がる様子' },
+    description: {
+        ko: '빛이 다른 매질로 들어갈 때 굴절되는 각도의 관계',
+        en: 'Relationship of refraction angles when light enters a different medium',
+        ja: '光が別の媒質に入るときの屈折角の関係',
+    },
+    simulationHint: {
+        ko: '빛이 물이나 유리에 들어갈 때 꺾이는 모습',
+        en: 'Shows light bending as it enters water or glass',
+        ja: '光が水やガラスに入るときに曲がる様子',
+    },
     applications: {
         ko: [
             '안경 렌즈와 콘택트렌즈 설계',
@@ -148,8 +156,16 @@ export const snell: Formula = {
     discoveries: [
         {
             id: 'total-internal-reflection',
-            mission: { ko: 'n₁ > n₂로 설정하고 입사각을 높여봐!', en: 'Set n₁ > n₂ and increase the incident angle!', ja: 'n₁ > n₂に設定して入射角を上げてみよう！' },
-            result: { ko: '전반사 발견! 빛이 완전히 반사돼!', en: 'Total internal reflection! Light is completely reflected!', ja: '全反射発見！光が完全に反射される！' },
+            mission: {
+                ko: 'n₁ > n₂로 설정하고 입사각을 높여봐!',
+                en: 'Set n₁ > n₂ and increase the incident angle!',
+                ja: 'n₁ > n₂に設定して入射角を上げてみよう！',
+            },
+            result: {
+                ko: '전반사 발견! 빛이 완전히 반사돼!',
+                en: 'Total internal reflection! Light is completely reflected!',
+                ja: '全反射発見！光が完全に反射される！',
+            },
             icon: '✨',
             condition: (vars) => {
                 const n1 = vars['n₁'] ?? 1
@@ -162,18 +178,42 @@ export const snell: Formula = {
         },
         {
             id: 'strong-refraction',
-            mission: { ko: 'n₂를 2 이상으로 높여봐!', en: 'Increase n₂ to 2 or more!', ja: 'n₂を2以上にしてみよう！' },
-            result: { ko: '다이아몬드 같은 고굴절률 매질에선 빛이 크게 꺾여!', en: 'In high-refractive materials like diamond, light bends sharply!', ja: 'ダイヤモンドのような高屈折率媒質では光が大きく曲がる！' },
+            mission: {
+                ko: 'n₂를 2 이상으로 높여봐!',
+                en: 'Increase n₂ to 2 or more!',
+                ja: 'n₂を2以上にしてみよう！',
+            },
+            result: {
+                ko: '다이아몬드 같은 고굴절률 매질에선 빛이 크게 꺾여!',
+                en: 'In high-refractive materials like diamond, light bends sharply!',
+                ja: 'ダイヤモンドのような高屈折率媒質では光が大きく曲がる！',
+            },
             icon: '💎',
             condition: (vars) => vars['n₂'] >= 2,
         },
     ],
     getInsight: (vars) => {
         const theta2 = vars['θ₂']
-        if (theta2 >= 90) return { ko: '전반사! 빛이 완전히 반사돼', en: 'Total reflection! Light bounces back', ja: '全反射！光が完全に反射される' }
-        if (theta2 < 10) return { ko: '빛이 거의 직진해', en: 'Light goes almost straight', ja: '光がほぼ直進する' }
-        if (theta2 < 30) return { ko: '빛이 살짝 꺾여', en: 'Light bends slightly', ja: '光が少し曲がる' }
-        if (theta2 < 50) return { ko: '빛이 많이 꺾여', en: 'Light bends noticeably', ja: '光がかなり曲がる' }
-        return { ko: '빛이 크게 굴절해!', en: 'Light refracts significantly!', ja: '光が大きく屈折する！' }
+        if (theta2 >= 90)
+            return {
+                ko: '전반사! 빛이 완전히 반사돼',
+                en: 'Total reflection! Light bounces back',
+                ja: '全反射！光が完全に反射される',
+            }
+        if (theta2 < 10)
+            return {
+                ko: '빛이 거의 직진해',
+                en: 'Light goes almost straight',
+                ja: '光がほぼ直進する',
+            }
+        if (theta2 < 30)
+            return { ko: '빛이 살짝 꺾여', en: 'Light bends slightly', ja: '光が少し曲がる' }
+        if (theta2 < 50)
+            return { ko: '빛이 많이 꺾여', en: 'Light bends noticeably', ja: '光がかなり曲がる' }
+        return {
+            ko: '빛이 크게 굴절해!',
+            en: 'Light refracts significantly!',
+            ja: '光が大きく屈折する！',
+        }
     },
 }

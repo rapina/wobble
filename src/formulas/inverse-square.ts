@@ -113,8 +113,16 @@ export const inverseSquare: Formula = {
     discoveries: [
         {
             id: 'double-distance',
-            mission: { ko: 'r을 2배로 늘려서 세기 변화를 봐', en: 'Double r to see intensity change', ja: 'rを2倍にして強度の変化を見て' },
-            result: { ko: '거리 2배 = 세기 1/4! 이게 역제곱 법칙!', en: 'Double distance = 1/4 intensity! The inverse square law!', ja: '距離2倍 = 強度1/4！これが逆二乗の法則！' },
+            mission: {
+                ko: 'r을 2배로 늘려서 세기 변화를 봐',
+                en: 'Double r to see intensity change',
+                ja: 'rを2倍にして強度の変化を見て',
+            },
+            result: {
+                ko: '거리 2배 = 세기 1/4! 이게 역제곱 법칙!',
+                en: 'Double distance = 1/4 intensity! The inverse square law!',
+                ja: '距離2倍 = 強度1/4！これが逆二乗の法則！',
+            },
             icon: '📏',
             condition: (vars) => {
                 const r = vars['r'] || 2
@@ -123,8 +131,16 @@ export const inverseSquare: Formula = {
         },
         {
             id: 'close-source',
-            mission: { ko: 'r을 최소로 줄여봐', en: 'Minimize distance r', ja: '距離rを最小にしてみて' },
-            result: { ko: '가까울수록 엄청 강해! 조심해야 해!', en: 'Much stronger up close! Be careful!', ja: '近いほどとても強い！気をつけて！' },
+            mission: {
+                ko: 'r을 최소로 줄여봐',
+                en: 'Minimize distance r',
+                ja: '距離rを最小にしてみて',
+            },
+            result: {
+                ko: '가까울수록 엄청 강해! 조심해야 해!',
+                en: 'Much stronger up close! Be careful!',
+                ja: '近いほどとても強い！気をつけて！',
+            },
             icon: '☀️',
             condition: (vars) => {
                 const r = vars['r'] || 2
@@ -134,8 +150,16 @@ export const inverseSquare: Formula = {
         },
         {
             id: 'high-power',
-            mission: { ko: 'P를 최대로 올려봐', en: 'Maximize power P', ja: '出力Pを最大にしてみて' },
-            result: { ko: '출력이 세면 멀리서도 강하게 도달해!', en: 'High power reaches far with strength!', ja: '出力が強いと遠くても強く届く！' },
+            mission: {
+                ko: 'P를 최대로 올려봐',
+                en: 'Maximize power P',
+                ja: '出力Pを最大にしてみて',
+            },
+            result: {
+                ko: '출력이 세면 멀리서도 강하게 도달해!',
+                en: 'High power reaches far with strength!',
+                ja: '出力が強いと遠くても強く届く！',
+            },
             icon: '💡',
             condition: (vars) => {
                 const P = vars['P'] || 100

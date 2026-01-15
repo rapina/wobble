@@ -130,7 +130,9 @@ export class BeatFrequencyScene extends BaseScene {
             // Upper envelope
             g.moveTo(startX, centerY - amplitude)
             for (let x = 0; x <= width; x += 4) {
-                const envelope = Math.abs(Math.cos((x / beatWavelength) * Math.PI + this.time * fbeat * 0.1))
+                const envelope = Math.abs(
+                    Math.cos((x / beatWavelength) * Math.PI + this.time * fbeat * 0.1)
+                )
                 g.lineTo(startX + x, centerY - envelope * amplitude)
             }
             g.stroke({ color: 0x2ecc71, width: 1.5, alpha: 0.5 })
@@ -138,7 +140,9 @@ export class BeatFrequencyScene extends BaseScene {
             // Lower envelope
             g.moveTo(startX, centerY + amplitude)
             for (let x = 0; x <= width; x += 4) {
-                const envelope = Math.abs(Math.cos((x / beatWavelength) * Math.PI + this.time * fbeat * 0.1))
+                const envelope = Math.abs(
+                    Math.cos((x / beatWavelength) * Math.PI + this.time * fbeat * 0.1)
+                )
                 g.lineTo(startX + x, centerY + envelope * amplitude)
             }
             g.stroke({ color: 0x2ecc71, width: 1.5, alpha: 0.5 })

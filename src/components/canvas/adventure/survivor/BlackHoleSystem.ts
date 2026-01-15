@@ -236,7 +236,9 @@ export class BlackHoleSystem {
     private pickNewTarget(): void {
         // Pick a random position within orbit distance of player (infinite map)
         const angle = Math.random() * Math.PI * 2
-        const distance = this.config.spawnDistance + Math.random() * (this.config.orbitDistance - this.config.spawnDistance)
+        const distance =
+            this.config.spawnDistance +
+            Math.random() * (this.config.orbitDistance - this.config.spawnDistance)
         this.targetX = this.playerX + Math.cos(angle) * distance
         this.targetY = this.playerY + Math.sin(angle) * distance
     }

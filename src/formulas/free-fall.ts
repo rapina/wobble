@@ -140,11 +140,36 @@ export const freeFall: Formula = {
     ],
     getInsight: (vars) => {
         const h = vars['h']
-        if (h < 5) return { ko: '2층 높이 정도야', en: 'About 2 stories high', ja: '2階くらいの高さだよ' }
-        if (h < 20) return { ko: '5층 건물 높이야', en: 'Like a 5-story building', ja: '5階建てビルの高さだよ' }
-        if (h < 50) return { ko: '10층 아파트 높이야', en: 'Like a 10-story apartment', ja: '10階建てマンションの高さだよ' }
-        if (h < 150) return { ko: '자유의 여신상 높이야!', en: 'Statue of Liberty height!', ja: '自由の女神の高さだよ！' }
-        if (h < 300) return { ko: '에펠탑 높이야!', en: 'Eiffel Tower height!', ja: 'エッフェル塔の高さだよ！' }
-        return { ko: '스카이다이빙 높이야!', en: 'Skydiving height!', ja: 'スカイダイビングの高さだよ！' }
+        if (h < 5)
+            return { ko: '2층 높이 정도야', en: 'About 2 stories high', ja: '2階くらいの高さだよ' }
+        if (h < 20)
+            return {
+                ko: '5층 건물 높이야',
+                en: 'Like a 5-story building',
+                ja: '5階建てビルの高さだよ',
+            }
+        if (h < 50)
+            return {
+                ko: '10층 아파트 높이야',
+                en: 'Like a 10-story apartment',
+                ja: '10階建てマンションの高さだよ',
+            }
+        if (h < 150)
+            return {
+                ko: '자유의 여신상 높이야!',
+                en: 'Statue of Liberty height!',
+                ja: '自由の女神の高さだよ！',
+            }
+        if (h < 300)
+            return {
+                ko: '에펠탑 높이야!',
+                en: 'Eiffel Tower height!',
+                ja: 'エッフェル塔の高さだよ！',
+            }
+        return {
+            ko: '스카이다이빙 높이야!',
+            en: 'Skydiving height!',
+            ja: 'スカイダイビングの高さだよ！',
+        }
     },
 }

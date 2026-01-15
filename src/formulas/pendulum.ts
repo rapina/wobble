@@ -5,8 +5,16 @@ export const pendulum: Formula = {
     id: 'pendulum',
     name: { ko: '단진자 주기', en: 'Simple Pendulum', ja: '単振り子の周期' },
     expression: 'T = 2π√(L/g)',
-    description: { ko: '진자가 한 번 왕복하는 시간', en: 'The time for a pendulum to complete one full swing', ja: '振り子が一往復する時間' },
-    simulationHint: { ko: '진자가 좌우로 흔들리며 길이에 따라 주기가 변하는 모습', en: 'Shows a pendulum swinging with period changing based on length', ja: '振り子が左右に揺れ、長さによって周期が変わる様子' },
+    description: {
+        ko: '진자가 한 번 왕복하는 시간',
+        en: 'The time for a pendulum to complete one full swing',
+        ja: '振り子が一往復する時間',
+    },
+    simulationHint: {
+        ko: '진자가 좌우로 흔들리며 길이에 따라 주기가 변하는 모습',
+        en: 'Shows a pendulum swinging with period changing based on length',
+        ja: '振り子が左右に揺れ、長さによって周期が変わる様子',
+    },
     applications: {
         ko: [
             '괘종시계의 정확한 시간 측정',
@@ -110,25 +118,48 @@ export const pendulum: Formula = {
     discoveries: [
         {
             id: 'long-pendulum',
-            mission: { ko: '줄 길이 L을 4m 이상으로 늘려봐!', en: 'Extend string length L above 4m!', ja: '紐の長さLを4m以上にしてみよう！' },
-            result: { ko: '긴 진자는 천천히 흔들려! 괘종시계가 긴 진자를 쓰는 이유야.', en: 'Long pendulums swing slowly! That is why grandfather clocks use long pendulums.', ja: '長い振り子はゆっくり揺れる！振り子時計が長い振り子を使う理由だ。' },
+            mission: {
+                ko: '줄 길이 L을 4m 이상으로 늘려봐!',
+                en: 'Extend string length L above 4m!',
+                ja: '紐の長さLを4m以上にしてみよう！',
+            },
+            result: {
+                ko: '긴 진자는 천천히 흔들려! 괘종시계가 긴 진자를 쓰는 이유야.',
+                en: 'Long pendulums swing slowly! That is why grandfather clocks use long pendulums.',
+                ja: '長い振り子はゆっくり揺れる！振り子時計が長い振り子を使う理由だ。',
+            },
             icon: '🕰️',
             condition: (vars) => vars['L'] >= 4,
         },
         {
             id: 'moon-gravity',
-            mission: { ko: '중력가속도 g를 2 이하로 낮춰봐! (달에서의 진자)', en: 'Lower gravitational acceleration g below 2! (pendulum on Moon)', ja: '重力加速度gを2以下にしてみよう！（月での振り子）' },
-            result: { ko: '중력이 약하면 진자가 아주 느리게 흔들려! 달에서 시계는 느리게 갈 거야.', en: 'With weak gravity, pendulums swing very slowly! A clock on the Moon would run slow.', ja: '重力が弱いと振り子はとてもゆっくり揺れる！月では時計がゆっくり進むだろう。' },
+            mission: {
+                ko: '중력가속도 g를 2 이하로 낮춰봐! (달에서의 진자)',
+                en: 'Lower gravitational acceleration g below 2! (pendulum on Moon)',
+                ja: '重力加速度gを2以下にしてみよう！（月での振り子）',
+            },
+            result: {
+                ko: '중력이 약하면 진자가 아주 느리게 흔들려! 달에서 시계는 느리게 갈 거야.',
+                en: 'With weak gravity, pendulums swing very slowly! A clock on the Moon would run slow.',
+                ja: '重力が弱いと振り子はとてもゆっくり揺れる！月では時計がゆっくり進むだろう。',
+            },
             icon: '🌙',
             condition: (vars) => vars['g'] <= 2,
         },
     ],
     getInsight: (vars) => {
         const T = vars['T']
-        if (T < 1) return { ko: '째깍째깍 빠른 시계야', en: 'Fast ticking clock', ja: 'チクタク速い時計' }
+        if (T < 1)
+            return { ko: '째깍째깍 빠른 시계야', en: 'Fast ticking clock', ja: 'チクタク速い時計' }
         if (T < 2) return { ko: '심장 박동 정도야', en: 'Like a heartbeat', ja: '心臓の鼓動くらい' }
-        if (T < 3) return { ko: '괘종시계 정도야', en: 'Like a grandfather clock', ja: '振り子時計くらい' }
-        if (T < 5) return { ko: '그네 타는 느낌이야', en: 'Like swinging on a swing', ja: 'ブランコに乗る感じ' }
+        if (T < 3)
+            return { ko: '괘종시계 정도야', en: 'Like a grandfather clock', ja: '振り子時計くらい' }
+        if (T < 5)
+            return {
+                ko: '그네 타는 느낌이야',
+                en: 'Like swinging on a swing',
+                ja: 'ブランコに乗る感じ',
+            }
         return { ko: '아주 느린 진동이야', en: 'Very slow oscillation', ja: 'とても遅い振動' }
     },
 }

@@ -105,10 +105,13 @@ export class CrusherSystem {
     }
 
     private createCrusher(): Crusher {
-        const size = this.config.minSize + Math.random() * (this.config.maxSize - this.config.minSize)
+        const size =
+            this.config.minSize + Math.random() * (this.config.maxSize - this.config.minSize)
         // Spawn at random angle around player (infinite map)
         const angle = Math.random() * Math.PI * 2
-        const distance = this.config.spawnDistance + Math.random() * (this.config.orbitDistance - this.config.spawnDistance) * 0.5
+        const distance =
+            this.config.spawnDistance +
+            Math.random() * (this.config.orbitDistance - this.config.spawnDistance) * 0.5
         const x = this.playerX + Math.cos(angle) * distance
         const y = this.playerY + Math.sin(angle) * distance
 
@@ -192,9 +195,7 @@ export class CrusherSystem {
             }
 
             // Respawn if too far from player (infinite map)
-            const distToPlayer = Math.sqrt(
-                (crusher.x - playerX) ** 2 + (crusher.y - playerY) ** 2
-            )
+            const distToPlayer = Math.sqrt((crusher.x - playerX) ** 2 + (crusher.y - playerY) ** 2)
             if (distToPlayer > this.config.orbitDistance * 1.5 && !crusher.isCharging) {
                 this.crushers[i] = this.createCrusher()
             }
@@ -206,7 +207,9 @@ export class CrusherSystem {
     private pickNewTarget(crusher: Crusher): void {
         // Pick target within orbit distance of player (infinite map)
         const angle = Math.random() * Math.PI * 2
-        const distance = this.config.spawnDistance + Math.random() * (this.config.orbitDistance - this.config.spawnDistance)
+        const distance =
+            this.config.spawnDistance +
+            Math.random() * (this.config.orbitDistance - this.config.spawnDistance)
         crusher.targetX = this.playerX + Math.cos(angle) * distance
         crusher.targetY = this.playerY + Math.sin(angle) * distance
     }
@@ -284,8 +287,20 @@ export class CrusherSystem {
     /**
      * Check if a crusher is about to charge (warning indicator)
      */
-    getCrusherWarnings(): Array<{ x: number; y: number; timeUntilCharge: number; directionX: number; directionY: number }> {
-        const warnings: Array<{ x: number; y: number; timeUntilCharge: number; directionX: number; directionY: number }> = []
+    getCrusherWarnings(): Array<{
+        x: number
+        y: number
+        timeUntilCharge: number
+        directionX: number
+        directionY: number
+    }> {
+        const warnings: Array<{
+            x: number
+            y: number
+            timeUntilCharge: number
+            directionX: number
+            directionY: number
+        }> = []
 
         for (const crusher of this.crushers) {
             if (!crusher.isCharging && crusher.chargeTimer < 1.5) {
@@ -324,7 +339,11 @@ export class CrusherSystem {
 
                 // Warning ring
                 this.graphics.circle(drawX, drawY, crusher.size * 0.8)
-                this.graphics.stroke({ color: 0xff0000, width: 3, alpha: warningAlpha * warningPulse })
+                this.graphics.stroke({
+                    color: 0xff0000,
+                    width: 3,
+                    alpha: warningAlpha * warningPulse,
+                })
             }
 
             // Draw shadow

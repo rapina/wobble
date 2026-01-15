@@ -6,7 +6,7 @@ export function LanguageToggle() {
     const { i18n } = useTranslation()
 
     const toggleLanguage = () => {
-        const currentIndex = LANGUAGES.indexOf(i18n.language as typeof LANGUAGES[number])
+        const currentIndex = LANGUAGES.indexOf(i18n.language as (typeof LANGUAGES)[number])
         const nextIndex = (currentIndex + 1) % LANGUAGES.length
         i18n.changeLanguage(LANGUAGES[nextIndex])
     }

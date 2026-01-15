@@ -74,7 +74,8 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
             <div
                 className="absolute inset-0 pointer-events-none opacity-30"
                 style={{
-                    backgroundImage: 'radial-gradient(circle at 50% 50%, transparent 20%, rgba(0,0,0,0.3) 100%)',
+                    backgroundImage:
+                        'radial-gradient(circle at 50% 50%, transparent 20%, rgba(0,0,0,0.3) 100%)',
                 }}
             />
 
@@ -167,7 +168,12 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                                 fontFamily: 'system-ui, -apple-system, sans-serif',
                             }}
                         >
-                            <ShuffleText duration={1200} trigger="mount" loop={true} loopDelay={5000}>
+                            <ShuffleText
+                                duration={1200}
+                                trigger="mount"
+                                loop={true}
+                                loopDelay={5000}
+                            >
                                 {t('home.title')}
                             </ShuffleText>
                         </h1>

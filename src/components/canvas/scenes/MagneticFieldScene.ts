@@ -46,7 +46,7 @@ export class MagneticFieldScene extends BaseScene {
         const I = this.variables['I'] || 10
         const r = this.variables['r'] || 10
         const mu0 = 4 * Math.PI * 1e-7
-        const B = (mu0 * I) / (2 * Math.PI * (r / 100)) * 1e6 // in μT
+        const B = ((mu0 * I) / (2 * Math.PI * (r / 100))) * 1e6 // in μT
 
         // Animate current flow
         this.currentFlow += I * 0.01 * delta

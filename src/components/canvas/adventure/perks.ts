@@ -92,7 +92,10 @@ export const perkDefinitions: PerkDefinition[] = [
         formulaId: 'newton-second',
         theme: 'mechanics',
         name: { ko: 'F = ma', en: "Newton's 2nd Law" },
-        description: { ko: '질량이 클수록 가속도는 작아진다', en: 'Greater mass means less acceleration' },
+        description: {
+            ko: '질량이 클수록 가속도는 작아진다',
+            en: 'Greater mass means less acceleration',
+        },
         color: 0xe74c3c,
         effects: [
             { stat: 'damage', min: 20, max: 40, isPercent: true },
@@ -106,7 +109,10 @@ export const perkDefinitions: PerkDefinition[] = [
         formulaId: 'momentum',
         theme: 'mechanics',
         name: { ko: 'p = mv', en: 'Momentum' },
-        description: { ko: '운동량은 질량과 속도의 곱이다', en: 'Momentum equals mass times velocity' },
+        description: {
+            ko: '운동량은 질량과 속도의 곱이다',
+            en: 'Momentum equals mass times velocity',
+        },
         color: 0xe74c3c,
         effects: [{ stat: 'knockback', min: 40, max: 80, isPercent: true }],
     },
@@ -117,7 +123,10 @@ export const perkDefinitions: PerkDefinition[] = [
         formulaId: 'kinetic-energy',
         theme: 'mechanics',
         name: { ko: 'KE = ½mv²', en: 'Kinetic Energy' },
-        description: { ko: '속도의 제곱에 비례하는 에너지', en: 'Energy proportional to velocity squared' },
+        description: {
+            ko: '속도의 제곱에 비례하는 에너지',
+            en: 'Energy proportional to velocity squared',
+        },
         color: 0xe74c3c,
         effects: [
             { stat: 'projectileSpeed', min: 25, max: 50, isPercent: true },
@@ -163,7 +172,10 @@ export const perkDefinitions: PerkDefinition[] = [
         formulaId: 'heat',
         theme: 'thermodynamics',
         name: { ko: '열에너지', en: 'Heat Energy' },
-        description: { ko: '온도 변화에 필요한 에너지', en: 'Energy needed for temperature change' },
+        description: {
+            ko: '온도 변화에 필요한 에너지',
+            en: 'Energy needed for temperature change',
+        },
         color: 0xe67e22,
         effects: [{ stat: 'damage', min: 30, max: 50, isPercent: true }],
     },
@@ -200,7 +212,10 @@ export const perkDefinitions: PerkDefinition[] = [
         formulaId: 'elastic-collision',
         theme: 'waves',
         name: { ko: '탄성 충돌', en: 'Elastic Collision' },
-        description: { ko: '에너지가 보존되어 튕겨나간다', en: 'Energy is conserved through bouncing' },
+        description: {
+            ko: '에너지가 보존되어 튕겨나간다',
+            en: 'Energy is conserved through bouncing',
+        },
         color: 0x3498db,
         effects: [{ stat: 'bounce', min: 2, max: 4, isPercent: false }],
     },
@@ -211,7 +226,10 @@ export const perkDefinitions: PerkDefinition[] = [
         formulaId: 'hooke',
         theme: 'waves',
         name: { ko: '훅의 법칙', en: "Hooke's Law" },
-        description: { ko: '탄성력은 변형에 비례한다', en: 'Elastic force proportional to displacement' },
+        description: {
+            ko: '탄성력은 변형에 비례한다',
+            en: 'Elastic force proportional to displacement',
+        },
         color: 0x3498db,
         effects: [
             { stat: 'bounce', min: 1, max: 2, isPercent: false },
@@ -225,7 +243,10 @@ export const perkDefinitions: PerkDefinition[] = [
         formulaId: 'wave',
         theme: 'waves',
         name: { ko: '파동', en: 'Wave Motion' },
-        description: { ko: '속도는 진동수와 파장의 곱', en: 'Velocity equals frequency times wavelength' },
+        description: {
+            ko: '속도는 진동수와 파장의 곱',
+            en: 'Velocity equals frequency times wavelength',
+        },
         color: 0x3498db,
         effects: [
             { stat: 'piercing', min: 1, max: 2, isPercent: false },
@@ -282,7 +303,10 @@ export const perkDefinitions: PerkDefinition[] = [
         formulaId: 'free-fall',
         theme: 'gravity',
         name: { ko: '자유 낙하', en: 'Free Fall' },
-        description: { ko: '중력 가속도에 의한 운동', en: 'Motion under gravitational acceleration' },
+        description: {
+            ko: '중력 가속도에 의한 운동',
+            en: 'Motion under gravitational acceleration',
+        },
         color: 0x9b59b6,
         effects: [
             { stat: 'damage', min: 20, max: 35, isPercent: true },

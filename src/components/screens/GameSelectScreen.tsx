@@ -82,7 +82,8 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: AdventureSelectS
             <div
                 className="absolute inset-0 pointer-events-none opacity-30"
                 style={{
-                    backgroundImage: 'radial-gradient(circle at 50% 50%, transparent 20%, rgba(0,0,0,0.3) 100%)',
+                    backgroundImage:
+                        'radial-gradient(circle at 50% 50%, transparent 20%, rgba(0,0,0,0.3) 100%)',
                 }}
             />
 
@@ -111,9 +112,7 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: AdventureSelectS
                 </button>
 
                 {/* Title Badge */}
-                <div
-                    className="flex-1 flex items-center justify-center"
-                >
+                <div className="flex-1 flex items-center justify-center">
                     <div
                         className="px-4 py-2 rounded-lg flex items-center gap-2"
                         style={{
@@ -155,7 +154,9 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: AdventureSelectS
                             style={{ transitionDelay: `${index * 150}ms` }}
                         >
                             <button
-                                onClick={() => adventure.available && onSelectAdventure(adventure.id)}
+                                onClick={() =>
+                                    adventure.available && onSelectAdventure(adventure.id)
+                                }
                                 disabled={!adventure.available}
                                 className={cn(
                                     'w-full rounded-2xl overflow-hidden transition-all',
@@ -247,7 +248,9 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: AdventureSelectS
                                     className="p-4 text-left"
                                     style={{
                                         borderTop: `3px solid ${theme.border}`,
-                                        background: adventure.available ? theme.bgPanelLight : theme.bgPanel,
+                                        background: adventure.available
+                                            ? theme.bgPanelLight
+                                            : theme.bgPanel,
                                     }}
                                 >
                                     <h3

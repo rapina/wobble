@@ -91,34 +91,92 @@ export const ph: Formula = {
     discoveries: [
         {
             id: 'strong-acid',
-            mission: { ko: '[H⁺]를 0.1 mol/L 이상으로 올려봐!', en: 'Raise [H+] above 0.1 mol/L!', ja: '[H⁺]を0.1 mol/L以上に上げてみて！' },
-            result: { ko: 'pH 1 이하! 위산이나 염산 수준의 강산이야.', en: 'pH below 1! Strong acid like stomach acid or hydrochloric acid.', ja: 'pH 1以下！胃酸や塩酸レベルの強酸だよ。' },
+            mission: {
+                ko: '[H⁺]를 0.1 mol/L 이상으로 올려봐!',
+                en: 'Raise [H+] above 0.1 mol/L!',
+                ja: '[H⁺]を0.1 mol/L以上に上げてみて！',
+            },
+            result: {
+                ko: 'pH 1 이하! 위산이나 염산 수준의 강산이야.',
+                en: 'pH below 1! Strong acid like stomach acid or hydrochloric acid.',
+                ja: 'pH 1以下！胃酸や塩酸レベルの強酸だよ。',
+            },
             icon: '🧪',
             condition: (vars) => vars['[H⁺]'] >= 0.1,
         },
         {
             id: 'neutral',
-            mission: { ko: 'pH를 7에 가깝게 맞춰봐!', en: 'Adjust pH close to 7!', ja: 'pHを7に近づけてみて！' },
-            result: { ko: '중성! 순수한 물의 pH야. 대부분의 생명체에 안전한 환경이지.', en: 'Neutral! pH of pure water. Safe environment for most living things.', ja: '中性！純水のpHだよ。ほとんどの生物に安全な環境だね。' },
+            mission: {
+                ko: 'pH를 7에 가깝게 맞춰봐!',
+                en: 'Adjust pH close to 7!',
+                ja: 'pHを7に近づけてみて！',
+            },
+            result: {
+                ko: '중성! 순수한 물의 pH야. 대부분의 생명체에 안전한 환경이지.',
+                en: 'Neutral! pH of pure water. Safe environment for most living things.',
+                ja: '中性！純水のpHだよ。ほとんどの生物に安全な環境だね。',
+            },
             icon: '💧',
             condition: (vars) => Math.abs(vars['pH'] - 7) < 0.5,
         },
         {
             id: 'alkaline',
-            mission: { ko: '[H⁺]를 0.0000001 mol/L 이하로 낮춰봐!', en: 'Lower [H+] below 0.0000001 mol/L!', ja: '[H⁺]を0.0000001 mol/L以下に下げてみて！' },
-            result: { ko: 'pH 7 이상의 염기성! 비누나 표백제 수준이야.', en: 'Alkaline pH above 7! Like soap or bleach.', ja: 'pH 7以上の塩基性！石鹸や漂白剤レベルだよ。' },
+            mission: {
+                ko: '[H⁺]를 0.0000001 mol/L 이하로 낮춰봐!',
+                en: 'Lower [H+] below 0.0000001 mol/L!',
+                ja: '[H⁺]を0.0000001 mol/L以下に下げてみて！',
+            },
+            result: {
+                ko: 'pH 7 이상의 염기성! 비누나 표백제 수준이야.',
+                en: 'Alkaline pH above 7! Like soap or bleach.',
+                ja: 'pH 7以上の塩基性！石鹸や漂白剤レベルだよ。',
+            },
             icon: '🫧',
             condition: (vars) => vars['[H⁺]'] <= 0.0000001,
         },
     ],
     getInsight: (vars) => {
         const pH = vars['pH']
-        if (pH < 2) return { ko: '강산! 위산, 염산 수준', en: 'Strong acid! Like stomach acid', ja: '強酸！胃酸、塩酸レベル' }
-        if (pH < 4) return { ko: '산성! 식초, 레몬즙 수준', en: 'Acidic! Like vinegar or lemon', ja: '酸性！酢、レモン汁レベル' }
-        if (pH < 6) return { ko: '약산성! 커피, 산성비 수준', en: 'Slightly acidic! Like coffee', ja: '弱酸性！コーヒー、酸性雨レベル' }
-        if (pH < 8) return { ko: '중성~약염기! 물, 혈액 수준', en: 'Neutral! Like water or blood', ja: '中性〜弱塩基！水、血液レベル' }
-        if (pH < 10) return { ko: '약염기! 베이킹소다 수준', en: 'Mild base! Like baking soda', ja: '弱塩基！重曹レベル' }
-        if (pH < 12) return { ko: '염기성! 비누, 암모니아 수준', en: 'Basic! Like soap or ammonia', ja: '塩基性！石鹸、アンモニアレベル' }
-        return { ko: '강염기! 표백제, 하수구 세정제 수준', en: 'Strong base! Like bleach', ja: '強塩基！漂白剤、排水溝洗剤レベル' }
+        if (pH < 2)
+            return {
+                ko: '강산! 위산, 염산 수준',
+                en: 'Strong acid! Like stomach acid',
+                ja: '強酸！胃酸、塩酸レベル',
+            }
+        if (pH < 4)
+            return {
+                ko: '산성! 식초, 레몬즙 수준',
+                en: 'Acidic! Like vinegar or lemon',
+                ja: '酸性！酢、レモン汁レベル',
+            }
+        if (pH < 6)
+            return {
+                ko: '약산성! 커피, 산성비 수준',
+                en: 'Slightly acidic! Like coffee',
+                ja: '弱酸性！コーヒー、酸性雨レベル',
+            }
+        if (pH < 8)
+            return {
+                ko: '중성~약염기! 물, 혈액 수준',
+                en: 'Neutral! Like water or blood',
+                ja: '中性〜弱塩基！水、血液レベル',
+            }
+        if (pH < 10)
+            return {
+                ko: '약염기! 베이킹소다 수준',
+                en: 'Mild base! Like baking soda',
+                ja: '弱塩基！重曹レベル',
+            }
+        if (pH < 12)
+            return {
+                ko: '염기성! 비누, 암모니아 수준',
+                en: 'Basic! Like soap or ammonia',
+                ja: '塩基性！石鹸、アンモニアレベル',
+            }
+        return {
+            ko: '강염기! 표백제, 하수구 세정제 수준',
+            en: 'Strong base! Like bleach',
+            ja: '強塩基！漂白剤、排水溝洗剤レベル',
+        }
     },
 }

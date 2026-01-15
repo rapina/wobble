@@ -116,11 +116,35 @@ export const lens: Formula = {
     },
     getInsight: (vars) => {
         const f = vars['f']
-        if (f < 5) return { ko: '돋보기 정도의 짧은 초점이야', en: 'Short focal length like a magnifying glass', ja: '虫眼鏡くらいの短い焦点距離だよ' }
-        if (f < 10) return { ko: '스마트폰 카메라 렌즈 정도야', en: 'Like a smartphone camera lens', ja: 'スマホカメラのレンズくらいだよ' }
-        if (f < 20) return { ko: '안경 렌즈 정도야', en: 'Like eyeglass lenses', ja: '眼鏡レンズくらいだよ' }
-        if (f < 35) return { ko: '표준 카메라 렌즈 정도야', en: 'Like a standard camera lens', ja: '標準カメラレンズくらいだよ' }
-        return { ko: '망원 렌즈 정도의 긴 초점이야', en: 'Long focal length like telephoto lens', ja: '望遠レンズくらいの長い焦点距離だよ' }
+        if (f < 5)
+            return {
+                ko: '돋보기 정도의 짧은 초점이야',
+                en: 'Short focal length like a magnifying glass',
+                ja: '虫眼鏡くらいの短い焦点距離だよ',
+            }
+        if (f < 10)
+            return {
+                ko: '스마트폰 카메라 렌즈 정도야',
+                en: 'Like a smartphone camera lens',
+                ja: 'スマホカメラのレンズくらいだよ',
+            }
+        if (f < 20)
+            return {
+                ko: '안경 렌즈 정도야',
+                en: 'Like eyeglass lenses',
+                ja: '眼鏡レンズくらいだよ',
+            }
+        if (f < 35)
+            return {
+                ko: '표준 카메라 렌즈 정도야',
+                en: 'Like a standard camera lens',
+                ja: '標準カメラレンズくらいだよ',
+            }
+        return {
+            ko: '망원 렌즈 정도의 긴 초점이야',
+            en: 'Long focal length like telephoto lens',
+            ja: '望遠レンズくらいの長い焦点距離だよ',
+        }
     },
     discoveries: [
         {

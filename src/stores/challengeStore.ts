@@ -43,9 +43,9 @@ interface ChallengeState {
 
 // Score by difficulty
 const BASE_SCORES: Record<1 | 2 | 3, number> = {
-    1: 100,  // target
-    2: 150,  // range
-    3: 200,  // condition
+    1: 100, // target
+    2: 150, // range
+    3: 200, // condition
 }
 
 export const useChallengeStore = create<ChallengeState>()(
@@ -67,7 +67,7 @@ export const useChallengeStore = create<ChallengeState>()(
                 if (!currentChallenge) return 0
 
                 const baseScore = BASE_SCORES[currentChallenge.difficulty]
-                const comboMultiplier = 1 + (combo * 0.1)
+                const comboMultiplier = 1 + combo * 0.1
                 const earnedScore = Math.round(baseScore * comboMultiplier)
                 const newScore = score + earnedScore
                 const newCombo = combo + 1
@@ -94,14 +94,15 @@ export const useChallengeStore = create<ChallengeState>()(
                 })
             },
 
-            resetSession: () => set({
-                score: 0,
-                combo: 0,
-                solved: 0,
-                failed: 0,
-                currentChallenge: null,
-                lastEarnedScore: 0,
-            }),
+            resetSession: () =>
+                set({
+                    score: 0,
+                    combo: 0,
+                    solved: 0,
+                    failed: 0,
+                    currentChallenge: null,
+                    lastEarnedScore: 0,
+                }),
         }),
         {
             name: 'wobble-challenge-storage',

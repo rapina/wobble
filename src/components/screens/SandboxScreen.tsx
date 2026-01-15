@@ -11,13 +11,28 @@ import { usePurchaseStore } from '@/stores/purchaseStore'
 import { useCollectionStore } from '@/stores/collectionStore'
 import { useProgressStore } from '@/stores/progressStore'
 import { useChallengeStore } from '@/stores/challengeStore'
-import { useFormulaUnlockStore, getPrerequisiteFormulaName, UNLOCK_CONDITIONS } from '@/stores/formulaUnlockStore'
+import {
+    useFormulaUnlockStore,
+    getPrerequisiteFormulaName,
+    UNLOCK_CONDITIONS,
+} from '@/stores/formulaUnlockStore'
 import { formulas as formulaRegistry } from '@/formulas/registry'
 import { generateChallenge } from '@/utils/challengeGenerator'
 import { getInsightText } from '@/utils/formulaInsights'
 import { TutorialOverlay } from '../tutorial/TutorialOverlay'
 import { SettingsModal } from '../ui/SettingsModal'
-import { ArrowLeft, List, X, Info, ChevronDown, HelpCircle, Lightbulb, Target, Lock, Unlock } from 'lucide-react'
+import {
+    ArrowLeft,
+    List,
+    X,
+    Info,
+    ChevronDown,
+    HelpCircle,
+    Lightbulb,
+    Target,
+    Lock,
+    Unlock,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Formula, FormulaCategory } from '../../formulas/types'
 import { WobbleShape } from '../canvas/Wobble'
@@ -63,24 +78,25 @@ export function SandboxScreen({
 }: SimulationScreenProps) {
     const { t, i18n } = useTranslation()
     const { formula, variables, inputVariables, setVariable } = useSimulation(formulaId)
-    const { isInitialized, isBannerVisible, showBanner, hideBanner, showRewardAd, isRewardAdLoading, isNative, webSimulationActive, completeWebSimulation, cancelWebSimulation } = useAdMob()
-    const { isAdFree } = usePurchaseStore()
     const {
-        isUnlocked,
-        unlockFormula,
-        getUnlockCondition,
-        completeDiscovery,
-    } = useFormulaUnlockStore()
+        isInitialized,
+        isBannerVisible,
+        showBanner,
+        hideBanner,
+        showRewardAd,
+        isRewardAdLoading,
+        isNative,
+        webSimulationActive,
+        completeWebSimulation,
+        cancelWebSimulation,
+    } = useAdMob()
+    const { isAdFree } = usePurchaseStore()
+    const { isUnlocked, unlockFormula, getUnlockCondition, completeDiscovery } =
+        useFormulaUnlockStore()
     const { unlockByFormula, getNewUnlocksForFormula } = useCollectionStore()
     const { studyFormula } = useProgressStore()
-    const {
-        currentChallenge,
-        score,
-        combo,
-        setChallenge,
-        solveChallenge,
-        skipChallenge,
-    } = useChallengeStore()
+    const { currentChallenge, score, combo, setChallenge, solveChallenge, skipChallenge } =
+        useChallengeStore()
     const localizedFormula = useLocalizedFormula(formula)
     const localizedVariables = useLocalizedVariables(formula?.variables ?? [])
     const [mounted, setMounted] = useState(false)
@@ -104,9 +120,15 @@ export function SandboxScreen({
     const [discoveryShownThisSession, setDiscoveryShownThisSession] = useState(false)
     const [welcomePhase, setWelcomePhase] = useState<'opening' | 'select' | 'simulation'>('opening')
     const [openingMounted, setOpeningMounted] = useState(false)
-    const [challengeToast, setChallengeToast] = useState<{ type: 'success'; score: number; combo: number; insight?: string } | { type: 'wrong'; hint: string } | null>(null)
+    const [challengeToast, setChallengeToast] = useState<
+        | { type: 'success'; score: number; combo: number; insight?: string }
+        | { type: 'wrong'; hint: string }
+        | null
+    >(null)
     const [challengeToastVisible, setChallengeToastVisible] = useState(false)
-    const [challengeTransition, setChallengeTransition] = useState<'idle' | 'exit' | 'enter'>('idle')
+    const [challengeTransition, setChallengeTransition] = useState<'idle' | 'exit' | 'enter'>(
+        'idle'
+    )
     const [webAdCountdown, setWebAdCountdown] = useState(5)
     const canvasRef = useRef<PixiCanvasHandle>(null)
 
@@ -248,7 +270,7 @@ export function SandboxScreen({
         const targetSymbol = currentChallenge.targetVariables[0]
         if (!targetSymbol) return null
 
-        const targetVar = formula.variables.find(v => v.symbol === targetSymbol)
+        const targetVar = formula.variables.find((v) => v.symbol === targetSymbol)
         if (!targetVar) return null
 
         const currentValue = variables[targetSymbol]
@@ -359,7 +381,12 @@ export function SandboxScreen({
 
             // Show success toast after brief delay
             setTimeout(() => {
-                setChallengeToast({ type: 'success', score: earnedScore, combo: combo + 1, insight: insight || undefined })
+                setChallengeToast({
+                    type: 'success',
+                    score: earnedScore,
+                    combo: combo + 1,
+                    insight: insight || undefined,
+                })
                 setChallengeToastVisible(true)
             }, 150)
             // Longer display time if there's an insight to read
@@ -378,13 +405,25 @@ export function SandboxScreen({
             setTimeout(() => setChallengeTransition('idle'), 550)
         } else {
             // Wrong answer - show hint with shake effect
-            const hint = getChallengeHint() || (i18n.language === 'ko' ? '다시 시도해봐!' : 'Try again!')
+            const hint =
+                getChallengeHint() || (i18n.language === 'ko' ? '다시 시도해봐!' : 'Try again!')
             setChallengeToast({ type: 'wrong', hint })
             setTimeout(() => setChallengeToastVisible(true), 50)
             setTimeout(() => setChallengeToastVisible(false), 1600)
             setTimeout(() => setChallengeToast(null), 1900)
         }
-    }, [variables, currentChallenge, formula, solveChallenge, setChallenge, combo, getChallengeHint, i18n.language, challengeTransition, completeDiscovery])
+    }, [
+        variables,
+        currentChallenge,
+        formula,
+        solveChallenge,
+        setChallenge,
+        combo,
+        getChallengeHint,
+        i18n.language,
+        challengeTransition,
+        completeDiscovery,
+    ])
 
     // Show AdMob banner when initialized (unless ad-free)
     useEffect(() => {
@@ -473,10 +512,8 @@ export function SandboxScreen({
         const timer = setTimeout(() => {
             if (canvasRef.current) {
                 setDiscoveryShownThisSession(true)
-                canvasRef.current.showNewWobbleDiscovery(
-                    pendingNewWobbles,
-                    i18n.language,
-                    () => setPendingNewWobbles([])
+                canvasRef.current.showNewWobbleDiscovery(pendingNewWobbles, i18n.language, () =>
+                    setPendingNewWobbles([])
                 )
             }
         }, 300)
@@ -525,7 +562,6 @@ export function SandboxScreen({
         }
     }, [formulaId, studyFormula])
 
-
     // Mark formula as seen (for NEW badge)
     const markAsSeen = (id: string) => {
         const newSeen = new Set(seenFormulas)
@@ -549,18 +585,21 @@ export function SandboxScreen({
     }
 
     // 보상형 광고를 통한 공식 잠금 해제
-    const handleUnlockFormula = useCallback((formulaIdToUnlock: string) => {
-        showRewardAd(
-            () => {
-                // 광고 시청 완료 - 공식 해금
-                unlockFormula(formulaIdToUnlock)
-            },
-            () => {
-                // 광고 로드 실패 - 아무 동작 없음
-                console.log('Reward ad failed')
-            }
-        )
-    }, [showRewardAd, unlockFormula])
+    const handleUnlockFormula = useCallback(
+        (formulaIdToUnlock: string) => {
+            showRewardAd(
+                () => {
+                    // 광고 시청 완료 - 공식 해금
+                    unlockFormula(formulaIdToUnlock)
+                },
+                () => {
+                    // 광고 로드 실패 - 아무 동작 없음
+                    console.log('Reward ad failed')
+                }
+            )
+        },
+        [showRewardAd, unlockFormula]
+    )
 
     if (!formula) {
         return (
@@ -603,7 +642,7 @@ export function SandboxScreen({
                                 transform: `rotate(${-15 + i * 7}deg)`,
                                 transitionDelay: `${300 + i * 100}ms`,
                                 animation: openingMounted
-                                    ? `float-${i % 3} ${3 + i % 2}s ease-in-out infinite`
+                                    ? `float-${i % 3} ${3 + (i % 2)}s ease-in-out infinite`
                                     : 'none',
                             }}
                         >
@@ -656,7 +695,9 @@ export function SandboxScreen({
                         <div
                             className="relative"
                             style={{
-                                animation: openingMounted ? 'wobble-float 2s ease-in-out infinite' : 'none',
+                                animation: openingMounted
+                                    ? 'wobble-float 2s ease-in-out infinite'
+                                    : 'none',
                             }}
                         >
                             <WobbleDisplay
@@ -670,24 +711,26 @@ export function SandboxScreen({
 
                     {/* Description with staged animation - each line appears separately */}
                     <div className="text-center mb-10 px-8 space-y-3">
-                        {t('simulation.welcome.openingDesc').split('\n').map((line, i) => (
-                            <p
-                                key={i}
-                                className={cn(
-                                    'text-lg leading-relaxed transition-all duration-600',
-                                    openingMounted
-                                        ? 'opacity-100 translate-y-0 scale-100'
-                                        : 'opacity-0 translate-y-6 scale-95'
-                                )}
-                                style={{
-                                    color: 'rgba(255,255,255,0.85)',
-                                    transitionDelay: `${600 + i * 400}ms`, // 더 긴 간격으로 단계적 등장
-                                    transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
-                                }}
-                            >
-                                {line}
-                            </p>
-                        ))}
+                        {t('simulation.welcome.openingDesc')
+                            .split('\n')
+                            .map((line, i) => (
+                                <p
+                                    key={i}
+                                    className={cn(
+                                        'text-lg leading-relaxed transition-all duration-600',
+                                        openingMounted
+                                            ? 'opacity-100 translate-y-0 scale-100'
+                                            : 'opacity-0 translate-y-6 scale-95'
+                                    )}
+                                    style={{
+                                        color: 'rgba(255,255,255,0.85)',
+                                        transitionDelay: `${600 + i * 400}ms`, // 더 긴 간격으로 단계적 등장
+                                        transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
+                                    }}
+                                >
+                                    {line}
+                                </p>
+                            ))}
                     </div>
 
                     {/* Tap to Start with bounce effect */}
@@ -824,14 +867,18 @@ export function SandboxScreen({
                     <div className="flex items-center gap-2 mb-3 px-2">
                         <div
                             className="h-[2px] flex-1"
-                            style={{ background: `linear-gradient(90deg, transparent, ${theme.gold}40)` }}
+                            style={{
+                                background: `linear-gradient(90deg, transparent, ${theme.gold}40)`,
+                            }}
                         />
                         <span className="text-xs font-bold text-white/50 uppercase tracking-wider">
                             {t('simulation.welcome.selectFormula')}
                         </span>
                         <div
                             className="h-[2px] flex-1"
-                            style={{ background: `linear-gradient(90deg, ${theme.gold}40, transparent)` }}
+                            style={{
+                                background: `linear-gradient(90deg, ${theme.gold}40, transparent)`,
+                            }}
                         />
                     </div>
 
@@ -842,9 +889,7 @@ export function SandboxScreen({
                             className="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-bold transition-all active:scale-95"
                             style={{
                                 background:
-                                    selectedCategory === 'all'
-                                        ? theme.gold
-                                        : theme.bgPanelLight,
+                                    selectedCategory === 'all' ? theme.gold : theme.bgPanelLight,
                                 color: selectedCategory === 'all' ? '#000' : '#fff',
                                 border: `2px solid ${theme.border}`,
                                 boxShadow: `0 2px 0 ${theme.border}`,
@@ -874,9 +919,7 @@ export function SandboxScreen({
                     </div>
 
                     {/* Formula Grid */}
-                    <div
-                        className="flex-1 overflow-y-auto px-2 pb-2"
-                    >
+                    <div className="flex-1 overflow-y-auto px-2 pb-2">
                         <div className="grid grid-cols-2 gap-3">
                             {filteredFormulas.map((f) => {
                                 const fColor = categoryColors[f.category]
@@ -926,7 +969,11 @@ export function SandboxScreen({
                                                 <span
                                                     className="block text-sm font-bold truncate"
                                                     style={{
-                                                        color: isSelected ? '#000' : isLocked ? '#888' : 'white',
+                                                        color: isSelected
+                                                            ? '#000'
+                                                            : isLocked
+                                                              ? '#888'
+                                                              : 'white',
                                                     }}
                                                 >
                                                     {fName}
@@ -934,44 +981,49 @@ export function SandboxScreen({
                                             </div>
                                         </button>
                                         {/* Unlock condition badge for locked formulas */}
-                                        {isLocked && (() => {
-                                            const cond = getUnlockCondition(f.id)
-                                            if (cond.type === 'prerequisite') {
-                                                const prereq = formulaRegistry[cond.formulaId]
+                                        {isLocked &&
+                                            (() => {
+                                                const cond = getUnlockCondition(f.id)
+                                                if (cond.type === 'prerequisite') {
+                                                    const prereq = formulaRegistry[cond.formulaId]
+                                                    return (
+                                                        <div
+                                                            className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                                            style={{
+                                                                background: theme.bgPanel,
+                                                                color: '#aaa',
+                                                                border: `1.5px solid ${theme.border}`,
+                                                            }}
+                                                        >
+                                                            <Lock className="w-2.5 h-2.5" />
+                                                            {prereq &&
+                                                                localizeText(
+                                                                    prereq.name,
+                                                                    i18n.language
+                                                                )}
+                                                        </div>
+                                                    )
+                                                }
                                                 return (
-                                                    <div
-                                                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            handleUnlockFormula(f.id)
+                                                        }}
+                                                        disabled={isRewardAdLoading}
+                                                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold transition-all active:scale-95"
                                                         style={{
-                                                            background: theme.bgPanel,
-                                                            color: '#aaa',
+                                                            background: '#f59e0b',
+                                                            color: '#000',
                                                             border: `1.5px solid ${theme.border}`,
+                                                            boxShadow: `0 1px 0 ${theme.border}`,
                                                         }}
                                                     >
                                                         <Lock className="w-2.5 h-2.5" />
-                                                        {prereq && localizeText(prereq.name, i18n.language)}
-                                                    </div>
+                                                        {i18n.language === 'ko' ? '잠김' : 'Locked'}
+                                                    </button>
                                                 )
-                                            }
-                                            return (
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        handleUnlockFormula(f.id)
-                                                    }}
-                                                    disabled={isRewardAdLoading}
-                                                    className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold transition-all active:scale-95"
-                                                    style={{
-                                                        background: '#f59e0b',
-                                                        color: '#000',
-                                                        border: `1.5px solid ${theme.border}`,
-                                                        boxShadow: `0 1px 0 ${theme.border}`,
-                                                    }}
-                                                >
-                                                    <Lock className="w-2.5 h-2.5" />
-                                                    {i18n.language === 'ko' ? '잠김' : 'Locked'}
-                                                </button>
-                                            )
-                                        })()}
+                                            })()}
                                     </div>
                                 )
                             })}
@@ -1020,61 +1072,72 @@ export function SandboxScreen({
                 <PixiCanvas ref={canvasRef} formulaId={formulaId} variables={variables} />
 
                 {/* Locked Overlay - Silhouette style */}
-                {isCurrentFormulaLocked && (() => {
-                    const condition = getUnlockCondition(formulaId)
-                    const prerequisiteId = condition.type === 'prerequisite' ? condition.formulaId : null
-                    const prerequisiteFormula = prerequisiteId ? formulaRegistry[prerequisiteId] : null
+                {isCurrentFormulaLocked &&
+                    (() => {
+                        const condition = getUnlockCondition(formulaId)
+                        const prerequisiteId =
+                            condition.type === 'prerequisite' ? condition.formulaId : null
+                        const prerequisiteFormula = prerequisiteId
+                            ? formulaRegistry[prerequisiteId]
+                            : null
 
-                    return (
-                        <div
-                            className="absolute inset-0 flex flex-col items-center justify-end pb-6"
-                            style={{
-                                background: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.88) 50%, rgba(0,0,0,0.95) 100%)',
-                            }}
-                        >
-                            {condition.type === 'prerequisite' && prerequisiteFormula ? (
-                                <div className="text-center px-4">
-                                    <div
-                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg mb-2"
+                        return (
+                            <div
+                                className="absolute inset-0 flex flex-col items-center justify-end pb-6"
+                                style={{
+                                    background:
+                                        'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.88) 50%, rgba(0,0,0,0.95) 100%)',
+                                }}
+                            >
+                                {condition.type === 'prerequisite' && prerequisiteFormula ? (
+                                    <div className="text-center px-4">
+                                        <div
+                                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg mb-2"
+                                            style={{
+                                                background: theme.bgPanel,
+                                                border: `2px solid ${theme.border}`,
+                                            }}
+                                        >
+                                            <Lock className="w-4 h-4 text-white/60" />
+                                            <span className="text-white/80 text-sm font-bold">
+                                                {i18n.language === 'ko'
+                                                    ? '선행 조건'
+                                                    : 'Prerequisite'}
+                                            </span>
+                                        </div>
+                                        <p className="text-white/60 text-xs leading-relaxed">
+                                            {i18n.language === 'ko'
+                                                ? `"${localizeText(prerequisiteFormula.name, 'ko')}"에서 챌린지를 완료하세요`
+                                                : i18n.language === 'ja'
+                                                  ? `"${localizeText(prerequisiteFormula.name, 'ja')}"でチャレンジを完了してください`
+                                                  : `Complete a challenge in "${localizeText(prerequisiteFormula.name, 'en')}"`}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={() => handleUnlockFormula(formulaId)}
+                                        disabled={isRewardAdLoading}
+                                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95"
                                         style={{
-                                            background: theme.bgPanel,
+                                            background: 'rgba(245, 158, 11, 0.9)',
+                                            color: '#000',
                                             border: `2px solid ${theme.border}`,
+                                            boxShadow: `0 3px 0 ${theme.border}`,
                                         }}
                                     >
-                                        <Lock className="w-4 h-4 text-white/60" />
-                                        <span className="text-white/80 text-sm font-bold">
-                                            {i18n.language === 'ko' ? '선행 조건' : 'Prerequisite'}
-                                        </span>
-                                    </div>
-                                    <p className="text-white/60 text-xs leading-relaxed">
-                                        {i18n.language === 'ko'
-                                            ? `"${localizeText(prerequisiteFormula.name, 'ko')}"에서 챌린지를 완료하세요`
-                                            : i18n.language === 'ja'
-                                            ? `"${localizeText(prerequisiteFormula.name, 'ja')}"でチャレンジを完了してください`
-                                            : `Complete a challenge in "${localizeText(prerequisiteFormula.name, 'en')}"`}
-                                    </p>
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={() => handleUnlockFormula(formulaId)}
-                                    disabled={isRewardAdLoading}
-                                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95"
-                                    style={{
-                                        background: 'rgba(245, 158, 11, 0.9)',
-                                        color: '#000',
-                                        border: `2px solid ${theme.border}`,
-                                        boxShadow: `0 3px 0 ${theme.border}`,
-                                    }}
-                                >
-                                    <Lock className="w-4 h-4" />
-                                    {isRewardAdLoading
-                                        ? (i18n.language === 'ko' ? '로딩...' : 'Loading...')
-                                        : (i18n.language === 'ko' ? '잠금 해제' : 'Unlock')}
-                                </button>
-                            )}
-                        </div>
-                    )
-                })()}
+                                        <Lock className="w-4 h-4" />
+                                        {isRewardAdLoading
+                                            ? i18n.language === 'ko'
+                                                ? '로딩...'
+                                                : 'Loading...'
+                                            : i18n.language === 'ko'
+                                              ? '잠금 해제'
+                                              : 'Unlock'}
+                                    </button>
+                                )}
+                            </div>
+                        )
+                    })()}
             </div>
 
             {/* Top Header */}
@@ -1116,19 +1179,21 @@ export function SandboxScreen({
                         </div>
 
                         {/* Info Button - Hidden when locked */}
-                        {formula.applications && Object.keys(formula.applications).length > 0 && !isCurrentFormulaLocked && (
-                            <button
-                                onClick={() => setShowInfoPopup(true)}
-                                className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95"
-                                style={{
-                                    background: theme.blue,
-                                    border: `2px solid ${theme.border}`,
-                                    boxShadow: `0 3px 0 ${theme.border}`,
-                                }}
-                            >
-                                <Info className="h-5 w-5 text-white" />
-                            </button>
-                        )}
+                        {formula.applications &&
+                            Object.keys(formula.applications).length > 0 &&
+                            !isCurrentFormulaLocked && (
+                                <button
+                                    onClick={() => setShowInfoPopup(true)}
+                                    className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95"
+                                    style={{
+                                        background: theme.blue,
+                                        border: `2px solid ${theme.border}`,
+                                        boxShadow: `0 3px 0 ${theme.border}`,
+                                    }}
+                                >
+                                    <Info className="h-5 w-5 text-white" />
+                                </button>
+                            )}
 
                         {/* Tutorial Button */}
                         {tutorial.hasCompletedTutorial && (
@@ -1182,36 +1247,38 @@ export function SandboxScreen({
             </div>
 
             {/* Simulation Hint Banner with Marquee - Hidden when locked */}
-            {!isCurrentFormulaLocked && (localizedFormula?.simulationHint || localizedFormula?.description) && (
-                <div
-                    className="absolute left-0 right-0 z-20"
-                    style={{
-                        top: 'calc(max(env(safe-area-inset-top, 0px), 12px) + 48px)',
-                        paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
-                        paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
-                    }}
-                >
+            {!isCurrentFormulaLocked &&
+                (localizedFormula?.simulationHint || localizedFormula?.description) && (
                     <div
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg overflow-hidden"
+                        className="absolute left-0 right-0 z-20"
                         style={{
-                            background: 'rgba(26, 26, 46, 0.9)',
-                            border: `1px solid ${theme.border}`,
+                            top: 'calc(max(env(safe-area-inset-top, 0px), 12px) + 48px)',
+                            paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
+                            paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
                         }}
                     >
-                        <Lightbulb className="h-4 w-4 text-yellow-400 shrink-0" />
-                        <div className="flex-1 overflow-hidden">
-                            <span
-                                className="inline-block text-xs text-gray-300 whitespace-nowrap"
-                                style={{
-                                    animation: 'marquee-scroll 8s linear infinite',
-                                }}
-                            >
-                                {localizedFormula.simulationHint || localizedFormula.description}
-                            </span>
+                        <div
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg overflow-hidden"
+                            style={{
+                                background: 'rgba(26, 26, 46, 0.9)',
+                                border: `1px solid ${theme.border}`,
+                            }}
+                        >
+                            <Lightbulb className="h-4 w-4 text-yellow-400 shrink-0" />
+                            <div className="flex-1 overflow-hidden">
+                                <span
+                                    className="inline-block text-xs text-gray-300 whitespace-nowrap"
+                                    style={{
+                                        animation: 'marquee-scroll 8s linear infinite',
+                                    }}
+                                >
+                                    {localizedFormula.simulationHint ||
+                                        localizedFormula.description}
+                                </span>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
             {/* Challenge Banner (infinite random missions) - Hidden when locked */}
             {currentChallenge && !isCurrentFormulaLocked && (
@@ -1226,15 +1293,17 @@ export function SandboxScreen({
                     <div
                         className="flex items-center gap-2 px-3 py-2 rounded-lg"
                         style={{
-                            background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(30, 27, 75, 0.9) 100%)',
+                            background:
+                                'linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(30, 27, 75, 0.9) 100%)',
                             border: '1px solid rgba(251, 191, 36, 0.5)',
                             boxShadow: '0 0 12px rgba(251, 191, 36, 0.2)',
                             opacity: challengeTransition === 'idle' ? 1 : 0,
-                            transform: challengeTransition === 'exit'
-                                ? 'translateX(-10px)'
-                                : challengeTransition === 'enter'
-                                    ? 'translateX(10px)'
-                                    : 'translateX(0)',
+                            transform:
+                                challengeTransition === 'exit'
+                                    ? 'translateX(-10px)'
+                                    : challengeTransition === 'enter'
+                                      ? 'translateX(10px)'
+                                      : 'translateX(0)',
                             transition: 'opacity 0.15s ease-out, transform 0.15s ease-out',
                         }}
                     >
@@ -1247,9 +1316,7 @@ export function SandboxScreen({
                         {/* Score & Combo */}
                         <div className="flex items-center gap-2 text-[10px] font-bold">
                             <span className="text-amber-300">{score}pt</span>
-                            {combo > 0 && (
-                                <span className="text-orange-400">x{combo}</span>
-                            )}
+                            {combo > 0 && <span className="text-orange-400">x{combo}</span>}
                         </div>
                         {/* Submit button */}
                         <button
@@ -1265,7 +1332,9 @@ export function SandboxScreen({
                                 boxShadow: '0 2px 0 #1a1a1a',
                             }}
                         >
-                            {i18n.language === 'ko' || i18n.language.startsWith('ko') ? '제출' : 'Submit'}
+                            {i18n.language === 'ko' || i18n.language.startsWith('ko')
+                                ? '제출'
+                                : 'Submit'}
                         </button>
                         {/* Skip button */}
                         <button
@@ -1273,7 +1342,10 @@ export function SandboxScreen({
                                 e.stopPropagation()
                                 skipChallenge()
                                 if (formula) {
-                                    const newChallenge = generateNewChallengeRef.current(formula, variables)
+                                    const newChallenge = generateNewChallengeRef.current(
+                                        formula,
+                                        variables
+                                    )
                                     setChallenge(newChallenge)
                                 }
                             }}
@@ -1283,7 +1355,9 @@ export function SandboxScreen({
                                 color: 'rgba(255,255,255,0.5)',
                             }}
                         >
-                            {i18n.language === 'ko' || i18n.language.startsWith('ko') ? '패스' : 'Pass'}
+                            {i18n.language === 'ko' || i18n.language.startsWith('ko')
+                                ? '패스'
+                                : 'Pass'}
                         </button>
                     </div>
                 </div>
@@ -1305,15 +1379,18 @@ export function SandboxScreen({
                     <div
                         className="flex items-center gap-3 px-5 py-3 rounded-xl"
                         style={{
-                            background: challengeToast.type === 'success'
-                                ? 'linear-gradient(135deg, #422006 0%, #1a1a2e 100%)'
-                                : 'linear-gradient(135deg, #1e1b4b 0%, #1a1a2e 100%)',
-                            border: challengeToast.type === 'success'
-                                ? '2px solid #f59e0b'
-                                : '2px solid #6366f1',
-                            boxShadow: challengeToast.type === 'success'
-                                ? '0 0 30px rgba(245, 158, 11, 0.5), 0 8px 20px rgba(0,0,0,0.4)'
-                                : '0 0 30px rgba(99, 102, 241, 0.5), 0 8px 20px rgba(0,0,0,0.4)',
+                            background:
+                                challengeToast.type === 'success'
+                                    ? 'linear-gradient(135deg, #422006 0%, #1a1a2e 100%)'
+                                    : 'linear-gradient(135deg, #1e1b4b 0%, #1a1a2e 100%)',
+                            border:
+                                challengeToast.type === 'success'
+                                    ? '2px solid #f59e0b'
+                                    : '2px solid #6366f1',
+                            boxShadow:
+                                challengeToast.type === 'success'
+                                    ? '0 0 30px rgba(245, 158, 11, 0.5), 0 8px 20px rgba(0,0,0,0.4)'
+                                    : '0 0 30px rgba(99, 102, 241, 0.5), 0 8px 20px rgba(0,0,0,0.4)',
                         }}
                     >
                         {challengeToast.type === 'success' ? (
@@ -1326,7 +1403,11 @@ export function SandboxScreen({
                                         </span>
                                         {challengeToast.combo > 1 && (
                                             <span className="text-sm font-bold text-orange-400">
-                                                x{challengeToast.combo} {i18n.language === 'ko' || i18n.language.startsWith('ko') ? '콤보!' : 'Combo!'}
+                                                x{challengeToast.combo}{' '}
+                                                {i18n.language === 'ko' ||
+                                                i18n.language.startsWith('ko')
+                                                    ? '콤보!'
+                                                    : 'Combo!'}
                                             </span>
                                         )}
                                     </div>
@@ -1357,7 +1438,8 @@ export function SandboxScreen({
                 }}
             >
                 {/* Shared Parameter Control - appears when card selected (disabled when locked) */}
-                {selectedCard && !isCurrentFormulaLocked &&
+                {selectedCard &&
+                    !isCurrentFormulaLocked &&
                     (() => {
                         const selectedVar = formula.variables.find((v) => v.symbol === selectedCard)
                         const localizedVar = localizedVariables.find(
@@ -1367,7 +1449,10 @@ export function SandboxScreen({
                         return (
                             <ParameterControl
                                 symbol={selectedVar.symbol}
-                                name={localizedVar?.localizedName ?? localizeText(selectedVar.name, i18n.language)}
+                                name={
+                                    localizedVar?.localizedName ??
+                                    localizeText(selectedVar.name, i18n.language)
+                                }
                                 value={variables[selectedVar.symbol] ?? selectedVar.default}
                                 min={selectedVar.range[0]}
                                 max={selectedVar.range[1]}
@@ -1379,7 +1464,12 @@ export function SandboxScreen({
                     })()}
 
                 {/* Formula Layout (disabled interaction when locked) */}
-                <div style={{ opacity: isCurrentFormulaLocked ? 0.5 : 1, pointerEvents: isCurrentFormulaLocked ? 'none' : 'auto' }}>
+                <div
+                    style={{
+                        opacity: isCurrentFormulaLocked ? 0.5 : 1,
+                        pointerEvents: isCurrentFormulaLocked ? 'none' : 'auto',
+                    }}
+                >
                     {formula.displayLayout ? (
                         <FormulaLayout
                             displayLayout={formula.displayLayout}
@@ -1609,7 +1699,11 @@ export function SandboxScreen({
                                                         <span
                                                             className="block text-sm font-bold truncate"
                                                             style={{
-                                                                color: isSelected ? '#000' : isLocked ? '#888' : 'white',
+                                                                color: isSelected
+                                                                    ? '#000'
+                                                                    : isLocked
+                                                                      ? '#888'
+                                                                      : 'white',
                                                             }}
                                                         >
                                                             {fName}
@@ -1617,44 +1711,52 @@ export function SandboxScreen({
                                                     </div>
                                                 </button>
                                                 {/* Unlock condition badge for locked formulas */}
-                                                {isLocked && (() => {
-                                                    const cond = getUnlockCondition(f.id)
-                                                    if (cond.type === 'prerequisite') {
-                                                        const prereq = formulaRegistry[cond.formulaId]
+                                                {isLocked &&
+                                                    (() => {
+                                                        const cond = getUnlockCondition(f.id)
+                                                        if (cond.type === 'prerequisite') {
+                                                            const prereq =
+                                                                formulaRegistry[cond.formulaId]
+                                                            return (
+                                                                <div
+                                                                    className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                                                    style={{
+                                                                        background: theme.bgPanel,
+                                                                        color: '#aaa',
+                                                                        border: `1.5px solid ${theme.border}`,
+                                                                    }}
+                                                                >
+                                                                    <Lock className="w-2.5 h-2.5" />
+                                                                    {prereq &&
+                                                                        localizeText(
+                                                                            prereq.name,
+                                                                            i18n.language
+                                                                        )}
+                                                                </div>
+                                                            )
+                                                        }
                                                         return (
-                                                            <div
-                                                                className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    handleUnlockFormula(f.id)
+                                                                }}
+                                                                disabled={isRewardAdLoading}
+                                                                className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold transition-all active:scale-95"
                                                                 style={{
-                                                                    background: theme.bgPanel,
-                                                                    color: '#aaa',
+                                                                    background: '#f59e0b',
+                                                                    color: '#000',
                                                                     border: `1.5px solid ${theme.border}`,
+                                                                    boxShadow: `0 1px 0 ${theme.border}`,
                                                                 }}
                                                             >
                                                                 <Lock className="w-2.5 h-2.5" />
-                                                                {prereq && localizeText(prereq.name, i18n.language)}
-                                                            </div>
+                                                                {i18n.language === 'ko'
+                                                                    ? '잠김'
+                                                                    : 'Locked'}
+                                                            </button>
                                                         )
-                                                    }
-                                                    return (
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                handleUnlockFormula(f.id)
-                                                            }}
-                                                            disabled={isRewardAdLoading}
-                                                            className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold transition-all active:scale-95"
-                                                            style={{
-                                                                background: '#f59e0b',
-                                                                color: '#000',
-                                                                border: `1.5px solid ${theme.border}`,
-                                                                boxShadow: `0 1px 0 ${theme.border}`,
-                                                            }}
-                                                        >
-                                                            <Lock className="w-2.5 h-2.5" />
-                                                            {i18n.language === 'ko' ? '잠김' : 'Locked'}
-                                                        </button>
-                                                    )
-                                                })()}
+                                                    })()}
                                             </div>
                                         )
                                     })}
@@ -1868,14 +1970,17 @@ export function SandboxScreen({
                                 <div
                                     className="absolute inset-0 opacity-30"
                                     style={{
-                                        backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.05) 20px, rgba(255,255,255,0.05) 40px)',
+                                        backgroundImage:
+                                            'repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.05) 20px, rgba(255,255,255,0.05) 40px)',
                                         animation: 'slide 20s linear infinite',
                                     }}
                                 />
                                 <div className="relative text-center">
                                     <div className="text-4xl font-black text-white/20 mb-2">AD</div>
                                     <div className="text-xs text-white/40">
-                                        {i18n.language === 'ko' ? '테스트 광고' : 'Test Advertisement'}
+                                        {i18n.language === 'ko'
+                                            ? '테스트 광고'
+                                            : 'Test Advertisement'}
                                     </div>
                                 </div>
                             </div>
@@ -1890,10 +1995,14 @@ export function SandboxScreen({
                                             border: `3px solid ${theme.border}`,
                                         }}
                                     >
-                                        <span className="text-2xl font-black text-white">{webAdCountdown}</span>
+                                        <span className="text-2xl font-black text-white">
+                                            {webAdCountdown}
+                                        </span>
                                     </div>
                                     <p className="text-white/50 text-sm">
-                                        {i18n.language === 'ko' ? '잠시 후 보상을 받을 수 있어요' : 'Reward available soon'}
+                                        {i18n.language === 'ko'
+                                            ? '잠시 후 보상을 받을 수 있어요'
+                                            : 'Reward available soon'}
                                     </p>
                                 </div>
                             ) : (

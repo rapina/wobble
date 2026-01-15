@@ -168,7 +168,17 @@ export class DilutionScene extends BaseScene {
         // Remove drops that hit the solution
         this.waterDrops = this.waterDrops.filter((drop) => drop.y < solutionTop - 10)
 
-        this.drawScene(M1, V1, V2, M2, solutionTop, beakerLeft, beakerRight, beakerTop, beakerBottom)
+        this.drawScene(
+            M1,
+            V1,
+            V2,
+            M2,
+            solutionTop,
+            beakerLeft,
+            beakerRight,
+            beakerTop,
+            beakerBottom
+        )
     }
 
     private drawScene(

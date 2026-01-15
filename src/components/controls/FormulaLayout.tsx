@@ -38,9 +38,13 @@ export function FormulaLayout({
                 <div
                     key={symbol}
                     className={highlighted ? 'relative' : ''}
-                    style={highlighted ? {
-                        animation: 'challenge-pulse 1.5s ease-in-out infinite',
-                    } : undefined}
+                    style={
+                        highlighted
+                            ? {
+                                  animation: 'challenge-pulse 1.5s ease-in-out infinite',
+                              }
+                            : undefined
+                    }
                 >
                     {highlighted && (
                         <div
@@ -73,9 +77,13 @@ export function FormulaLayout({
             <div
                 key={symbol}
                 className="relative"
-                style={highlighted ? {
-                    animation: 'challenge-pulse 1.5s ease-in-out infinite',
-                } : undefined}
+                style={
+                    highlighted
+                        ? {
+                              animation: 'challenge-pulse 1.5s ease-in-out infinite',
+                          }
+                        : undefined
+                }
             >
                 {highlighted && (
                     <div

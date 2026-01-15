@@ -5,8 +5,16 @@ export const wave: Formula = {
     id: 'wave',
     name: { ko: '파동 속도', en: 'Wave Velocity', ja: '波動速度' },
     expression: 'v = fλ',
-    description: { ko: '파동이 전파되는 속도', en: 'Speed at which a wave propagates', ja: '波が伝わる速度' },
-    simulationHint: { ko: '파동이 진동수와 파장에 따라 전파되는 모습', en: 'Shows a wave propagating based on frequency and wavelength', ja: '周波数と波長に応じて波が伝わる様子' },
+    description: {
+        ko: '파동이 전파되는 속도',
+        en: 'Speed at which a wave propagates',
+        ja: '波が伝わる速度',
+    },
+    simulationHint: {
+        ko: '파동이 진동수와 파장에 따라 전파되는 모습',
+        en: 'Shows a wave propagating based on frequency and wavelength',
+        ja: '周波数と波長に応じて波が伝わる様子',
+    },
     applications: {
         ko: [
             '라디오와 TV 방송 주파수 설계',
@@ -97,15 +105,31 @@ export const wave: Formula = {
     discoveries: [
         {
             id: 'high-frequency',
-            mission: { ko: '진동수 f를 4Hz 이상으로 올려봐!', en: 'Raise frequency f above 4Hz!', ja: '周波数fを4Hz以上にしてみよう！' },
-            result: { ko: '진동수가 높으면 빠르게 진동해! 높은 음은 진동수가 높은 소리야.', en: 'Higher frequency means faster vibration! High-pitched sounds have high frequency.', ja: '周波数が高いと速く振動する！高い音は周波数が高い音だ。' },
+            mission: {
+                ko: '진동수 f를 4Hz 이상으로 올려봐!',
+                en: 'Raise frequency f above 4Hz!',
+                ja: '周波数fを4Hz以上にしてみよう！',
+            },
+            result: {
+                ko: '진동수가 높으면 빠르게 진동해! 높은 음은 진동수가 높은 소리야.',
+                en: 'Higher frequency means faster vibration! High-pitched sounds have high frequency.',
+                ja: '周波数が高いと速く振動する！高い音は周波数が高い音だ。',
+            },
             icon: '🎵',
             condition: (vars) => vars['f'] >= 4,
         },
         {
             id: 'long-wavelength',
-            mission: { ko: '파장 λ를 8m 이상으로 늘려봐!', en: 'Extend wavelength λ above 8m!', ja: '波長λを8m以上にしてみよう！' },
-            result: { ko: '파장이 길면 장애물을 잘 돌아가! AM 라디오가 건물 뒤에서도 들리는 이유야.', en: 'Long wavelengths bend around obstacles! This is why AM radio works behind buildings.', ja: '波長が長いと障害物を回り込む！AMラジオが建物の後ろでも聞こえる理由だ。' },
+            mission: {
+                ko: '파장 λ를 8m 이상으로 늘려봐!',
+                en: 'Extend wavelength λ above 8m!',
+                ja: '波長λを8m以上にしてみよう！',
+            },
+            result: {
+                ko: '파장이 길면 장애물을 잘 돌아가! AM 라디오가 건물 뒤에서도 들리는 이유야.',
+                en: 'Long wavelengths bend around obstacles! This is why AM radio works behind buildings.',
+                ja: '波長が長いと障害物を回り込む！AMラジオが建物の後ろでも聞こえる理由だ。',
+            },
             icon: '📻',
             condition: (vars) => vars['λ'] >= 8,
         },
@@ -113,9 +137,12 @@ export const wave: Formula = {
     getInsight: (vars) => {
         const v = vars['v']
         if (v < 5) return { ko: '걷는 속도 정도야', en: 'Walking speed', ja: '歩く速度くらい' }
-        if (v < 15) return { ko: '자전거 속도 정도야', en: 'Like cycling speed', ja: '自転車くらいの速度' }
-        if (v < 30) return { ko: '달리는 자동차 속도야', en: 'Like a car speed', ja: '車くらいの速度' }
-        if (v < 40) return { ko: '고속도로 속도야', en: 'Highway speed', ja: '高速道路くらいの速度' }
+        if (v < 15)
+            return { ko: '자전거 속도 정도야', en: 'Like cycling speed', ja: '自転車くらいの速度' }
+        if (v < 30)
+            return { ko: '달리는 자동차 속도야', en: 'Like a car speed', ja: '車くらいの速度' }
+        if (v < 40)
+            return { ko: '고속도로 속도야', en: 'Highway speed', ja: '高速道路くらいの速度' }
         return { ko: '빠른 파동이야!', en: 'Fast wave!', ja: '速い波だ！' }
     },
 }

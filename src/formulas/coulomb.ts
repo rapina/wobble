@@ -171,10 +171,34 @@ export const coulomb: Formula = {
     ],
     getInsight: (vars) => {
         const F = vars['F']
-        if (F < 1) return { ko: '정전기 정도의 약한 힘이야', en: 'Weak like static electricity', ja: '静電気程度の弱い力だよ' }
-        if (F < 10) return { ko: '머리카락 끌어당기는 힘이야', en: 'Hair-attracting force', ja: '髪の毛を引き寄せる力だよ' }
-        if (F < 100) return { ko: '풍선 정전기 정도야', en: 'Like balloon static', ja: '風船の静電気くらいだよ' }
-        if (F < 500) return { ko: '상당한 전기력이야', en: 'Significant electric force', ja: 'かなりの電気力だよ' }
-        return { ko: '번개급 강력한 전기력!', en: 'Lightning-level electric force!', ja: '雷レベルの強力な電気力だよ！' }
+        if (F < 1)
+            return {
+                ko: '정전기 정도의 약한 힘이야',
+                en: 'Weak like static electricity',
+                ja: '静電気程度の弱い力だよ',
+            }
+        if (F < 10)
+            return {
+                ko: '머리카락 끌어당기는 힘이야',
+                en: 'Hair-attracting force',
+                ja: '髪の毛を引き寄せる力だよ',
+            }
+        if (F < 100)
+            return {
+                ko: '풍선 정전기 정도야',
+                en: 'Like balloon static',
+                ja: '風船の静電気くらいだよ',
+            }
+        if (F < 500)
+            return {
+                ko: '상당한 전기력이야',
+                en: 'Significant electric force',
+                ja: 'かなりの電気力だよ',
+            }
+        return {
+            ko: '번개급 강력한 전기력!',
+            en: 'Lightning-level electric force!',
+            ja: '雷レベルの強力な電気力だよ！',
+        }
     },
 }

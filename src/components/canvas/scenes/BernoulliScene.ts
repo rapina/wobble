@@ -175,7 +175,18 @@ export class BernoulliScene extends BaseScene {
         })
 
         // Draw pressure indicators
-        this.drawPressureIndicators(g, v1, v2, pipeLeft, narrowStart, narrowEnd, pipeRight, cy, h1, h2)
+        this.drawPressureIndicators(
+            g,
+            v1,
+            v2,
+            pipeLeft,
+            narrowStart,
+            narrowEnd,
+            pipeRight,
+            cy,
+            h1,
+            h2
+        )
 
         // Draw velocity bar
         this.drawVelocityBar(g, v1, v2)

@@ -81,7 +81,7 @@ export const angularMomentum: Formula = {
         const L = inputs['L'] || 50
         const I = inputs['I'] || 10
         const omega = L / I
-        return { 'ω': Math.round(omega * 100) / 100 }
+        return { ω: Math.round(omega * 100) / 100 }
     },
     formatCalculation: (inputs) => {
         const L = inputs['L'] || 50

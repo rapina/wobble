@@ -113,11 +113,35 @@ export const bohr: Formula = {
     getInsight: (vars) => {
         const n = Math.round(vars['n'] ?? 2)
         const E = vars['E']
-        if (n === 1) return { ko: '바닥상태! 가장 안정한 전자야', en: 'Ground state! Most stable electron', ja: '基底状態！最も安定した電子' }
-        if (n === 2) return { ko: '발머 계열 시작! 가시광선을 방출해', en: 'Balmer series starts! Emits visible light', ja: 'バルマー系列開始！可視光を放出' }
-        if (n === 3) return { ko: '파셴 계열! 적외선 영역이야', en: 'Paschen series! Infrared region', ja: 'パッシェン系列！赤外線領域' }
-        if (E > -1) return { ko: '거의 자유 전자! 이온화 직전이야', en: 'Nearly free electron! About to ionize', ja: 'ほぼ自由電子！イオン化直前' }
-        return { ko: '들뜬상태! 에너지를 흡수한 전자야', en: 'Excited state! Electron that absorbed energy', ja: '励起状態！エネルギーを吸収した電子' }
+        if (n === 1)
+            return {
+                ko: '바닥상태! 가장 안정한 전자야',
+                en: 'Ground state! Most stable electron',
+                ja: '基底状態！最も安定した電子',
+            }
+        if (n === 2)
+            return {
+                ko: '발머 계열 시작! 가시광선을 방출해',
+                en: 'Balmer series starts! Emits visible light',
+                ja: 'バルマー系列開始！可視光を放出',
+            }
+        if (n === 3)
+            return {
+                ko: '파셴 계열! 적외선 영역이야',
+                en: 'Paschen series! Infrared region',
+                ja: 'パッシェン系列！赤外線領域',
+            }
+        if (E > -1)
+            return {
+                ko: '거의 자유 전자! 이온화 직전이야',
+                en: 'Nearly free electron! About to ionize',
+                ja: 'ほぼ自由電子！イオン化直前',
+            }
+        return {
+            ko: '들뜬상태! 에너지를 흡수한 전자야',
+            en: 'Excited state! Electron that absorbed energy',
+            ja: '励起状態！エネルギーを吸収した電子',
+        }
     },
     discoveries: [
         {

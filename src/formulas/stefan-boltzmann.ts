@@ -3,7 +3,11 @@ import { colors } from '../styles/colors'
 
 export const stefanBoltzmann: Formula = {
     id: 'stefan-boltzmann',
-    name: { ko: '스테판-볼츠만 법칙', en: 'Stefan-Boltzmann Law', ja: 'シュテファン・ボルツマンの法則' },
+    name: {
+        ko: '스테판-볼츠만 법칙',
+        en: 'Stefan-Boltzmann Law',
+        ja: 'シュテファン・ボルツマンの法則',
+    },
     expression: 'P = σAT⁴',
     description: {
         ko: '흑체가 방출하는 복사 에너지',
@@ -111,24 +115,64 @@ export const stefanBoltzmann: Formula = {
     },
     getInsight: (vars) => {
         const P = vars['P']
-        if (P < 1000) return { ko: '촛불 정도의 복사 에너지야', en: 'Candle level radiant energy', ja: 'ろうそく程度の放射エネルギーだよ' }
-        if (P < 10000) return { ko: '전구 정도의 복사 에너지야', en: 'Light bulb level radiant energy', ja: '電球程度の放射エネルギーだよ' }
-        if (P < 50000) return { ko: '히터 정도의 복사 에너지야', en: 'Heater level radiant energy', ja: 'ヒーター程度の放射エネルギーだよ' }
-        if (P < 200000) return { ko: '용광로 정도의 복사 에너지야', en: 'Furnace level radiant energy', ja: '溶鉱炉程度の放射エネルギーだよ' }
-        return { ko: '태양급 복사 에너지!', en: 'Sun level radiant energy!', ja: '太陽級の放射エネルギー！' }
+        if (P < 1000)
+            return {
+                ko: '촛불 정도의 복사 에너지야',
+                en: 'Candle level radiant energy',
+                ja: 'ろうそく程度の放射エネルギーだよ',
+            }
+        if (P < 10000)
+            return {
+                ko: '전구 정도의 복사 에너지야',
+                en: 'Light bulb level radiant energy',
+                ja: '電球程度の放射エネルギーだよ',
+            }
+        if (P < 50000)
+            return {
+                ko: '히터 정도의 복사 에너지야',
+                en: 'Heater level radiant energy',
+                ja: 'ヒーター程度の放射エネルギーだよ',
+            }
+        if (P < 200000)
+            return {
+                ko: '용광로 정도의 복사 에너지야',
+                en: 'Furnace level radiant energy',
+                ja: '溶鉱炉程度の放射エネルギーだよ',
+            }
+        return {
+            ko: '태양급 복사 에너지!',
+            en: 'Sun level radiant energy!',
+            ja: '太陽級の放射エネルギー！',
+        }
     },
     discoveries: [
         {
             id: 'sun-temperature',
-            mission: { ko: '온도 T를 1000K 이상으로 올려봐!', en: 'Raise temperature T above 1000K!', ja: '温度Tを1000K以上に上げてみて！' },
-            result: { ko: '온도가 2배면 복사 에너지는 16배! T⁴에 비례하기 때문이야.', en: 'Double the temperature means 16x more radiation! Because power scales with T to the 4th.', ja: '温度が2倍なら放射エネルギーは16倍！T⁴に比例するからだよ。' },
+            mission: {
+                ko: '온도 T를 1000K 이상으로 올려봐!',
+                en: 'Raise temperature T above 1000K!',
+                ja: '温度Tを1000K以上に上げてみて！',
+            },
+            result: {
+                ko: '온도가 2배면 복사 에너지는 16배! T⁴에 비례하기 때문이야.',
+                en: 'Double the temperature means 16x more radiation! Because power scales with T to the 4th.',
+                ja: '温度が2倍なら放射エネルギーは16倍！T⁴に比例するからだよ。',
+            },
             icon: '☀️',
             condition: (vars) => vars['T'] >= 1000,
         },
         {
             id: 'room-temperature',
-            mission: { ko: '온도 T를 350K 이하로 낮춰봐! (상온 근처)', en: 'Lower temperature T below 350K! (near room temperature)', ja: '温度Tを350K以下に下げてみて！（室温付近）' },
-            result: { ko: '상온 물체도 적외선을 방출해! 열화상 카메라가 작동하는 원리야.', en: 'Room temperature objects emit infrared! This is how thermal cameras work.', ja: '室温の物体も赤外線を放出する！サーモカメラが動作する原理だよ。' },
+            mission: {
+                ko: '온도 T를 350K 이하로 낮춰봐! (상온 근처)',
+                en: 'Lower temperature T below 350K! (near room temperature)',
+                ja: '温度Tを350K以下に下げてみて！（室温付近）',
+            },
+            result: {
+                ko: '상온 물체도 적외선을 방출해! 열화상 카메라가 작동하는 원리야.',
+                en: 'Room temperature objects emit infrared! This is how thermal cameras work.',
+                ja: '室温の物体も赤外線を放出する！サーモカメラが動作する原理だよ。',
+            },
             icon: '📷',
             condition: (vars) => vars['T'] <= 350,
         },

@@ -144,12 +144,7 @@ export class AngularMomentumScene extends BaseScene {
         this.drawMomentumMeter(g, L, I, omega)
     }
 
-    private drawRotationIndicator(
-        g: Graphics,
-        x: number,
-        y: number,
-        omega: number
-    ): void {
+    private drawRotationIndicator(g: Graphics, x: number, y: number, omega: number): void {
         const radius = 35
 
         // Background circle
@@ -188,12 +183,7 @@ export class AngularMomentumScene extends BaseScene {
         g.stroke({ color: 0xffffff, width: 2, alpha: 0.5 })
     }
 
-    private drawMomentumMeter(
-        g: Graphics,
-        L: number,
-        I: number,
-        omega: number
-    ): void {
+    private drawMomentumMeter(g: Graphics, L: number, I: number, omega: number): void {
         const meterX = this.centerX - 70
         const meterY = this.height - 35
         const meterWidth = 140
@@ -208,8 +198,7 @@ export class AngularMomentumScene extends BaseScene {
         const fillWidth = meterWidth * fillRatio
 
         if (fillWidth > 0) {
-            const fillColor =
-                omega > 20 ? 0xe74c3c : omega > 10 ? 0xf39c12 : 0x5dade2
+            const fillColor = omega > 20 ? 0xe74c3c : omega > 10 ? 0xf39c12 : 0x5dade2
             g.roundRect(meterX, meterY, fillWidth, meterHeight, 5)
             g.fill({ color: fillColor, alpha: 0.85 })
         }

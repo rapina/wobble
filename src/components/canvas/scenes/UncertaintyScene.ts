@@ -80,7 +80,10 @@ export class UncertaintyScene extends BaseScene {
         // Clamp to reasonable bounds
         const maxOffset = positionWidth * 0.8
         this.particleOffsetX = Math.max(-maxOffset, Math.min(maxOffset, this.particleOffsetX))
-        this.particleOffsetY = Math.max(-maxOffset * 0.5, Math.min(maxOffset * 0.5, this.particleOffsetY))
+        this.particleOffsetY = Math.max(
+            -maxOffset * 0.5,
+            Math.min(maxOffset * 0.5, this.particleOffsetY)
+        )
 
         // Expression based on uncertainty
         let expression: WobbleExpression = 'happy'
@@ -140,7 +143,9 @@ export class UncertaintyScene extends BaseScene {
         for (let x = 0; x <= this.width; x += 2) {
             const distFromCenter = x - this.centerX
             // Gaussian envelope
-            const envelope = Math.exp(-(distFromCenter * distFromCenter) / (positionWidth * positionWidth * 2))
+            const envelope = Math.exp(
+                -(distFromCenter * distFromCenter) / (positionWidth * positionWidth * 2)
+            )
 
             // Wave oscillation
             const wavelength = 30 + positionWidth * 0.5
@@ -155,7 +160,9 @@ export class UncertaintyScene extends BaseScene {
         // Draw probability density |ψ|²
         for (let x = 0; x <= this.width; x += 3) {
             const distFromCenter = x - this.centerX
-            const envelope = Math.exp(-(distFromCenter * distFromCenter) / (positionWidth * positionWidth * 2))
+            const envelope = Math.exp(
+                -(distFromCenter * distFromCenter) / (positionWidth * positionWidth * 2)
+            )
 
             const wavelength = 30 + positionWidth * 0.5
             const phase = (x / wavelength) * Math.PI * 2 - this.time * 4
@@ -171,17 +178,29 @@ export class UncertaintyScene extends BaseScene {
 
         // Draw envelope outline
         g.moveTo(this.centerX - positionWidth * 3, centerY)
-        for (let x = this.centerX - positionWidth * 3; x <= this.centerX + positionWidth * 3; x += 2) {
+        for (
+            let x = this.centerX - positionWidth * 3;
+            x <= this.centerX + positionWidth * 3;
+            x += 2
+        ) {
             const distFromCenter = x - this.centerX
-            const envelope = Math.exp(-(distFromCenter * distFromCenter) / (positionWidth * positionWidth * 2))
+            const envelope = Math.exp(
+                -(distFromCenter * distFromCenter) / (positionWidth * positionWidth * 2)
+            )
             g.lineTo(x, centerY - amplitude * envelope)
         }
         g.stroke({ color: pixiColors.distance, width: 1.5, alpha: 0.5 })
 
         g.moveTo(this.centerX - positionWidth * 3, centerY)
-        for (let x = this.centerX - positionWidth * 3; x <= this.centerX + positionWidth * 3; x += 2) {
+        for (
+            let x = this.centerX - positionWidth * 3;
+            x <= this.centerX + positionWidth * 3;
+            x += 2
+        ) {
             const distFromCenter = x - this.centerX
-            const envelope = Math.exp(-(distFromCenter * distFromCenter) / (positionWidth * positionWidth * 2))
+            const envelope = Math.exp(
+                -(distFromCenter * distFromCenter) / (positionWidth * positionWidth * 2)
+            )
             g.lineTo(x, centerY + amplitude * envelope)
         }
         g.stroke({ color: pixiColors.distance, width: 1.5, alpha: 0.5 })
@@ -208,7 +227,9 @@ export class UncertaintyScene extends BaseScene {
             // Gaussian distribution width is proportional to momentum spread
             const normalizedSpread = momentumSpread / 150
             const gaussianWidth = 0.3 + normalizedSpread * 0.7
-            const height = Math.exp(-(distFromCenter * distFromCenter) / (gaussianWidth * gaussianWidth * 2))
+            const height = Math.exp(
+                -(distFromCenter * distFromCenter) / (gaussianWidth * gaussianWidth * 2)
+            )
 
             const barActualHeight = height * barHeight
             const alpha = 0.3 + height * 0.5
@@ -222,7 +243,12 @@ export class UncertaintyScene extends BaseScene {
         g.fill({ color: 0x000000, alpha: 0.3 })
     }
 
-    private drawIndicators(positionWidth: number, momentumSpread: number, Dx: number, Dp: number): void {
+    private drawIndicators(
+        positionWidth: number,
+        momentumSpread: number,
+        Dx: number,
+        Dp: number
+    ): void {
         const g = this.indicatorGraphics
         g.clear()
 

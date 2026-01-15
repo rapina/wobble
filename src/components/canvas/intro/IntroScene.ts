@@ -72,7 +72,9 @@ class MiniParticleDisplay extends Container {
 
         // Create bouncing particles
         const numParticles = 8
-        const colors = [0x4ecdc4, 0x45b7d1, 0x96ceb4, 0xffeaa7, 0xff6b6b, 0xa29bfe, 0xfd79a8, 0x74b9ff]
+        const colors = [
+            0x4ecdc4, 0x45b7d1, 0x96ceb4, 0xffeaa7, 0xff6b6b, 0xa29bfe, 0xfd79a8, 0x74b9ff,
+        ]
         const shapes: ('circle' | 'square' | 'triangle')[] = ['circle', 'square', 'triangle']
 
         for (let i = 0; i < numParticles; i++) {
@@ -193,11 +195,23 @@ class MiniParticleDisplay extends Container {
         const thickness = 4
 
         // Container walls with glow effect
-        g.roundRect(padding, padding, this.displayWidth - padding * 2, this.displayHeight - padding * 2, 8)
+        g.roundRect(
+            padding,
+            padding,
+            this.displayWidth - padding * 2,
+            this.displayHeight - padding * 2,
+            8
+        )
         g.stroke({ color: 0x4ecdc4, width: thickness, alpha: 0.6 })
 
         // Inner glow
-        g.roundRect(padding + 2, padding + 2, this.displayWidth - padding * 2 - 4, this.displayHeight - padding * 2 - 4, 6)
+        g.roundRect(
+            padding + 2,
+            padding + 2,
+            this.displayWidth - padding * 2 - 4,
+            this.displayHeight - padding * 2 - 4,
+            6
+        )
         g.stroke({ color: 0x4ecdc4, width: 1, alpha: 0.3 })
     }
 }
@@ -216,7 +230,12 @@ class MiniGameDisplay extends Container {
         super()
         this.displayWidth = width
         this.displayHeight = height
-        this.player = new Wobble({ size: 18, color: 0xf5b041, shape: 'circle', expression: 'excited' })
+        this.player = new Wobble({
+            size: 18,
+            color: 0xf5b041,
+            shape: 'circle',
+            expression: 'excited',
+        })
         this.setup()
     }
 

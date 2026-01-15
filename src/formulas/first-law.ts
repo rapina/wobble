@@ -140,10 +140,34 @@ export const firstLaw: Formula = {
     ],
     getInsight: (vars) => {
         const dU = vars['ΔU']
-        if (dU < -200) return { ko: '급격히 식는 중이야! 단열팽창!', en: 'Cooling rapidly! Adiabatic expansion!', ja: '急激に冷えている！断熱膨張だよ！' }
-        if (dU < 0) return { ko: '온도가 내려가고 있어', en: 'Temperature is dropping', ja: '温度が下がっているよ' }
-        if (dU < 100) return { ko: '에너지 변화가 작아', en: 'Small energy change', ja: 'エネルギー変化が小さいよ' }
-        if (dU < 300) return { ko: '온도가 올라가고 있어', en: 'Temperature is rising', ja: '温度が上がっているよ' }
-        return { ko: '급격히 뜨거워지고 있어!', en: 'Heating up rapidly!', ja: '急激に熱くなっている！' }
+        if (dU < -200)
+            return {
+                ko: '급격히 식는 중이야! 단열팽창!',
+                en: 'Cooling rapidly! Adiabatic expansion!',
+                ja: '急激に冷えている！断熱膨張だよ！',
+            }
+        if (dU < 0)
+            return {
+                ko: '온도가 내려가고 있어',
+                en: 'Temperature is dropping',
+                ja: '温度が下がっているよ',
+            }
+        if (dU < 100)
+            return {
+                ko: '에너지 변화가 작아',
+                en: 'Small energy change',
+                ja: 'エネルギー変化が小さいよ',
+            }
+        if (dU < 300)
+            return {
+                ko: '온도가 올라가고 있어',
+                en: 'Temperature is rising',
+                ja: '温度が上がっているよ',
+            }
+        return {
+            ko: '급격히 뜨거워지고 있어!',
+            en: 'Heating up rapidly!',
+            ja: '急激に熱くなっている！',
+        }
     },
 }

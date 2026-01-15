@@ -46,14 +46,18 @@ export function FormulaExplanation({ formulaIds, onBack, onPlayAgain }: FormulaE
                     <WobbleDisplay size={50} shape="circle" expression="happy" />
                     <div>
                         <h2 className="text-xl font-bold text-white">
-                            {lang === 'ko' ? '오늘 배운 공식' : lang === 'ja' ? '今日学んだ公式' : 'Physics You Used'}
+                            {lang === 'ko'
+                                ? '오늘 배운 공식'
+                                : lang === 'ja'
+                                  ? '今日学んだ公式'
+                                  : 'Physics You Used'}
                         </h2>
                         <p className="text-white/60 text-sm">
                             {lang === 'ko'
                                 ? '방금 미니게임에서 사용된 공식이에요!'
                                 : lang === 'ja'
-                                ? 'ミニゲームで使った公式だよ！'
-                                : 'These formulas powered your game!'}
+                                  ? 'ミニゲームで使った公式だよ！'
+                                  : 'These formulas powered your game!'}
                         </p>
                     </div>
                 </div>
@@ -86,15 +90,17 @@ export function FormulaExplanation({ formulaIds, onBack, onPlayAgain }: FormulaE
                             </div>
 
                             {/* Description */}
-                            <p className="text-white/70 text-sm">
-                                {t(formula.description, lang)}
-                            </p>
+                            <p className="text-white/70 text-sm">{t(formula.description, lang)}</p>
 
                             {/* Application hint */}
                             {formula.applications && (
                                 <div className="mt-3 pt-3 border-t border-white/10">
                                     <p className="text-white/50 text-xs mb-1">
-                                        {lang === 'ko' ? '실생활 적용' : lang === 'ja' ? '実生活での応用' : 'Real-world use'}
+                                        {lang === 'ko'
+                                            ? '실생활 적용'
+                                            : lang === 'ja'
+                                              ? '実生活での応用'
+                                              : 'Real-world use'}
                                     </p>
                                     <p className="text-white/60 text-sm">
                                         {tArray(formula.applications, lang)[0]}
@@ -118,7 +124,9 @@ export function FormulaExplanation({ formulaIds, onBack, onPlayAgain }: FormulaE
                         )}
                     >
                         <Home className="w-5 h-5" />
-                        <span>{lang === 'ko' ? '메뉴로' : lang === 'ja' ? 'メニュー' : 'Menu'}</span>
+                        <span>
+                            {lang === 'ko' ? '메뉴로' : lang === 'ja' ? 'メニュー' : 'Menu'}
+                        </span>
                     </button>
 
                     <button
@@ -133,7 +141,13 @@ export function FormulaExplanation({ formulaIds, onBack, onPlayAgain }: FormulaE
                         )}
                     >
                         <RotateCcw className="w-5 h-5" />
-                        <span>{lang === 'ko' ? '다시 하기' : lang === 'ja' ? 'もう一度' : 'Play Again'}</span>
+                        <span>
+                            {lang === 'ko'
+                                ? '다시 하기'
+                                : lang === 'ja'
+                                  ? 'もう一度'
+                                  : 'Play Again'}
+                        </span>
                     </button>
                 </div>
             </div>

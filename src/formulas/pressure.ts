@@ -143,10 +143,34 @@ export const pressure: Formula = {
     ],
     getInsight: (vars) => {
         const P = vars['P']
-        if (P < 50) return { ko: '손바닥으로 누르는 정도야', en: 'Like pressing with palm', ja: '手のひらで押す程度だよ' }
-        if (P < 200) return { ko: '손가락으로 누르는 힘이야', en: 'Like pressing with finger', ja: '指で押す力だよ' }
-        if (P < 500) return { ko: '볼펜 끝 압력이야', en: 'Ballpoint pen tip pressure', ja: 'ボールペンの先の圧力だよ' }
-        if (P < 1000) return { ko: '압정 끝 압력이야!', en: 'Thumbtack tip pressure!', ja: '画びょうの先の圧力だよ！' }
-        return { ko: '칼날 수준의 압력!', en: 'Knife blade level pressure!', ja: '刃物レベルの圧力だよ！' }
+        if (P < 50)
+            return {
+                ko: '손바닥으로 누르는 정도야',
+                en: 'Like pressing with palm',
+                ja: '手のひらで押す程度だよ',
+            }
+        if (P < 200)
+            return {
+                ko: '손가락으로 누르는 힘이야',
+                en: 'Like pressing with finger',
+                ja: '指で押す力だよ',
+            }
+        if (P < 500)
+            return {
+                ko: '볼펜 끝 압력이야',
+                en: 'Ballpoint pen tip pressure',
+                ja: 'ボールペンの先の圧力だよ',
+            }
+        if (P < 1000)
+            return {
+                ko: '압정 끝 압력이야!',
+                en: 'Thumbtack tip pressure!',
+                ja: '画びょうの先の圧力だよ！',
+            }
+        return {
+            ko: '칼날 수준의 압력!',
+            en: 'Knife blade level pressure!',
+            ja: '刃物レベルの圧力だよ！',
+        }
     },
 }

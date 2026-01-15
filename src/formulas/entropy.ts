@@ -142,10 +142,34 @@ export const entropy: Formula = {
     ],
     getInsight: (vars) => {
         const dS = vars['ΔS']
-        if (dS < 1) return { ko: '질서가 거의 유지돼', en: 'Order mostly maintained', ja: '秩序がほぼ維持されている' }
-        if (dS < 2) return { ko: '약간의 무질서 증가', en: 'Slight increase in disorder', ja: '無秩序が少し増加' }
-        if (dS < 4) return { ko: '무질서가 증가하고 있어', en: 'Disorder is increasing', ja: '無秩序が増加している' }
-        if (dS < 6) return { ko: '꽤 무질서해지고 있어!', en: 'Getting quite disordered!', ja: 'かなり無秩序になっている！' }
-        return { ko: '엄청난 엔트로피 증가!', en: 'Massive entropy increase!', ja: '莫大なエントロピー増加！' }
+        if (dS < 1)
+            return {
+                ko: '질서가 거의 유지돼',
+                en: 'Order mostly maintained',
+                ja: '秩序がほぼ維持されている',
+            }
+        if (dS < 2)
+            return {
+                ko: '약간의 무질서 증가',
+                en: 'Slight increase in disorder',
+                ja: '無秩序が少し増加',
+            }
+        if (dS < 4)
+            return {
+                ko: '무질서가 증가하고 있어',
+                en: 'Disorder is increasing',
+                ja: '無秩序が増加している',
+            }
+        if (dS < 6)
+            return {
+                ko: '꽤 무질서해지고 있어!',
+                en: 'Getting quite disordered!',
+                ja: 'かなり無秩序になっている！',
+            }
+        return {
+            ko: '엄청난 엔트로피 증가!',
+            en: 'Massive entropy increase!',
+            ja: '莫大なエントロピー増加！',
+        }
     },
 }

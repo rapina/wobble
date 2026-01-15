@@ -81,7 +81,7 @@ export const STAGES: StageConfig[] = [
         },
         formula: 'hooke',
         bgColor: 0x4d3d5a, // Balatro purple-tinted felt
-        particleColor: 0xFF6B9D, // Balatro pink
+        particleColor: 0xff6b9d, // Balatro pink
         description: 'F = -kx',
         trait: '반발 장벽이 모든 것을 튕겨낸다',
         tip: '장벽에 부딪히면 튕겨납니다',

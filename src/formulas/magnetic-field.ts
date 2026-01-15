@@ -121,8 +121,16 @@ export const magneticField: Formula = {
     discoveries: [
         {
             id: 'close-field',
-            mission: { ko: 'r을 최소로 줄여서 강한 자기장을 만들어봐', en: 'Minimize r to create strong magnetic field', ja: 'rを最小にして強い磁場を作ってみて' },
-            result: { ko: '가까울수록 자기장이 강해! 전자석 코어가 중요한 이유!', en: 'Closer = stronger field! This is why electromagnet cores matter!', ja: '近いほど磁場が強い！電磁石のコアが重要な理由！' },
+            mission: {
+                ko: 'r을 최소로 줄여서 강한 자기장을 만들어봐',
+                en: 'Minimize r to create strong magnetic field',
+                ja: 'rを最小にして強い磁場を作ってみて',
+            },
+            result: {
+                ko: '가까울수록 자기장이 강해! 전자석 코어가 중요한 이유!',
+                en: 'Closer = stronger field! This is why electromagnet cores matter!',
+                ja: '近いほど磁場が強い！電磁石のコアが重要な理由！',
+            },
             icon: '🧲',
             condition: (vars) => {
                 const r = vars['r'] || 10
@@ -132,8 +140,16 @@ export const magneticField: Formula = {
         },
         {
             id: 'high-current',
-            mission: { ko: 'I를 최대로 올려봐', en: 'Maximize current I', ja: '電流Iを最大にしてみて' },
-            result: { ko: '전류가 클수록 자기장도 강해져!', en: 'More current = stronger magnetic field!', ja: '電流が大きいほど磁場も強くなる！' },
+            mission: {
+                ko: 'I를 최대로 올려봐',
+                en: 'Maximize current I',
+                ja: '電流Iを最大にしてみて',
+            },
+            result: {
+                ko: '전류가 클수록 자기장도 강해져!',
+                en: 'More current = stronger magnetic field!',
+                ja: '電流が大きいほど磁場も強くなる！',
+            },
             icon: '⚡',
             condition: (vars) => {
                 const I = vars['I'] || 10
@@ -142,8 +158,16 @@ export const magneticField: Formula = {
         },
         {
             id: 'earth-field',
-            mission: { ko: '지구 자기장(~50μT) 정도의 세기를 만들어봐', en: "Create Earth's magnetic field strength (~50μT)", ja: '地球の磁場（〜50μT）程度の強さを作ってみて' },
-            result: { ko: '지구 자기장은 나침반을 움직이게 하는 힘!', en: "Earth's field is what makes compasses work!", ja: '地球の磁場がコンパスを動かす力！' },
+            mission: {
+                ko: '지구 자기장(~50μT) 정도의 세기를 만들어봐',
+                en: "Create Earth's magnetic field strength (~50μT)",
+                ja: '地球の磁場（〜50μT）程度の強さを作ってみて',
+            },
+            result: {
+                ko: '지구 자기장은 나침반을 움직이게 하는 힘!',
+                en: "Earth's field is what makes compasses work!",
+                ja: '地球の磁場がコンパスを動かす力！',
+            },
             icon: '🌍',
             condition: (vars) => {
                 const B = vars['B'] || 20
