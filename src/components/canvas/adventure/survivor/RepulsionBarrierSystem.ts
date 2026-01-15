@@ -26,6 +26,8 @@ interface RepulsionBarrierConfig {
     bounceStrength: number
     rotationSpeed: number
     rotationInterval: number
+    spawnDistance: number // distance from player when spawned
+    maxDistance: number // respawn if further than this from player
 }
 
 const DEFAULT_CONFIG: RepulsionBarrierConfig = {
@@ -36,6 +38,8 @@ const DEFAULT_CONFIG: RepulsionBarrierConfig = {
     bounceStrength: 1.2,
     rotationSpeed: 0.5,
     rotationInterval: 4,
+    spawnDistance: 200, // spawn 200px from player
+    maxDistance: 400, // respawn if > 400px away
 }
 
 export class RepulsionBarrierSystem {
@@ -45,6 +49,10 @@ export class RepulsionBarrierSystem {
     private graphics: Graphics
     private isActive = false
     private animTime = 0
+
+    // Player position reference
+    private playerX = 0
+    private playerY = 0
 
     constructor(context: RepulsionBarrierSystemContext, config?: Partial<RepulsionBarrierConfig>) {
         this.context = context
@@ -59,8 +67,10 @@ export class RepulsionBarrierSystem {
         this.context = { ...this.context, ...context }
     }
 
-    activate(): void {
+    activate(playerX: number, playerY: number): void {
         this.isActive = true
+        this.playerX = playerX
+        this.playerY = playerY
         this.graphics.visible = true
         this.createBarriers()
     }
@@ -81,34 +91,45 @@ export class RepulsionBarrierSystem {
 
     private createBarriers(): void {
         this.barriers = []
-        const margin = 60
 
         for (let i = 0; i < this.config.barrierCount; i++) {
-            const width = this.config.minWidth + Math.random() * (this.config.maxWidth - this.config.minWidth)
-            const x = margin + Math.random() * (this.context.width - margin * 2)
-            const y = margin + Math.random() * (this.context.height - margin * 2)
-            const angle = Math.random() * Math.PI * 2
-
-            this.barriers.push({
-                x,
-                y,
-                width,
-                height: this.config.height,
-                angle,
-                targetAngle: angle,
-                bounceStrength: this.config.bounceStrength,
-                phase: Math.random() * Math.PI * 2,
-                pulsePhase: Math.random() * Math.PI * 2,
-            })
+            this.barriers.push(this.createBarrier())
         }
     }
 
-    update(deltaSeconds: number): void {
+    private createBarrier(): RepulsionBarrier {
+        const width = this.config.minWidth + Math.random() * (this.config.maxWidth - this.config.minWidth)
+        // Spawn at random angle around player (infinite map)
+        const spawnAngle = Math.random() * Math.PI * 2
+        const distance = this.config.spawnDistance * (0.5 + Math.random() * 0.5)
+        const x = this.playerX + Math.cos(spawnAngle) * distance
+        const y = this.playerY + Math.sin(spawnAngle) * distance
+        const angle = Math.random() * Math.PI * 2
+
+        return {
+            x,
+            y,
+            width,
+            height: this.config.height,
+            angle,
+            targetAngle: angle,
+            bounceStrength: this.config.bounceStrength,
+            phase: Math.random() * Math.PI * 2,
+            pulsePhase: Math.random() * Math.PI * 2,
+        }
+    }
+
+    update(deltaSeconds: number, playerX: number, playerY: number): void {
         if (!this.isActive) return
+
+        // Track player position
+        this.playerX = playerX
+        this.playerY = playerY
 
         this.animTime += deltaSeconds
 
-        for (const barrier of this.barriers) {
+        for (let i = 0; i < this.barriers.length; i++) {
+            const barrier = this.barriers[i]
             barrier.phase += deltaSeconds
             barrier.pulsePhase += deltaSeconds * 3
 
@@ -121,6 +142,14 @@ export class RepulsionBarrierSystem {
             // Rotate toward target angle
             const angleDiff = barrier.targetAngle - barrier.angle
             barrier.angle += angleDiff * this.config.rotationSpeed * deltaSeconds
+
+            // Respawn if too far from player (infinite map)
+            const dx = barrier.x - playerX
+            const dy = barrier.y - playerY
+            const dist = Math.sqrt(dx * dx + dy * dy)
+            if (dist > this.config.maxDistance) {
+                this.barriers[i] = this.createBarrier()
+            }
         }
 
         this.draw()

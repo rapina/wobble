@@ -53,47 +53,72 @@ uniform vec3 uStageTint;
 uniform vec2 uCameraPos;
 uniform float uWorldScale; // pixels per unit
 
+// Grid control
+uniform int uGridEnabled; // 0=disabled, 1=enabled
+
+// Player position for gravity distortion (world coordinates)
+uniform vec2 uPlayerPos;
+uniform float uPlayerGravityStrength; // How much player bends the grid
+
+// Debug offset for player gravity center (to fix coordinate mismatch)
+uniform vec2 uGravityOffset;
+
+// Debug mode - show gravity center position
+uniform int uDebugMode; // 0=off, 1=show gravity centers
+
+// Mass system - multiple gravity sources (fixed size for WebGL compatibility)
+uniform vec4 uGravitySources[8]; // xy = position, z = mass, w = enabled (1/0)
+uniform int uGravitySourceCount; // Active source count
+
 // ==================== UTILITY FUNCTIONS ====================
 
 #define PI 3.14159265359
 #define TAU 6.28318530718
 
-// Convert screen UV to world UV (for world-space effects)
+// Convert screen UV to camera-relative coordinates
+// Screen center (0.5, 0.5) maps to (0, 0)
 vec2 screenToWorld(vec2 screenUV) {
-    // Screen UV is 0-1, convert to world coordinates
-    // Center the UV, scale by screen size, add camera offset
-    vec2 worldPos = (screenUV - 0.5) * uDimensions + uCameraPos;
-    // Normalize to reasonable scale for effects (divide by world scale)
-    return worldPos / uWorldScale;
+    // Screen UV is 0-1, convert to camera-relative pixel coords
+    // (0.5, 0.5) -> (0, 0), edges depend on screen size
+    vec2 relativePos = (screenUV - 0.5) * uDimensions;
+    // Normalize to reasonable scale for effects
+    return relativePos / uWorldScale;
 }
 
-// Diamond grid pattern - world-space card suit diamonds
-float diamondGrid(vec2 worldUV, float time) {
-    // Grid parameters - larger scale for visibility
-    float gridSize = 0.08; // Size of each grid cell (smaller = more diamonds)
-    float diamondSize = 0.06; // Size of diamond shape (larger = bigger diamonds)
+// Diagonal grid for spacetime visualization
+// Wide diamonds like floor viewed from above
+float spaceGrid(vec2 uv, float t, float dist) {
+    float sp = 0.12;
+    float ang = 0.35;
+    // Horizontal base with slight tilt - creates wide diamonds
+    float c1 = uv.y + uv.x * ang;
+    float c2 = uv.y - uv.x * ang;
+    float m1 = mod(c1, sp);
+    float m2 = mod(c2, sp);
+    float d1 = min(m1, sp - m1);
+    float d2 = min(m2, sp - m2);
+    float lw = 0.003;
+    float l1 = smoothstep(lw * 2.0, lw * 0.3, d1);
+    float l2 = smoothstep(lw * 2.0, lw * 0.3, d2);
+    float g = max(l1, l2);
+    g += l1 * l2 * 0.5;
+    return g * (0.3 + dist * 0.35);
+}
 
-    // Staggered grid (like brick pattern)
-    vec2 gridUV = worldUV / gridSize;
-    float rowOffset = mod(floor(gridUV.y), 2.0) * 0.5;
-    gridUV.x += rowOffset;
+// Apply gravity distortion - pulls grid toward mass center
+vec2 applyGravityDistortion(vec2 uv, vec2 gravityCenter, float strength, float time) {
+    vec2 toCenter = uv - gravityCenter;
+    float dist = length(toCenter);
 
-    // Get cell coordinates
-    vec2 cellId = floor(gridUV);
-    vec2 cellUV = fract(gridUV) - 0.5; // Center in cell (-0.5 to 0.5)
+    // Inverse square falloff (like real gravity)
+    float pull = strength / (dist * dist + 0.2);
+    pull = min(pull, 0.4); // Prevent extreme distortion
 
-    // Diamond shape (rotated square)
-    float diamond = abs(cellUV.x) + abs(cellUV.y);
+    // Pull UV toward gravity center
+    vec2 pullDir = normalize(toCenter + 0.001);
+    float pullAmount = pull * 0.08;
 
-    // Pulsing based on world position and time
-    float pulse = sin(time * 0.5 + cellId.x * 0.3 + cellId.y * 0.4) * 0.5 + 0.5;
-    float size = diamondSize * (0.7 + pulse * 0.5);
-
-    // Diamond mask with soft edge
-    float mask = smoothstep(size + 0.02, size, diamond);
-
-    // Stronger visibility
-    return mask * (0.4 + pulse * 0.6);
+    return uv - pullDir * pullAmount;
 }
 
 // Smooth minimum for organic blending
@@ -446,12 +471,117 @@ void main() {
     // Sample main color
     vec4 color = texture(uTexture, uv);
 
-    // ==================== DIAMOND GRID PATTERN (World-space) ====================
+    // ==================== SPACE GRID (All stages) ====================
+    // Only render grid if enabled (for background layer only)
+    if (uGridEnabled == 1) {
+        // Calculate grid UV in WORLD space (adds camera position so grid scrolls)
+        // Camera position makes the grid move with the world
+        vec2 cameraOffset = uCameraPos / uWorldScale;
+        vec2 gridWorldUV = (worldUV + cameraOffset) * 5.0; // Scale for visible grid
+        float gridDistortion = 0.0;
 
-    // Diamond grid overlay - pulsing card suit pattern
-    // Use screen coordinates for reliable visibility
-    float diamonds = diamondGrid(vTextureCoord * 10.0, uTime);
-    color.rgb += vec3(1.0, 0.8, 0.3) * diamonds * 0.3; // Bright gold, very visible
+        // === PLAYER GRAVITY - grid bends around player ===
+        // Player position is passed in world coordinates
+        if (uPlayerGravityStrength > 0.0) {
+            // Convert player world position to grid UV space (same scale as gridWorldUV)
+            // Apply debug offset to fix coordinate mismatch
+            vec2 playerGridPos = (uPlayerPos / uWorldScale) * 5.0 + uGravityOffset;
+
+            // Apply gravity distortion centered on player
+            gridWorldUV = applyGravityDistortion(gridWorldUV, playerGridPos, uPlayerGravityStrength, uTime);
+            gridDistortion += uPlayerGravityStrength * 0.5;
+        }
+
+        // === ALL MASS SOURCES - enemies, black holes, etc. ===
+        // Sources are passed in world coordinates
+        for (int i = 0; i < 8; i++) {
+            if (i >= uGravitySourceCount) break;
+
+            vec4 source = uGravitySources[i];
+            if (source.w > 0.5) { // Check if enabled
+                // source.xy is world position, convert to grid UV space
+                // Apply same debug offset as player
+                vec2 sourceGridPos = (source.xy / uWorldScale) * 5.0 + uGravityOffset;
+                float mass = source.z;
+
+                // Apply gravity distortion from this source
+                gridWorldUV = applyGravityDistortion(gridWorldUV, sourceGridPos, mass, uTime);
+                gridDistortion += mass * 0.3;
+            }
+        }
+
+        // Apply stage-specific gravity distortion to grid
+        // All positions relative to player (use actual player world position with offset)
+        vec2 playerWorldPos = (uPlayerPos / uWorldScale) * 5.0 + uGravityOffset;
+
+        if (uStageMode == 1) { // Gravity Wells - multiple gravity points orbiting player
+            vec2 grav1 = playerWorldPos + vec2(sin(uTime * 0.2) * 2.0, cos(uTime * 0.15) * 1.5);
+            vec2 grav2 = playerWorldPos + vec2(cos(uTime * 0.18) * 1.5, sin(uTime * 0.22) * 2.0);
+            gridWorldUV = applyGravityDistortion(gridWorldUV, grav1, 0.15, uTime);
+            gridWorldUV = applyGravityDistortion(gridWorldUV, grav2, 0.1, uTime);
+            gridDistortion = 0.4;
+        } else if (uStageMode == 4) { // Vortex - singularity at player position
+            vec2 vortexCenter = playerWorldPos;
+            gridWorldUV = applyGravityDistortion(gridWorldUV, vortexCenter, 0.25, uTime);
+            // Add spiral twist relative to vortex center
+            vec2 fromCenter = gridWorldUV - vortexCenter;
+            float dist = length(fromCenter);
+            float twist = 0.3 / (dist + 0.5);
+            float angle = atan(fromCenter.y, fromCenter.x) + twist * sin(uTime * 0.5);
+            gridWorldUV = vortexCenter + vec2(cos(angle), sin(angle)) * dist;
+            gridDistortion = 0.6;
+        } else if (uStageMode == 2) { // Elastic - rippling grid from player
+            vec2 fromPlayer = gridWorldUV - playerWorldPos;
+            float ripple = sin(length(fromPlayer) * 8.0 - uTime * 3.0) * 0.03;
+            gridWorldUV += normalize(fromPlayer + 0.001) * ripple;
+            gridDistortion = 0.2;
+        } else if (uStageMode == 3) { // Momentum - flowing distortion
+            gridWorldUV.x += sin(gridWorldUV.y * 3.0 + uTime) * 0.05;
+            gridWorldUV.y += cos(gridWorldUV.x * 2.0 - uTime * 0.5) * 0.03;
+            gridDistortion = 0.15;
+        }
+
+        // Draw the space grid
+        float grid = spaceGrid(gridWorldUV, uTime, gridDistortion);
+        color.rgb += uStageTint * grid;
+
+        // === DEBUG MODE - show gravity centers ===
+        if (uDebugMode == 1) {
+            // Current pixel position in grid UV space (before distortion)
+            vec2 pixelGridPos = (worldUV + cameraOffset) * 5.0;
+
+            // Player gravity center (RED marker)
+            vec2 playerGridPos = (uPlayerPos / uWorldScale) * 5.0 + uGravityOffset;
+            float playerDist = length(pixelGridPos - playerGridPos);
+            if (playerDist < 0.15) {
+                color.rgb = vec3(1.0, 0.0, 0.0); // Red
+            } else if (playerDist < 0.2) {
+                color.rgb = mix(color.rgb, vec3(1.0, 0.0, 0.0), 0.5);
+            }
+
+            // Screen center reference (GREEN marker) - where player SHOULD be
+            vec2 screenCenterGridPos = cameraOffset * 5.0;
+            float centerDist = length(pixelGridPos - screenCenterGridPos);
+            if (centerDist < 0.1) {
+                color.rgb = vec3(0.0, 1.0, 0.0); // Green
+            } else if (centerDist < 0.15) {
+                color.rgb = mix(color.rgb, vec3(0.0, 1.0, 0.0), 0.5);
+            }
+
+            // Other gravity sources (BLUE markers)
+            for (int i = 0; i < 8; i++) {
+                if (i >= uGravitySourceCount) break;
+                vec4 source = uGravitySources[i];
+                if (source.w > 0.5) {
+                    vec2 sourceGridPos = (source.xy / uWorldScale) * 5.0 + uGravityOffset;
+                    float sourceDist = length(pixelGridPos - sourceGridPos);
+                    if (sourceDist < 0.1) {
+                        color.rgb = vec3(0.0, 0.5, 1.0); // Blue
+                    }
+                }
+            }
+        }
+    }
 
     // ==================== WORLD-SPACE VISUAL EFFECTS ====================
 
@@ -534,10 +664,6 @@ void main() {
     float worldPulse = 1.0 + 0.03 * sin(uTime * 1.2);
     color.rgb *= worldPulse;
 
-    // DEBUG: Add visible pulsing tint to verify shader is working
-    float debugPulse = sin(uTime * 2.0) * 0.5 + 0.5;
-    color.rgb += vec3(0.2, 0.1, 0.0) * debugPulse;
-
     finalColor = color;
 }
 `
@@ -575,6 +701,13 @@ export class WobbleWorldFilter extends Filter {
         uStageTint: Float32Array
         uCameraPos: Float32Array
         uWorldScale: number
+        uGridEnabled: number
+        uPlayerPos: Float32Array
+        uPlayerGravityStrength: number
+        uGravityOffset: Float32Array
+        uDebugMode: number
+        uGravitySources: Float32Array
+        uGravitySourceCount: number
     }
 
     constructor(options: WobbleWorldFilterOptions = {}) {
@@ -619,6 +752,13 @@ export class WobbleWorldFilter extends Filter {
                     uStageTint: { value: new Float32Array(stageTint), type: 'vec3<f32>' },
                     uCameraPos: { value: new Float32Array([0, 0]), type: 'vec2<f32>' },
                     uWorldScale: { value: 800, type: 'f32' }, // 800 pixels per world unit (larger = sparser patterns)
+                    uGridEnabled: { value: 0, type: 'i32' }, // 0=disabled, 1=enabled
+                    uPlayerPos: { value: new Float32Array([0, 0]), type: 'vec2<f32>' },
+                    uPlayerGravityStrength: { value: 0.3, type: 'f32' }, // Default player gravity
+                    uGravityOffset: { value: new Float32Array([0, 0]), type: 'vec2<f32>' }, // Debug offset
+                    uDebugMode: { value: 0, type: 'i32' }, // 0=off, 1=show gravity centers
+                    uGravitySources: { value: new Float32Array(8 * 4), type: 'vec4<f32>' }, // 8 sources x 4 floats
+                    uGravitySourceCount: { value: 0, type: 'i32' },
                 },
             },
         })
@@ -650,6 +790,80 @@ export class WobbleWorldFilter extends Filter {
 
     set worldScale(value: number) {
         this.uniforms.uWorldScale = value
+    }
+
+    get gridEnabled(): boolean {
+        return this.uniforms.uGridEnabled === 1
+    }
+
+    set gridEnabled(value: boolean) {
+        this.uniforms.uGridEnabled = value ? 1 : 0
+    }
+
+    setPlayerPosition(x: number, y: number): void {
+        this.uniforms.uPlayerPos[0] = x
+        this.uniforms.uPlayerPos[1] = y
+    }
+
+    /**
+     * Set gravity offset to fix coordinate mismatch between filter and screen
+     * This offset is added to all gravity source positions in grid UV space
+     */
+    setGravityOffset(x: number, y: number): void {
+        this.uniforms.uGravityOffset[0] = x
+        this.uniforms.uGravityOffset[1] = y
+    }
+
+    /**
+     * Enable/disable debug mode
+     * When enabled, shows colored markers:
+     * - RED: calculated player gravity center (with offset)
+     * - GREEN: screen center (where player should visually be)
+     * - BLUE: other gravity sources
+     */
+    set debugMode(value: boolean) {
+        this.uniforms.uDebugMode = value ? 1 : 0
+    }
+
+    get debugMode(): boolean {
+        return this.uniforms.uDebugMode === 1
+    }
+
+    get playerGravityStrength(): number {
+        return this.uniforms.uPlayerGravityStrength
+    }
+
+    set playerGravityStrength(value: number) {
+        this.uniforms.uPlayerGravityStrength = value
+    }
+
+    /**
+     * Set gravity sources (enemies, black holes, etc.)
+     * Each source: { x, y, mass, enabled }
+     * Max 8 sources for performance
+     */
+    setGravitySources(sources: Array<{ x: number; y: number; mass: number }>): void {
+        const maxSources = 8
+        const count = Math.min(sources.length, maxSources)
+
+        for (let i = 0; i < maxSources; i++) {
+            const baseIndex = i * 4
+            if (i < count) {
+                const source = sources[i]
+                this.uniforms.uGravitySources[baseIndex] = source.x // x position
+                this.uniforms.uGravitySources[baseIndex + 1] = source.y // y position
+                this.uniforms.uGravitySources[baseIndex + 2] = source.mass // mass/strength
+                this.uniforms.uGravitySources[baseIndex + 3] = 1 // enabled
+            } else {
+                this.uniforms.uGravitySources[baseIndex + 3] = 0 // disabled
+            }
+        }
+
+        this.uniforms.uGravitySourceCount = count
+    }
+
+    clearGravitySources(): void {
+        this.uniforms.uGravitySourceCount = 0
     }
 
     get wobbleIntensity(): number {

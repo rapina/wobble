@@ -31,6 +31,8 @@ interface CrusherConfig {
     chargeDuration: number
     pushStrength: number
     damagePerSecond: number
+    spawnDistance: number // distance from player when spawned
+    orbitDistance: number // max distance from player
 }
 
 const DEFAULT_CONFIG: CrusherConfig = {
@@ -43,6 +45,8 @@ const DEFAULT_CONFIG: CrusherConfig = {
     chargeDuration: 0.8,
     pushStrength: 8,
     damagePerSecond: 20,
+    spawnDistance: 250, // spawn 250px from player
+    orbitDistance: 400, // orbit within 400px of player
 }
 
 export class CrusherSystem {
@@ -52,6 +56,10 @@ export class CrusherSystem {
     private graphics: Graphics
     private isActive = false
     private animTime = 0
+
+    // Player position reference
+    private playerX = 0
+    private playerY = 0
 
     constructor(context: CrusherSystemContext, config?: Partial<CrusherConfig>) {
         this.context = context
@@ -66,8 +74,10 @@ export class CrusherSystem {
         this.context = { ...this.context, ...context }
     }
 
-    activate(): void {
+    activate(playerX: number, playerY: number): void {
         this.isActive = true
+        this.playerX = playerX
+        this.playerY = playerY
         this.graphics.visible = true
         this.createCrushers()
     }
@@ -88,55 +98,53 @@ export class CrusherSystem {
 
     private createCrushers(): void {
         this.crushers = []
-        const margin = 100
 
         for (let i = 0; i < this.config.crusherCount; i++) {
-            const size = this.config.minSize + Math.random() * (this.config.maxSize - this.config.minSize)
-            const x = margin + Math.random() * (this.context.width - margin * 2)
-            const y = margin + Math.random() * (this.context.height - margin * 2)
+            this.crushers.push(this.createCrusher())
+        }
+    }
 
-            this.crushers.push({
-                x,
-                y,
-                size,
-                vx: 0,
-                vy: 0,
-                targetX: x,
-                targetY: y,
-                mass: size * 2, // Heavier = bigger
-                phase: Math.random() * Math.PI * 2,
-                chargeTimer: this.config.chargeInterval * Math.random(),
-                isCharging: false,
-                chargeDirection: { x: 0, y: 0 },
-            })
+    private createCrusher(): Crusher {
+        const size = this.config.minSize + Math.random() * (this.config.maxSize - this.config.minSize)
+        // Spawn at random angle around player (infinite map)
+        const angle = Math.random() * Math.PI * 2
+        const distance = this.config.spawnDistance + Math.random() * (this.config.orbitDistance - this.config.spawnDistance) * 0.5
+        const x = this.playerX + Math.cos(angle) * distance
+        const y = this.playerY + Math.sin(angle) * distance
+
+        return {
+            x,
+            y,
+            size,
+            vx: 0,
+            vy: 0,
+            targetX: x,
+            targetY: y,
+            mass: size * 2, // Heavier = bigger
+            phase: Math.random() * Math.PI * 2,
+            chargeTimer: this.config.chargeInterval * Math.random(),
+            isCharging: false,
+            chargeDirection: { x: 0, y: 0 },
         }
     }
 
     update(deltaSeconds: number, playerX: number, playerY: number): void {
         if (!this.isActive) return
 
+        // Track player position
+        this.playerX = playerX
+        this.playerY = playerY
+
         this.animTime += deltaSeconds
 
-        for (const crusher of this.crushers) {
+        for (let i = 0; i < this.crushers.length; i++) {
+            const crusher = this.crushers[i]
             crusher.phase += deltaSeconds * 2
 
             if (crusher.isCharging) {
-                // Continue charge movement
+                // Continue charge movement (infinite map - no wall collision)
                 crusher.x += crusher.vx * deltaSeconds
                 crusher.y += crusher.vy * deltaSeconds
-
-                // Check wall collision during charge
-                const halfSize = crusher.size / 2
-                if (crusher.x < halfSize || crusher.x > this.context.width - halfSize) {
-                    crusher.vx *= -0.5
-                    crusher.x = Math.max(halfSize, Math.min(this.context.width - halfSize, crusher.x))
-                    crusher.isCharging = false
-                }
-                if (crusher.y < halfSize || crusher.y > this.context.height - halfSize) {
-                    crusher.vy *= -0.5
-                    crusher.y = Math.max(halfSize, Math.min(this.context.height - halfSize, crusher.y))
-                    crusher.isCharging = false
-                }
 
                 // Slow down during charge
                 crusher.vx *= 0.98
@@ -182,15 +190,25 @@ export class CrusherSystem {
                     }
                 }
             }
+
+            // Respawn if too far from player (infinite map)
+            const distToPlayer = Math.sqrt(
+                (crusher.x - playerX) ** 2 + (crusher.y - playerY) ** 2
+            )
+            if (distToPlayer > this.config.orbitDistance * 1.5 && !crusher.isCharging) {
+                this.crushers[i] = this.createCrusher()
+            }
         }
 
         this.draw()
     }
 
     private pickNewTarget(crusher: Crusher): void {
-        const margin = 80
-        crusher.targetX = margin + Math.random() * (this.context.width - margin * 2)
-        crusher.targetY = margin + Math.random() * (this.context.height - margin * 2)
+        // Pick target within orbit distance of player (infinite map)
+        const angle = Math.random() * Math.PI * 2
+        const distance = this.config.spawnDistance + Math.random() * (this.config.orbitDistance - this.config.spawnDistance)
+        crusher.targetX = this.playerX + Math.cos(angle) * distance
+        crusher.targetY = this.playerY + Math.sin(angle) * distance
     }
 
     /**

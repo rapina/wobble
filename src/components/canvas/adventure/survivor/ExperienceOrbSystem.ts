@@ -67,8 +67,13 @@ const DEFAULT_OPTIONS: Required<ExperienceOrbSystemOptions> = {
 export class ExperienceOrbSystem {
     private context: ExperienceOrbSystemContext
     private pool: Graphics[] = []
-    private orbs: ExperienceOrb[] = []
+    private _orbs: ExperienceOrb[] = []
     private poolSize: number
+
+    /** Public accessor for orbs (used by coordinate reset) */
+    get orbs(): ExperienceOrb[] {
+        return this._orbs
+    }
     private magnetRadius: number
     private collectRadius: number
 
@@ -118,8 +123,8 @@ export class ExperienceOrbSystem {
             return this.pool.pop()!
         }
         // Pool exhausted - recycle oldest
-        if (this.orbs.length > 0) {
-            const oldest = this.orbs.shift()!
+        if (this._orbs.length > 0) {
+            const oldest = this._orbs.shift()!
             oldest.graphics.visible = false
             return oldest.graphics
         }
@@ -208,7 +213,7 @@ export class ExperienceOrbSystem {
         graphics.alpha = 1
         graphics.scale.set(1)
 
-        this.orbs.push({
+        this._orbs.push({
             graphics,
             x,
             y,
@@ -228,25 +233,25 @@ export class ExperienceOrbSystem {
      */
     private mergeNearbyOrbs(): void {
         // Use larger merge radius if too many orbs
-        const mergeRadius = this.orbs.length > this.MAX_ORBS
+        const mergeRadius = this._orbs.length > this.MAX_ORBS
             ? this.MERGE_RADIUS * 1.5
             : this.MERGE_RADIUS
 
         // Track which orbs have been merged (to skip them)
         const merged = new Set<number>()
 
-        for (let i = 0; i < this.orbs.length; i++) {
+        for (let i = 0; i < this._orbs.length; i++) {
             if (merged.has(i)) continue
 
-            const orbA = this.orbs[i]
+            const orbA = this._orbs[i]
 
             // Don't merge orbs that are being collected
             if (orbA.collectSpeed > 0) continue
 
-            for (let j = i + 1; j < this.orbs.length; j++) {
+            for (let j = i + 1; j < this._orbs.length; j++) {
                 if (merged.has(j)) continue
 
-                const orbB = this.orbs[j]
+                const orbB = this._orbs[j]
 
                 // Don't merge orbs that are being collected
                 if (orbB.collectSpeed > 0) continue
@@ -279,8 +284,8 @@ export class ExperienceOrbSystem {
         // Remove merged orbs (iterate backwards)
         const mergedIndices = Array.from(merged).sort((a, b) => b - a)
         for (const idx of mergedIndices) {
-            this.releaseOrb(this.orbs[idx].graphics)
-            this.orbs.splice(idx, 1)
+            this.releaseOrb(this._orbs[idx].graphics)
+            this._orbs.splice(idx, 1)
         }
     }
 
@@ -338,20 +343,20 @@ export class ExperienceOrbSystem {
         this.mergeTimer += deltaSeconds
         if (this.mergeTimer >= this.MERGE_INTERVAL) {
             this.mergeTimer = 0
-            if (this.orbs.length > 10) { // Only merge if there are enough orbs
+            if (this._orbs.length > 10) { // Only merge if there are enough orbs
                 this.mergeNearbyOrbs()
             }
         }
 
-        for (let i = this.orbs.length - 1; i >= 0; i--) {
-            const orb = this.orbs[i]
+        for (let i = this._orbs.length - 1; i >= 0; i--) {
+            const orb = this._orbs[i]
 
             // Decrease lifetime
             orb.life -= deltaSeconds
 
             if (orb.life <= 0) {
                 this.releaseOrb(orb.graphics)
-                this.orbs.splice(i, 1)
+                this._orbs.splice(i, 1)
                 continue
             }
 
@@ -444,21 +449,8 @@ export class ExperienceOrbSystem {
             orb.x += orb.vx
             orb.y += orb.vy
 
-            // Bounce off walls
-            if (orb.x < 10) {
-                orb.x = 10
-                orb.vx *= -0.5
-            } else if (orb.x > this.context.width - 10) {
-                orb.x = this.context.width - 10
-                orb.vx *= -0.5
-            }
-            if (orb.y < 10) {
-                orb.y = 10
-                orb.vy *= -0.5
-            } else if (orb.y > this.context.height - 10) {
-                orb.y = this.context.height - 10
-                orb.vy *= -0.5
-            }
+            // Infinite map - no wall boundaries
+            // Orbs can move freely in world space
 
             // Update graphics position with gentle bobbing
             const bobAmount = Math.sin((orb.maxLife - orb.life) * 4 + orb.animOffset) * 2
@@ -492,7 +484,7 @@ export class ExperienceOrbSystem {
         orb.graphics.alpha = 0.3
 
         this.releaseOrb(orb.graphics)
-        this.orbs.splice(index, 1)
+        this._orbs.splice(index, 1)
     }
 
     private collectOrb(orb: ExperienceOrb, index: number): void {
@@ -507,7 +499,7 @@ export class ExperienceOrbSystem {
         orb.graphics.alpha = 0.5
 
         this.releaseOrb(orb.graphics)
-        this.orbs.splice(index, 1)
+        this._orbs.splice(index, 1)
     }
 
     /**
@@ -521,17 +513,17 @@ export class ExperienceOrbSystem {
      * Get active orb count
      */
     getActiveCount(): number {
-        return this.orbs.length
+        return this._orbs.length
     }
 
     /**
      * Reset the system
      */
     reset(): void {
-        for (const orb of this.orbs) {
+        for (const orb of this._orbs) {
             this.releaseOrb(orb.graphics)
         }
-        this.orbs = []
+        this._orbs = []
         this.totalXpCollected = 0
         this.mergeTimer = 0
     }

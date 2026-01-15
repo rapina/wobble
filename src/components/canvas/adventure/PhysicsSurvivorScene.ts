@@ -8,7 +8,9 @@ import {
     getCharacterSkillConfig,
     calculateCombinedSkillStats,
 } from './survivor/skills'
+import { t } from '@/utils/localization'
 import { CRTFilter } from '../filters/CRTFilter'
+import { WobbleWorldFilter } from '../filters/WobbleWorldFilter'
 import { useCollectionStore } from '@/stores/collectionStore'
 import { useProgressStore } from '@/stores/progressStore'
 import {
@@ -96,6 +98,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
     // CRT Filter
     declare private crtFilter: CRTFilter
+    // Wobble World Filter - physics atmosphere (main scene effects, no grid)
+    declare private wobbleFilter: WobbleWorldFilter
+    // Grid Filter - background only (grid effect behind characters)
+    declare private gridFilter: WobbleWorldFilter
     // Base CRT filter values (for black hole distortion effect)
     private baseChromaticAberration = 0.08
     private baseCurvatureStrength = 0.005
@@ -104,12 +110,26 @@ export class PhysicsSurvivorScene extends AdventureScene {
     // Current black hole proximity effect (0-1)
     private blackHoleProximityEffect = 0
 
-    // Player
+    // Base wobble filter values (for dynamic intensity)
+    private baseWobbleIntensity = 0.15
+    private baseWobbleSpeed = 1.5
+    private baseEnergyPulse = 0.2
+    // Combat intensity for wobble effect (0-1)
+    private combatIntensity = 0
+
+    // Player (world coordinates - infinite map)
     declare private player: Wobble
     private playerX = 0
     private playerY = 0
     private playerVx = 0
     private playerVy = 0
+
+    // Camera system (follows player)
+    private cameraX = 0
+    private cameraY = 0
+
+    // Coordinate overflow prevention - reset all positions when too far from origin
+    private readonly WORLD_RESET_THRESHOLD = 10000
     // External velocity (knockback, bounce, pull) - separate from input
     private externalVx = 0
     private externalVy = 0
@@ -162,7 +182,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     // Virtual joystick
     declare private joystick: VirtualJoystick
 
-    // Background container
+    // Background container (world-space, inside gameContainer)
     declare private bgContainer: Container
 
     // Camera shake system
@@ -215,13 +235,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     protected setup(): void {
-        // Background container
-        this.bgContainer = new Container()
-        this.container.addChild(this.bgContainer)
-
-        // Game container
+        // Game container (holds all world-space elements including background)
         this.gameContainer = new Container()
         this.container.addChild(this.gameContainer)
+
+        // Background container - inside gameContainer (world-space)
+        this.bgContainer = new Container()
+        this.gameContainer.addChild(this.bgContainer)
 
         this.enemyContainer = new Container()
         this.gameContainer.addChild(this.enemyContainer)
@@ -258,11 +278,26 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // CRT Filter
         this.crtFilter = CRTFilter.subtle()
         this.crtFilter.setDimensions(this.width, this.height)
-        this.container.filters = [this.crtFilter]
+
+        // Wobble World Filter - physics atmosphere (no grid, applies to whole scene)
+        this.wobbleFilter = WobbleWorldFilter.subtle()
+        this.wobbleFilter.setDimensions(this.width, this.height)
+        this.wobbleFilter.gridEnabled = false // Grid is drawn separately on background
+
+        // Grid Filter - background only (grid behind characters)
+        this.gridFilter = WobbleWorldFilter.subtle()
+        this.gridFilter.setDimensions(this.width, this.height)
+        this.gridFilter.gridEnabled = true // Enable grid on background
+        // Offset to fix coordinate mismatch between filter UV and screen position
+        // (determined empirically using debugMode = true)
+        this.gridFilter.setGravityOffset(-0.42, -0.65)
+        this.bgContainer.filters = [this.gridFilter] // Apply grid to background only
+
+        this.container.filters = [this.wobbleFilter, this.crtFilter]
 
         // Initialize core systems
         this.backgroundSystem = new BackgroundSystem({
-            bgContainer: this.bgContainer,
+            worldContainer: this.bgContainer,
             width: this.width,
             height: this.height,
         })
@@ -437,7 +472,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
             knobAlpha: 0.5,
         })
         this.uiContainer.addChild(this.joystick)
-        this.joystick.attachTo(this.gameContainer)
+        // Attach to uiContainer for pointer events (not gameContainer which has camera transform)
+        this.joystick.attachTo(this.uiContainer)
 
         // Debug overlay - use DOM element for guaranteed visibility
         if (this.debugEnabled) {
@@ -491,13 +527,22 @@ export class PhysicsSurvivorScene extends AdventureScene {
         if (this.crtFilter) {
             this.crtFilter.setDimensions(this.width, this.height)
         }
+        if (this.wobbleFilter) {
+            this.wobbleFilter.setDimensions(this.width, this.height)
+        }
+        if (this.gridFilter) {
+            this.gridFilter.setDimensions(this.width, this.height)
+        }
     }
 
     protected onInitialDraw(): void {
         this.gridOverlay.visible = false
 
-        this.playerX = this.centerX
-        this.playerY = this.centerY
+        // Infinite map - start at world origin
+        this.playerX = 0
+        this.playerY = 0
+        this.cameraX = 0
+        this.cameraY = 0
 
         this.player = new Wobble({
             size: 50,
@@ -508,6 +553,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
         })
         this.player.position.set(this.playerX, this.playerY)
         this.gameContainer.addChild(this.player)
+
+        // Initialize camera position
+        this.gameContainer.pivot.set(this.cameraX, this.cameraY)
+        this.gameContainer.position.set(this.centerX, this.centerY)
         // Note: joystick is now initialized in setup() to ensure it's available for onReset()
     }
 
@@ -549,7 +598,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 this.damageTextSystem.spawnCustom(
                     this.width / 2,
                     this.height / 2 - 50,
-                    `${def.nameKo} Lv.${playerSkill.level}!`,
+                    `${t(def.name, 'ko')} Lv.${playerSkill.level}!`,
                     'combo'
                 )
             }
@@ -680,7 +729,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     private updateProjectiles(delta: number): void {
-        this.projectileSystem.update(delta, this.enemySystem.enemies, this.stats)
+        this.projectileSystem.update(delta, this.enemySystem.enemies, this.stats, this.cameraX, this.cameraY)
 
         this.projectileSystem.checkCollisions(
             this.enemySystem.enemies,
@@ -730,8 +779,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.enemySystem.checkCollisions(deltaSeconds, this.hitEffects)
         this.enemySystem.updateMerges(this.gameTime, this.hitEffects)
         this.enemySystem.cleanupOverlapTracker()
-        // Clean up enemies that drifted too far off-screen (from physics)
-        this.enemySystem.cleanupOffScreen()
+        // Clean up enemies that drifted too far from camera (infinite map)
+        this.enemySystem.cleanupOffScreen(this.cameraX, this.cameraY)
 
         const deadEnemies = this.enemySystem.getDeadEnemies()
         for (const enemy of deadEnemies) {
@@ -758,7 +807,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     private spawnEnemy(): void {
-        this.enemySystem.spawnAtEdge(this.gameTime)
+        this.enemySystem.spawnAtEdge(this.gameTime, this.playerX, this.playerY)
     }
 
     private checkPlayerCollisions(): void {
@@ -817,6 +866,113 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     /**
+     * Update wobble filter intensity based on combat state
+     * Creates more dynamic physics atmosphere during intense moments
+     */
+    private updateWobbleIntensity(): void {
+        if (!this.wobbleFilter) return
+
+        // Calculate combat intensity from various factors
+        const enemyCount = this.enemySystem.enemies.length
+        const enemyFactor = Math.min(enemyCount / 30, 1) * 0.3 // Max 0.3 from enemies
+
+        // Combo factor - more intense during multi-kills
+        const multiKillState = this.comboSystem.getMultiKillState()
+        const comboFactor = multiKillState.windowTimer > 0 ? 0.2 : 0
+
+        // Health factor - wobble increases as health decreases (danger!)
+        const healthPercent = this.playerHealth / this.maxPlayerHealth
+        const healthFactor = (1 - healthPercent) * 0.3 // Max 0.3 from low health
+
+        // Combine factors with smooth interpolation
+        const targetIntensity = Math.min(enemyFactor + comboFactor + healthFactor, 1)
+        this.combatIntensity += (targetIntensity - this.combatIntensity) * 0.05 // Smooth transition
+
+        // Apply to wobble filter
+        this.wobbleFilter.wobbleIntensity = this.baseWobbleIntensity + this.combatIntensity * 0.3
+        this.wobbleFilter.wobbleSpeed = this.baseWobbleSpeed + this.combatIntensity * 1.5
+        this.wobbleFilter.energyPulse = this.baseEnergyPulse + this.combatIntensity * 0.4
+    }
+
+    /**
+     * Collect gravity sources (enemies, black holes) for grid distortion
+     * Sends largest/closest mass objects to shader (max 8)
+     */
+    private updateGridGravitySources(): void {
+        if (!this.gridFilter) return
+
+        const gravitySources: Array<{ x: number; y: number; mass: number }> = []
+        const screenRadius = Math.max(this.width, this.height) * 1.5
+
+        // === PROJECTILES - faster = more mass (relativistic effect!) ===
+        // Use world coordinates for all positions (filter is on bgContainer which uses world coords)
+        const visibleProjectiles = this.projectileSystem.projectiles
+            .filter((proj) => {
+                const dx = proj.x - this.cameraX
+                const dy = proj.y - this.cameraY
+                return Math.abs(dx) < screenRadius && Math.abs(dy) < screenRadius
+            })
+            .map((proj) => {
+                // Speed determines mass - faster projectiles warp space more
+                const speed = Math.sqrt(proj.vx * proj.vx + proj.vy * proj.vy)
+                const speedMass = speed * 0.015 // Convert speed to mass effect
+                // World position (not camera-relative)
+                return { x: proj.x, y: proj.y, mass: speedMass * proj.scale }
+            })
+            .sort((a, b) => b.mass - a.mass)
+            .slice(0, 4) // Top 4 fastest projectiles
+
+        for (const proj of visibleProjectiles) {
+            gravitySources.push(proj)
+        }
+
+        // === ENEMIES - collect largest visible enemies ===
+        const visibleEnemies = this.enemySystem.enemies
+            .filter((enemy) => {
+                const dx = enemy.x - this.cameraX
+                const dy = enemy.y - this.cameraY
+                return Math.abs(dx) < screenRadius && Math.abs(dy) < screenRadius
+            })
+            .sort((a, b) => b.mass - a.mass) // Sort by mass descending
+            .slice(0, 4) // Take top 4 largest (reduced to make room for projectiles)
+
+        for (const enemy of visibleEnemies) {
+            // World position (not camera-relative)
+            gravitySources.push({
+                x: enemy.x,
+                y: enemy.y,
+                mass: enemy.mass * 0.06, // Scale mass for visual effect
+            })
+        }
+
+        // === BLACK HOLE (Vortex Stage) ===
+        if (this.blackHoleSystem.getIsActive()) {
+            const bhPos = this.blackHoleSystem.getPosition()
+            // World position
+            gravitySources.push({
+                x: bhPos.x,
+                y: bhPos.y,
+                mass: 0.8, // Strong gravity for black hole
+            })
+        }
+
+        // === GRAVITY WELLS (Gravity Stage) ===
+        if (this.gravityWellSystem.getIsActive()) {
+            const wells = this.gravityWellSystem.getWells()
+            for (const well of wells.slice(0, 2)) {
+                // World position
+                gravitySources.push({
+                    x: well.x,
+                    y: well.y,
+                    mass: 0.5, // Medium gravity for wells
+                })
+            }
+        }
+
+        this.gridFilter.setGravitySources(gravitySources)
+    }
+
+    /**
      * Update all world entity systems and apply their effects
      */
     private updateWorldEntities(deltaSeconds: number): void {
@@ -825,7 +981,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         // === BLACK HOLE (Vortex Stage) ===
         if (this.blackHoleSystem.getIsActive()) {
-            this.blackHoleSystem.update(deltaSeconds)
+            this.blackHoleSystem.update(deltaSeconds, this.playerX, this.playerY)
 
             // Update physics vortex center to follow black hole
             const bhPos = this.blackHoleSystem.getPositionRatio()
@@ -845,7 +1001,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         // === GRAVITY WELLS (Low-Gravity Stage) ===
         if (this.gravityWellSystem.getIsActive()) {
-            this.gravityWellSystem.update(deltaSeconds)
+            this.gravityWellSystem.update(deltaSeconds, this.playerX, this.playerY)
 
             // Apply gentle drift to player (can escape, but pulled slightly)
             const drift = this.gravityWellSystem.applyPlayerDrift(
@@ -862,7 +1018,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         // === REPULSION BARRIERS (Elastic Stage) ===
         if (this.repulsionBarrierSystem.getIsActive()) {
-            this.repulsionBarrierSystem.update(deltaSeconds)
+            this.repulsionBarrierSystem.update(deltaSeconds, this.playerX, this.playerY)
 
             // Check player collision with barriers (use combined velocity for collision detection)
             const totalVx = this.playerVx + this.externalVx
@@ -912,6 +1068,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Update visual distortion based on proximity to any world entity
         this.blackHoleProximityEffect = totalProximityEffect
         this.updateBlackHoleDistortion()
+
+        // Update wobble physics atmosphere based on combat intensity
+        this.updateWobbleIntensity()
     }
 
     private createExplosion(x: number, y: number): void {
@@ -965,13 +1124,14 @@ export class PhysicsSurvivorScene extends AdventureScene {
             const offsetX = (Math.random() - 0.5) * this.shakeIntensity * 2
             const offsetY = (Math.random() - 0.5) * this.shakeIntensity * 2
 
-            this.gameContainer.position.set(offsetX, offsetY)
+            // Apply shake offset relative to camera center position
+            this.gameContainer.position.set(this.centerX + offsetX, this.centerY + offsetY)
 
             this.shakeIntensity *= this.shakeDecay
             this.shakeDuration -= delta / 60
 
             if (this.shakeDuration <= 0) {
-                this.gameContainer.position.set(0, 0)
+                this.gameContainer.position.set(this.centerX, this.centerY)
                 this.shakeIntensity = 0
                 this.shakeDuration = 0
             }
@@ -1296,23 +1456,20 @@ export class PhysicsSurvivorScene extends AdventureScene {
         if (Math.abs(this.externalVx) < 0.1) this.externalVx = 0
         if (Math.abs(this.externalVy) < 0.1) this.externalVy = 0
 
-        const margin = 30
-        if (this.playerX < margin) {
-            this.playerX = margin
-            this.externalVx = Math.abs(this.externalVx) * 0.5 // Bounce off wall
-        } else if (this.playerX > this.width - margin) {
-            this.playerX = this.width - margin
-            this.externalVx = -Math.abs(this.externalVx) * 0.5
-        }
-        if (this.playerY < margin) {
-            this.playerY = margin
-            this.externalVy = Math.abs(this.externalVy) * 0.5
-        } else if (this.playerY > this.height - margin) {
-            this.playerY = this.height - margin
-            this.externalVy = -Math.abs(this.externalVy) * 0.5
-        }
+        // Infinite map - no boundary restrictions
+        // Player can move freely in any direction
 
+        // Update player position in world space
         this.player.position.set(this.playerX, this.playerY)
+
+        // Camera follows player
+        this.cameraX = this.playerX
+        this.cameraY = this.playerY
+
+        // Apply camera transform to gameContainer
+        // This makes the player appear centered on screen
+        this.gameContainer.pivot.set(this.cameraX, this.cameraY)
+        this.gameContainer.position.set(this.centerX, this.centerY)
 
         const velMag = Math.sqrt(totalVx * totalVx + totalVy * totalVy)
         if (velMag > 0.5) {
@@ -1320,6 +1477,55 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 lookDirection: { x: totalVx / velMag, y: totalVy / velMag },
             })
         }
+
+        // Check for coordinate overflow and reset if needed
+        if (
+            Math.abs(this.playerX) > this.WORLD_RESET_THRESHOLD ||
+            Math.abs(this.playerY) > this.WORLD_RESET_THRESHOLD
+        ) {
+            this.resetWorldCoordinates()
+        }
+    }
+
+    /**
+     * Reset all world coordinates to prevent floating point overflow
+     * Shifts everything so player is back at origin (0,0)
+     */
+    private resetWorldCoordinates(): void {
+        const offsetX = this.playerX
+        const offsetY = this.playerY
+
+        // Reset player to origin
+        this.playerX = 0
+        this.playerY = 0
+        this.player.position.set(0, 0)
+
+        // Offset all enemies
+        for (const enemy of this.enemySystem.enemies) {
+            enemy.x -= offsetX
+            enemy.y -= offsetY
+            enemy.graphics.position.set(enemy.x, enemy.y)
+        }
+
+        // Offset all projectiles
+        for (const proj of this.projectileSystem.projectiles) {
+            proj.x -= offsetX
+            proj.y -= offsetY
+            proj.graphics.position.set(proj.x, proj.y)
+        }
+
+        // Offset all experience orbs
+        for (const orb of this.xpOrbSystem.orbs) {
+            orb.x -= offsetX
+            orb.y -= offsetY
+            orb.graphics.position.set(orb.x, orb.y)
+        }
+
+        // Update camera to new player position
+        this.cameraX = 0
+        this.cameraY = 0
+        this.gameContainer.pivot.set(0, 0)
+        this.gameContainer.position.set(this.centerX, this.centerY)
     }
 
     private gameOver(): void {
@@ -1441,17 +1647,32 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Activate the appropriate world entity for this stage
         switch (this.currentStage.id) {
             case 'vortex':
-                this.blackHoleSystem.activate()
+                this.blackHoleSystem.activate(this.playerX, this.playerY)
                 break
             case 'low-gravity':
-                this.gravityWellSystem.activate()
+                this.gravityWellSystem.activate(this.playerX, this.playerY)
                 break
             case 'elastic':
-                this.repulsionBarrierSystem.activate()
+                this.repulsionBarrierSystem.activate(this.playerX, this.playerY)
                 break
             case 'momentum':
-                this.crusherSystem.activate()
+                this.crusherSystem.activate(this.playerX, this.playerY)
                 break
+        }
+
+        // Apply stage-specific quantum/visual effects to wobble filter
+        if (this.wobbleFilter) {
+            this.wobbleFilter.applyStagePreset(this.currentStage.id)
+            this.wobbleFilter.gridEnabled = false // Keep grid disabled on main filter
+            // Update base values for dynamic intensity scaling
+            this.baseWobbleIntensity = this.wobbleFilter.wobbleIntensity
+            this.baseWobbleSpeed = this.wobbleFilter.wobbleSpeed
+            this.baseEnergyPulse = this.wobbleFilter.energyPulse
+        }
+        // Apply stage preset to grid filter (background only)
+        if (this.gridFilter) {
+            this.gridFilter.applyStagePreset(this.currentStage.id)
+            this.gridFilter.gridEnabled = true // Keep grid enabled on background
         }
     }
 
@@ -1526,8 +1747,18 @@ export class PhysicsSurvivorScene extends AdventureScene {
         if (this.crtFilter) {
             this.crtFilter.time = this.animPhase
         }
+        if (this.wobbleFilter) {
+            this.wobbleFilter.time = this.animPhase
+            this.wobbleFilter.setCameraPosition(this.cameraX, this.cameraY)
+        }
+        if (this.gridFilter) {
+            this.gridFilter.time = this.animPhase
+            this.gridFilter.setCameraPosition(this.cameraX, this.cameraY)
+            // Player position in world coordinates (filter is on bgContainer which uses world coords)
+            this.gridFilter.setPlayerPosition(this.playerX, this.playerY)
+        }
 
-        this.backgroundSystem.update(delta, this.playerSkills.length, this.gameTime)
+        this.backgroundSystem.update(delta, this.playerSkills.length, this.gameTime, this.cameraX, this.cameraY)
 
         if (this.gameState === 'skill-selection') {
             this.skillSelectionScreen.update(deltaSeconds)
@@ -1588,10 +1819,24 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         if (this.impactSystem.isHitstopActive) {
             this.animPhase += rawDeltaSeconds
+
+            // Update filter time and camera during hitstop
+            if (this.crtFilter) this.crtFilter.time = this.animPhase
+            if (this.wobbleFilter) {
+                this.wobbleFilter.time = this.animPhase
+                this.wobbleFilter.setCameraPosition(this.cameraX, this.cameraY)
+            }
+            if (this.gridFilter) {
+                this.gridFilter.time = this.animPhase
+                this.gridFilter.setCameraPosition(this.cameraX, this.cameraY)
+            }
+
             this.backgroundSystem.update(
                 rawDeltaSeconds * 60,
                 this.playerSkills.length,
-                this.gameTime
+                this.gameTime,
+                this.cameraX,
+                this.cameraY
             )
             this.damageTextSystem.update(rawDeltaSeconds)
             this.updateShake(rawDeltaSeconds * 60)
@@ -1611,7 +1856,21 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.animPhase += deltaSeconds
         this.gameTime += deltaSeconds
 
-        this.backgroundSystem.update(delta, this.playerSkills.length, this.gameTime)
+        // Update filter time and camera during gameplay
+        if (this.crtFilter) this.crtFilter.time = this.animPhase
+        if (this.wobbleFilter) {
+            this.wobbleFilter.time = this.animPhase
+            this.wobbleFilter.setCameraPosition(this.cameraX, this.cameraY)
+        }
+        if (this.gridFilter) {
+            this.gridFilter.time = this.animPhase
+            this.gridFilter.setCameraPosition(this.cameraX, this.cameraY)
+            // Player position in world coordinates (filter is on bgContainer which uses world coords)
+            this.gridFilter.setPlayerPosition(this.playerX, this.playerY)
+            this.updateGridGravitySources()
+        }
+
+        this.backgroundSystem.update(delta, this.playerSkills.length, this.gameTime, this.cameraX, this.cameraY)
 
         // Update world entities and their effects
         this.updateWorldEntities(deltaSeconds)
@@ -1893,7 +2152,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Reset camera shake
         this.shakeIntensity = 0
         this.shakeDuration = 0
-        this.gameContainer.position.set(0, 0)
+        this.gameContainer.position.set(this.centerX, this.centerY)
 
         // Reset state
         this.gameTime = 0
@@ -1916,12 +2175,16 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.resetStats()
         this.fireTimer = 0
         this.spawnTimer = 0
-        this.playerX = this.centerX
-        this.playerY = this.centerY
+        // Infinite map - start at origin
+        this.playerX = 0
+        this.playerY = 0
         this.playerVx = 0
         this.playerVy = 0
         this.externalVx = 0
         this.externalVy = 0
+        this.cameraX = 0
+        this.cameraY = 0
+        this.gameContainer.pivot.set(0, 0)
         this.selectedCharacter = 'circle'
 
         this.joystick.reset()

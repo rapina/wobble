@@ -123,7 +123,7 @@ export class ProjectileSystem {
     }
 
     // Update projectile positions
-    update(delta: number, enemies: Enemy[] = [], stats?: PlayerStats): void {
+    update(delta: number, enemies: Enemy[] = [], stats?: PlayerStats, cameraX: number = 0, cameraY: number = 0): void {
         const { width, height } = this.context
         const bounce = this.physicsModifiers.bounce
         const returnDistance = stats?.returnDistance || 0
@@ -203,31 +203,16 @@ export class ProjectileSystem {
                 }
             }
 
-            // Wall bounce - only from stage physics (elastic, momentum stages)
-            // Note: proj.maxBounces is for enemy-to-enemy bouncing (skill), NOT wall bouncing
-            const effectiveBounce = bounce
-            if (effectiveBounce > 0) {
-                if (proj.x < 0 || proj.x > width) {
-                    proj.vx *= -effectiveBounce
-                    proj.x = Math.max(0, Math.min(width, proj.x))
-                }
-                if (proj.y < 0 || proj.y > height) {
-                    proj.vy *= -effectiveBounce
-                    proj.y = Math.max(0, Math.min(height, proj.y))
-                }
-            }
+            // Infinite map - no wall boundaries
+            // Wall bounce disabled for infinite map
 
             proj.graphics.position.set(proj.x, proj.y)
 
-            // Remove if outside screen (but not returning projectiles heading to origin)
-            const margin = 50
-            if (
-                !proj.returning &&
-                (proj.x < -margin ||
-                    proj.x > width + margin ||
-                    proj.y < -margin ||
-                    proj.y > height + margin)
-            ) {
+            // Remove if too far from camera (but not returning projectiles heading to origin)
+            const margin = 500 // Larger margin for infinite map
+            const dx = Math.abs(proj.x - cameraX)
+            const dy = Math.abs(proj.y - cameraY)
+            if (!proj.returning && (dx > margin || dy > margin)) {
                 this.remove(i)
             }
         }

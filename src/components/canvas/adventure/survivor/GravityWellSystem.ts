@@ -26,6 +26,8 @@ interface GravityWellConfig {
     pullStrength: number
     moveSpeed: number
     moveInterval: number
+    spawnDistance: number // distance from player when spawned
+    orbitDistance: number // max distance from player
 }
 
 const DEFAULT_CONFIG: GravityWellConfig = {
@@ -36,6 +38,8 @@ const DEFAULT_CONFIG: GravityWellConfig = {
     pullStrength: 0.8,
     moveSpeed: 25,
     moveInterval: 6,
+    spawnDistance: 150, // spawn 150px from player
+    orbitDistance: 350, // orbit within 350px of player
 }
 
 export class GravityWellSystem {
@@ -45,6 +49,10 @@ export class GravityWellSystem {
     private graphics: Graphics
     private isActive = false
     private animTime = 0
+
+    // Player position reference (for orbit calculations)
+    private playerX = 0
+    private playerY = 0
 
     constructor(context: GravityWellSystemContext, config?: Partial<GravityWellConfig>) {
         this.context = context
@@ -59,8 +67,10 @@ export class GravityWellSystem {
         this.context = { ...this.context, ...context }
     }
 
-    activate(): void {
+    activate(playerX: number, playerY: number): void {
         this.isActive = true
+        this.playerX = playerX
+        this.playerY = playerY
         this.graphics.visible = true
         this.createWells()
     }
@@ -81,12 +91,14 @@ export class GravityWellSystem {
 
     private createWells(): void {
         this.wells = []
-        const margin = 80
 
         for (let i = 0; i < this.config.wellCount; i++) {
             const radius = this.config.minRadius + Math.random() * (this.config.maxRadius - this.config.minRadius)
-            const x = margin + Math.random() * (this.context.width - margin * 2)
-            const y = margin + Math.random() * (this.context.height - margin * 2)
+            // Spawn at random angle around player (infinite map)
+            const angle = Math.random() * Math.PI * 2
+            const distance = this.config.spawnDistance + Math.random() * (this.config.orbitDistance - this.config.spawnDistance)
+            const x = this.playerX + Math.cos(angle) * distance
+            const y = this.playerY + Math.sin(angle) * distance
 
             this.wells.push({
                 x,
@@ -102,8 +114,12 @@ export class GravityWellSystem {
         }
     }
 
-    update(deltaSeconds: number): void {
+    update(deltaSeconds: number, playerX: number, playerY: number): void {
         if (!this.isActive) return
+
+        // Track player position for orbit calculations
+        this.playerX = playerX
+        this.playerY = playerY
 
         this.animTime += deltaSeconds
 
@@ -134,9 +150,11 @@ export class GravityWellSystem {
     }
 
     private pickNewTarget(well: GravityWell): void {
-        const margin = 80
-        well.targetX = margin + Math.random() * (this.context.width - margin * 2)
-        well.targetY = margin + Math.random() * (this.context.height - margin * 2)
+        // Pick new target within orbit distance of player (infinite map)
+        const angle = Math.random() * Math.PI * 2
+        const distance = this.config.spawnDistance + Math.random() * (this.config.orbitDistance - this.config.spawnDistance)
+        well.targetX = this.playerX + Math.cos(angle) * distance
+        well.targetY = this.playerY + Math.sin(angle) * distance
     }
 
     /**
@@ -230,6 +248,7 @@ export class GravityWellSystem {
     /**
      * Check if player is near any gravity well (for visual effects)
      * Returns max proximity effect (0-1)
+     * Uses visual radius (smaller than pullRadius) for distortion effect
      */
     getPlayerProximityEffect(playerX: number, playerY: number): number {
         if (!this.isActive) return 0
@@ -241,8 +260,10 @@ export class GravityWellSystem {
             const dy = well.y - playerY
             const dist = Math.sqrt(dx * dx + dy * dy)
 
-            if (dist < well.pullRadius) {
-                const effect = Math.pow(1 - dist / well.pullRadius, 1.5)
+            // Use a smaller visual effect radius (2x visual radius, not pullRadius)
+            const visualEffectRadius = well.radius * 2
+            if (dist < visualEffectRadius) {
+                const effect = Math.pow(1 - dist / visualEffectRadius, 1.5)
                 maxEffect = Math.max(maxEffect, effect)
             }
         }

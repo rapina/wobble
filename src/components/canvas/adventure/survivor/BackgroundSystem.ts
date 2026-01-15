@@ -91,7 +91,7 @@ interface WaveLayer {
 }
 
 interface BackgroundSystemContext {
-    bgContainer: Container
+    worldContainer: Container // All world-space elements (gradient, grid, particles)
     width: number
     height: number
 }
@@ -119,7 +119,6 @@ export class BackgroundSystem {
     private gridGraphics: Graphics
     private collapseGraphics: Graphics
 
-    private particles: FloatingParticle[] = []
     private waveLayers: WaveLayer[] = []
     private animTime = 0
     private currentThemeIndex = 0
@@ -139,21 +138,21 @@ export class BackgroundSystem {
     constructor(context: BackgroundSystemContext) {
         this.context = context
 
-        // Create graphics layers (back to front)
+        // All layers in world-space (inside gameContainer, moves with camera)
         this.gradientGraphics = new Graphics()
-        this.context.bgContainer.addChild(this.gradientGraphics)
+        this.context.worldContainer.addChild(this.gradientGraphics)
 
         this.gridGraphics = new Graphics()
-        this.context.bgContainer.addChild(this.gridGraphics)
+        this.context.worldContainer.addChild(this.gridGraphics)
 
         this.waveGraphics = new Graphics()
-        this.context.bgContainer.addChild(this.waveGraphics)
+        this.context.worldContainer.addChild(this.waveGraphics)
 
         this.particleGraphics = new Graphics()
-        this.context.bgContainer.addChild(this.particleGraphics)
+        this.context.worldContainer.addChild(this.particleGraphics)
 
         this.collapseGraphics = new Graphics()
-        this.context.bgContainer.addChild(this.collapseGraphics)
+        this.context.worldContainer.addChild(this.collapseGraphics)
     }
 
     updateContext(context: Partial<BackgroundSystemContext>): void {
@@ -206,40 +205,15 @@ export class BackgroundSystem {
 
     // Initialize background
     initialize(background: Graphics): void {
+        // Clear any legacy background (from BaseScene)
         background.clear()
-        background.rect(0, 0, this.context.width, this.context.height)
-        background.fill(COLOR_THEMES[0].bgBottom)
-
-        // Create floating particles
-        this.createParticles()
 
         // Create wave layers
         this.createWaveLayers()
 
-        // Initial draw
-        this.drawGradient(COLOR_THEMES[0], COLOR_THEMES[0], 0)
-        this.drawGrid(COLOR_THEMES[0])
-    }
-
-    // Create ambient floating particles - Balatro style
-    private createParticles(): void {
-        this.particles = []
-        const particleCount = 50
-
-        for (let i = 0; i < particleCount; i++) {
-            const types: ('circle' | 'hexagon' | 'diamond')[] = ['circle', 'diamond', 'diamond'] // More diamonds for card feel
-            this.particles.push({
-                x: Math.random() * this.context.width,
-                y: Math.random() * this.context.height,
-                size: 4 + Math.random() * 10, // Slightly larger
-                color: 0xffffff, // Will be updated per theme
-                alpha: 0.12 + Math.random() * 0.18, // Higher alpha for dark background
-                speedX: (Math.random() - 0.5) * 0.4,
-                speedY: -0.3 - Math.random() * 0.4, // Drift upward
-                phase: Math.random() * Math.PI * 2,
-                type: types[Math.floor(Math.random() * types.length)],
-            })
-        }
+        // Initial draw at origin (0, 0)
+        this.drawGradient(COLOR_THEMES[0], COLOR_THEMES[0], 0, 0, 0)
+        this.drawGrid(COLOR_THEMES[0], 0, 0)
     }
 
     // Create decorative wave layers
@@ -273,17 +247,17 @@ export class BackgroundSystem {
     }
 
     // Update all background effects
-    update(delta: number, activePerksCount: number, gameTime: number = 0): void {
+    update(delta: number, activePerksCount: number, gameTime: number = 0, cameraX: number = 0, cameraY: number = 0): void {
         const deltaSeconds = delta / 60
         this.animTime += deltaSeconds
 
         // Use stage theme override if set
         if (this.stageThemeOverride) {
             const theme = this.stageThemeOverride
-            this.drawGradient(theme, theme, 0)
-            this.drawGrid(theme)
-            this.drawWaves(theme, theme, 0)
-            this.updateParticles(deltaSeconds, theme, theme, 0)
+            this.drawGradient(theme, theme, 0, cameraX, cameraY)
+            this.drawGrid(theme, cameraX, cameraY)
+            this.drawWaves(theme, theme, 0, cameraX, cameraY)
+            this.drawProceduralParticles(theme, cameraX, cameraY)
             return
         }
 
@@ -305,79 +279,37 @@ export class BackgroundSystem {
         const nextTheme = COLOR_THEMES[(this.currentThemeIndex + 1) % COLOR_THEMES.length]
 
         // Update all visual elements
-        this.drawGradient(currentTheme, nextTheme, this.themeTransitionProgress)
-        this.drawGrid(this.lerpTheme(currentTheme, nextTheme, this.themeTransitionProgress))
-        this.drawWaves(currentTheme, nextTheme, this.themeTransitionProgress)
-        this.updateParticles(deltaSeconds, currentTheme, nextTheme, this.themeTransitionProgress)
+        const lerpedTheme = this.lerpTheme(currentTheme, nextTheme, this.themeTransitionProgress)
+        this.drawGradient(currentTheme, nextTheme, this.themeTransitionProgress, cameraX, cameraY)
+        this.drawGrid(lerpedTheme, cameraX, cameraY)
+        this.drawWaves(currentTheme, nextTheme, this.themeTransitionProgress, cameraX, cameraY)
+        this.drawProceduralParticles(lerpedTheme, cameraX, cameraY)
     }
 
-    // Draw animated gradient background
-    private drawGradient(from: ColorTheme, to: ColorTheme, t: number): void {
+    // Draw solid background at world coordinates around camera
+    private drawGradient(from: ColorTheme, to: ColorTheme, t: number, cameraX: number, cameraY: number): void {
         this.gradientGraphics.clear()
 
-        const topColor = this.lerpColor(from.bgTop, to.bgTop, t)
-        const bottomColor = this.lerpColor(from.bgBottom, to.bgBottom, t)
+        // Use blended background color (average of top and bottom)
+        const bgColor = this.lerpColor(from.bgBottom, to.bgBottom, t)
 
-        // Create gradient effect with multiple bands
-        const bands = 8
-        for (let i = 0; i < bands; i++) {
-            const y = (i / bands) * this.context.height
-            const h = this.context.height / bands + 1
-            const blend = i / (bands - 1)
-            const color = this.lerpColor(topColor, bottomColor, blend)
+        // Calculate visible area in world space
+        const margin = 100
+        const left = cameraX - this.context.width / 2 - margin
+        const top = cameraY - this.context.height / 2 - margin
+        const w = this.context.width + margin * 2
+        const h = this.context.height + margin * 2
 
-            this.gradientGraphics.rect(0, y, this.context.width, h)
-            this.gradientGraphics.fill(color)
-        }
-
-        // Add subtle vignette effect at edges
-        const vignetteAlpha = 0.15
-        this.gradientGraphics.rect(0, 0, this.context.width, this.context.height)
-        this.gradientGraphics.fill({
-            color: 0x000000,
-            alpha: 0,
-        })
-
-        // Top/bottom darkening
-        for (let i = 0; i < 3; i++) {
-            const alpha = vignetteAlpha * (1 - i / 3)
-            // Top
-            this.gradientGraphics.rect(0, i * 20, this.context.width, 20)
-            this.gradientGraphics.fill({ color: 0x000000, alpha })
-            // Bottom
-            this.gradientGraphics.rect(
-                0,
-                this.context.height - (i + 1) * 20,
-                this.context.width,
-                20
-            )
-            this.gradientGraphics.fill({ color: 0x000000, alpha })
-        }
+        // Draw single solid color
+        this.gradientGraphics.rect(left, top, w, h)
+        this.gradientGraphics.fill(bgColor)
     }
 
-    // Draw subtle card suit pattern - Balatro style
-    private drawGrid(theme: ColorTheme): void {
+    // Draw subtle card suit pattern - Balatro style (tiled for infinite map)
+    private drawGrid(theme: ColorTheme, cameraX: number = 0, cameraY: number = 0): void {
+        // Grid is now rendered via shader (WobbleWorldFilter.diamondGrid)
+        // Keeping this method for potential future use
         this.gridGraphics.clear()
-
-        const gridSize = 60
-        const rows = Math.ceil(this.context.height / gridSize) + 1
-        const cols = Math.ceil(this.context.width / gridSize) + 1
-
-        for (let row = 0; row < rows; row++) {
-            for (let col = 0; col < cols; col++) {
-                const x = col * gridSize + (row % 2) * (gridSize / 2)
-                const y = row * gridSize
-
-                // Pulsing alpha based on position and time
-                const pulse = Math.sin(this.animTime * 0.3 + x * 0.008 + y * 0.008) * 0.5 + 0.5
-                const alpha = 0.04 + pulse * 0.04
-
-                // Draw small diamond shape (like card suits)
-                const size = 8
-                this.gridGraphics.poly([x, y - size, x + size, y, x, y + size, x - size, y])
-                this.gridGraphics.fill({ color: theme.accent1, alpha })
-            }
-        }
     }
 
     // Draw hexagon shape
@@ -399,106 +331,26 @@ export class BackgroundSystem {
         g.stroke({ color, width: 1, alpha })
     }
 
-    // Draw animated wave layers
-    private drawWaves(from: ColorTheme, to: ColorTheme, t: number): void {
+    // Waves disabled - keeping method for potential future use
+    private drawWaves(from: ColorTheme, to: ColorTheme, t: number, cameraX: number, cameraY: number): void {
         this.waveGraphics.clear()
-
-        for (const layer of this.waveLayers) {
-            layer.phase += 0.02
-
-            this.waveGraphics.moveTo(0, this.context.height)
-
-            // Draw wave path
-            for (let x = 0; x <= this.context.width; x += 5) {
-                const waveY =
-                    layer.yOffset +
-                    Math.sin(x * layer.frequency + layer.phase) * layer.amplitude +
-                    Math.sin(x * layer.frequency * 2 + layer.phase * 1.5) * (layer.amplitude * 0.3)
-                this.waveGraphics.lineTo(x, waveY)
-            }
-
-            this.waveGraphics.lineTo(this.context.width, this.context.height)
-            this.waveGraphics.closePath()
-
-            // Use darker, muted color for waves
-            this.waveGraphics.fill({ color: 0x000000, alpha: layer.alpha })
-        }
+        // Waves removed for cleaner look
     }
 
-    // Update floating particles
-    private updateParticles(
-        deltaSeconds: number,
-        from: ColorTheme,
-        to: ColorTheme,
-        t: number
-    ): void {
+    /**
+     * Simple seeded random number generator for procedural content
+     */
+    private seededRandom(seed: number): number {
+        const x = Math.sin(seed * 12.9898 + seed * 78.233) * 43758.5453
+        return x - Math.floor(x)
+    }
+
+    /**
+     * Procedural particles now rendered via shader (WobbleWorldFilter)
+     * Keeping method stub for potential future use
+     */
+    private drawProceduralParticles(theme: ColorTheme, cameraX: number, cameraY: number): void {
         this.particleGraphics.clear()
-
-        const themeParticles = from.particles.map((c, i) =>
-            this.lerpColor(c, to.particles[i] || to.particles[0], t)
-        )
-
-        for (const particle of this.particles) {
-            // Update position
-            particle.x += particle.speedX * deltaSeconds * 60
-            particle.y += particle.speedY * deltaSeconds * 60
-            particle.phase += deltaSeconds * 2
-
-            // Wrap around screen
-            if (particle.y < -20) {
-                particle.y = this.context.height + 20
-                particle.x = Math.random() * this.context.width
-            }
-            if (particle.x < -20) particle.x = this.context.width + 20
-            if (particle.x > this.context.width + 20) particle.x = -20
-
-            // Pulsing effect
-            const pulse = Math.sin(particle.phase) * 0.3 + 0.7
-            const alpha = particle.alpha * pulse
-
-            // Pick color from theme
-            const colorIndex = Math.floor(particle.phase * 0.1) % themeParticles.length
-            particle.color = themeParticles[colorIndex]
-
-            // Draw particle based on type
-            this.drawParticle(particle, alpha)
-        }
-    }
-
-    // Draw individual particle
-    private drawParticle(particle: FloatingParticle, alpha: number): void {
-        const { x, y, size, color, type } = particle
-
-        switch (type) {
-            case 'circle':
-                this.particleGraphics.circle(x, y, size)
-                this.particleGraphics.fill({ color, alpha })
-                break
-
-            case 'hexagon':
-                this.drawHexagon(this.particleGraphics, x, y, size, color, alpha)
-                this.particleGraphics.poly([
-                    x,
-                    y - size,
-                    x + size * 0.866,
-                    y - size * 0.5,
-                    x + size * 0.866,
-                    y + size * 0.5,
-                    x,
-                    y + size,
-                    x - size * 0.866,
-                    y + size * 0.5,
-                    x - size * 0.866,
-                    y - size * 0.5,
-                ])
-                this.particleGraphics.fill({ color, alpha })
-                break
-
-            case 'diamond':
-                this.particleGraphics.poly([x, y - size, x + size, y, x, y + size, x - size, y])
-                this.particleGraphics.fill({ color, alpha })
-                break
-        }
     }
 
     // Interpolate between two colors
@@ -540,13 +392,6 @@ export class BackgroundSystem {
 
         // Clear stage theme override
         this.stageThemeOverride = null
-
-        // Reset particles
-        for (const particle of this.particles) {
-            particle.x = Math.random() * this.context.width
-            particle.y = Math.random() * this.context.height
-            particle.phase = Math.random() * Math.PI * 2
-        }
 
         // Reset wave phases
         for (const wave of this.waveLayers) {

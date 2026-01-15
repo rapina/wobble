@@ -2,13 +2,13 @@ import { Container, Graphics } from 'pixi.js'
 
 interface BlackHoleSystemContext {
     container: Container
-    width: number
-    height: number
+    width: number // viewport width (for distance calculations)
+    height: number // viewport height (for distance calculations)
 }
 
 interface BlackHoleConfig {
-    initialX: number // 0-1 ratio
-    initialY: number // 0-1 ratio
+    spawnDistance: number // distance from player when spawned
+    orbitDistance: number // max distance from player to orbit around
     moveSpeed: number // pixels per second
     moveInterval: number // seconds between direction changes
     pullRadius: number // radius for pulling orbs
@@ -18,8 +18,8 @@ interface BlackHoleConfig {
 }
 
 const DEFAULT_CONFIG: BlackHoleConfig = {
-    initialX: 0.5,
-    initialY: 0.5,
+    spawnDistance: 200, // spawn 200px from player
+    orbitDistance: 300, // orbit within 300px of player
     moveSpeed: 15, // Very slow
     moveInterval: 8, // Change direction every 8 seconds
     pullRadius: 150,
@@ -32,9 +32,13 @@ export class BlackHoleSystem {
     private context: BlackHoleSystemContext
     private config: BlackHoleConfig
 
-    // Position (absolute pixels)
+    // Position (world coordinates)
     private x = 0
     private y = 0
+
+    // Player position reference (for orbit calculations)
+    private playerX = 0
+    private playerY = 0
 
     // Movement
     private targetX = 0
@@ -65,11 +69,7 @@ export class BlackHoleSystem {
         this.context = context
         this.config = { ...DEFAULT_CONFIG, ...config }
 
-        // Initialize position
-        this.x = this.context.width * this.config.initialX
-        this.y = this.context.height * this.config.initialY
-        this.targetX = this.x
-        this.targetY = this.y
+        // Position will be set when activated with player position
 
         // Create graphics containers
         this.graphics = new Graphics()
@@ -90,10 +90,20 @@ export class BlackHoleSystem {
     }
 
     /**
-     * Activate the black hole
+     * Activate the black hole at a position relative to player
      */
-    activate(): void {
+    activate(playerX: number, playerY: number): void {
         this.isActive = true
+        this.playerX = playerX
+        this.playerY = playerY
+
+        // Spawn at a random angle from player
+        const angle = Math.random() * Math.PI * 2
+        this.x = playerX + Math.cos(angle) * this.config.spawnDistance
+        this.y = playerY + Math.sin(angle) * this.config.spawnDistance
+        this.targetX = this.x
+        this.targetY = this.y
+
         this.graphics.visible = true
         this.innerGraphics.visible = true
         this.particleGraphics.visible = true
@@ -185,10 +195,14 @@ export class BlackHoleSystem {
     }
 
     /**
-     * Update the black hole
+     * Update the black hole (infinite map - orbits around player)
      */
-    update(deltaSeconds: number): void {
+    update(deltaSeconds: number, playerX: number, playerY: number): void {
         if (!this.isActive) return
+
+        // Track player position for orbit calculations
+        this.playerX = playerX
+        this.playerY = playerY
 
         // Update animation
         this.rotation += deltaSeconds * 0.8
@@ -220,10 +234,11 @@ export class BlackHoleSystem {
     }
 
     private pickNewTarget(): void {
-        // Pick a random position within bounds (with margin)
-        const margin = 80
-        this.targetX = margin + Math.random() * (this.context.width - margin * 2)
-        this.targetY = margin + Math.random() * (this.context.height - margin * 2)
+        // Pick a random position within orbit distance of player (infinite map)
+        const angle = Math.random() * Math.PI * 2
+        const distance = this.config.spawnDistance + Math.random() * (this.config.orbitDistance - this.config.spawnDistance)
+        this.targetX = this.playerX + Math.cos(angle) * distance
+        this.targetY = this.playerY + Math.sin(angle) * distance
     }
 
     private initializeSuckingParticles(): void {
@@ -325,10 +340,12 @@ export class BlackHoleSystem {
      */
     reset(): void {
         this.deactivate()
-        this.x = this.context.width * this.config.initialX
-        this.y = this.context.height * this.config.initialY
-        this.targetX = this.x
-        this.targetY = this.y
+        this.x = 0
+        this.y = 0
+        this.targetX = 0
+        this.targetY = 0
+        this.playerX = 0
+        this.playerY = 0
         this.moveTimer = 0
         this.rotation = 0
         this.pulsePhase = 0

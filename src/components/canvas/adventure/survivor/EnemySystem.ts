@@ -57,35 +57,19 @@ export class EnemySystem {
         this.physicsModifiers = modifiers
     }
 
-    // Spawn enemy at random edge
-    spawnAtEdge(gameTime: number): boolean {
+    // Spawn enemy at random edge (relative to player position for infinite map)
+    spawnAtEdge(gameTime: number, playerX: number, playerY: number): boolean {
         // Check enemy limit before spawning
         if (!this.canSpawn()) {
             return false
         }
 
-        const side = Math.floor(Math.random() * 4)
-        const size = TIER_CONFIGS.small.size
-        let x: number, y: number
+        // Spawn at a random angle around the player, just outside visible area
+        const spawnDistance = Math.max(this.context.width, this.context.height) * 0.7
+        const angle = Math.random() * Math.PI * 2
 
-        switch (side) {
-            case 0: // top
-                x = Math.random() * this.context.width
-                y = -size
-                break
-            case 1: // right
-                x = this.context.width + size
-                y = Math.random() * this.context.height
-                break
-            case 2: // bottom
-                x = Math.random() * this.context.width
-                y = this.context.height + size
-                break
-            default: // left
-                x = -size
-                y = Math.random() * this.context.height
-                break
-        }
+        const x = playerX + Math.cos(angle) * spawnDistance
+        const y = playerY + Math.sin(angle) * spawnDistance
 
         this.spawnAtTier(x, y, 'small', gameTime)
         return true
@@ -195,24 +179,8 @@ export class EnemySystem {
             enemy.vx *= this.physicsModifiers.friction
             enemy.vy *= this.physicsModifiers.friction
 
-            // Wall bounce for elastic stage
-            const bounce = this.physicsModifiers.bounce
-            if (bounce > 0) {
-                if (enemy.x < enemy.size / 2) {
-                    enemy.x = enemy.size / 2
-                    enemy.vx *= -bounce
-                } else if (enemy.x > width - enemy.size / 2) {
-                    enemy.x = width - enemy.size / 2
-                    enemy.vx *= -bounce
-                }
-                if (enemy.y < enemy.size / 2) {
-                    enemy.y = enemy.size / 2
-                    enemy.vy *= -bounce
-                } else if (enemy.y > height - enemy.size / 2) {
-                    enemy.y = height - enemy.size / 2
-                    enemy.vy *= -bounce
-                }
-            }
+            // Infinite map - no wall boundaries
+            // Enemies can move freely in world space
 
             enemy.graphics.position.set(enemy.x, enemy.y)
 
@@ -370,22 +338,19 @@ export class EnemySystem {
     }
 
     /**
-     * Remove enemies that have drifted too far off-screen
-     * Important for stages with gravity/physics that push enemies away
+     * Remove enemies that have drifted too far from camera
+     * For infinite map: uses camera position instead of screen bounds
      */
-    cleanupOffScreen(): number {
-        const margin = 300 // How far off-screen before removal
-        const { width, height } = this.context
+    cleanupOffScreen(cameraX: number = 0, cameraY: number = 0): number {
+        const margin = 600 // Larger margin for infinite map
         let removed = 0
 
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i]
-            if (
-                enemy.x < -margin ||
-                enemy.x > width + margin ||
-                enemy.y < -margin ||
-                enemy.y > height + margin
-            ) {
+            const dx = Math.abs(enemy.x - cameraX)
+            const dy = Math.abs(enemy.y - cameraY)
+
+            if (dx > margin || dy > margin) {
                 this.context.enemyContainer.removeChild(enemy.graphics)
                 enemy.graphics.destroy()
                 this.enemies.splice(i, 1)
