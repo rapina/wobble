@@ -4,6 +4,7 @@ import { Wobble, WobbleShape } from '../../Wobble'
 // Game state type
 export type GameState =
     | 'character-select'
+    | 'stage-select'
     | 'opening'
     | 'playing'
     | 'paused'
@@ -125,28 +126,28 @@ export interface TierConfig {
 
 export const TIER_CONFIGS: Record<EnemyTier, TierConfig> = {
     small: {
-        size: 25,
+        size: 18, // Reduced from 25 for zoom-out view
         healthMultiplier: 1,
         speedMultiplier: 1,
         color: 0x1a1a1a,
         canMerge: true,
     },
     medium: {
-        size: 40,
+        size: 28, // Reduced from 40 for zoom-out view
         healthMultiplier: 2, // Was 2.5 - easier to kill
         speedMultiplier: 0.9, // Was 0.85 - slightly faster
         color: 0x2d1a3d,
         canMerge: true,
     },
     large: {
-        size: 60,
+        size: 42, // Reduced from 60 for zoom-out view
         healthMultiplier: 4, // Was 5 - easier to kill
         speedMultiplier: 0.8, // Was 0.7 - slightly faster
         color: 0x4a1a5d,
         canMerge: true,
     },
     boss: {
-        size: 100,
+        size: 70, // Reduced from 100 for zoom-out view
         healthMultiplier: 10, // Was 12 - more manageable
         speedMultiplier: 0.6, // Was 0.5 - slightly faster
         color: 0x6a1a7d,

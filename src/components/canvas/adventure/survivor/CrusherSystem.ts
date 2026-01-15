@@ -440,6 +440,20 @@ export class CrusherSystem {
         }
     }
 
+    /**
+     * Offset all positions (for world coordinate reset)
+     */
+    offsetPositions(dx: number, dy: number): void {
+        this.playerX -= dx
+        this.playerY -= dy
+        for (const crusher of this.crushers) {
+            crusher.x -= dx
+            crusher.y -= dy
+            crusher.targetX -= dx
+            crusher.targetY -= dy
+        }
+    }
+
     reset(): void {
         this.deactivate()
         this.animTime = 0

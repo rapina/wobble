@@ -7,27 +7,20 @@ import {
     getCharacterSkillConfig,
     SkillDefinition,
 } from '../skills'
-import { STAGES, StageConfig } from '../PhysicsModifiers'
 import { useCollectionStore } from '@/stores/collectionStore'
 import { useProgressStore, isSkillUnlocked, skillToFormulaMap } from '@/stores/progressStore'
 import { getFormula } from '@/formulas/registry'
 import { t } from '@/utils/localization'
+import {
+    createBalatroButton,
+    createBalatroCircleButton,
+    BALATRO_COLORS,
+} from './BalatroButton'
 
 export interface CharacterSelectContext {
     container: Container
     width: number
     height: number
-}
-
-// Stage preview particle
-interface PreviewParticle {
-    x: number
-    y: number
-    vx: number
-    vy: number
-    size: number
-    alpha: number
-    color: number
 }
 
 export class CharacterSelectScreen {
@@ -40,23 +33,11 @@ export class CharacterSelectScreen {
     private availableCharacters: WobbleShape[] = ['circle']
     private selectedCharacterIndex = 0
 
-    // Selected stage
-    private selectedStageIndex = 0
-
     // UI elements
     private characterCardContainer!: Container
     private previewWobble: Wobble | null = null
     private charLeftArrowBtn!: Container
     private charRightArrowBtn!: Container
-
-    // Stage UI elements
-    private stagePreviewContainer!: Container
-    private stagePreviewGraphics!: Graphics
-    private stageLeftArrowBtn!: Container
-    private stageRightArrowBtn!: Container
-
-    // Stage preview particles
-    private previewParticles: PreviewParticle[] = []
 
     // Selected skills (player chooses up to 5)
     private selectedSkills: string[] = []
@@ -81,7 +62,7 @@ export class CharacterSelectScreen {
     private isVisible = false
 
     // Callbacks
-    onStartGame?: (character: WobbleShape, stageId: string, selectedSkills: string[]) => void
+    onSelectCharacter?: (character: WobbleShape, selectedSkills: string[]) => void
     onExit?: () => void
 
     constructor(context: CharacterSelectContext) {
@@ -99,10 +80,6 @@ export class CharacterSelectScreen {
         return this.availableCharacters[this.selectedCharacterIndex] || 'circle'
     }
 
-    getSelectedStage(): StageConfig {
-        return STAGES[this.selectedStageIndex]
-    }
-
     show(): void {
         console.log('[CharacterSelectScreen] show() CALLED')
         this.isVisible = true
@@ -114,7 +91,6 @@ export class CharacterSelectScreen {
 
         console.log('[CharacterSelectScreen] Calling createUI...')
         this.createUI()
-        this.initStagePreviewParticles()
         console.log(
             `[CharacterSelectScreen] show() COMPLETED - visible: ${this.screenContainer.visible}, children: ${this.screenContainer.children.length}`
         )
@@ -171,8 +147,6 @@ export class CharacterSelectScreen {
         const arrowPulse = 1 + Math.sin(this.animPhase * 3) * 0.03
         if (this.charLeftArrowBtn?.scale.x >= 0.9) this.charLeftArrowBtn.scale.set(arrowPulse)
         if (this.charRightArrowBtn?.scale.x >= 0.9) this.charRightArrowBtn.scale.set(arrowPulse)
-        if (this.stageLeftArrowBtn?.scale.x >= 0.9) this.stageLeftArrowBtn.scale.set(arrowPulse)
-        if (this.stageRightArrowBtn?.scale.x >= 0.9) this.stageRightArrowBtn.scale.set(arrowPulse)
 
         // Pulse buttons
         if (this.startButton) {
@@ -184,19 +158,14 @@ export class CharacterSelectScreen {
             const pulse = 1 + Math.sin(this.animPhase * 3 + Math.PI) * 0.02
             this.exitButton.scale.set(pulse)
         }
-
-        // Animate stage preview
-        this.updateStagePreview(deltaSeconds)
     }
 
     reset(): void {
         this.hide()
         this.selectedCharacterIndex = 0
-        this.selectedStageIndex = 0
         this.selectedSkills = []
         this.focusedSkillId = null
         this.animPhase = 0
-        this.previewParticles = []
     }
 
     private selectCharacterByIndex(index: number): void {
@@ -215,249 +184,6 @@ export class CharacterSelectScreen {
             (this.selectedCharacterIndex - 1 + this.availableCharacters.length) %
             this.availableCharacters.length
         this.selectCharacterByIndex(prevIndex)
-    }
-
-    private selectStage(index: number): void {
-        if (this.selectedStageIndex === index) return
-        this.selectedStageIndex = index
-        this.createUI()
-        this.initStagePreviewParticles()
-    }
-
-    private selectNextStage(): void {
-        const nextIndex = (this.selectedStageIndex + 1) % STAGES.length
-        this.selectStage(nextIndex)
-    }
-
-    private selectPrevStage(): void {
-        const prevIndex = (this.selectedStageIndex - 1 + STAGES.length) % STAGES.length
-        this.selectStage(prevIndex)
-    }
-
-    /**
-     * Initialize particles for stage preview based on stage type
-     */
-    private initStagePreviewParticles(): void {
-        const stage = STAGES[this.selectedStageIndex]
-        this.previewParticles = []
-
-        const previewWidth = this.width - 50
-        const previewHeight = 60
-
-        switch (stage.id) {
-            case 'normal':
-                // Gentle floating particles
-                for (let i = 0; i < 15; i++) {
-                    this.previewParticles.push({
-                        x: Math.random() * previewWidth,
-                        y: Math.random() * previewHeight,
-                        vx: (Math.random() - 0.5) * 20,
-                        vy: (Math.random() - 0.5) * 20,
-                        size: 2 + Math.random() * 3,
-                        alpha: 0.3 + Math.random() * 0.4,
-                        color: stage.particleColor,
-                    })
-                }
-                break
-
-            case 'low-gravity':
-                // Stars floating upward slowly
-                for (let i = 0; i < 25; i++) {
-                    this.previewParticles.push({
-                        x: Math.random() * previewWidth,
-                        y: Math.random() * previewHeight,
-                        vx: (Math.random() - 0.5) * 5,
-                        vy: -10 - Math.random() * 20, // Floating up
-                        size: 1 + Math.random() * 3,
-                        alpha: 0.4 + Math.random() * 0.6,
-                        color: Math.random() > 0.7 ? 0xffffff : stage.particleColor,
-                    })
-                }
-                break
-
-            case 'elastic':
-                // Bouncy particles
-                for (let i = 0; i < 20; i++) {
-                    this.previewParticles.push({
-                        x: Math.random() * previewWidth,
-                        y: Math.random() * previewHeight,
-                        vx: (Math.random() - 0.5) * 80,
-                        vy: (Math.random() - 0.5) * 80,
-                        size: 3 + Math.random() * 4,
-                        alpha: 0.5 + Math.random() * 0.3,
-                        color: stage.particleColor,
-                    })
-                }
-                break
-
-            case 'momentum':
-                // Heavy, slow particles
-                for (let i = 0; i < 12; i++) {
-                    this.previewParticles.push({
-                        x: Math.random() * previewWidth,
-                        y: Math.random() * previewHeight,
-                        vx: (Math.random() - 0.5) * 30,
-                        vy: (Math.random() - 0.5) * 30,
-                        size: 5 + Math.random() * 6,
-                        alpha: 0.6 + Math.random() * 0.3,
-                        color: stage.particleColor,
-                    })
-                }
-                break
-
-            case 'vortex':
-                // Particles that will orbit center
-                for (let i = 0; i < 30; i++) {
-                    const angle = Math.random() * Math.PI * 2
-                    const dist = 20 + Math.random() * 50
-                    this.previewParticles.push({
-                        x: previewWidth / 2 + Math.cos(angle) * dist,
-                        y: previewHeight / 2 + Math.sin(angle) * dist,
-                        vx: Math.cos(angle + Math.PI / 2) * 40,
-                        vy: Math.sin(angle + Math.PI / 2) * 40,
-                        size: 2 + Math.random() * 3,
-                        alpha: 0.4 + Math.random() * 0.4,
-                        color: stage.particleColor,
-                    })
-                }
-                break
-        }
-    }
-
-    /**
-     * Update stage preview animation
-     */
-    private updateStagePreview(deltaSeconds: number): void {
-        if (!this.stagePreviewContainer || !this.stagePreviewGraphics) return
-
-        const stage = STAGES[this.selectedStageIndex]
-        const previewWidth = this.width - 50
-        const previewHeight = 60
-
-        // Use clear() - the Batcher issue was fixed in usePixiApp.ts
-        this.stagePreviewGraphics.clear()
-
-        // Draw background gradient
-        const bgTop = stage.bgColor
-        const bgBottom = this.darkenColor(stage.bgColor, 0.3)
-        const bands = 6
-        for (let i = 0; i < bands; i++) {
-            const y = (i / bands) * previewHeight
-            const h = previewHeight / bands + 1
-            const blend = i / (bands - 1)
-            const color = this.lerpColor(bgTop, bgBottom, blend)
-            this.stagePreviewGraphics.rect(0, y, previewWidth, h)
-            this.stagePreviewGraphics.fill(color)
-        }
-
-        // Update and draw particles based on stage type
-        for (const p of this.previewParticles) {
-            // Update position
-            p.x += p.vx * deltaSeconds
-            p.y += p.vy * deltaSeconds
-
-            // Stage-specific physics
-            switch (stage.id) {
-                case 'normal':
-                    // Gentle drift
-                    p.vx *= 0.99
-                    p.vy *= 0.99
-                    break
-
-                case 'low-gravity':
-                    // Float upward, wrap around
-                    if (p.y < -5) {
-                        p.y = previewHeight + 5
-                        p.x = Math.random() * previewWidth
-                    }
-                    break
-
-                case 'elastic':
-                    // Bounce off walls
-                    if (p.x < 0 || p.x > previewWidth) {
-                        p.vx *= -0.9
-                        p.x = Math.max(0, Math.min(previewWidth, p.x))
-                    }
-                    if (p.y < 0 || p.y > previewHeight) {
-                        p.vy *= -0.9
-                        p.y = Math.max(0, Math.min(previewHeight, p.y))
-                    }
-                    break
-
-                case 'momentum':
-                    // Heavy friction
-                    p.vx *= 0.98
-                    p.vy *= 0.98
-                    // Wrap around
-                    if (p.x < -10) p.x = previewWidth + 10
-                    if (p.x > previewWidth + 10) p.x = -10
-                    if (p.y < -10) p.y = previewHeight + 10
-                    if (p.y > previewHeight + 10) p.y = -10
-                    break
-
-                case 'vortex': {
-                    // Pull toward center and orbit
-                    const centerX = previewWidth / 2
-                    const centerY = previewHeight / 2
-                    const dx = centerX - p.x
-                    const dy = centerY - p.y
-                    const dist = Math.sqrt(dx * dx + dy * dy)
-                    if (dist > 10) {
-                        const pull = 50 / dist
-                        p.vx += (dx / dist) * pull * deltaSeconds
-                        p.vy += (dy / dist) * pull * deltaSeconds
-                    }
-                    // Add orbital motion
-                    const angle = Math.atan2(dy, dx) + Math.PI / 2
-                    p.vx += Math.cos(angle) * 30 * deltaSeconds
-                    p.vy += Math.sin(angle) * 30 * deltaSeconds
-                    // Friction
-                    p.vx *= 0.995
-                    p.vy *= 0.995
-                    break
-                }
-            }
-
-            // Draw particle
-            const pulse = 0.8 + Math.sin(this.animPhase * 3 + p.x * 0.1) * 0.2
-            this.stagePreviewGraphics.circle(p.x, p.y, p.size * pulse)
-            this.stagePreviewGraphics.fill({ color: p.color, alpha: p.alpha * pulse })
-        }
-
-        // Stage-specific overlay effects
-        switch (stage.id) {
-            case 'low-gravity':
-                // Draw a few twinkling stars
-                for (let i = 0; i < 5; i++) {
-                    const sx = (i * 0.2 + 0.1) * previewWidth
-                    const sy = (Math.sin(this.animPhase + i) * 0.3 + 0.3) * previewHeight
-                    const twinkle = Math.sin(this.animPhase * 5 + i * 2) * 0.5 + 0.5
-                    this.stagePreviewGraphics.circle(sx, sy, 1.5)
-                    this.stagePreviewGraphics.fill({ color: 0xffffff, alpha: twinkle })
-                }
-                break
-
-            case 'vortex':
-                // Draw spiral lines
-                const centerX = previewWidth / 2
-                const centerY = previewHeight / 2
-                for (let arm = 0; arm < 3; arm++) {
-                    const startAngle = (arm / 3) * Math.PI * 2 + this.animPhase * 0.5
-                    for (let i = 0; i < 20; i++) {
-                        const t = i / 20
-                        const angle = startAngle + t * Math.PI
-                        const dist = 10 + t * 50
-                        const x = centerX + Math.cos(angle) * dist
-                        const y = centerY + Math.sin(angle) * dist
-                        this.stagePreviewGraphics.circle(x, y, 1)
-                        this.stagePreviewGraphics.fill({
-                            color: stage.particleColor,
-                            alpha: 0.3 * (1 - t),
-                        })
-                    }
-                }
-                break
-        }
     }
 
     /**
@@ -618,7 +344,6 @@ export class CharacterSelectScreen {
 
         const selectedShape = this.getSelectedCharacter()
         const selectedChar = WOBBLE_CHARACTERS[selectedShape]
-        const selectedStage = STAGES[this.selectedStageIndex]
         const skillConfig = getCharacterSkillConfig(selectedShape)
         const charStats = WOBBLE_STATS[selectedShape]
 
@@ -676,26 +401,17 @@ export class CharacterSelectScreen {
         card.stroke({ color: 0x1a1a1a, width: 4 })
         this.screenContainer.addChild(card)
 
-        // ========== 1. CHARACTER + STATS SECTION (HORIZONTAL LAYOUT) ==========
-        const charSectionY = cardY + 20
-        const charStatsRowY = charSectionY + 60
+        // ========== 1. CHARACTER SECTION (CENTERED, VERTICAL LAYOUT) ==========
+        const charCenterY = cardY + 70
 
-        // Calculate positions for centered horizontal layout
-        const sectionGap = 15 // Gap between character and stats
-        const charAreaWidth = 130 // Character area width (arrows + wobble)
-        const statsAreaWidth = 160 // Stats area width (radar + labels)
-        const totalWidth = charAreaWidth + sectionGap + statsAreaWidth
-        const startX = this.centerX - totalWidth / 2
-
-        // === LEFT: Character preview ===
-        const charAreaX = startX + charAreaWidth / 2
+        // Character container (centered)
         this.characterCardContainer = new Container()
-        this.characterCardContainer.position.set(charAreaX, charStatsRowY)
+        this.characterCardContainer.position.set(this.centerX, charCenterY)
         this.screenContainer.addChild(this.characterCardContainer)
 
-        // Character wobble (bigger for 9:16)
+        // Character wobble (larger now that we have more space)
         this.previewWobble = new Wobble({
-            size: 55,
+            size: 70,
             shape: selectedShape,
             expression: 'happy',
             color: selectedChar.color,
@@ -709,17 +425,17 @@ export class CharacterSelectScreen {
             text: t(selectedChar.name, 'ko'),
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 15,
+                fontSize: 16,
                 fontWeight: 'bold',
                 fill: textDark,
             }),
         })
         charNameText.anchor.set(0.5)
-        charNameText.position.set(0, 52)
+        charNameText.position.set(0, 55)
         this.characterCardContainer.addChild(charNameText)
 
         // Character page dots
-        const charDotsY = 72
+        const charDotsY = 75
         const charDotGap = 12
         const charTotalDotsWidth = (this.availableCharacters.length - 1) * charDotGap
         this.availableCharacters.forEach((char, i) => {
@@ -736,48 +452,90 @@ export class CharacterSelectScreen {
         })
 
         // Character arrows (around character)
-        this.charLeftArrowBtn = this.createArrowButton('<', charAreaX - 58, charStatsRowY, () => {
-            this.selectPrevCharacter()
+        this.charLeftArrowBtn = createBalatroCircleButton({
+            symbol: '<',
+            size: 32,
+            color: BALATRO_COLORS.gold,
+            onClick: () => this.selectPrevCharacter(),
         })
+        this.charLeftArrowBtn.position.set(this.centerX - 70, charCenterY)
         this.screenContainer.addChild(this.charLeftArrowBtn)
 
-        this.charRightArrowBtn = this.createArrowButton('>', charAreaX + 58, charStatsRowY, () => {
-            this.selectNextCharacter()
+        this.charRightArrowBtn = createBalatroCircleButton({
+            symbol: '>',
+            size: 32,
+            color: BALATRO_COLORS.gold,
+            onClick: () => this.selectNextCharacter(),
         })
+        this.charRightArrowBtn.position.set(this.centerX + 70, charCenterY)
         this.screenContainer.addChild(this.charRightArrowBtn)
 
-        // === RIGHT: Stats radar chart ===
-        const statsAreaX = startX + charAreaWidth + sectionGap + statsAreaWidth / 2
-        const statsContainer = new Container()
-        statsContainer.position.set(statsAreaX, charStatsRowY)
-        this.screenContainer.addChild(statsContainer)
+        // ========== 2. STATS BARS (below character) ==========
+        const statsY = charCenterY + 95
+        const statsWidth = cardWidth - 60
+        const statsStartX = cardX + 30
+        const barHeight = 6
+        const barGap = 14
 
-        // Radar chart (bigger for 9:16)
-        const radarRadius = 45
-
-        const statLabels = ['HP', 'DMG', 'RATE', 'SPD', 'KNOCK']
-        const statValues = [
-            charStats.healthMultiplier,
-            charStats.damageMultiplier,
-            charStats.fireRateMultiplier,
-            charStats.moveSpeedMultiplier,
-            charStats.knockbackMultiplier,
+        const statItems = [
+            { label: 'HP', value: charStats.healthMultiplier, color: 0x2ecc71 },
+            { label: 'DMG', value: charStats.damageMultiplier, color: 0xe74c3c },
+            { label: 'RATE', value: charStats.fireRateMultiplier, color: 0xf39c12 },
+            { label: 'SPD', value: charStats.moveSpeedMultiplier, color: 0x3498db },
+            { label: 'KNOCK', value: charStats.knockbackMultiplier, color: 0x9b59b6 },
         ]
 
-        this.drawRadarChart(
-            statsContainer,
-            statValues,
-            statLabels,
-            0,
-            5,
-            radarRadius,
-            selectedChar.color,
-            textDark,
-            textMuted
-        )
+        statItems.forEach((stat, index) => {
+            const y = statsY + index * barGap
 
-        // ========== 2. SKILL SELECTION SECTION (Drag & Drop Grid) ==========
-        const skillSectionY = charStatsRowY + 95
+            // Stat label
+            const label = new Text({
+                text: stat.label,
+                style: new TextStyle({
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 9,
+                    fontWeight: 'bold',
+                    fill: textMuted,
+                }),
+            })
+            label.anchor.set(0, 0.5)
+            label.position.set(statsStartX, y)
+            this.screenContainer.addChild(label)
+
+            // Bar background
+            const barBgX = statsStartX + 45
+            const barWidth = statsWidth - 45
+            const barBg = new Graphics()
+            barBg.roundRect(barBgX, y - barHeight / 2, barWidth, barHeight, 3)
+            barBg.fill({ color: textMuted, alpha: 0.2 })
+            this.screenContainer.addChild(barBg)
+
+            // Bar fill (value 0.5~2.0 mapped to 0~100%)
+            const normalizedValue = Math.min(1, Math.max(0, (stat.value - 0.5) / 1.5))
+            const fillWidth = barWidth * normalizedValue
+            if (fillWidth > 0) {
+                const barFill = new Graphics()
+                barFill.roundRect(barBgX, y - barHeight / 2, fillWidth, barHeight, 3)
+                barFill.fill({ color: stat.color, alpha: 0.8 })
+                this.screenContainer.addChild(barFill)
+            }
+
+            // Value text
+            const valueText = new Text({
+                text: stat.value.toFixed(1),
+                style: new TextStyle({
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 8,
+                    fill: textDark,
+                }),
+            })
+            valueText.anchor.set(1, 0.5)
+            valueText.position.set(statsStartX + statsWidth, y)
+            this.screenContainer.addChild(valueText)
+        })
+
+        // ========== 3. SKILL SELECTION SECTION (Drag & Drop Grid) ==========
+        const skillSectionY = statsY + statItems.length * barGap + 10
         const studiedFormulas = useProgressStore.getState().studiedFormulas
         const allSkills = Object.values(SKILL_DEFINITIONS)
 
@@ -974,7 +732,7 @@ export class CharacterSelectScreen {
                 const requiredFormulas = skillToFormulaMap[skillDef.id] || []
                 const formulaId = requiredFormulas[0]
                 const formula = formulaId ? getFormula(formulaId) : null
-                const hintText = formula ? formula.name : '???'
+                const hintText = formula ? t(formula.name, 'ko') : '???'
 
                 const hint = new Text({
                     text: hintText,
@@ -1260,7 +1018,7 @@ export class CharacterSelectScreen {
                 const formulaNames = requiredFormulas
                     .map((fId) => {
                         const f = getFormula(fId)
-                        return f ? f.name : fId
+                        return f ? t(f.name, 'ko') : fId
                     })
                     .join(', ')
 
@@ -1293,29 +1051,31 @@ export class CharacterSelectScreen {
             skillDescContainer.addChild(placeholder)
         }
 
-        // ========== 5. PASSIVE SECTION (anchored above stage) ==========
-        // Calculate from bottom: buttons(-35) -> stage(60+25) -> passive(26+10)
-        const passivePillY = cardY + cardHeight - 35 - 25 - 60 - 10 - 26
+        // ========== 5. PASSIVE SECTION (above buttons) ==========
+        const btnY = cardY + cardHeight - 32
+        const passivePillY = btnY - 50
         const passiveDef = PASSIVE_DEFINITIONS[skillConfig.passive]
+
         if (passiveDef) {
             const passiveNameText = `${passiveDef.icon} ${t(passiveDef.name, 'ko')}`
-            const passivePillWidth = 120
+            const passivePillWidth = 140
+            const passivePillHeight = 24
 
             const passivePill = new Graphics()
             passivePill.roundRect(
                 this.centerX - passivePillWidth / 2,
                 passivePillY,
                 passivePillWidth,
-                26,
-                13
+                passivePillHeight,
+                12
             )
             passivePill.fill({ color: passiveDef.color, alpha: 0.15 })
             passivePill.roundRect(
                 this.centerX - passivePillWidth / 2,
                 passivePillY,
                 passivePillWidth,
-                26,
-                13
+                passivePillHeight,
+                12
             )
             passivePill.stroke({ color: passiveDef.color, width: 1.5, alpha: 0.6 })
             this.screenContainer.addChild(passivePill)
@@ -1330,7 +1090,7 @@ export class CharacterSelectScreen {
                 }),
             })
             passiveText.anchor.set(0.5)
-            passiveText.position.set(this.centerX, passivePillY + 13)
+            passiveText.position.set(this.centerX, passivePillY + passivePillHeight / 2)
             this.screenContainer.addChild(passiveText)
         } else {
             const noPassiveText = new Text({
@@ -1342,145 +1102,31 @@ export class CharacterSelectScreen {
                 }),
             })
             noPassiveText.anchor.set(0.5)
-            noPassiveText.position.set(this.centerX, passivePillY + 13)
+            noPassiveText.position.set(this.centerX, passivePillY + 12)
             noPassiveText.alpha = 0.6
             this.screenContainer.addChild(noPassiveText)
         }
 
-        // ========== 6. STAGE/BACKGROUND SECTION (anchored to bottom) ==========
-        const previewWidth = cardWidth - 20
-        const previewHeight = 60
-        // Position from bottom: buttons at -35, stage above with margin
-        const previewY = cardY + cardHeight - 35 - 25 - previewHeight
+        // ========== 6. ACTION BUTTONS (anchored at bottom) ==========
+        const btnWidth = 120
+        const btnGap = 25
 
-        // Stage preview container
-        this.stagePreviewContainer = new Container()
-        this.stagePreviewContainer.position.set(cardX + 10, previewY)
-        this.screenContainer.addChild(this.stagePreviewContainer)
-
-        // Preview background
-        const previewBorder = new Graphics()
-        previewBorder.roundRect(0, 0, previewWidth, previewHeight, 10)
-        previewBorder.fill({ color: selectedStage.bgColor, alpha: 1 })
-        this.stagePreviewContainer.addChild(previewBorder)
-
-        // Animated preview graphics
-        this.stagePreviewGraphics = new Graphics()
-        this.stagePreviewContainer.addChild(this.stagePreviewGraphics)
-
-        // Stage info overlay (left side)
-        const stageInfoOverlay = new Container()
-        stageInfoOverlay.position.set(70, previewHeight / 2)
-        this.stagePreviewContainer.addChild(stageInfoOverlay)
-
-        // Stage icon
-        const stageIcon = new Text({
-            text: selectedStage.icon,
-            style: new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 20,
-                fill: 0xffffff,
-            }),
+        this.startButton = createBalatroButton({
+            label: 'NEXT',
+            width: btnWidth,
+            color: BALATRO_COLORS.blue,
+            onClick: () => this.handleSelectCharacter(),
         })
-        stageIcon.anchor.set(0.5)
-        stageIcon.position.set(-35, 0)
-        stageIcon.alpha = 0.9
-        stageInfoOverlay.addChild(stageIcon)
-
-        // Stage name + formula + trait stacked
-        const stageNameText = new Text({
-            text: t(selectedStage.name, 'ko'),
-            style: new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 13,
-                fontWeight: 'bold',
-                fill: 0xffffff,
-            }),
-        })
-        stageNameText.anchor.set(0, 0.5)
-        stageNameText.position.set(-10, -12)
-        stageInfoOverlay.addChild(stageNameText)
-
-        const formulaText = new Text({
-            text: `${selectedStage.description}  ·  ${selectedStage.trait}`,
-            style: new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 9,
-                fill: selectedStage.particleColor,
-            }),
-        })
-        formulaText.anchor.set(0, 0.5)
-        formulaText.position.set(-10, 6)
-        stageInfoOverlay.addChild(formulaText)
-
-        // Preview border stroke
-        const borderStroke = new Graphics()
-        borderStroke.roundRect(0, 0, previewWidth, previewHeight, 10)
-        borderStroke.stroke({ color: selectedStage.particleColor, width: 2, alpha: 0.8 })
-        this.stagePreviewContainer.addChild(borderStroke)
-
-        // Stage dots (inside preview, bottom right)
-        const stageDotY = previewHeight - 10
-        const stageDotGap = 10
-        const stageTotalDotsWidth = (STAGES.length - 1) * stageDotGap
-        const dotsStartX = previewWidth - 15 - stageTotalDotsWidth
-        STAGES.forEach((stage, i) => {
-            const isSelected = i === this.selectedStageIndex
-            const dot = new Graphics()
-            dot.circle(dotsStartX + i * stageDotGap, stageDotY, isSelected ? 4 : 2.5)
-            dot.fill({
-                color: isSelected ? 0xffffff : 0xffffff,
-                alpha: isSelected ? 1 : 0.4,
-            })
-            this.stagePreviewContainer.addChild(dot)
-        })
-
-        // Stage arrows
-        this.stageLeftArrowBtn = this.createSmallArrowButton(
-            '<',
-            cardX + 22,
-            previewY + previewHeight / 2,
-            () => {
-                this.selectPrevStage()
-            }
-        )
-        this.screenContainer.addChild(this.stageLeftArrowBtn)
-
-        this.stageRightArrowBtn = this.createSmallArrowButton(
-            '>',
-            cardX + cardWidth - 22,
-            previewY + previewHeight / 2,
-            () => {
-                this.selectNextStage()
-            }
-        )
-        this.screenContainer.addChild(this.stageRightArrowBtn)
-
-        // ========== ACTION BUTTONS (inside card at bottom) ==========
-        const btnY = cardY + cardHeight - 35
-        const btnWidth = 100
-        const btnGap = 15
-
-        this.startButton = this.createActionButton(
-            'PLAY',
-            this.centerX - btnWidth / 2 - btnGap / 2,
-            btnY,
-            btnWidth,
-            0x4a9eff, // Balatro blue
-            () => {
-                this.handleStartGame()
-            }
-        )
+        this.startButton.position.set(this.centerX - btnWidth / 2 - btnGap / 2, btnY)
         this.screenContainer.addChild(this.startButton)
 
-        this.exitButton = this.createActionButton(
-            'EXIT',
-            this.centerX + btnWidth / 2 + btnGap / 2,
-            btnY,
-            btnWidth,
-            0xe85d4c, // Balatro red
-            () => this.onExit?.()
-        )
+        this.exitButton = createBalatroButton({
+            label: 'EXIT',
+            width: btnWidth,
+            color: BALATRO_COLORS.red,
+            onClick: () => this.onExit?.(),
+        })
+        this.exitButton.position.set(this.centerX + btnWidth / 2 + btnGap / 2, btnY)
         this.screenContainer.addChild(this.exitButton)
 
         console.log(
@@ -1488,152 +1134,9 @@ export class CharacterSelectScreen {
         )
     }
 
-    private createArrowButton(
-        symbol: string,
-        x: number,
-        y: number,
-        onClick: () => void
-    ): Container {
-        const btn = new Container()
-        btn.position.set(x, y)
-        btn.eventMode = 'static'
-        btn.cursor = 'pointer'
-
-        const btnSize = 32
-        const cardShadowColor = 0x1a1a1a
-        const btnColor = 0xc9a227 // Balatro gold
-
-        const shadow = new Graphics()
-        shadow.circle(2, 3, btnSize / 2)
-        shadow.fill({ color: cardShadowColor, alpha: 0.5 })
-        btn.addChild(shadow)
-
-        const bg = new Graphics()
-        bg.circle(0, 0, btnSize / 2)
-        bg.fill(btnColor)
-        bg.circle(0, 0, btnSize / 2)
-        bg.stroke({ color: 0x1a1a1a, width: 3 })
-        btn.addChild(bg)
-
-        const arrow = new Text({
-            text: symbol,
-            style: new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 16,
-                fontWeight: 'bold',
-                fill: 0x000000, // Black text on gold
-            }),
-        })
-        arrow.anchor.set(0.5)
-        btn.addChild(arrow)
-
-        btn.on('pointerdown', () => {
-            btn.scale.set(0.9)
-            onClick()
-        })
-        btn.on('pointerup', () => btn.scale.set(1))
-        btn.on('pointerupoutside', () => btn.scale.set(1))
-
-        return btn
-    }
-
-    private createSmallArrowButton(
-        symbol: string,
-        x: number,
-        y: number,
-        onClick: () => void
-    ): Container {
-        const btn = new Container()
-        btn.position.set(x, y)
-        btn.eventMode = 'static'
-        btn.cursor = 'pointer'
-
-        // Semi-transparent background circle
-        const bg = new Graphics()
-        bg.circle(0, 0, 16)
-        bg.fill({ color: 0x000000, alpha: 0.3 })
-        btn.addChild(bg)
-
-        const arrow = new Text({
-            text: symbol,
-            style: new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 18,
-                fontWeight: 'bold',
-                fill: 0xffffff,
-            }),
-        })
-        arrow.anchor.set(0.5)
-        btn.addChild(arrow)
-
-        btn.on('pointerdown', () => {
-            btn.scale.set(0.85)
-            onClick()
-        })
-        btn.on('pointerup', () => btn.scale.set(1))
-        btn.on('pointerupoutside', () => btn.scale.set(1))
-
-        return btn
-    }
-
-    private createActionButton(
-        label: string,
-        x: number,
-        y: number,
-        width: number,
-        accentColor: number,
-        onClick: () => void
-    ): Container {
-        const btn = new Container()
-        btn.position.set(x, y)
-        btn.eventMode = 'static'
-        btn.cursor = 'pointer'
-
-        const height = 38
-        const cardShadowColor = 0x1a1a1a
-
-        // Shadow
-        const shadow = new Graphics()
-        shadow.roundRect(-width / 2 + 2, -height / 2 + 4, width, height, 10)
-        shadow.fill({ color: cardShadowColor, alpha: 0.5 })
-        btn.addChild(shadow)
-
-        // Colored background (like HomeScreen buttons)
-        const bg = new Graphics()
-        bg.roundRect(-width / 2, -height / 2, width, height, 10)
-        bg.fill(accentColor)
-        bg.roundRect(-width / 2, -height / 2, width, height, 10)
-        bg.stroke({ color: 0x1a1a1a, width: 3 })
-        btn.addChild(bg)
-
-        // Dark text on colored background
-        const btnText = new Text({
-            text: label,
-            style: new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 14,
-                fontWeight: 'bold',
-                fill: accentColor === 0xc9a227 ? 0x000000 : 0xffffff, // Black text on gold, white on others
-                letterSpacing: 2,
-            }),
-        })
-        btnText.anchor.set(0.5)
-        btn.addChild(btnText)
-
-        btn.on('pointerdown', () => btn.scale.set(0.95))
-        btn.on('pointerup', () => {
-            btn.scale.set(1)
-            onClick()
-        })
-        btn.on('pointerupoutside', () => btn.scale.set(1))
-
-        return btn
-    }
-
-    private handleStartGame(): void {
-        const stage = STAGES[this.selectedStageIndex]
+    private handleSelectCharacter(): void {
         this.hide()
-        this.onStartGame?.(this.getSelectedCharacter(), stage.id, this.selectedSkills)
+        this.onSelectCharacter?.(this.getSelectedCharacter(), this.selectedSkills)
     }
 
     getSelectedSkills(): string[] {

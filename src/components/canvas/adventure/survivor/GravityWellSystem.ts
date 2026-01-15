@@ -334,6 +334,20 @@ export class GravityWellSystem {
         }
     }
 
+    /**
+     * Offset all positions (for world coordinate reset)
+     */
+    offsetPositions(dx: number, dy: number): void {
+        this.playerX -= dx
+        this.playerY -= dy
+        for (const well of this.wells) {
+            well.x -= dx
+            well.y -= dy
+            well.targetX -= dx
+            well.targetY -= dy
+        }
+    }
+
     reset(): void {
         this.deactivate()
         this.animTime = 0

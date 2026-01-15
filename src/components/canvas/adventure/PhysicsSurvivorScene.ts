@@ -43,6 +43,7 @@ import {
     CharacterSelectScreen,
     OpeningScreen,
     PauseScreen,
+    StageSelectScreen,
     STAGES,
     getDefaultStage,
     getStageById,
@@ -165,6 +166,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     declare private skillSelectionScreen: SkillSelectionScreen
     declare private resultScreen: ResultScreen
     declare private characterSelectScreen: CharacterSelectScreen
+    declare private stageSelectScreen: StageSelectScreen
     declare private openingScreen: OpeningScreen
     declare private pauseScreen: PauseScreen
 
@@ -239,6 +241,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     protected setup(): void {
         // Game container (holds all world-space elements including background)
         this.gameContainer = new Container()
+        this.gameContainer.scale.set(0.75) // Zoom out to show more of the battlefield
         this.container.addChild(this.gameContainer)
 
         // Background container - inside gameContainer (world-space)
@@ -271,6 +274,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
         const characterSelectContainer = new Container()
         characterSelectContainer.visible = false
         this.container.addChild(characterSelectContainer)
+
+        // Stage selection container
+        const stageSelectContainer = new Container()
+        stageSelectContainer.visible = false
+        this.container.addChild(stageSelectContainer)
 
         // Opening screen container
         const openingContainer = new Container()
@@ -423,15 +431,29 @@ export class PhysicsSurvivorScene extends AdventureScene {
             width: this.width,
             height: this.height,
         })
-        this.characterSelectScreen.onStartGame = (character, stageId, selectedSkills) => {
+        this.characterSelectScreen.onSelectCharacter = (character, selectedSkills) => {
             this.debugLog(
-                `characterSelectScreen.onStartGame: ${character}, ${stageId}, skills: ${selectedSkills.join(', ')}`
+                `characterSelectScreen.onSelectCharacter: ${character}, skills: ${selectedSkills.join(', ')}`
             )
-            this.startWithStage(character, stageId, selectedSkills)
+            this.showStageSelect(character, selectedSkills)
         }
         this.characterSelectScreen.onExit = () => {
             this.debugLog('characterSelectScreen.onExit called')
             this.onPlayComplete?.('success') // This triggers GameScreen's onBack()
+        }
+
+        this.stageSelectScreen = new StageSelectScreen({
+            container: stageSelectContainer,
+            width: this.width,
+            height: this.height,
+        })
+        this.stageSelectScreen.onSelectStage = (stageId) => {
+            this.debugLog(`stageSelectScreen.onSelectStage: ${stageId}`)
+            this.startWithStage(this.selectedCharacter, stageId, this.playerSelectedSkills)
+        }
+        this.stageSelectScreen.onBack = () => {
+            this.debugLog('stageSelectScreen.onBack called')
+            this.showCharacterSelect()
         }
 
         this.openingScreen = new OpeningScreen({
@@ -549,7 +571,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.cameraY = 0
 
         this.player = new Wobble({
-            size: 50,
+            size: 35, // Reduced from 50 for zoom-out view
             shape: 'circle',
             expression: 'happy',
             color: 0xf5b041,
@@ -1553,6 +1575,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
             orb.graphics.position.set(orb.x, orb.y)
         }
 
+        // Offset world entity systems (stage gimmicks)
+        this.blackHoleSystem.offsetPositions(offsetX, offsetY)
+        this.gravityWellSystem.offsetPositions(offsetX, offsetY)
+        this.repulsionBarrierSystem.offsetPositions(offsetX, offsetY)
+        this.crusherSystem.offsetPositions(offsetX, offsetY)
+
         // Update camera to new player position
         this.cameraX = 0
         this.cameraY = 0
@@ -1653,6 +1681,22 @@ export class PhysicsSurvivorScene extends AdventureScene {
     // Player-selected skills from character select screen
     private playerSelectedSkills: string[] = []
 
+    private showStageSelect(character: WobbleShape, selectedSkills: string[]): void {
+        this.debugLog(`showStageSelect: ${character}, skills: ${selectedSkills.length}`)
+        this.selectedCharacter = character
+        this.playerSelectedSkills = selectedSkills
+        this.characterSelectScreen.hide()
+        this.setGameState('stage-select', 'showStageSelect')
+        this.stageSelectScreen.show()
+    }
+
+    private showCharacterSelect(): void {
+        this.debugLog('showCharacterSelect called')
+        this.stageSelectScreen.hide()
+        this.setGameState('character-select', 'showCharacterSelect')
+        this.characterSelectScreen.show()
+    }
+
     private startWithStage(
         character: WobbleShape,
         stageId: string,
@@ -1664,7 +1708,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.selectedCharacter = character
         this.currentStage = getStageById(stageId) || getDefaultStage()
         this.playerSelectedSkills = selectedSkills
-        this.characterSelectScreen.hide()
+        this.stageSelectScreen.hide()
         this.showOpening(this.selectedCharacter)
     }
 
@@ -1828,6 +1872,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         if (this.gameState === 'character-select') {
             this.characterSelectScreen.update(deltaSeconds)
+        }
+
+        if (this.gameState === 'stage-select') {
+            this.stageSelectScreen.update(deltaSeconds)
         }
 
         if (this.gameState === 'opening') {
@@ -2155,6 +2203,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
             skillSelectionScreen: !!this.skillSelectionScreen,
             resultScreen: !!this.resultScreen,
             characterSelectScreen: !!this.characterSelectScreen,
+            stageSelectScreen: !!this.stageSelectScreen,
             openingScreen: !!this.openingScreen,
             pauseScreen: !!this.pauseScreen,
             joystick: !!this.joystick,
@@ -2203,6 +2252,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.skillSelectionScreen.reset()
         this.resultScreen.reset()
         this.characterSelectScreen.reset()
+        this.stageSelectScreen.reset()
         this.openingScreen.reset()
         this.pauseScreen.reset()
 
@@ -2283,6 +2333,33 @@ export class PhysicsSurvivorScene extends AdventureScene {
         const oldState = this.gameState
         this.gameState = newState
         this.debugLog(`STATE: ${oldState} -> ${newState} (${reason})`)
+
+        // Toggle filters based on game state
+        // Disable CRT/scanline effects during selection screens
+        const isSelectionScreen = newState === 'character-select' || newState === 'stage-select'
+        this.updateFilterVisibility(!isSelectionScreen)
+    }
+
+    /**
+     * Toggle filter effects visibility
+     * Disabled during character/stage selection, enabled during gameplay
+     */
+    private updateFilterVisibility(enabled: boolean): void {
+        if (this.crtFilter) {
+            // Disable scanlines, chromatic aberration, etc. during selection
+            if (enabled) {
+                this.crtFilter.scanlineIntensity = 0.015 // subtle preset value
+                this.crtFilter.chromaticAberration = this.baseChromaticAberration
+            } else {
+                this.crtFilter.scanlineIntensity = 0
+                this.crtFilter.chromaticAberration = 0
+            }
+        }
+
+        if (this.wobbleFilter) {
+            // Disable wobble effects during selection
+            this.wobbleFilter.wobbleIntensity = enabled ? this.baseWobbleIntensity : 0
+        }
     }
 
     private updateDebugText(): void {
@@ -2312,6 +2389,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         }
 
         const charInfo = getScreenInfo(this.characterSelectScreen)
+        const stageInfo = getScreenInfo(this.stageSelectScreen)
         const openingInfo = getScreenInfo(this.openingScreen)
         const pauseInfo = getScreenInfo(this.pauseScreen)
         const resultInfo = getScreenInfo(this.resultScreen)
@@ -2326,6 +2404,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
             `<span style="color:#0ff">gameTime:</span> ${this.gameTime.toFixed(1)}s`,
             `<span style="color:#888">--- Screens (v/c/p) ---</span>`,
             `charSelect: ${charInfo.visible}/${charInfo.children}/${charInfo.hasParent}`,
+            `stageSelect: ${stageInfo.visible}/${stageInfo.children}/${stageInfo.hasParent}`,
             `opening: ${openingInfo.visible}/${openingInfo.children}/${openingInfo.hasParent}`,
             `pause: ${pauseInfo.visible}/${pauseInfo.children}/${pauseInfo.hasParent}`,
             `result: ${resultInfo.visible}/${resultInfo.children}/${resultInfo.hasParent}`,

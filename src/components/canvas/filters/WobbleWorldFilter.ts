@@ -1095,10 +1095,10 @@ export class WobbleWorldFilter extends Filter {
                     wobbleIntensity: 0.12,
                     wobbleSpeed: 0.8,
                     energyPulse: 0.5,
-                    distortionStrength: 0.08,
+                    distortionStrength: 0.0, // Dynamic only - controlled by proximity
                     noiseAmount: 0.0,
-                    vignetteStrength: 0.3,
-                    colorShift: 0.5,
+                    vignetteStrength: 0.15,
+                    colorShift: 0.3,
                     stageMode: 1,
                     quantumWave: 0.2,
                     particleField: 0.5,
@@ -1108,49 +1108,49 @@ export class WobbleWorldFilter extends Filter {
                 break
             case 'elastic':
                 preset = {
-                    wobbleIntensity: 0.25,
-                    wobbleSpeed: 2.5,
-                    energyPulse: 0.6,
-                    distortionStrength: 0.05,
+                    wobbleIntensity: 0.15,
+                    wobbleSpeed: 1.8,
+                    energyPulse: 0.4,
+                    distortionStrength: 0.0, // Dynamic only - controlled by proximity
                     noiseAmount: 0.0,
-                    vignetteStrength: 0.18,
-                    colorShift: 0.6,
+                    vignetteStrength: 0.15,
+                    colorShift: 0.3,
                     stageMode: 2,
-                    quantumWave: 0.5,
+                    quantumWave: 0.3,
                     particleField: 0.3,
-                    probabilityCloud: 0.5,
+                    probabilityCloud: 0.3,
                     stageTint: [1.0, 0.4, 0.6],
                 }
                 break
             case 'momentum':
                 preset = {
-                    wobbleIntensity: 0.18,
-                    wobbleSpeed: 2.0,
+                    wobbleIntensity: 0.15,
+                    wobbleSpeed: 1.5,
                     energyPulse: 0.35,
-                    distortionStrength: 0.04,
+                    distortionStrength: 0.0, // Dynamic only - controlled by proximity
                     noiseAmount: 0.0,
-                    vignetteStrength: 0.22,
-                    colorShift: 0.35,
+                    vignetteStrength: 0.15,
+                    colorShift: 0.25,
                     stageMode: 3,
                     quantumWave: 0.25,
-                    particleField: 0.6,
+                    particleField: 0.4,
                     probabilityCloud: 0.3,
                     stageTint: [1.0, 0.8, 0.3],
                 }
                 break
             case 'vortex':
                 preset = {
-                    wobbleIntensity: 0.2,
+                    wobbleIntensity: 0.15,
                     wobbleSpeed: 1.2,
-                    energyPulse: 0.55,
-                    distortionStrength: 0.1,
+                    energyPulse: 0.4,
+                    distortionStrength: 0.0, // Dynamic only - controlled by proximity
                     noiseAmount: 0.0,
-                    vignetteStrength: 0.4,
-                    colorShift: 0.7,
+                    vignetteStrength: 0.15,
+                    colorShift: 0.3,
                     stageMode: 4,
-                    quantumWave: 0.35,
+                    quantumWave: 0.3,
                     particleField: 0.4,
-                    probabilityCloud: 0.5,
+                    probabilityCloud: 0.3,
                     stageTint: [1.0, 0.3, 0.2],
                 }
                 break
@@ -1159,7 +1159,7 @@ export class WobbleWorldFilter extends Filter {
                     wobbleIntensity: 0.15,
                     wobbleSpeed: 1.5,
                     energyPulse: 0.3,
-                    distortionStrength: 0.02,
+                    distortionStrength: 0.0, // No distortion for normal stage
                     noiseAmount: 0.0,
                     vignetteStrength: 0.15,
                     colorShift: 0.2,

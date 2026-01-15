@@ -342,6 +342,18 @@ export class RepulsionBarrierSystem {
         this.graphics.fill({ color, alpha })
     }
 
+    /**
+     * Offset all positions (for world coordinate reset)
+     */
+    offsetPositions(dx: number, dy: number): void {
+        this.playerX -= dx
+        this.playerY -= dy
+        for (const barrier of this.barriers) {
+            barrier.x -= dx
+            barrier.y -= dy
+        }
+    }
+
     reset(): void {
         this.deactivate()
         this.animTime = 0

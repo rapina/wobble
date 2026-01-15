@@ -338,6 +338,23 @@ export class BlackHoleSystem {
     }
 
     /**
+     * Offset all positions (for world coordinate reset)
+     */
+    offsetPositions(dx: number, dy: number): void {
+        this.x -= dx
+        this.y -= dy
+        this.targetX -= dx
+        this.targetY -= dy
+        this.playerX -= dx
+        this.playerY -= dy
+        // Offset sucking particles
+        for (const particle of this.suckingParticles) {
+            particle.x -= dx
+            particle.y -= dy
+        }
+    }
+
+    /**
      * Reset the system
      */
     reset(): void {

@@ -12,7 +12,7 @@ interface ProjectileSystemContext {
 export class ProjectileSystem {
     private context: ProjectileSystemContext
     private baseSpeed = 8
-    private baseSize = 8
+    private baseSize = 6 // Reduced from 8 for zoom-out view
 
     // Physics modifiers (stage-based)
     private physicsModifiers: PhysicsModifiers = DEFAULT_PHYSICS

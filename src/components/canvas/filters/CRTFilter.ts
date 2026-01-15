@@ -236,6 +236,14 @@ export class CRTFilter extends Filter {
         this.uniforms.uDimensions[1] = height
     }
 
+    get scanlineIntensity(): number {
+        return this.uniforms.uScanlineIntensity
+    }
+
+    set scanlineIntensity(value: number) {
+        this.uniforms.uScanlineIntensity = value
+    }
+
     get chromaticAberration(): number {
         return this.uniforms.uChromaticAberration
     }
