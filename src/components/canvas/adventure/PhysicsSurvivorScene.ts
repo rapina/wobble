@@ -50,6 +50,8 @@ import {
     type StageConfig,
     type BlackHoleInfo,
     type GeneratedWorld,
+    type Enemy,
+    type SkillCooldown,
 } from './survivor'
 import { VirtualJoystick } from './VirtualJoystick'
 import { FloatingDamageText } from './FloatingDamageText'
@@ -85,11 +87,44 @@ export class PhysicsSurvivorScene extends AdventureScene {
     // Shockwave skill timer
     private shockwaveTimer = 0
 
+    // Phase 3 cooldown-based skill timers
+    private wavePulseTimer = 0
+    private auraTimer = 0
+    private beatPulseTimer = 0
+    private beatPhase = 0 // For beat frequency calculation
+
+    // Wave pulse state
+    private activeWaves: Array<{
+        x: number
+        y: number
+        radius: number
+        maxRadius: number
+        graphics: Graphics
+    }> = []
+
     // New skill timers and state
     private pendulumPhase = 0 // Current phase of pendulum rhythm (radians)
     private pendulumDamageMultiplier = 1 // Current damage multiplier from pendulum rhythm
     private slashAngle = 0 // Current rotation of torque slash
     private slashHitCooldowns: Map<number, number> = new Map() // Enemy ID -> cooldown
+
+    // Buoyant bomb state
+    private buoyantBombTimer = 0
+    private buoyantBombs: Array<{
+        x: number
+        y: number
+        floatTime: number
+        graphics: Graphics
+    }> = []
+
+    // Phase 6: Orbital strike state
+    private orbitAngle = 0 // Current rotation angle
+    private orbitalProjectiles: Array<{
+        angle: number // Individual angle offset
+        graphics: Graphics
+        hitCooldowns: Map<number, number> // Enemy ID -> cooldown
+    }> = []
+    private lastOrbitCount = 0 // Track changes to recreate orbitals
 
     // Passive state tracking
     private momentumSpeedBonus = 0
@@ -735,6 +770,43 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.stats.warpRadius = skillStats.warpRadius
         this.stats.slowFactor = skillStats.slowFactor
 
+        // Phase 3 cooldown skills
+        this.stats.wavePulseInterval = skillStats.wavePulseInterval
+        this.stats.wavelength = skillStats.wavelength
+        this.stats.waveAmplitude = skillStats.waveAmplitude
+        this.stats.waveSpeed = skillStats.waveSpeed
+        this.stats.auraRadius = skillStats.auraRadius
+        this.stats.radiationDamage = skillStats.radiationDamage
+        this.stats.beatFreq1 = skillStats.beatFreq1
+        this.stats.beatFreq2 = skillStats.beatFreq2
+        this.stats.beatAmplitude = skillStats.beatAmplitude
+
+        // Phase 4 area effect skills
+        this.stats.chaosFieldRadius = skillStats.chaosFieldRadius
+        this.stats.chaosStrength = skillStats.chaosStrength
+        this.stats.flowSpeed = skillStats.flowSpeed
+        this.stats.suctionForce = skillStats.suctionForce
+        this.stats.streamWidth = skillStats.streamWidth
+        this.stats.magneticPullRadius = skillStats.magneticPullRadius
+        this.stats.magneticPullStrength = skillStats.magneticPullStrength
+
+        // Phase 5 conditional trigger skills
+        this.stats.decayChance = skillStats.decayChance
+        this.stats.chainRadius = skillStats.chainRadius
+        this.stats.conductRange = skillStats.conductRange
+        this.stats.conductRatio = skillStats.conductRatio
+        this.stats.maxChain = skillStats.maxChain
+        this.stats.velocityThreshold = skillStats.velocityThreshold
+        this.stats.escapeBonus = skillStats.escapeBonus
+        this.stats.escapeBurstRadius = skillStats.escapeBurstRadius
+        this.stats.approachBonus = skillStats.approachBonus
+        this.stats.recedeReduction = skillStats.recedeReduction
+
+        // Phase 6 orbital skills
+        this.stats.orbitCount = skillStats.orbitCount
+        this.stats.orbitRadius = skillStats.orbitRadius
+        this.stats.orbitDamage = skillStats.orbitDamage
+
         this.applyPassiveToStats()
     }
 
@@ -757,12 +829,44 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     private updateHUD(): void {
+        // Calculate cooldowns for skills that have them
+        const cooldowns: SkillCooldown[] = []
+
+        // Shockwave (centripetal-pulse)
+        if (this.stats.shockwaveInterval > 0) {
+            cooldowns.push({
+                skillId: 'centripetal-pulse',
+                current: this.stats.shockwaveInterval - this.shockwaveTimer,
+                max: this.stats.shockwaveInterval,
+            })
+        }
+
+        // Wave Pulse (wave)
+        if (this.stats.wavePulseInterval > 0) {
+            cooldowns.push({
+                skillId: 'wave-pulse',
+                current: this.stats.wavePulseInterval - this.wavePulseTimer,
+                max: this.stats.wavePulseInterval,
+            })
+        }
+
+        // Buoyant Bomb (buoyancy)
+        if (this.stats.floatDuration > 0) {
+            const bombInterval = 3 // Bomb spawns every 3 seconds
+            cooldowns.push({
+                skillId: 'buoyant-bomb',
+                current: bombInterval - this.buoyantBombTimer,
+                max: bombInterval,
+            })
+        }
+
         this.hudSystem.update({
             health: this.playerHealth,
             maxHealth: this.maxPlayerHealth,
             progress: this.playerProgress,
             gameTime: this.gameTime,
             skills: this.playerSkills,
+            cooldowns,
         })
 
         // Update combo display
@@ -893,6 +997,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
             const rippleAmplitude =
                 enemy.tier === 'boss' ? 1.5 : enemy.tier === 'large' ? 1.0 : enemy.tier === 'medium' ? 0.6 : 0.3
             this.gridFilter.addRipple(enemy.x, enemy.y, rippleAmplitude)
+
+            // Phase 5: Decay Chain - chance to trigger chain explosion on death
+            this.handleDecayChain(enemy.x, enemy.y)
         }
 
         this.score += this.enemySystem.cleanupDead()
@@ -1301,6 +1408,698 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     // ============================================
+    // PHASE 3: COOLDOWN-BASED SKILLS
+    // ============================================
+
+    /**
+     * Wave Pulse (파동 펄스) - periodic expanding wave that damages enemies
+     * Based on wave physics: amplitude decreases with distance
+     */
+    private updateWavePulse(deltaSeconds: number): void {
+        // Check if wave pulse skill is active
+        if (this.stats.wavePulseInterval <= 0 || this.stats.waveAmplitude <= 0) return
+
+        this.wavePulseTimer += deltaSeconds
+
+        if (this.wavePulseTimer >= this.stats.wavePulseInterval) {
+            this.wavePulseTimer = 0
+            this.triggerWavePulse()
+        }
+
+        // Update active waves
+        this.updateActiveWaves(deltaSeconds)
+    }
+
+    /**
+     * Trigger a new wave pulse from player position
+     */
+    private triggerWavePulse(): void {
+        const maxRadius = this.stats.wavelength * 3 // Wave extends to 3 wavelengths
+
+        // Create wave visual
+        const wave = new Graphics()
+        wave.circle(0, 0, 10)
+        wave.stroke({ color: 0x44aaff, width: 3, alpha: 0.8 })
+        wave.position.set(this.playerX, this.playerY)
+        this.effectContainer.addChild(wave)
+
+        this.activeWaves.push({
+            x: this.playerX,
+            y: this.playerY,
+            radius: 10,
+            maxRadius,
+            graphics: wave,
+        })
+
+        // Sound/visual feedback
+        this.damageTextSystem.spawnCustom(this.playerX, this.playerY - 30, `WAVE!`, 'combo')
+    }
+
+    /**
+     * Update active wave visuals and damage
+     */
+    private updateActiveWaves(deltaSeconds: number): void {
+        for (let i = this.activeWaves.length - 1; i >= 0; i--) {
+            const wave = this.activeWaves[i]
+
+            // Expand wave
+            wave.radius += this.stats.waveSpeed * deltaSeconds
+            const progress = wave.radius / wave.maxRadius
+
+            // Remove completed waves
+            if (progress >= 1) {
+                this.effectContainer.removeChild(wave.graphics)
+                wave.graphics.destroy()
+                this.activeWaves.splice(i, 1)
+                continue
+            }
+
+            // Update visual - wave pattern with decreasing intensity
+            const wavePhase = (wave.radius / this.stats.wavelength) * Math.PI * 2
+            const waveIntensity = Math.abs(Math.sin(wavePhase)) * (1 - progress)
+
+            wave.graphics.clear()
+            wave.graphics.circle(0, 0, wave.radius)
+            wave.graphics.stroke({
+                color: 0x44aaff,
+                width: 3 + waveIntensity * 4,
+                alpha: 0.3 + waveIntensity * 0.5,
+            })
+
+            // Damage enemies at wave front (narrow band)
+            const waveBandWidth = this.stats.wavelength * 0.3
+            for (const enemy of this.enemySystem.enemies) {
+                const dx = enemy.x - wave.x
+                const dy = enemy.y - wave.y
+                const dist = Math.sqrt(dx * dx + dy * dy)
+
+                // Check if enemy is in wave band
+                if (dist > wave.radius - waveBandWidth && dist < wave.radius + waveBandWidth) {
+                    // Damage based on wave amplitude and distance
+                    const damage = this.stats.waveAmplitude * (1 - progress) * 0.05
+                    enemy.health -= damage * this.stats.damageMultiplier
+
+                    // Small knockback away from wave center
+                    if (dist > 0) {
+                        const nx = dx / dist
+                        const ny = dy / dist
+                        const knockback = 2 / Math.sqrt(enemy.mass)
+                        enemy.vx += nx * knockback
+                        enemy.vy += ny * knockback
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Radiant Aura (복사 오라) - continuous damage to nearby enemies
+     * Based on Stefan-Boltzmann law: radiation intensity
+     */
+    private updateRadiantAura(deltaSeconds: number): void {
+        if (this.stats.auraRadius <= 0 || this.stats.radiationDamage <= 0) return
+
+        this.auraTimer += deltaSeconds
+
+        // Apply damage every 0.5 seconds to prevent excessive damage
+        if (this.auraTimer >= 0.5) {
+            this.auraTimer = 0
+
+            let hitCount = 0
+            for (const enemy of this.enemySystem.enemies) {
+                const dx = enemy.x - this.playerX
+                const dy = enemy.y - this.playerY
+                const dist = Math.sqrt(dx * dx + dy * dy)
+
+                if (dist < this.stats.auraRadius) {
+                    // Radiation damage decreases with distance (inverse square)
+                    const distFactor = 1 - (dist / this.stats.auraRadius)
+                    const damage = this.stats.radiationDamage * distFactor * distFactor * 0.5
+                    enemy.health -= damage * this.stats.damageMultiplier
+                    hitCount++
+
+                    // Visual feedback - small glow on damaged enemy
+                    if (enemy.wobble && distFactor > 0.5) {
+                        this.impactSystem.addScalePunch(enemy.wobble, 0.05, 0.1)
+                    }
+                }
+            }
+
+            // Visual aura pulse
+            if (hitCount > 0) {
+                this.createAuraPulseEffect()
+            }
+        }
+    }
+
+    /**
+     * Create visual effect for aura pulse
+     */
+    private createAuraPulseEffect(): void {
+        const aura = new Graphics()
+        aura.circle(0, 0, this.stats.auraRadius)
+        aura.fill({ color: 0xff6644, alpha: 0.1 })
+        aura.circle(0, 0, this.stats.auraRadius)
+        aura.stroke({ color: 0xff6644, width: 2, alpha: 0.3 })
+        aura.position.set(this.playerX, this.playerY)
+        this.effectContainer.addChild(aura)
+
+        // Fade out animation
+        let alpha = 0.3
+        const fadeOut = () => {
+            alpha -= 0.02
+            if (alpha <= 0) {
+                this.effectContainer.removeChild(aura)
+                aura.destroy()
+                return
+            }
+            aura.alpha = alpha
+            requestAnimationFrame(fadeOut)
+        }
+        requestAnimationFrame(fadeOut)
+    }
+
+    /**
+     * Beat Pulse (맥놀이 펄스) - periodic damage based on beat frequency
+     * Based on beat phenomenon: f_beat = |f1 - f2|
+     */
+    private updateBeatPulse(deltaSeconds: number): void {
+        if (this.stats.beatFreq1 <= 0 || this.stats.beatFreq2 <= 0) return
+
+        // Calculate beat frequency
+        const beatFrequency = Math.abs(this.stats.beatFreq1 - this.stats.beatFreq2)
+        if (beatFrequency <= 0) return
+
+        // Update beat phase
+        this.beatPhase += deltaSeconds * Math.PI * 2 * beatFrequency
+        if (this.beatPhase > Math.PI * 2) {
+            this.beatPhase -= Math.PI * 2
+        }
+
+        // Beat intensity (0 at node, 1 at antinode)
+        const beatIntensity = Math.abs(Math.cos(this.beatPhase))
+
+        // Apply damage when beat intensity is high (near antinode)
+        if (beatIntensity > 0.9) {
+            this.beatPulseTimer += deltaSeconds
+
+            // Trigger damage at beat peaks (once per beat cycle)
+            if (this.beatPulseTimer >= 0.1) {
+                this.beatPulseTimer = 0
+                this.triggerBeatDamage(beatIntensity)
+            }
+        }
+    }
+
+    /**
+     * Trigger damage from beat pulse
+     */
+    private triggerBeatDamage(intensity: number): void {
+        const radius = 100 + this.stats.beatAmplitude // Base radius + amplitude
+        const damage = this.stats.beatAmplitude * intensity * 0.3
+
+        // Damage enemies in radius
+        let hitCount = 0
+        for (const enemy of this.enemySystem.enemies) {
+            const dx = enemy.x - this.playerX
+            const dy = enemy.y - this.playerY
+            const dist = Math.sqrt(dx * dx + dy * dy)
+
+            if (dist < radius) {
+                enemy.health -= damage * this.stats.damageMultiplier
+                hitCount++
+            }
+        }
+
+        // Visual effect - pulsing ring
+        if (hitCount > 0) {
+            const ring = new Graphics()
+            ring.circle(0, 0, radius)
+            ring.stroke({ color: 0xaa44ff, width: 2 + intensity * 4, alpha: 0.5 * intensity })
+            ring.position.set(this.playerX, this.playerY)
+            this.effectContainer.addChild(ring)
+
+            // Quick fade
+            let alpha = 0.5 * intensity
+            const fade = () => {
+                alpha -= 0.05
+                if (alpha <= 0) {
+                    this.effectContainer.removeChild(ring)
+                    ring.destroy()
+                    return
+                }
+                ring.alpha = alpha
+                requestAnimationFrame(fade)
+            }
+            requestAnimationFrame(fade)
+
+            // Small text
+            this.damageTextSystem.spawnCustom(this.playerX, this.playerY - 20, `BEAT!`, 'combo')
+        }
+    }
+
+    // ============================================
+    // PHASE 4: AREA EFFECT SKILLS
+    // ============================================
+
+    /**
+     * Chaos Field (혼돈장) - randomize enemy movement paths
+     * Based on entropy: increases disorder in enemy movement
+     */
+    private updateChaosField(deltaSeconds: number): void {
+        if (this.stats.chaosFieldRadius <= 0 || this.stats.chaosStrength <= 0) return
+
+        for (const enemy of this.enemySystem.enemies) {
+            const dx = enemy.x - this.playerX
+            const dy = enemy.y - this.playerY
+            const dist = Math.sqrt(dx * dx + dy * dy)
+
+            if (dist < this.stats.chaosFieldRadius) {
+                // Apply random velocity perturbation
+                const chaosIntensity = 1 - dist / this.stats.chaosFieldRadius
+                const perturbation = this.stats.chaosStrength * chaosIntensity * deltaSeconds
+
+                // Random angle for chaos direction
+                const randomAngle = Math.random() * Math.PI * 2
+                enemy.vx += Math.cos(randomAngle) * perturbation
+                enemy.vy += Math.sin(randomAngle) * perturbation
+
+                // Small random spin (visual chaos)
+                if (enemy.wobble && Math.random() < 0.02) {
+                    this.impactSystem.addScalePunch(enemy.wobble, 0.08, 0.15)
+                }
+            }
+        }
+    }
+
+    /**
+     * Flow Stream (유체 흐름) - create a directional flow that pulls enemies
+     * Based on Bernoulli's principle: fluid dynamics
+     */
+    private updateFlowStream(deltaSeconds: number): void {
+        if (this.stats.flowSpeed <= 0 || this.stats.suctionForce <= 0) return
+
+        // Flow direction based on player's facing direction or movement
+        const flowDirX = this.playerVx !== 0 || this.playerVy !== 0
+            ? this.playerVx / (Math.sqrt(this.playerVx * this.playerVx + this.playerVy * this.playerVy) || 1)
+            : 1 // Default right
+        const flowDirY = this.playerVx !== 0 || this.playerVy !== 0
+            ? this.playerVy / (Math.sqrt(this.playerVx * this.playerVx + this.playerVy * this.playerVy) || 1)
+            : 0
+
+        for (const enemy of this.enemySystem.enemies) {
+            const dx = enemy.x - this.playerX
+            const dy = enemy.y - this.playerY
+            const dist = Math.sqrt(dx * dx + dy * dy)
+
+            // Check if enemy is within the stream
+            const streamRange = this.stats.flowSpeed * 3 // Stream length
+            if (dist < streamRange) {
+                // Calculate perpendicular distance to stream line
+                const perpDist = Math.abs(dx * -flowDirY + dy * flowDirX)
+
+                if (perpDist < this.stats.streamWidth) {
+                    // Apply suction toward stream center
+                    const suctionIntensity = 1 - perpDist / this.stats.streamWidth
+                    const force = this.stats.suctionForce * suctionIntensity * deltaSeconds / Math.sqrt(enemy.mass)
+
+                    // Pull toward stream line
+                    const toStreamX = -flowDirY * (dx * -flowDirY + dy * flowDirX > 0 ? 1 : -1)
+                    const toStreamY = flowDirX * (dx * -flowDirY + dy * flowDirX > 0 ? 1 : -1)
+
+                    enemy.vx += toStreamX * force * 0.5
+                    enemy.vy += toStreamY * force * 0.5
+
+                    // Also push along stream direction (Bernoulli effect)
+                    enemy.vx += flowDirX * this.stats.flowSpeed * deltaSeconds * 0.1
+                    enemy.vy += flowDirY * this.stats.flowSpeed * deltaSeconds * 0.1
+                }
+            }
+        }
+    }
+
+    /**
+     * Magnetic Pull (자기 흡인) - attract enemies toward player
+     * Based on magnetic field: inverse square attraction
+     */
+    private updateMagneticPull(deltaSeconds: number): void {
+        if (this.stats.magneticPullRadius <= 0 || this.stats.magneticPullStrength <= 0) return
+
+        for (const enemy of this.enemySystem.enemies) {
+            const dx = enemy.x - this.playerX
+            const dy = enemy.y - this.playerY
+            const dist = Math.sqrt(dx * dx + dy * dy)
+
+            if (dist < this.stats.magneticPullRadius && dist > 30) {
+                // Magnetic force: stronger when closer (1/r²), but capped
+                const normalizedDist = dist / this.stats.magneticPullRadius
+                const forceFactor = 1 / (normalizedDist * normalizedDist + 0.3)
+                const force = this.stats.magneticPullStrength * forceFactor * deltaSeconds / Math.sqrt(enemy.mass)
+
+                // Pull toward player
+                const nx = -dx / dist
+                const ny = -dy / dist
+                enemy.vx += nx * force
+                enemy.vy += ny * force
+            }
+        }
+    }
+
+    // ============================================
+    // PHASE 5: CONDITIONAL TRIGGER SKILLS
+    // ============================================
+
+    /**
+     * Decay Chain (붕괴 연쇄) - triggers chain explosion on enemy death
+     * Based on radioactive decay: probability-based chain reaction
+     * Called from enemy death handling
+     */
+    private handleDecayChain(deadX: number, deadY: number): void {
+        if (this.stats.decayChance <= 0) return
+        if (Math.random() > this.stats.decayChance) return
+
+        // Chain explosion damages nearby enemies
+        const damage = 15 * this.stats.damageMultiplier
+        let chainHits = 0
+
+        for (const enemy of this.enemySystem.enemies) {
+            const dx = enemy.x - deadX
+            const dy = enemy.y - deadY
+            const dist = Math.sqrt(dx * dx + dy * dy)
+
+            if (dist < this.stats.chainRadius && dist > 0) {
+                enemy.health -= damage * (1 - dist / this.stats.chainRadius)
+                chainHits++
+
+                // Small knockback
+                const nx = dx / dist
+                const ny = dy / dist
+                enemy.vx += nx * 3
+                enemy.vy += ny * 3
+            }
+        }
+
+        // Visual effect
+        if (chainHits > 0) {
+            const ring = new Graphics()
+            ring.circle(0, 0, this.stats.chainRadius)
+            ring.stroke({ color: 0x44ff44, width: 3, alpha: 0.6 })
+            ring.position.set(deadX, deadY)
+            this.effectContainer.addChild(ring)
+
+            // Fade out
+            let alpha = 0.6
+            const fade = () => {
+                alpha -= 0.06
+                if (alpha <= 0) {
+                    this.effectContainer.removeChild(ring)
+                    ring.destroy()
+                    return
+                }
+                ring.alpha = alpha
+                requestAnimationFrame(fade)
+            }
+            requestAnimationFrame(fade)
+
+            this.damageTextSystem.spawnCustom(deadX, deadY - 20, `CHAIN!`, 'explosion')
+        }
+    }
+
+    /**
+     * Heat Chain (열 전도 체인) - transfers damage to nearby enemies
+     * Based on thermal conduction: damage spreads like heat
+     * Called when dealing damage to an enemy
+     */
+    private handleHeatChain(sourceX: number, sourceY: number, damage: number, depth: number = 0): void {
+        if (this.stats.conductRange <= 0 || this.stats.conductRatio <= 0) return
+        if (depth >= this.stats.maxChain) return
+
+        const chainDamage = damage * this.stats.conductRatio
+
+        // Find nearest enemy to chain to
+        let nearest: { enemy: Enemy; dist: number } | null = null
+        for (const enemy of this.enemySystem.enemies) {
+            const dx = enemy.x - sourceX
+            const dy = enemy.y - sourceY
+            const dist = Math.sqrt(dx * dx + dy * dy)
+
+            if (dist < this.stats.conductRange && dist > 10) {
+                if (!nearest || dist < nearest.dist) {
+                    nearest = { enemy, dist }
+                }
+            }
+        }
+
+        if (nearest) {
+            nearest.enemy.health -= chainDamage
+
+            // Visual chain line
+            const line = new Graphics()
+            line.moveTo(sourceX, sourceY)
+            line.lineTo(nearest.enemy.x, nearest.enemy.y)
+            line.stroke({ color: 0xff8844, width: 2, alpha: 0.7 })
+            this.effectContainer.addChild(line)
+
+            // Fade out
+            let alpha = 0.7
+            const fade = () => {
+                alpha -= 0.1
+                if (alpha <= 0) {
+                    this.effectContainer.removeChild(line)
+                    line.destroy()
+                    return
+                }
+                line.alpha = alpha
+                requestAnimationFrame(fade)
+            }
+            requestAnimationFrame(fade)
+
+            // Recursive chain
+            this.handleHeatChain(nearest.enemy.x, nearest.enemy.y, chainDamage, depth + 1)
+        }
+    }
+
+    /**
+     * Escape Burst (탈출 속도 폭발) - triggers explosion at high speed
+     * Based on escape velocity: kinetic energy release
+     */
+    private updateEscapeBurst(deltaSeconds: number): void {
+        if (this.stats.velocityThreshold <= 0) return
+
+        const speed = Math.sqrt(this.playerVx * this.playerVx + this.playerVy * this.playerVy)
+
+        if (speed > this.stats.velocityThreshold) {
+            // Create explosion at player position
+            const damage = this.stats.escapeBonus * this.stats.damageMultiplier
+            let hitCount = 0
+
+            for (const enemy of this.enemySystem.enemies) {
+                const dx = enemy.x - this.playerX
+                const dy = enemy.y - this.playerY
+                const dist = Math.sqrt(dx * dx + dy * dy)
+
+                if (dist < this.stats.escapeBurstRadius) {
+                    enemy.health -= damage * (1 - dist / this.stats.escapeBurstRadius)
+                    hitCount++
+
+                    // Knockback away
+                    if (dist > 0) {
+                        const nx = dx / dist
+                        const ny = dy / dist
+                        enemy.vx += nx * 5
+                        enemy.vy += ny * 5
+                    }
+                }
+            }
+
+            // Visual burst effect (once per threshold crossing)
+            if (hitCount > 0) {
+                const burst = new Graphics()
+                burst.circle(0, 0, this.stats.escapeBurstRadius)
+                burst.fill({ color: 0xff44ff, alpha: 0.2 })
+                burst.circle(0, 0, this.stats.escapeBurstRadius)
+                burst.stroke({ color: 0xff44ff, width: 3, alpha: 0.5 })
+                burst.position.set(this.playerX, this.playerY)
+                this.effectContainer.addChild(burst)
+
+                let alpha = 0.5
+                const fade = () => {
+                    alpha -= 0.08
+                    if (alpha <= 0) {
+                        this.effectContainer.removeChild(burst)
+                        burst.destroy()
+                        return
+                    }
+                    burst.alpha = alpha
+                    requestAnimationFrame(fade)
+                }
+                requestAnimationFrame(fade)
+            }
+        }
+    }
+
+    /**
+     * Calculate Doppler damage modifier based on enemy approach/recede
+     * Based on Doppler effect: frequency shift with relative velocity
+     */
+    private getDopplerDamageModifier(enemyX: number, enemyY: number, enemyVx: number, enemyVy: number): number {
+        if (this.stats.approachBonus <= 0 && this.stats.recedeReduction <= 0) return 1
+
+        // Direction from player to enemy
+        const dx = enemyX - this.playerX
+        const dy = enemyY - this.playerY
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        if (dist === 0) return 1
+
+        const nx = dx / dist
+        const ny = dy / dist
+
+        // Relative velocity along the line between player and enemy
+        // Negative = approaching, Positive = receding
+        const relVelToPlayer = (enemyVx - this.playerVx) * nx + (enemyVy - this.playerVy) * ny
+
+        if (relVelToPlayer < 0) {
+            // Approaching - bonus damage
+            return 1 + this.stats.approachBonus * Math.min(1, Math.abs(relVelToPlayer) / 100)
+        } else if (relVelToPlayer > 0) {
+            // Receding - reduced damage
+            return 1 - this.stats.recedeReduction * Math.min(1, relVelToPlayer / 100)
+        }
+
+        return 1
+    }
+
+    // ============================================
+    // PHASE 6: ORBITAL/ROTATING WEAPON SKILLS
+    // ============================================
+
+    /**
+     * Orbital Strike (궤도 폭격) - projectiles orbiting around player
+     * Based on Kepler's laws: orbital mechanics
+     */
+    private updateOrbitalStrike(deltaSeconds: number): void {
+        // Check if orbital skill is active
+        if (this.stats.orbitCount <= 0) {
+            // Clean up if disabled
+            if (this.orbitalProjectiles.length > 0) {
+                this.cleanupOrbitals()
+            }
+            this.lastOrbitCount = 0
+            return
+        }
+
+        // Recreate orbitals if count changed
+        if (this.stats.orbitCount !== this.lastOrbitCount) {
+            this.cleanupOrbitals()
+            this.createOrbitals()
+            this.lastOrbitCount = this.stats.orbitCount
+        }
+
+        // Update orbital rotation (Kepler's third law: T² ∝ a³)
+        // Faster rotation for smaller orbits
+        const orbitalSpeed = 2 * Math.PI / Math.max(1, this.stats.orbitRadius / 50)
+        this.orbitAngle += orbitalSpeed * deltaSeconds
+        if (this.orbitAngle > Math.PI * 2) {
+            this.orbitAngle -= Math.PI * 2
+        }
+
+        // Update each orbital position and check collisions
+        for (const orbital of this.orbitalProjectiles) {
+            const angle = this.orbitAngle + orbital.angle
+            const orbitalX = this.playerX + Math.cos(angle) * this.stats.orbitRadius
+            const orbitalY = this.playerY + Math.sin(angle) * this.stats.orbitRadius
+
+            // Update graphics position
+            orbital.graphics.position.set(orbitalX, orbitalY)
+
+            // Update cooldowns
+            for (const [enemyId, cooldown] of orbital.hitCooldowns) {
+                if (cooldown > 0) {
+                    orbital.hitCooldowns.set(enemyId, cooldown - deltaSeconds)
+                } else {
+                    orbital.hitCooldowns.delete(enemyId)
+                }
+            }
+
+            // Check collisions with enemies
+            for (const enemy of this.enemySystem.enemies) {
+                const dx = enemy.x - orbitalX
+                const dy = enemy.y - orbitalY
+                const dist = Math.sqrt(dx * dx + dy * dy)
+
+                if (dist < enemy.size / 2 + 15) {
+                    // Check cooldown for this enemy
+                    const cooldown = orbital.hitCooldowns.get(enemy.id) || 0
+                    if (cooldown <= 0) {
+                        // Apply damage
+                        const damage = this.stats.orbitDamage * this.stats.damageMultiplier
+                        enemy.health -= damage
+
+                        // Set hit cooldown
+                        orbital.hitCooldowns.set(enemy.id, 0.3)
+
+                        // Visual feedback
+                        if (enemy.wobble) {
+                            this.impactSystem.addScalePunch(enemy.wobble, 0.15, 0.1)
+                        }
+
+                        // Small knockback
+                        if (dist > 0) {
+                            const nx = dx / dist
+                            const ny = dy / dist
+                            enemy.vx += nx * 3 / Math.sqrt(enemy.mass)
+                            enemy.vy += ny * 3 / Math.sqrt(enemy.mass)
+                        }
+
+                        // Damage number
+                        this.damageTextSystem.spawn(orbitalX, orbitalY - 10, Math.round(damage))
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Create orbital projectiles evenly spaced around player
+     */
+    private createOrbitals(): void {
+        const angleStep = (Math.PI * 2) / this.stats.orbitCount
+
+        for (let i = 0; i < this.stats.orbitCount; i++) {
+            const angle = i * angleStep
+
+            // Create orbital graphic
+            const orbital = new Graphics()
+            orbital.circle(0, 0, 12)
+            orbital.fill({ color: 0x44ccff, alpha: 0.8 })
+            orbital.circle(0, 0, 12)
+            orbital.stroke({ color: 0xffffff, width: 2, alpha: 0.9 })
+            // Inner glow
+            orbital.circle(0, 0, 6)
+            orbital.fill({ color: 0xffffff, alpha: 0.5 })
+
+            this.effectContainer.addChild(orbital)
+
+            this.orbitalProjectiles.push({
+                angle,
+                graphics: orbital,
+                hitCooldowns: new Map(),
+            })
+        }
+    }
+
+    /**
+     * Clean up all orbital projectiles
+     */
+    private cleanupOrbitals(): void {
+        for (const orbital of this.orbitalProjectiles) {
+            this.effectContainer.removeChild(orbital.graphics)
+            orbital.graphics.destroy()
+        }
+        this.orbitalProjectiles = []
+    }
+
+    // ============================================
     // NEW SKILL UPDATE METHODS
     // ============================================
 
@@ -1468,6 +2267,104 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 this.impactSystem.trigger(enemy.x, enemy.y, 'hit')
             }
         }
+    }
+
+    /**
+     * Buoyant Bomb - floating bombs that drop and explode
+     */
+    private updateBuoyantBombs(deltaSeconds: number): void {
+        if (this.stats.floatDuration <= 0) return
+
+        // Spawn new bomb every 3 seconds
+        const spawnInterval = 3
+        this.buoyantBombTimer += deltaSeconds
+        if (this.buoyantBombTimer >= spawnInterval) {
+            this.buoyantBombTimer = 0
+            this.spawnBuoyantBomb()
+        }
+
+        // Update existing bombs
+        for (let i = this.buoyantBombs.length - 1; i >= 0; i--) {
+            const bomb = this.buoyantBombs[i]
+            bomb.floatTime += deltaSeconds
+
+            // Floating animation (bob up and down)
+            const bobOffset = Math.sin(bomb.floatTime * 3) * 5
+            bomb.graphics.position.y = bomb.y + bobOffset - bomb.floatTime * 10 // Float upward slowly
+
+            // Pulse effect
+            const pulse = 1 + Math.sin(bomb.floatTime * 5) * 0.1
+            bomb.graphics.scale.set(pulse)
+
+            // Check if time to drop
+            if (bomb.floatTime >= this.stats.floatDuration) {
+                // Explode!
+                this.createBombExplosion(bomb.x, bomb.graphics.position.y)
+
+                // Remove bomb
+                this.effectContainer.removeChild(bomb.graphics)
+                bomb.graphics.destroy()
+                this.buoyantBombs.splice(i, 1)
+            }
+        }
+    }
+
+    private spawnBuoyantBomb(): void {
+        // Spawn at random position near player
+        const angle = Math.random() * Math.PI * 2
+        const distance = 50 + Math.random() * 100
+        const x = this.playerX + Math.cos(angle) * distance
+        const y = this.playerY + Math.sin(angle) * distance
+
+        // Create bomb graphics
+        const graphics = new Graphics()
+        // Bomb body
+        graphics.circle(0, 0, 12)
+        graphics.fill(0x9b59b6) // Purple
+        graphics.circle(0, 0, 12)
+        graphics.stroke({ color: 0xe74c3c, width: 2 })
+        // Fuse spark
+        graphics.circle(0, -14, 3)
+        graphics.fill(0xf39c12)
+
+        graphics.position.set(x, y)
+        this.effectContainer.addChild(graphics)
+
+        this.buoyantBombs.push({
+            x,
+            y,
+            floatTime: 0,
+            graphics,
+        })
+    }
+
+    private createBombExplosion(x: number, y: number): void {
+        const radius = this.stats.dropRadius
+        const damage = this.stats.dropDamage * this.stats.damageMultiplier
+
+        // Damage enemies in radius
+        for (const enemy of this.enemySystem.enemies) {
+            const dx = enemy.x - x
+            const dy = enemy.y - y
+            const dist = Math.sqrt(dx * dx + dy * dy)
+
+            if (dist < radius + enemy.size / 2) {
+                // Damage falls off with distance
+                const falloff = 1 - dist / radius
+                const finalDamage = damage * Math.max(0.3, falloff)
+                enemy.health -= finalDamage
+
+                // Knockback away from explosion
+                const knockDir = dist > 0 ? { x: dx / dist, y: dy / dist } : { x: 0, y: -1 }
+                const knockForce = 8 * falloff / Math.sqrt(enemy.mass)
+                enemy.vx += knockDir.x * knockForce
+                enemy.vy += knockDir.y * knockForce
+            }
+        }
+
+        // Visual explosion effect
+        this.impactSystem.trigger(x, y, 'explosion')
+        this.triggerShake(4, 0.1)
     }
 
     private updatePlayer(delta: number): void {
@@ -1824,6 +2721,28 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.pendulumDamageMultiplier = 1
         this.slashAngle = 0
         this.slashHitCooldowns.clear()
+        this.buoyantBombTimer = 0
+        for (const bomb of this.buoyantBombs) {
+            this.effectContainer.removeChild(bomb.graphics)
+            bomb.graphics.destroy()
+        }
+        this.buoyantBombs = []
+
+        // Phase 3 timer resets
+        this.wavePulseTimer = 0
+        this.auraTimer = 0
+        this.beatPulseTimer = 0
+        this.beatPhase = 0
+        for (const wave of this.activeWaves) {
+            this.effectContainer.removeChild(wave.graphics)
+            wave.graphics.destroy()
+        }
+        this.activeWaves = []
+
+        // Phase 6 orbital cleanup
+        this.cleanupOrbitals()
+        this.orbitAngle = 0
+        this.lastOrbitCount = 0
     }
 
     private applyCharacterStats(): void {
@@ -2035,6 +2954,23 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.updateTimeWarp(deltaSeconds)
         this.updateMagneticShield(deltaSeconds)
         this.updateTorqueSlash(deltaSeconds)
+        this.updateBuoyantBombs(deltaSeconds)
+
+        // Phase 3 cooldown-based skills
+        this.updateWavePulse(deltaSeconds)
+        this.updateRadiantAura(deltaSeconds)
+        this.updateBeatPulse(deltaSeconds)
+
+        // Phase 4 area effect skills
+        this.updateChaosField(deltaSeconds)
+        this.updateFlowStream(deltaSeconds)
+        this.updateMagneticPull(deltaSeconds)
+
+        // Phase 5 conditional trigger skills
+        this.updateEscapeBurst(deltaSeconds)
+
+        // Phase 6 orbital skills
+        this.updateOrbitalStrike(deltaSeconds)
 
         this.effectsManager.update(delta)
         // PhysicsSkillVisuals disabled due to PixiJS Batcher conflicts
@@ -2301,6 +3237,30 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.pendulumDamageMultiplier = 1
         this.slashAngle = 0
         this.slashHitCooldowns.clear()
+        this.buoyantBombTimer = 0
+        // Clean up buoyant bombs
+        for (const bomb of this.buoyantBombs) {
+            this.effectContainer.removeChild(bomb.graphics)
+            bomb.graphics.destroy()
+        }
+        this.buoyantBombs = []
+
+        // Phase 3 timer resets
+        this.wavePulseTimer = 0
+        this.auraTimer = 0
+        this.beatPulseTimer = 0
+        this.beatPhase = 0
+        for (const wave of this.activeWaves) {
+            this.effectContainer.removeChild(wave.graphics)
+            wave.graphics.destroy()
+        }
+        this.activeWaves = []
+
+        // Phase 6 orbital cleanup
+        this.cleanupOrbitals()
+        this.orbitAngle = 0
+        this.lastOrbitCount = 0
+
         this.resetStats()
         this.fireTimer = 0
         this.spawnTimer = 0

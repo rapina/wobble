@@ -1672,6 +1672,64 @@ export interface CombinedSkillStats {
     slashSpeed: number
     warpRadius: number // Time Warp
     slowFactor: number
+
+    // === PHASE 2 SKILLS ===
+
+    // Kinetic Charge (운동 에너지 충전)
+    chargePerDistance: number
+    maxCharge: number
+    damagePerCharge: number
+
+    // Orbital Strike (궤도 폭격)
+    orbitCount: number
+    orbitRadius: number
+    orbitDamage: number
+
+    // Wave Pulse (파동 펄스)
+    wavelength: number
+    waveAmplitude: number
+    waveSpeed: number
+    wavePulseInterval: number
+
+    // Radiant Aura (복사 오라)
+    auraRadius: number
+    radiationDamage: number
+
+    // Decay Chain (붕괴 연쇄)
+    decayChance: number
+    chainRadius: number
+
+    // Heat Chain (열 전도 체인)
+    conductRange: number
+    conductRatio: number
+    maxChain: number
+
+    // Chaos Field (혼돈장)
+    chaosFieldRadius: number
+    chaosStrength: number
+
+    // Flow Stream (유체 흐름)
+    flowSpeed: number
+    suctionForce: number
+    streamWidth: number
+
+    // Magnetic Pull (자기 흡인)
+    magneticPullRadius: number
+    magneticPullStrength: number
+
+    // Beat Pulse (맥놀이 펄스)
+    beatFreq1: number
+    beatFreq2: number
+    beatAmplitude: number
+
+    // Doppler Shift (주파수 편이)
+    approachBonus: number
+    recedeReduction: number
+
+    // Escape Burst (탈출 속도)
+    velocityThreshold: number
+    escapeBonus: number
+    escapeBurstRadius: number
 }
 
 export function calculateCombinedSkillStats(skills: PlayerSkill[]): CombinedSkillStats {
@@ -1708,6 +1766,40 @@ export function calculateCombinedSkillStats(skills: PlayerSkill[]): CombinedSkil
         slashSpeed: 0,
         warpRadius: 0,
         slowFactor: 0,
+
+        // Phase 2 skill defaults
+        chargePerDistance: 0,
+        maxCharge: 0,
+        damagePerCharge: 0,
+        orbitCount: 0,
+        orbitRadius: 0,
+        orbitDamage: 0,
+        wavelength: 0,
+        waveAmplitude: 0,
+        waveSpeed: 0,
+        wavePulseInterval: 0,
+        auraRadius: 0,
+        radiationDamage: 0,
+        decayChance: 0,
+        chainRadius: 0,
+        conductRange: 0,
+        conductRatio: 0,
+        maxChain: 0,
+        chaosFieldRadius: 0,
+        chaosStrength: 0,
+        flowSpeed: 0,
+        suctionForce: 0,
+        streamWidth: 0,
+        magneticPullRadius: 0,
+        magneticPullStrength: 0,
+        beatFreq1: 0,
+        beatFreq2: 0,
+        beatAmplitude: 0,
+        approachBonus: 0,
+        recedeReduction: 0,
+        velocityThreshold: 0,
+        escapeBonus: 0,
+        escapeBurstRadius: 0,
     }
 
     for (const skill of skills) {
@@ -1823,6 +1915,88 @@ export function calculateCombinedSkillStats(skills: PlayerSkill[]): CombinedSkil
         if (effect.warpRadius !== undefined) {
             result.warpRadius = Math.max(result.warpRadius, effect.warpRadius)
             result.slowFactor = Math.max(result.slowFactor, effect.slowFactor || 0)
+        }
+
+        // === PHASE 2 SKILLS ===
+
+        // Kinetic Charge (additive)
+        if (effect.chargePerDistance !== undefined) {
+            result.chargePerDistance = Math.max(result.chargePerDistance, effect.chargePerDistance)
+            result.maxCharge = Math.max(result.maxCharge, effect.maxCharge || 0)
+            result.damagePerCharge = Math.max(result.damagePerCharge, effect.damagePerCharge || 0)
+        }
+
+        // Orbital Strike (use highest values)
+        if (effect.orbitCount !== undefined) {
+            result.orbitCount = Math.max(result.orbitCount, effect.orbitCount)
+            result.orbitRadius = Math.max(result.orbitRadius, effect.orbitRadius || 0)
+            result.orbitDamage = Math.max(result.orbitDamage, effect.orbitDamage || 0)
+        }
+
+        // Wave Pulse (use best values)
+        if (effect.wavelength !== undefined) {
+            result.wavelength = effect.wavelength
+            result.waveAmplitude = Math.max(result.waveAmplitude, effect.amplitude || 0)
+            result.waveSpeed = Math.max(result.waveSpeed, effect.waveSpeed || 0)
+            result.wavePulseInterval = effect.wavelength > 0 ? 2 : 0 // 2 second interval
+        }
+
+        // Radiant Aura (use highest values)
+        if (effect.auraRadius !== undefined) {
+            result.auraRadius = Math.max(result.auraRadius, effect.auraRadius)
+            result.radiationDamage = Math.max(result.radiationDamage, effect.radiationDamage || 0)
+        }
+
+        // Decay Chain (use highest values)
+        if (effect.decayChance !== undefined) {
+            result.decayChance = Math.max(result.decayChance, effect.decayChance)
+            result.chainRadius = Math.max(result.chainRadius, effect.chainRadius || 0)
+        }
+
+        // Heat Chain (use highest values)
+        if (effect.conductRange !== undefined) {
+            result.conductRange = Math.max(result.conductRange, effect.conductRange)
+            result.conductRatio = Math.max(result.conductRatio, effect.conductRatio || 0)
+            result.maxChain = Math.max(result.maxChain, effect.maxChain || 0)
+        }
+
+        // Chaos Field (use highest values)
+        if (effect.fieldRadius !== undefined) {
+            result.chaosFieldRadius = Math.max(result.chaosFieldRadius, effect.fieldRadius)
+            result.chaosStrength = Math.max(result.chaosStrength, effect.chaosStrength || 0)
+        }
+
+        // Flow Stream (use highest values)
+        if (effect.flowSpeed !== undefined) {
+            result.flowSpeed = Math.max(result.flowSpeed, effect.flowSpeed)
+            result.suctionForce = Math.max(result.suctionForce, effect.suctionForce || 0)
+            result.streamWidth = Math.max(result.streamWidth, effect.streamWidth || 0)
+        }
+
+        // Magnetic Pull (use highest values)
+        if (effect.pullRadius !== undefined) {
+            result.magneticPullRadius = Math.max(result.magneticPullRadius, effect.pullRadius)
+            result.magneticPullStrength = Math.max(result.magneticPullStrength, effect.pullStrength || 0)
+        }
+
+        // Beat Pulse (use values)
+        if (effect.freq1 !== undefined) {
+            result.beatFreq1 = effect.freq1
+            result.beatFreq2 = effect.freq2 || 0
+            result.beatAmplitude = Math.max(result.beatAmplitude, effect.beatAmplitude || 0)
+        }
+
+        // Doppler Shift (use highest values)
+        if (effect.approachBonus !== undefined) {
+            result.approachBonus = Math.max(result.approachBonus, effect.approachBonus)
+            result.recedeReduction = Math.max(result.recedeReduction, effect.recedeReduction || 0)
+        }
+
+        // Escape Burst (use highest values)
+        if (effect.velocityThreshold !== undefined) {
+            result.velocityThreshold = effect.velocityThreshold
+            result.escapeBonus = Math.max(result.escapeBonus, effect.escapeBonus || 0)
+            result.escapeBurstRadius = Math.max(result.escapeBurstRadius, effect.burstRadius || 0)
         }
     }
 

@@ -276,6 +276,65 @@ export interface PlayerStats {
     warpRadius: number // 0 = disabled
     slowFactor: number
 
+    // === PHASE 3: COOLDOWN-BASED SKILLS ===
+
+    // Wave Pulse - periodic expanding damage wave
+    wavePulseInterval: number // 0 = disabled
+    wavelength: number
+    waveAmplitude: number
+    waveSpeed: number
+
+    // Radiant Aura - continuous radiation damage
+    auraRadius: number // 0 = disabled
+    radiationDamage: number
+
+    // Beat Pulse - beat frequency damage
+    beatFreq1: number // 0 = disabled
+    beatFreq2: number
+    beatAmplitude: number
+
+    // === PHASE 4: AREA EFFECT SKILLS ===
+
+    // Chaos Field - randomize enemy paths
+    chaosFieldRadius: number // 0 = disabled
+    chaosStrength: number
+
+    // Flow Stream - pull enemies toward player
+    flowSpeed: number // 0 = disabled
+    suctionForce: number
+    streamWidth: number
+
+    // Magnetic Pull - attract enemies
+    magneticPullRadius: number // 0 = disabled
+    magneticPullStrength: number
+
+    // === PHASE 5: CONDITIONAL TRIGGER SKILLS ===
+
+    // Decay Chain - chain reaction on enemy death
+    decayChance: number // 0 = disabled (0-1 probability)
+    chainRadius: number
+
+    // Heat Chain - damage transfers to nearby enemies
+    conductRange: number // 0 = disabled
+    conductRatio: number // damage transfer ratio (0-1)
+    maxChain: number // max chain targets
+
+    // Escape Burst - high-speed triggers explosion
+    velocityThreshold: number // 0 = disabled
+    escapeBonus: number // damage bonus
+    escapeBurstRadius: number
+
+    // Doppler Shift - bonus vs approaching/receding enemies
+    approachBonus: number // 0 = disabled
+    recedeReduction: number
+
+    // === PHASE 6: ORBITAL/ROTATING WEAPON SKILLS ===
+
+    // Orbital Strike - orbiting projectiles
+    orbitCount: number // 0 = disabled (number of orbiting projectiles)
+    orbitRadius: number // distance from player
+    orbitDamage: number // damage per hit
+
     // Passive-derived stats
     damageReduction: number // 0-1, damage reduction percentage
     critChance: number // 0-1, chance to crit
@@ -326,6 +385,43 @@ export const DEFAULT_PLAYER_STATS: PlayerStats = {
     slashSpeed: 0,
     warpRadius: 0,
     slowFactor: 0,
+
+    // Phase 3 cooldown skills defaults
+    wavePulseInterval: 0,
+    wavelength: 0,
+    waveAmplitude: 0,
+    waveSpeed: 0,
+    auraRadius: 0,
+    radiationDamage: 0,
+    beatFreq1: 0,
+    beatFreq2: 0,
+    beatAmplitude: 0,
+
+    // Phase 4 area effect skills defaults
+    chaosFieldRadius: 0,
+    chaosStrength: 0,
+    flowSpeed: 0,
+    suctionForce: 0,
+    streamWidth: 0,
+    magneticPullRadius: 0,
+    magneticPullStrength: 0,
+
+    // Phase 5 conditional trigger skills defaults
+    decayChance: 0,
+    chainRadius: 0,
+    conductRange: 0,
+    conductRatio: 0,
+    maxChain: 0,
+    velocityThreshold: 0,
+    escapeBonus: 0,
+    escapeBurstRadius: 0,
+    approachBonus: 0,
+    recedeReduction: 0,
+
+    // Phase 6 orbital skills defaults
+    orbitCount: 0,
+    orbitRadius: 0,
+    orbitDamage: 0,
 
     damageReduction: 0,
     critChance: 0,

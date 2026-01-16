@@ -10,12 +10,19 @@ export interface HudContext {
     height: number
 }
 
+export interface SkillCooldown {
+    skillId: string
+    current: number // Current cooldown time remaining
+    max: number // Max cooldown time
+}
+
 export interface HudState {
     health: number
     maxHealth: number
     progress: PlayerProgress
     gameTime: number
     skills: PlayerSkill[]
+    cooldowns?: SkillCooldown[] // Cooldown states for active skills
 }
 
 export class HudSystem {
@@ -228,7 +235,7 @@ export class HudSystem {
         this.updateXpBar(state.progress)
         this.updateTimer(state.gameTime)
         this.updateLevel(state.progress.level)
-        this.updateSkillIcons(state.skills)
+        this.updateSkillIcons(state.skills, state.cooldowns || [])
         this.lastState = state
     }
 
@@ -329,7 +336,7 @@ export class HudSystem {
         this.levelText.text = `${level}`
     }
 
-    private updateSkillIcons(skills: PlayerSkill[]): void {
+    private updateSkillIcons(skills: PlayerSkill[], cooldowns: SkillCooldown[]): void {
         this.skillIconsContainer.removeChildren()
 
         const hexSize = 20
@@ -343,6 +350,11 @@ export class HudSystem {
             const x = index * (hexSize * 2 + iconGap) + hexSize
             iconContainer.position.set(x, hexSize)
 
+            // Find cooldown for this skill
+            const cooldown = cooldowns.find((cd) => cd.skillId === skill.skillId)
+            const isOnCooldown = cooldown && cooldown.current > 0
+            const cooldownRatio = cooldown ? cooldown.current / cooldown.max : 0
+
             // Hexagon background (Balatro style - dark panel with thick border)
             const bg = new Graphics()
             drawUIHexagon(bg, 0, 0, hexSize, 0x374244, 0x1a1a1a, 3)
@@ -354,25 +366,56 @@ export class HudSystem {
                 style: new TextStyle({
                     fontFamily: 'Arial, sans-serif',
                     fontSize: 12,
-                    fill: skillDef.color,
+                    fill: isOnCooldown ? 0x666666 : skillDef.color,
                 }),
             })
             iconText.anchor.set(0.5)
             iconText.position.set(0, -3)
             iconContainer.addChild(iconText)
 
-            // Level number (white for dark background)
+            // Cooldown overlay (radial sweep from top)
+            if (isOnCooldown && cooldownRatio > 0) {
+                const overlay = new Graphics()
+
+                // Draw a pie slice from top, clockwise
+                // cooldownRatio: 1 = full cooldown (full overlay), 0 = ready (no overlay)
+                const startAngle = -Math.PI / 2 // Start from top
+                const endAngle = startAngle + (Math.PI * 2 * cooldownRatio)
+
+                overlay.moveTo(0, 0)
+                overlay.arc(0, 0, hexSize - 2, startAngle, endAngle, false)
+                overlay.lineTo(0, 0)
+                overlay.fill({ color: 0x000000, alpha: 0.6 })
+                iconContainer.addChild(overlay)
+
+                // Cooldown time text
+                const cdText = new Text({
+                    text: cooldown!.current.toFixed(1),
+                    style: new TextStyle({
+                        fontFamily: 'Arial, sans-serif',
+                        fontSize: 10,
+                        fontWeight: 'bold',
+                        fill: 0xffffff,
+                        stroke: { color: 0x000000, width: 2 },
+                    }),
+                })
+                cdText.anchor.set(0.5)
+                cdText.position.set(0, -3)
+                iconContainer.addChild(cdText)
+            }
+
+            // Level number (white for dark background, below icon)
             const levelText = new Text({
-                text: `${skill.level}`,
+                text: `Lv.${skill.level}`,
                 style: new TextStyle({
                     fontFamily: 'Arial, sans-serif',
                     fontSize: 8,
                     fontWeight: 'bold',
-                    fill: 0xffffff,
+                    fill: isOnCooldown ? 0x888888 : 0xffffff,
                 }),
             })
             levelText.anchor.set(0.5)
-            levelText.position.set(0, 10)
+            levelText.position.set(0, hexSize + 8)
             iconContainer.addChild(levelText)
 
             this.skillIconsContainer.addChild(iconContainer)

@@ -18,7 +18,7 @@ interface ImpactConfig {
 const IMPACT_CONFIGS: Record<ImpactType, ImpactConfig> = {
     hit: {
         hitstopFrames: 2,
-        flashAlpha: 0.15,
+        flashAlpha: 0,
         flashColor: 0xffffff,
         flashDuration: 0.05,
         particleCount: 6,
@@ -30,7 +30,7 @@ const IMPACT_CONFIGS: Record<ImpactType, ImpactConfig> = {
     },
     critical: {
         hitstopFrames: 4,
-        flashAlpha: 0.35,
+        flashAlpha: 0,
         flashColor: 0xffd700,
         flashDuration: 0.08,
         particleCount: 12,
@@ -42,7 +42,7 @@ const IMPACT_CONFIGS: Record<ImpactType, ImpactConfig> = {
     },
     kill: {
         hitstopFrames: 3,
-        flashAlpha: 0.25,
+        flashAlpha: 0,
         flashColor: 0xff4444,
         flashDuration: 0.06,
         particleCount: 16,
@@ -54,7 +54,7 @@ const IMPACT_CONFIGS: Record<ImpactType, ImpactConfig> = {
     },
     explosion: {
         hitstopFrames: 5,
-        flashAlpha: 0.4,
+        flashAlpha: 0,
         flashColor: 0xff6600,
         flashDuration: 0.1,
         particleCount: 24,
@@ -66,7 +66,7 @@ const IMPACT_CONFIGS: Record<ImpactType, ImpactConfig> = {
     },
     combo: {
         hitstopFrames: 2,
-        flashAlpha: 0.2,
+        flashAlpha: 0,
         flashColor: 0x9b59b6,
         flashDuration: 0.06,
         particleCount: 10,
@@ -294,16 +294,16 @@ export class ImpactEffectSystem {
             )
         }
 
-        // Flash based on energy
-        if (normalizedEnergy > 0.5) {
-            this.flashTimer = 0.05
-            this.flashDuration = 0.05
-            this.flashTargetAlpha = 0.1 + normalizedEnergy * 0.1
-            this.flashOverlay.clear()
-            this.flashOverlay.rect(0, 0, this.width, this.height)
-            this.flashOverlay.fill(color ?? this.getEnergyColor(normalizedEnergy))
-            this.flashOverlay.alpha = this.flashTargetAlpha
-        }
+        // Flash based on energy - disabled
+        // if (normalizedEnergy > 0.5) {
+        //     this.flashTimer = 0.05
+        //     this.flashDuration = 0.05
+        //     this.flashTargetAlpha = 0.1 + normalizedEnergy * 0.1
+        //     this.flashOverlay.clear()
+        //     this.flashOverlay.rect(0, 0, this.width, this.height)
+        //     this.flashOverlay.fill(color ?? this.getEnergyColor(normalizedEnergy))
+        //     this.flashOverlay.alpha = this.flashTargetAlpha
+        // }
     }
 
     /**
