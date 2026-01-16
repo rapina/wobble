@@ -5,6 +5,7 @@ import { Wobble, WobbleShape } from '../../Wobble'
 export type GameState =
     | 'character-select'
     | 'stage-select'
+    | 'loading'
     | 'opening'
     | 'playing'
     | 'paused'

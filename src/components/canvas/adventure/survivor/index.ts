@@ -20,4 +20,12 @@ export {
     type PhysicsModifiers,
     type StageConfig,
 } from './PhysicsModifiers'
+export {
+    WorldGenerator,
+    type GeneratedWorld,
+    type EnemySpawnEvent,
+    type WorldEvent,
+    type BlackHoleConfig,
+} from './WorldGenerator'
+export { BlackHoleSystem } from './BlackHoleSystem'
 export * from './ui'

@@ -41,11 +41,15 @@ import {
     OpeningScreen,
     PauseScreen,
     StageSelectScreen,
+    LoadingScreen,
     STAGES,
     getDefaultStage,
     getStageById,
+    WorldGenerator,
+    BlackHoleSystem,
     type StageConfig,
     type BlackHoleInfo,
+    type GeneratedWorld,
 } from './survivor'
 import { VirtualJoystick } from './VirtualJoystick'
 import { FloatingDamageText } from './FloatingDamageText'
@@ -170,6 +174,16 @@ export class PhysicsSurvivorScene extends AdventureScene {
     declare private stageSelectScreen: StageSelectScreen
     declare private openingScreen: OpeningScreen
     declare private pauseScreen: PauseScreen
+    declare private loadingScreen: LoadingScreen
+
+    // World generation
+    private worldGenerator: WorldGenerator | null = null
+    private generatedWorld: GeneratedWorld | null = null
+
+    // Black hole system
+    private blackHoleContainer: Container | null = null
+    private blackHoleSystem: BlackHoleSystem | null = null
+    private blackHoleDamageCooldown = 0 // Cooldown between damage ticks
 
     // Fire system - faster baseline for power fantasy (was 0.5)
     private fireRate = 0.35
@@ -453,6 +467,17 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.debugLog('openingScreen.onComplete called')
             this.startGameAfterOpening()
         }
+
+        // Loading screen container
+        const loadingContainer = new Container()
+        loadingContainer.visible = false
+        this.container.addChild(loadingContainer)
+
+        this.loadingScreen = new LoadingScreen({
+            container: loadingContainer,
+            width: this.width,
+            height: this.height,
+        })
 
         // Pause screen container
         const pauseContainer = new Container()
@@ -1018,7 +1043,85 @@ export class PhysicsSurvivorScene extends AdventureScene {
     /**
      * Update all world entity systems and apply their effects
      */
-    private updateWorldEntities(_deltaSeconds: number): void {
+    private updateWorldEntities(deltaSeconds: number): void {
+        // Update black hole system
+        if (this.blackHoleSystem) {
+            this.blackHoleSystem.update(deltaSeconds)
+
+            // Apply gravity to player
+            const gravity = this.blackHoleSystem.getGravityAt(this.playerX, this.playerY)
+            this.externalVx += gravity.fx * deltaSeconds * 0.1
+            this.externalVy += gravity.fy * deltaSeconds * 0.1
+
+            // Apply gravity to enemies
+            for (const enemy of this.enemySystem.enemies) {
+                const enemyGravity = this.blackHoleSystem.getGravityAt(enemy.x, enemy.y)
+                enemy.vx += enemyGravity.fx * deltaSeconds * 0.05
+                enemy.vy += enemyGravity.fy * deltaSeconds * 0.05
+
+                // Check if enemy is absorbed by black hole
+                if (this.blackHoleSystem.isInsideEventHorizon(enemy.x, enemy.y)) {
+                    this.blackHoleSystem.absorbObject(enemy.x, enemy.y, enemy.size, 0xff0000)
+                    enemy.health = 0 // Kill the enemy
+                }
+            }
+
+            // Apply gravity to projectiles
+            for (const proj of this.projectileSystem.projectiles) {
+                const projGravity = this.blackHoleSystem.getGravityAt(proj.x, proj.y)
+                proj.vx += projGravity.fx * deltaSeconds * 0.08
+                proj.vy += projGravity.fy * deltaSeconds * 0.08
+            }
+
+            // Check if player is inside event horizon
+            if (this.blackHoleSystem.isInsideEventHorizon(this.playerX, this.playerY)) {
+                // Damage with cooldown (1 damage per 0.5 seconds)
+                this.blackHoleDamageCooldown -= deltaSeconds
+                if (this.blackHoleDamageCooldown <= 0) {
+                    this.takeDamage(3)
+                    this.blackHoleDamageCooldown = 0.5
+                    this.triggerShake(5, 0.1)
+                }
+
+                // Strong push to escape (slingshot effect)
+                const bhPos = this.blackHoleSystem.getPosition()
+                const escapeX = this.playerX - bhPos.x
+                const escapeY = this.playerY - bhPos.y
+                const escapeDist = Math.sqrt(escapeX * escapeX + escapeY * escapeY) || 1
+                this.externalVx += (escapeX / escapeDist) * 15 * deltaSeconds
+                this.externalVy += (escapeY / escapeDist) * 15 * deltaSeconds
+            } else {
+                // Reset cooldown when outside
+                this.blackHoleDamageCooldown = 0
+            }
+
+            // Calculate proximity effect for CRT distortion
+            const bhPos = this.blackHoleSystem.getPosition()
+            const dx = this.playerX - bhPos.x
+            const dy = this.playerY - bhPos.y
+            const dist = Math.sqrt(dx * dx + dy * dy)
+            const distortionParams = this.blackHoleSystem.getDistortionParams()
+            const maxProximity = distortionParams.radius * 2
+            this.blackHoleProximityEffect = Math.max(0, 1 - dist / maxProximity) * distortionParams.strength
+
+            // Add black hole to grid distortion
+            // Position needs to be relative to camera for shader alignment
+            if (this.gridFilter) {
+                const sources = [
+                    {
+                        x: bhPos.x - this.cameraX,
+                        y: bhPos.y - this.cameraY,
+                        mass: distortionParams.mass * 0.02, // Strong grid distortion
+                    }
+                ]
+                // Add to existing gravity sources
+                const existingCount = this.enemySystem.enemies.length
+                if (existingCount < 7) {
+                    this.gridFilter.setGravitySources([...sources])
+                }
+            }
+        }
+
         // Update visual distortion based on proximity to any world entity
         this.updateBlackHoleDistortion()
 
@@ -1581,6 +1684,38 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.selectedCharacter = character
         this.currentStage = getStageById(stageId) || getDefaultStage()
         this.stageSelectScreen.hide()
+
+        // Start world generation with loading screen
+        this.startWorldGeneration()
+    }
+
+    private async startWorldGeneration(): Promise<void> {
+        // Create world generator with random seed
+        this.worldGenerator = new WorldGenerator()
+        const seed = this.worldGenerator.getSeed()
+
+        this.debugLog(`Starting world generation with seed: 0x${seed.toString(16)}`)
+        this.setGameState('loading', 'startWorldGeneration')
+
+        // Show loading screen
+        this.loadingScreen.show(seed)
+
+        // Connect progress callback
+        this.worldGenerator.onProgress = (progress, phase, detail) => {
+            this.loadingScreen.setProgress(progress, phase, detail)
+        }
+
+        // Generate world
+        const difficulty = this.currentStage.physics.gravity || 5
+        this.generatedWorld = await this.worldGenerator.generate(difficulty)
+
+        this.debugLog(`World generated: ${this.generatedWorld.enemySpawns.length} spawns, ${this.generatedWorld.worldEvents.length} events`)
+
+        // Brief delay to show "READY" state
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        // Transition to opening
+        this.loadingScreen.hide()
         this.showOpening(this.selectedCharacter)
     }
 
@@ -1626,6 +1761,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.applyCharacterStats()
         this.applyStagePhysics()
 
+        // Create black hole system if world was generated
+        this.createBlackHoleSystem()
+
         const charData = WOBBLE_CHARACTERS[this.selectedCharacter]
         this.player.updateOptions({
             shape: this.selectedCharacter,
@@ -1640,6 +1778,35 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.playerProgress = { xp: 0, level: 1, pendingLevelUps: 0 }
         this.setGameState('playing', 'startGameAfterOpening')
         this.updateHUD()
+    }
+
+    /**
+     * Create the Interstellar-style black hole from generated world
+     */
+    private createBlackHoleSystem(): void {
+        // Clean up existing black hole
+        if (this.blackHoleSystem) {
+            this.blackHoleSystem.destroy()
+            this.blackHoleSystem = null
+        }
+        if (this.blackHoleContainer) {
+            this.gameContainer.removeChild(this.blackHoleContainer)
+            this.blackHoleContainer = null
+        }
+
+        // Create new black hole from generated world
+        if (this.generatedWorld?.blackHole) {
+            this.blackHoleContainer = new Container()
+            // Add behind player but above background
+            this.gameContainer.addChildAt(this.blackHoleContainer, 1)
+
+            this.blackHoleSystem = new BlackHoleSystem(
+                this.blackHoleContainer,
+                this.generatedWorld.blackHole
+            )
+
+            this.debugLog(`Black hole created at (${this.generatedWorld.blackHole.x.toFixed(0)}, ${this.generatedWorld.blackHole.y.toFixed(0)}) with mass ${this.generatedWorld.blackHole.mass}`)
+        }
     }
 
     private initializeCharacterSkills(): void {
@@ -1728,6 +1895,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         if (this.gameState === 'opening') {
             this.openingScreen.update(deltaSeconds)
+        }
+
+        if (this.gameState === 'loading') {
+            this.loadingScreen.update(deltaSeconds)
         }
 
         if (this.gameState === 'paused') {
@@ -2040,6 +2211,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
             stageSelectScreen: !!this.stageSelectScreen,
             openingScreen: !!this.openingScreen,
             pauseScreen: !!this.pauseScreen,
+            loadingScreen: !!this.loadingScreen,
             joystick: !!this.joystick,
         }
 
@@ -2084,6 +2256,20 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.stageSelectScreen.reset()
         this.openingScreen.reset()
         this.pauseScreen.reset()
+        this.loadingScreen.reset()
+
+        // Reset black hole system
+        if (this.blackHoleSystem) {
+            this.blackHoleSystem.destroy()
+            this.blackHoleSystem = null
+        }
+        if (this.blackHoleContainer) {
+            this.gameContainer.removeChild(this.blackHoleContainer)
+            this.blackHoleContainer = null
+        }
+        this.worldGenerator = null
+        this.generatedWorld = null
+        this.blackHoleDamageCooldown = 0
 
         // Reset hit effects
         // Don't call destroy() synchronously as it can corrupt PixiJS v8's shared Batcher

@@ -5,3 +5,4 @@ export { CharacterSelectScreen, type CharacterSelectContext } from './CharacterS
 export { OpeningScreen, type OpeningScreenContext } from './OpeningScreen'
 export { PauseScreen, type PauseScreenContext, type PauseData } from './PauseScreen'
 export { StageSelectScreen, type StageSelectContext } from './StageSelectScreen'
+export { LoadingScreen, type LoadingScreenContext } from './LoadingScreen'

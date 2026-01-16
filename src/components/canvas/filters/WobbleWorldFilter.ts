@@ -105,8 +105,8 @@ float spaceGrid(vec2 uv, float t, float dist) {
     float l1 = smoothstep(lw * 2.0, lw * 0.3, d1);
     float l2 = smoothstep(lw * 2.0, lw * 0.3, d2);
     float g = max(l1, l2);
-    g += l1 * l2 * 0.5;
-    return g * (0.3 + dist * 0.35);
+    g += l1 * l2 * 0.3;
+    return g * (0.04 + dist * 0.06); // Very subtle grid - easy on eyes
 }
 
 // Apply gravity distortion - rubber sheet funnel effect (grid sags DOWN near mass)
@@ -611,9 +611,9 @@ void main() {
         // Draw the space grid
         float grid = spaceGrid(gridWorldUV, uTime, gridDistortion);
 
-        // Space theme grid color - cyan/teal
-        vec3 gridColor = vec3(0.2, 0.8, 0.9); // Cyan for spacetime grid
-        color.rgb += gridColor * grid;
+        // Space theme grid color - subtle dark teal
+        vec3 gridColor = vec3(0.08, 0.18, 0.22); // Dark teal
+        color.rgb += gridColor * grid * 0.4; // Subtle but visible
 
         // === DEBUG MODE - show gravity centers ===
         if (uDebugMode == 1) {
