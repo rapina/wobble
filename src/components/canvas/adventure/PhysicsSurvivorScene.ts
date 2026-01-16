@@ -31,15 +31,12 @@ import {
     ProjectileSystem,
     BackgroundSystem,
     ExperienceOrbSystem,
-    BlackHoleSystem,
-    GravityWellSystem,
-    RepulsionBarrierSystem,
-    CrusherSystem,
     EffectsManager,
     ComboSystem,
     HudSystem,
     SkillSelectionScreen,
     ResultScreen,
+    PhysicsStats,
     CharacterSelectScreen,
     OpeningScreen,
     PauseScreen,
@@ -61,6 +58,14 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private gameTime = 0
     private score = 0
     private playerHealth = 100
+
+    // Physics stats tracking for result screen
+    private physicsStats: PhysicsStats = {
+        totalMomentum: 0,
+        elasticBounces: 0,
+        mergedMass: 0,
+        slingshotCount: 0,
+    }
     private maxPlayerHealth = 100
     private gameState: GameState = 'character-select'
     private bossSpawned = false
@@ -150,10 +155,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
     declare private projectileSystem: ProjectileSystem
     declare private backgroundSystem: BackgroundSystem
     declare private xpOrbSystem: ExperienceOrbSystem
-    declare private blackHoleSystem: BlackHoleSystem
-    declare private gravityWellSystem: GravityWellSystem
-    declare private repulsionBarrierSystem: RepulsionBarrierSystem
-    declare private crusherSystem: CrusherSystem
     declare private damageTextSystem: FloatingDamageText
     declare private impactSystem: ImpactEffectSystem
     declare private effectsManager: EffectsManager
@@ -300,7 +301,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.gridFilter.gridEnabled = true // Enable grid on background
         // Offset to fix coordinate mismatch between filter UV and screen position
         // (determined empirically using debugMode = true)
-        this.gridFilter.setGravityOffset(-0.42, -0.65)
+        this.gridFilter.setGravityOffset(-0.68, -0.65)
         this.bgContainer.filters = [this.gridFilter] // Apply grid to background only
 
         this.container.filters = [this.wobbleFilter, this.crtFilter]
@@ -351,32 +352,21 @@ export class PhysicsSurvivorScene extends AdventureScene {
         }
 
         // World entity systems for each stage
-        this.blackHoleSystem = new BlackHoleSystem({
-            container: this.effectContainer,
-            width: this.width,
-            height: this.height,
-        })
-
-        this.gravityWellSystem = new GravityWellSystem({
-            container: this.effectContainer,
-            width: this.width,
-            height: this.height,
-        })
-
-        this.repulsionBarrierSystem = new RepulsionBarrierSystem({
-            container: this.effectContainer,
-            width: this.width,
-            height: this.height,
-        })
-
-        this.crusherSystem = new CrusherSystem({
-            container: this.effectContainer,
-            width: this.width,
-            height: this.height,
-        })
-
         this.effectsManager = new EffectsManager({
             effectContainer: this.effectContainer,
+        })
+
+        // Connect EnemySystem to EffectsManager for physics visualization
+        this.enemySystem.updateContext({
+            onAddTrailPoint: (trail, x, y) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                this.effectsManager.addTrailPoint(trail as any, x, y)
+            },
+            onShowMergeFormula: (x, y, mass1, mass2, totalMass) => {
+                this.effectsManager.showMergeFormula(x, y, mass1, mass2, totalMass)
+                // Track merged mass for physics stats (momentum conservation)
+                this.physicsStats.mergedMass += totalMass
+            },
         })
 
         // PhysicsSkillVisuals disabled due to PixiJS Batcher conflicts
@@ -400,8 +390,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
             width: this.width,
             height: this.height,
         })
-        this.skillSelectionScreen.onSkillSelected = (skill, newLevel) => {
-            this.handleSkillUpgrade(skill, newLevel)
+        this.skillSelectionScreen.onSkillSelected = (skillId, newLevel) => {
+            this.handleSkillUpgrade(skillId, newLevel)
         }
         this.skillSelectionScreen.onSelectionComplete = () => {
             this.finishLevelUp()
@@ -431,11 +421,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
             width: this.width,
             height: this.height,
         })
-        this.characterSelectScreen.onSelectCharacter = (character, selectedSkills) => {
-            this.debugLog(
-                `characterSelectScreen.onSelectCharacter: ${character}, skills: ${selectedSkills.join(', ')}`
-            )
-            this.showStageSelect(character, selectedSkills)
+        this.characterSelectScreen.onSelectCharacter = (character) => {
+            this.debugLog(`characterSelectScreen.onSelectCharacter: ${character}`)
+            this.showStageSelect(character)
         }
         this.characterSelectScreen.onExit = () => {
             this.debugLog('characterSelectScreen.onExit called')
@@ -449,7 +437,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         })
         this.stageSelectScreen.onSelectStage = (stageId) => {
             this.debugLog(`stageSelectScreen.onSelectStage: ${stageId}`)
-            this.startWithStage(this.selectedCharacter, stageId, this.playerSelectedSkills)
+            this.startWithStage(this.selectedCharacter, stageId)
         }
         this.stageSelectScreen.onBack = () => {
             this.debugLog('stageSelectScreen.onBack called')
@@ -614,21 +602,35 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.skillSelectionScreen.show(this.playerSkills, this.playerProgress.level)
     }
 
-    private handleSkillUpgrade(skill: PlayerSkill, newLevel: number): void {
-        const playerSkill = this.playerSkills.find((s) => s.skillId === skill.skillId)
-        if (playerSkill) {
-            const def = getSkillDefinition(playerSkill.skillId)
-            if (def && playerSkill.level < def.maxLevel) {
-                playerSkill.level = newLevel
+    private handleSkillUpgrade(skillId: string, newLevel: number): void {
+        const def = getSkillDefinition(skillId)
+        if (!def) return
 
+        // Check if player already has this skill
+        const playerSkill = this.playerSkills.find((s) => s.skillId === skillId)
+
+        if (playerSkill) {
+            // Upgrade existing skill
+            if (playerSkill.level < def.maxLevel) {
+                playerSkill.level = newLevel
                 this.damageTextSystem.spawnCustom(
                     this.width / 2,
                     this.height / 2 - 50,
-                    `${t(def.name, 'ko')} Lv.${playerSkill.level}!`,
+                    `${t(def.name, 'ko')} Lv.${newLevel}!`,
                     'combo'
                 )
             }
+        } else {
+            // Add new skill
+            this.playerSkills.push({ skillId, level: 1 })
+            this.damageTextSystem.spawnCustom(
+                this.width / 2,
+                this.height / 2 - 50,
+                `NEW! ${t(def.name, 'ko')}`,
+                'combo'
+            )
         }
+
         this.recalculateStats()
     }
 
@@ -765,6 +767,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.cameraY
         )
 
+        // Track elastic bounces for physics stats
+        this.physicsStats.elasticBounces += this.projectileSystem.getAndResetBounceCount()
+
         this.projectileSystem.checkCollisions(
             this.enemySystem.enemies,
             this.stats,
@@ -790,27 +795,48 @@ export class PhysicsSurvivorScene extends AdventureScene {
                         break
                     }
                 }
+            },
+            // Knockback trail callback - visualizes F=ma (lighter = thicker trail)
+            (enemy, knockbackVx, knockbackVy) => {
+                // Track momentum transfer (p = mv)
+                const knockbackMag = Math.sqrt(knockbackVx * knockbackVx + knockbackVy * knockbackVy)
+                this.physicsStats.totalMomentum += enemy.mass * knockbackMag
+
+                // Only show trail for significant knockback
+                if (knockbackMag > 3) {
+                    const tierColors: Record<EnemyTier, number> = {
+                        small: 0xff6666,
+                        medium: 0xff9944,
+                        large: 0xcc44ff,
+                        boss: 0xffdd00,
+                    }
+                    const trail = this.effectsManager.startKnockbackTrail(
+                        enemy.x,
+                        enemy.y,
+                        enemy.mass,
+                        tierColors[enemy.tier]
+                    )
+                    // Store trail reference on enemy for position updates
+                    enemy.knockbackTrail = trail
+                }
+            },
+            // Physics impact callback - particle count proportional to KE = ½mv²
+            (x, y, damage, projectileSpeed, enemyMass, knockbackDir) => {
+                this.impactSystem.triggerPhysicsImpact(
+                    x,
+                    y,
+                    damage,
+                    projectileSpeed,
+                    enemyMass,
+                    undefined, // auto-color based on energy
+                    knockbackDir
+                )
             }
         )
     }
 
     private updateEnemiesAndMerges(delta: number, deltaSeconds: number): void {
         this.enemySystem.update(delta, this.playerX, this.playerY, this.animPhase)
-
-        // Apply gravity well pull to enemies (they get sucked in too!)
-        if (this.gravityWellSystem.getIsActive()) {
-            for (const enemy of this.enemySystem.enemies) {
-                const pull = this.gravityWellSystem.applyGravityPull(
-                    enemy.x,
-                    enemy.y,
-                    enemy.vx,
-                    enemy.vy,
-                    deltaSeconds
-                )
-                enemy.vx = pull.vx
-                enemy.vy = pull.vy
-            }
-        }
 
         this.enemySystem.checkCollisions(deltaSeconds, this.hitEffects)
         this.enemySystem.updateMerges(this.gameTime, this.hitEffects)
@@ -837,6 +863,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
             if (enemy.tier === 'large' || enemy.tier === 'boss') {
                 this.impactSystem.triggerSlowMotion(0.2, 0.15)
             }
+
+            // Grid ripple effect - amplitude based on mass (physics: E = ½mv²)
+            const rippleAmplitude =
+                enemy.tier === 'boss' ? 1.5 : enemy.tier === 'large' ? 1.0 : enemy.tier === 'medium' ? 0.6 : 0.3
+            this.gridFilter.addRipple(enemy.x, enemy.y, rippleAmplitude)
         }
 
         this.score += this.enemySystem.cleanupDead()
@@ -981,148 +1012,14 @@ export class PhysicsSurvivorScene extends AdventureScene {
             })
         }
 
-        // === BLACK HOLE (Vortex Stage) ===
-        if (this.blackHoleSystem.getIsActive()) {
-            const bhPos = this.blackHoleSystem.getPosition()
-            // World position
-            gravitySources.push({
-                x: bhPos.x,
-                y: bhPos.y,
-                mass: 0.8, // Strong gravity for black hole
-            })
-        }
-
-        // === GRAVITY WELLS (Gravity Stage) ===
-        if (this.gravityWellSystem.getIsActive()) {
-            const wells = this.gravityWellSystem.getWells()
-            for (const well of wells.slice(0, 2)) {
-                // World position
-                gravitySources.push({
-                    x: well.x,
-                    y: well.y,
-                    mass: 0.5, // Medium gravity for wells
-                })
-            }
-        }
-
         this.gridFilter.setGravitySources(gravitySources)
     }
 
     /**
      * Update all world entity systems and apply their effects
      */
-    private updateWorldEntities(deltaSeconds: number): void {
-        // Track total proximity effect for visual feedback
-        let totalProximityEffect = 0
-
-        // === BLACK HOLE (Vortex Stage) ===
-        if (this.blackHoleSystem.getIsActive()) {
-            this.blackHoleSystem.update(deltaSeconds, this.playerX, this.playerY)
-
-            // Update physics vortex center to follow black hole
-            const bhPos = this.blackHoleSystem.getPositionRatio()
-            if (this.currentStage.physics.vortexCenter) {
-                this.currentStage.physics.vortexCenter.x = bhPos.x
-                this.currentStage.physics.vortexCenter.y = bhPos.y
-            }
-
-            // Check player proximity and apply damage
-            const bhProximity = this.blackHoleSystem.getPlayerProximityEffect(
-                this.playerX,
-                this.playerY
-            )
-            if (bhProximity > 0) {
-                const damage =
-                    this.blackHoleSystem.getDamagePerSecond() * bhProximity * deltaSeconds
-                this.takeDamage(damage)
-            }
-            totalProximityEffect = Math.max(totalProximityEffect, bhProximity)
-        }
-
-        // === GRAVITY WELLS (Low-Gravity Stage) ===
-        if (this.gravityWellSystem.getIsActive()) {
-            this.gravityWellSystem.update(deltaSeconds, this.playerX, this.playerY)
-
-            // Apply gentle drift to player (can escape, but pulled slightly)
-            const drift = this.gravityWellSystem.applyPlayerDrift(
-                this.playerX,
-                this.playerY,
-                deltaSeconds
-            )
-            this.externalVx += drift.dvx
-            this.externalVy += drift.dvy
-
-            // Check player proximity for visual effect
-            const gwProximity = this.gravityWellSystem.getPlayerProximityEffect(
-                this.playerX,
-                this.playerY
-            )
-            totalProximityEffect = Math.max(totalProximityEffect, gwProximity)
-        }
-
-        // === REPULSION BARRIERS (Elastic Stage) ===
-        if (this.repulsionBarrierSystem.getIsActive()) {
-            this.repulsionBarrierSystem.update(deltaSeconds, this.playerX, this.playerY)
-
-            // Check player collision with barriers (use combined velocity for collision detection)
-            const totalVx = this.playerVx + this.externalVx
-            const totalVy = this.playerVy + this.externalVy
-            const barrierCollision = this.repulsionBarrierSystem.checkCollision(
-                this.playerX,
-                this.playerY,
-                totalVx,
-                totalVy,
-                25 // Player radius
-            )
-            if (barrierCollision && barrierCollision.bounced) {
-                // Player is blocked but NOT bounced - just stop movement in that direction
-                this.externalVx = 0
-                this.externalVy = 0
-                this.triggerShake(3, 0.1)
-            }
-
-            // Check projectile collisions with barriers
-            this.projectileSystem.checkBarrierCollisions((x, y, vx, vy, radius) =>
-                this.repulsionBarrierSystem.checkCollision(x, y, vx, vy, radius)
-            )
-
-            // Check player proximity for visual effect
-            const rbProximity = this.repulsionBarrierSystem.getPlayerProximityEffect(
-                this.playerX,
-                this.playerY
-            )
-            totalProximityEffect = Math.max(totalProximityEffect, rbProximity)
-        }
-
-        // === CRUSHERS (Momentum Stage) ===
-        if (this.crusherSystem.getIsActive()) {
-            this.crusherSystem.update(deltaSeconds, this.playerX, this.playerY)
-
-            // Check player collision with crushers
-            const crusherCollision = this.crusherSystem.checkCollision(
-                this.playerX,
-                this.playerY,
-                25
-            )
-            if (crusherCollision) {
-                // Apply push to external velocity
-                this.externalVx += crusherCollision.pushVx
-                this.externalVy += crusherCollision.pushVy
-                // Apply damage
-                this.takeDamage(crusherCollision.damage * deltaSeconds)
-                this.triggerShake(5, 0.15)
-            }
-
-            // Check player proximity for visual effect
-            const crProximity = this.crusherSystem.getPlayerProximityEffect(
-                this.playerX,
-                this.playerY
-            )
-            totalProximityEffect = Math.max(totalProximityEffect, crProximity)
-        }
-
+    private updateWorldEntities(_deltaSeconds: number): void {
         // Update visual distortion based on proximity to any world entity
-        this.blackHoleProximityEffect = totalProximityEffect
         this.updateBlackHoleDistortion()
 
         // Update wobble physics atmosphere based on combat intensity
@@ -1472,16 +1369,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
     private updatePlayer(delta: number): void {
         const input = this.joystick.getInput()
-        let speed = this.playerBaseSpeed * this.stats.moveSpeedMultiplier
-
-        // Apply gravity well slowdown (player can escape but moves slower)
-        if (this.gravityWellSystem.getIsActive()) {
-            const gravitySpeedMult = this.gravityWellSystem.getPlayerSpeedMultiplier(
-                this.playerX,
-                this.playerY
-            )
-            speed *= gravitySpeedMult
-        }
+        const speed = this.playerBaseSpeed * this.stats.moveSpeedMultiplier
 
         const deadzone = 0.1
 
@@ -1574,12 +1462,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
             orb.y -= offsetY
             orb.graphics.position.set(orb.x, orb.y)
         }
-
-        // Offset world entity systems (stage gimmicks)
-        this.blackHoleSystem.offsetPositions(offsetX, offsetY)
-        this.gravityWellSystem.offsetPositions(offsetX, offsetY)
-        this.repulsionBarrierSystem.offsetPositions(offsetX, offsetY)
-        this.crusherSystem.offsetPositions(offsetX, offsetY)
 
         // Update camera to new player position
         this.cameraX = 0
@@ -1675,16 +1557,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
             score: this.score,
             level: this.playerProgress.level,
             skills: this.playerSkills,
+            physicsStats: { ...this.physicsStats },
         })
     }
 
-    // Player-selected skills from character select screen
-    private playerSelectedSkills: string[] = []
-
-    private showStageSelect(character: WobbleShape, selectedSkills: string[]): void {
-        this.debugLog(`showStageSelect: ${character}, skills: ${selectedSkills.length}`)
+    private showStageSelect(character: WobbleShape): void {
+        this.debugLog(`showStageSelect: ${character}`)
         this.selectedCharacter = character
-        this.playerSelectedSkills = selectedSkills
         this.characterSelectScreen.hide()
         this.setGameState('stage-select', 'showStageSelect')
         this.stageSelectScreen.show()
@@ -1697,17 +1576,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.characterSelectScreen.show()
     }
 
-    private startWithStage(
-        character: WobbleShape,
-        stageId: string,
-        selectedSkills: string[] = []
-    ): void {
-        this.debugLog(
-            `startWithStage: ${character}, stage: ${stageId}, skills: ${selectedSkills.length}`
-        )
+    private startWithStage(character: WobbleShape, stageId: string): void {
+        this.debugLog(`startWithStage: ${character}, stage: ${stageId}`)
         this.selectedCharacter = character
         this.currentStage = getStageById(stageId) || getDefaultStage()
-        this.playerSelectedSkills = selectedSkills
         this.stageSelectScreen.hide()
         this.showOpening(this.selectedCharacter)
     }
@@ -1719,28 +1591,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         // Update background theme
         this.backgroundSystem.setTheme(this.currentStage.bgColor)
-
-        // Deactivate all world entities first
-        this.blackHoleSystem.deactivate()
-        this.gravityWellSystem.deactivate()
-        this.repulsionBarrierSystem.deactivate()
-        this.crusherSystem.deactivate()
-
-        // Activate the appropriate world entity for this stage
-        switch (this.currentStage.id) {
-            case 'vortex':
-                this.blackHoleSystem.activate(this.playerX, this.playerY)
-                break
-            case 'low-gravity':
-                this.gravityWellSystem.activate(this.playerX, this.playerY)
-                break
-            case 'elastic':
-                this.repulsionBarrierSystem.activate(this.playerX, this.playerY)
-                break
-            case 'momentum':
-                this.crusherSystem.activate(this.playerX, this.playerY)
-                break
-        }
 
         // Apply stage-specific quantum/visual effects to wobble filter
         if (this.wobbleFilter) {
@@ -1786,6 +1636,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         this.gameTime = 0
         this.score = 0
+        this.physicsStats = { totalMomentum: 0, elasticBounces: 0, mergedMass: 0, slingshotCount: 0 }
         this.playerProgress = { xp: 0, level: 1, pendingLevelUps: 0 }
         this.setGameState('playing', 'startGameAfterOpening')
         this.updateHUD()
@@ -1794,11 +1645,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private initializeCharacterSkills(): void {
         const config = getCharacterSkillConfig(this.selectedCharacter)
 
-        // Use player-selected skills from character select screen
-        this.playerSkills = this.playerSelectedSkills.map((skillId) => ({
-            skillId,
-            level: 1,
-        }))
+        // Roguelike style: player starts with no skills, gains them through level-ups
+        this.playerSkills = []
 
         // Character provides passive only
         this.passiveTrait = config.passive
@@ -1959,6 +1807,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.gridFilter.setCameraPosition(this.cameraX, this.cameraY)
             // Player position in world coordinates (filter is on bgContainer which uses world coords)
             this.gridFilter.setPlayerPosition(this.playerX, this.playerY)
+            this.gridFilter.cleanupRipples() // Clean up expired ripple effects
             this.updateGridGravitySources()
         }
 
@@ -1973,19 +1822,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Update world entities and their effects
         this.updateWorldEntities(deltaSeconds)
 
-        // Update XP orbs (with black hole info if active)
-        if (this.blackHoleSystem.getIsActive()) {
-            const bhAbsPos = this.blackHoleSystem.getPosition()
-            const blackHoleInfo: BlackHoleInfo = {
-                x: bhAbsPos.x,
-                y: bhAbsPos.y,
-                pullRadius: this.blackHoleSystem.getPullRadius(),
-                consumeRadius: this.blackHoleSystem.getConsumeRadius(),
-            }
-            this.xpOrbSystem.update(deltaSeconds, this.playerX, this.playerY, blackHoleInfo)
-        } else {
-            this.xpOrbSystem.update(deltaSeconds, this.playerX, this.playerY)
-        }
+        // Update XP orbs
+        this.xpOrbSystem.update(deltaSeconds, this.playerX, this.playerY)
 
         this.fireTimer += deltaSeconds
         const effectiveFireRate = this.fireRate * this.stats.fireRateMultiplier
@@ -2191,10 +2029,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
             enemySystem: !!this.enemySystem,
             backgroundSystem: !!this.backgroundSystem,
             xpOrbSystem: !!this.xpOrbSystem,
-            blackHoleSystem: !!this.blackHoleSystem,
-            gravityWellSystem: !!this.gravityWellSystem,
-            repulsionBarrierSystem: !!this.repulsionBarrierSystem,
-            crusherSystem: !!this.crusherSystem,
             damageTextSystem: !!this.damageTextSystem,
             impactSystem: !!this.impactSystem,
             effectsManager: !!this.effectsManager,
@@ -2234,11 +2068,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.damageTextSystem.reset()
         this.impactSystem.reset()
         this.xpOrbSystem.reset()
-        // Reset all world entity systems
-        this.blackHoleSystem.reset()
-        this.gravityWellSystem.reset()
-        this.repulsionBarrierSystem.reset()
-        this.crusherSystem.reset()
         // Reset visual distortion
         this.blackHoleProximityEffect = 0
         this.updateBlackHoleDistortion()
@@ -2271,13 +2100,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Reset state
         this.gameTime = 0
         this.score = 0
+        this.physicsStats = { totalMomentum: 0, elasticBounces: 0, mergedMass: 0, slingshotCount: 0 }
         this.playerProgress = { xp: 0, level: 1, pendingLevelUps: 0 }
         this.maxPlayerHealth = this.baseMaxHealth
         this.playerHealth = this.maxPlayerHealth
         this.setGameState('character-select', 'onReset')
         this.bossSpawned = false
         this.playerSkills = []
-        this.playerSelectedSkills = []
         this.passiveTrait = ''
         this.momentumSpeedBonus = 0
         this.consecutiveHits = 0

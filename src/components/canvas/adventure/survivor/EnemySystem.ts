@@ -2,6 +2,7 @@ import { Container, Graphics } from 'pixi.js'
 import { Wobble } from '../../Wobble'
 import { Enemy, EnemyTier, TIER_CONFIGS, HitEffect } from './types'
 import { PhysicsModifiers, DEFAULT_PHYSICS, applyVortex } from './PhysicsModifiers'
+import type { KnockbackTrail } from './EffectsManager'
 
 interface EnemySystemContext {
     enemyContainer: Container
@@ -10,6 +11,10 @@ interface EnemySystemContext {
     height: number
     baseEnemySpeed: number
     maxEnemyCount?: number
+    // Callback to add trail points (from EffectsManager)
+    onAddTrailPoint?: (trail: KnockbackTrail, x: number, y: number) => void
+    // Callback to show physics formula during merge (momentum conservation)
+    onShowMergeFormula?: (x: number, y: number, mass1: number, mass2: number, totalMass: number) => void
 }
 
 interface PendingMerge {
@@ -105,9 +110,17 @@ export class EnemySystem {
         wobble.position.set(x, y)
         this.context.enemyContainer.addChild(wobble)
 
+        const mass = 2 * config.healthMultiplier
+
+        // Create mass ring - physics visualization (m ∝ ring thickness)
+        const massRing = this.createMassRing(config.size, mass, tier)
+        massRing.position.set(x, y)
+        this.context.enemyContainer.addChild(massRing)
+
         const enemy: Enemy = {
             graphics: wobble,
             wobble,
+            massRing,
             x,
             y,
             vx: overrides?.vx ?? 0,
@@ -115,7 +128,7 @@ export class EnemySystem {
             health,
             maxHealth,
             speed,
-            mass: 2 * config.healthMultiplier,
+            mass,
             size: config.size,
             tier,
             id: this.nextEnemyId++,
@@ -123,6 +136,46 @@ export class EnemySystem {
         }
 
         this.enemies.push(enemy)
+    }
+
+    /**
+     * Create a mass ring graphic for physics visualization
+     * Ring thickness and intensity scale with mass (F = ma visualization)
+     */
+    private createMassRing(size: number, mass: number, tier: EnemyTier): Graphics {
+        const ring = new Graphics()
+
+        // Ring properties scale with mass
+        const ringRadius = size * 0.65
+        const strokeWidth = Math.sqrt(mass) * 1.5 + 1 // √m scaling for visual balance
+        const baseAlpha = 0.2 + Math.min(mass * 0.03, 0.4) // More opaque for heavier
+
+        // Color based on tier - heavier = more intense blue/purple
+        const colors: Record<EnemyTier, number> = {
+            small: 0x4488ff, // Light blue
+            medium: 0x6644ff, // Blue-purple
+            large: 0x8844ff, // Purple
+            boss: 0xaa44ff, // Bright purple
+        }
+
+        ring.circle(0, 0, ringRadius)
+        ring.stroke({
+            color: colors[tier],
+            width: strokeWidth,
+            alpha: baseAlpha,
+        })
+
+        // Add inner glow for medium+ tiers
+        if (tier !== 'small') {
+            ring.circle(0, 0, ringRadius * 0.85)
+            ring.stroke({
+                color: colors[tier],
+                width: strokeWidth * 0.5,
+                alpha: baseAlpha * 0.5,
+            })
+        }
+
+        return ring
     }
 
     // Update enemy positions (move towards player)
@@ -183,6 +236,30 @@ export class EnemySystem {
             // Enemies can move freely in world space
 
             enemy.graphics.position.set(enemy.x, enemy.y)
+
+            // Update mass ring position
+            if (enemy.massRing) {
+                enemy.massRing.position.set(enemy.x, enemy.y)
+
+                // Boss mass ring pulses to show massive gravity
+                if (enemy.tier === 'boss') {
+                    const pulseScale = 1 + Math.sin(animPhase * 3) * 0.15
+                    enemy.massRing.scale.set(pulseScale)
+                    enemy.massRing.alpha = 0.5 + Math.sin(animPhase * 2) * 0.2
+                }
+            }
+
+            // Update knockback trail (F=ma visualization)
+            if (enemy.knockbackTrail && this.context.onAddTrailPoint) {
+                const speed = Math.sqrt(enemy.vx * enemy.vx + enemy.vy * enemy.vy)
+                // Only add points while moving fast (knockback in progress)
+                if (speed > 1) {
+                    this.context.onAddTrailPoint(enemy.knockbackTrail, enemy.x, enemy.y)
+                } else {
+                    // Knockback finished, clear trail reference
+                    enemy.knockbackTrail = undefined
+                }
+            }
 
             // Animate wobble phase
             if (enemy.wobble) {
@@ -313,6 +390,11 @@ export class EnemySystem {
         if (index !== -1) {
             this.context.enemyContainer.removeChild(enemy.graphics)
             enemy.graphics.destroy()
+            // Clean up mass ring
+            if (enemy.massRing) {
+                this.context.enemyContainer.removeChild(enemy.massRing)
+                enemy.massRing.destroy()
+            }
             this.enemies.splice(index, 1)
         }
     }
@@ -330,6 +412,11 @@ export class EnemySystem {
                 const enemy = this.enemies[i]
                 this.context.enemyContainer.removeChild(enemy.graphics)
                 enemy.graphics.destroy()
+                // Clean up mass ring
+                if (enemy.massRing) {
+                    this.context.enemyContainer.removeChild(enemy.massRing)
+                    enemy.massRing.destroy()
+                }
                 this.enemies.splice(i, 1)
                 score += 10
             }
@@ -353,6 +440,11 @@ export class EnemySystem {
             if (dx > margin || dy > margin) {
                 this.context.enemyContainer.removeChild(enemy.graphics)
                 enemy.graphics.destroy()
+                // Clean up mass ring
+                if (enemy.massRing) {
+                    this.context.enemyContainer.removeChild(enemy.massRing)
+                    enemy.massRing.destroy()
+                }
                 this.enemies.splice(i, 1)
                 removed++
             }
@@ -378,6 +470,11 @@ export class EnemySystem {
         for (const enemy of this.enemies) {
             this.context.enemyContainer.removeChild(enemy.graphics)
             enemy.graphics.destroy()
+            // Clean up mass ring
+            if (enemy.massRing) {
+                this.context.enemyContainer.removeChild(enemy.massRing)
+                enemy.massRing.destroy()
+            }
         }
         this.enemies.length = 0
         this.overlapTracker.clear()
@@ -459,6 +556,11 @@ export class EnemySystem {
 
         // Create merge effect
         this.createMergeEffect(centerX, centerY, config.size, hitEffects)
+
+        // Show physics formula: momentum conservation p₁ + p₂ = p
+        if (this.context.onShowMergeFormula) {
+            this.context.onShowMergeFormula(centerX, centerY, e1.mass, e2.mass, totalMass)
+        }
     }
 
     private createMergeEffect(x: number, y: number, size: number, hitEffects: HitEffect[]): void {

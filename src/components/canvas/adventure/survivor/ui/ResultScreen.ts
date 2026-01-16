@@ -10,11 +10,19 @@ export interface ResultScreenContext {
     height: number
 }
 
+export interface PhysicsStats {
+    totalMomentum: number // Total momentum transferred (Σ p = mv)
+    elasticBounces: number // Number of projectile bounces
+    mergedMass: number // Total mass from merges
+    slingshotCount: number // Gravity slingshot maneuvers
+}
+
 export interface ResultData {
     gameTime: number
     score: number
     level: number
     skills: PlayerSkill[]
+    physicsStats?: PhysicsStats // Optional for backwards compatibility
 }
 
 export class ResultScreen {
@@ -201,10 +209,10 @@ export class ResultScreen {
 
         if (!this.data) return
 
-        // Balatro green felt theme colors
-        const bgTopColor = 0x3d6b59 // felt green
-        const bgBottomColor = 0x2d5a4a // darker felt
-        const cardBgColor = 0x374244 // dark panel
+        // Space theme colors
+        const bgTopColor = 0x0a0a1a // deep space
+        const bgBottomColor = 0x050510 // near black
+        const cardBgColor = 0x1a1a2e // dark panel
         const cardShadowColor = 0x1a1a1a // black shadow
         const textDark = 0xffffff // white text
         const textMuted = 0xaaaaaa // light gray
@@ -477,6 +485,44 @@ export class ResultScreen {
         messageText.anchor.set(0.5)
         messageText.position.set(0, rankBoxHeight / 2 + 15)
         this.resultRankCard.addChild(messageText)
+
+        // Physics stats section (below card, compact layout)
+        if (this.data.physicsStats) {
+            const physicsY = cardY + cardHeight + 15
+            const physicsStyle = new TextStyle({
+                fontFamily: 'monospace, Courier, sans-serif',
+                fontSize: 10,
+                fontWeight: 'bold',
+                fill: 0x88ccff,
+                letterSpacing: 1,
+            })
+
+            // Physics formula header
+            const physicsHeader = new Text({
+                text: '⚛ PHYSICS',
+                style: new TextStyle({
+                    ...physicsStyle,
+                    fontSize: 11,
+                    fill: 0xaaddff,
+                }),
+            })
+            physicsHeader.anchor.set(0.5)
+            physicsHeader.position.set(this.centerX, physicsY)
+            this.screenContainer.addChild(physicsHeader)
+
+            // Stats in a single line with formulas
+            const stats = this.data.physicsStats
+            const momentum = (stats.totalMomentum / 1000).toFixed(1) // Convert to k units
+            const statsLine = `p=${momentum}k · bounces=${stats.elasticBounces} · m=${stats.mergedMass} · sling=${stats.slingshotCount}`
+
+            const physicsText = new Text({
+                text: statsLine,
+                style: physicsStyle,
+            })
+            physicsText.anchor.set(0.5)
+            physicsText.position.set(this.centerX, physicsY + 15)
+            this.screenContainer.addChild(physicsText)
+        }
 
         // Action buttons - Balatro-style rounded rectangle buttons
         this.resultButtons = new Container()

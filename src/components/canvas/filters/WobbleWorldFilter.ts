@@ -70,6 +70,10 @@ uniform int uDebugMode; // 0=off, 1=show gravity centers
 uniform vec4 uGravitySources[8]; // xy = position, z = mass, w = enabled (1/0)
 uniform int uGravitySourceCount; // Active source count
 
+// Ripple system - expanding waves from impacts/deaths
+uniform vec4 uRipples[4]; // xy = world position, z = birth time, w = amplitude
+uniform int uRippleCount; // Active ripple count
+
 // ==================== UTILITY FUNCTIONS ====================
 
 #define PI 3.14159265359
@@ -105,18 +109,33 @@ float spaceGrid(vec2 uv, float t, float dist) {
     return g * (0.3 + dist * 0.35);
 }
 
-// Apply gravity distortion - pulls grid toward mass center
+// Apply gravity distortion - rubber sheet funnel effect (grid sags DOWN near mass)
+// Visualizes general relativity: mass curves spacetime downward like a funnel
 vec2 applyGravityDistortion(vec2 uv, vec2 gravityCenter, float strength, float time) {
     vec2 toCenter = uv - gravityCenter;
     float dist = length(toCenter);
 
-    // Inverse square falloff (like real gravity)
-    float pull = strength / (dist * dist + 0.2);
-    pull = min(pull, 0.4); // Prevent extreme distortion
+    // Tight funnel - dist^4 for localized sharp peak
+    float massEffect = pow(strength, 1.2);
+    float pull = massEffect / (dist * dist * dist * dist + 0.02);
 
-    // Pull UV toward gravity center
-    vec2 pullDir = normalize(toCenter + 0.001);
-    float pullAmount = pull * 0.08;
+    // Cap the effect
+    pull = min(pull, 0.6);
+
+    // Tight edge falloff - small radius
+    float edgeFade = smoothstep(0.5, 0.0, dist);
+    pull *= edgeFade;
+
+    // Subtle pulsing for heavy masses
+    float pulse = 1.0;
+    if (strength > 0.15) {
+        pulse = 1.0 + sin(time * 2.0 + strength * 10.0) * 0.08 * (strength - 0.15);
+    }
+
+    float pullAmount = pull * 0.10 * pulse; // Subtle but visible
+
+    // Pure downward sag - like weight pressing down on fabric
+    vec2 pullDir = vec2(0.0, 1.0); // Straight down
 
     return uv - pullDir * pullAmount;
 }
@@ -125,6 +144,39 @@ vec2 applyGravityDistortion(vec2 uv, vec2 gravityCenter, float strength, float t
 float smin(float a, float b, float k) {
     float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
     return mix(b, a, h) - k * h * (1.0 - h);
+}
+
+// Apply ripple wave distortion - expanding circular wave from impact point
+// Visualizes energy release: E = ½mv² spreading outward
+vec2 applyRippleDistortion(vec2 uv, vec2 rippleCenter, float birthTime, float amplitude, float currentTime) {
+    float age = currentTime - birthTime;
+    if (age < 0.0 || age > 2.0) return uv; // Ripple lasts 2 seconds
+
+    vec2 toCenter = uv - rippleCenter;
+    float dist = length(toCenter);
+
+    // Wave expands outward over time
+    float waveSpeed = 3.0; // Units per second
+    float waveRadius = age * waveSpeed;
+    float waveWidth = 0.3 + age * 0.2; // Wave spreads wider as it expands
+
+    // Distance from wave front
+    float distFromWave = abs(dist - waveRadius);
+
+    // Wave intensity (fades over time and distance from wavefront)
+    float fadeout = 1.0 - age / 2.0; // Fade to zero over 2 seconds
+    float waveIntensity = exp(-distFromWave * distFromWave / (waveWidth * waveWidth));
+    waveIntensity *= fadeout * fadeout; // Quadratic fadeout for smooth end
+
+    // Sinusoidal wave pattern (multiple wavefronts)
+    float wavePhase = (dist - waveRadius) * 8.0;
+    float wave = sin(wavePhase) * waveIntensity;
+
+    // Displace perpendicular to wave direction
+    vec2 waveDir = normalize(toCenter + 0.001);
+    float displacement = wave * amplitude * 0.15;
+
+    return uv + waveDir * displacement;
 }
 
 // ==================== DYNAMIC WAVE FUNCTIONS ====================
@@ -510,6 +562,21 @@ void main() {
             }
         }
 
+        // === RIPPLE WAVES - expanding waves from impacts/deaths ===
+        for (int i = 0; i < 4; i++) {
+            if (i >= uRippleCount) break;
+
+            vec4 ripple = uRipples[i];
+            // Convert world position to grid UV space
+            vec2 rippleGridPos = (ripple.xy / uWorldScale) * 5.0 + uGravityOffset;
+            float birthTime = ripple.z;
+            float amplitude = ripple.w;
+
+            // Apply ripple distortion
+            gridWorldUV = applyRippleDistortion(gridWorldUV, rippleGridPos, birthTime, amplitude, uTime);
+            gridDistortion += amplitude * 0.2 * (1.0 - min((uTime - birthTime) / 2.0, 1.0));
+        }
+
         // Apply stage-specific gravity distortion to grid
         // All positions relative to player (use actual player world position with offset)
         vec2 playerWorldPos = (uPlayerPos / uWorldScale) * 5.0 + uGravityOffset;
@@ -543,7 +610,10 @@ void main() {
 
         // Draw the space grid
         float grid = spaceGrid(gridWorldUV, uTime, gridDistortion);
-        color.rgb += uStageTint * grid;
+
+        // Space theme grid color - cyan/teal
+        vec3 gridColor = vec3(0.2, 0.8, 0.9); // Cyan for spacetime grid
+        color.rgb += gridColor * grid;
 
         // === DEBUG MODE - show gravity centers ===
         if (uDebugMode == 1) {
@@ -560,7 +630,9 @@ void main() {
             }
 
             // Screen center reference (GREEN marker) - where player SHOULD be
-            vec2 screenCenterGridPos = cameraOffset * 5.0;
+            // Screen center is at UV (0.5, 0.5), convert to world UV then grid space
+            vec2 screenCenterWorldUV = vec2(0.5) * (uDimensions / uWorldScale);
+            vec2 screenCenterGridPos = (screenCenterWorldUV + cameraOffset) * 5.0;
             float centerDist = length(pixelGridPos - screenCenterGridPos);
             if (centerDist < 0.1) {
                 color.rgb = vec3(0.0, 1.0, 0.0); // Green
@@ -708,7 +780,12 @@ export class WobbleWorldFilter extends Filter {
         uDebugMode: number
         uGravitySources: Float32Array
         uGravitySourceCount: number
+        uRipples: Float32Array
+        uRippleCount: number
     }
+
+    // Ripple tracking for automatic cleanup
+    private ripples: Array<{ x: number; y: number; birthTime: number; amplitude: number }> = []
 
     constructor(options: WobbleWorldFilterOptions = {}) {
         const {
@@ -759,6 +836,8 @@ export class WobbleWorldFilter extends Filter {
                     uDebugMode: { value: 0, type: 'i32' }, // 0=off, 1=show gravity centers
                     uGravitySources: { value: new Float32Array(8 * 4), type: 'vec4<f32>' }, // 8 sources x 4 floats
                     uGravitySourceCount: { value: 0, type: 'i32' },
+                    uRipples: { value: new Float32Array(4 * 4), type: 'vec4<f32>' }, // 4 ripples x 4 floats (x, y, birthTime, amplitude)
+                    uRippleCount: { value: 0, type: 'i32' },
                 },
             },
         })
@@ -866,6 +945,78 @@ export class WobbleWorldFilter extends Filter {
         this.uniforms.uGravitySourceCount = 0
     }
 
+    /**
+     * Add a ripple effect at the specified world position
+     * Used for enemy deaths, explosions, heavy impacts
+     * @param x World X coordinate
+     * @param y World Y coordinate
+     * @param amplitude Ripple strength (0.5 = medium enemy, 1.0+ = boss)
+     */
+    addRipple(x: number, y: number, amplitude: number): void {
+        const maxRipples = 4
+        const currentTime = this.uniforms.uTime
+
+        // Remove expired ripples (older than 2 seconds)
+        this.ripples = this.ripples.filter((r) => currentTime - r.birthTime < 2.0)
+
+        // Add new ripple
+        this.ripples.push({ x, y, birthTime: currentTime, amplitude })
+
+        // Keep only the most recent ripples if over limit
+        if (this.ripples.length > maxRipples) {
+            this.ripples = this.ripples.slice(-maxRipples)
+        }
+
+        // Update uniforms
+        this.updateRippleUniforms()
+    }
+
+    /**
+     * Update ripple uniforms from internal tracking
+     */
+    private updateRippleUniforms(): void {
+        const maxRipples = 4
+        const count = Math.min(this.ripples.length, maxRipples)
+
+        for (let i = 0; i < maxRipples; i++) {
+            const baseIndex = i * 4
+            if (i < count) {
+                const ripple = this.ripples[i]
+                this.uniforms.uRipples[baseIndex] = ripple.x // x position
+                this.uniforms.uRipples[baseIndex + 1] = ripple.y // y position
+                this.uniforms.uRipples[baseIndex + 2] = ripple.birthTime // birth time
+                this.uniforms.uRipples[baseIndex + 3] = ripple.amplitude // amplitude
+            } else {
+                this.uniforms.uRipples[baseIndex + 3] = 0 // Zero amplitude = disabled
+            }
+        }
+
+        this.uniforms.uRippleCount = count
+    }
+
+    /**
+     * Clean up expired ripples (call periodically in update loop)
+     */
+    cleanupRipples(): void {
+        const currentTime = this.uniforms.uTime
+        const previousCount = this.ripples.length
+
+        this.ripples = this.ripples.filter((r) => currentTime - r.birthTime < 2.0)
+
+        // Only update uniforms if count changed
+        if (this.ripples.length !== previousCount) {
+            this.updateRippleUniforms()
+        }
+    }
+
+    /**
+     * Clear all ripples immediately
+     */
+    clearRipples(): void {
+        this.ripples = []
+        this.uniforms.uRippleCount = 0
+    }
+
     get wobbleIntensity(): number {
         return this.uniforms.uWobbleIntensity
     }
@@ -952,7 +1103,7 @@ export class WobbleWorldFilter extends Filter {
             quantumWave: 0.3,
             particleField: 0.4,
             probabilityCloud: 0.3,
-            stageTint: [0.6, 0.9, 0.5], // Green energy
+            stageTint: [0.2, 0.8, 0.9], // Space cyan
         })
     }
 
@@ -1167,7 +1318,7 @@ export class WobbleWorldFilter extends Filter {
                     quantumWave: 0.3,
                     particleField: 0.4,
                     probabilityCloud: 0.3,
-                    stageTint: [0.6, 0.9, 0.5],
+                    stageTint: [0.2, 0.8, 0.9], // Space cyan
                 }
         }
 

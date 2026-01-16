@@ -237,6 +237,145 @@ export class ImpactEffectSystem {
     }
 
     /**
+     * Trigger physics-based impact with particle count proportional to energy
+     * Uses KE = ½mv² to determine visual intensity
+     * @param x World X position
+     * @param y World Y position
+     * @param damage Damage dealt
+     * @param projectileSpeed Speed of projectile
+     * @param enemyMass Mass of enemy hit
+     * @param color Optional particle color
+     * @param knockbackDir Optional knockback direction for directional particles
+     */
+    triggerPhysicsImpact(
+        x: number,
+        y: number,
+        damage: number,
+        projectileSpeed: number,
+        enemyMass: number,
+        color?: number,
+        knockbackDir?: { x: number; y: number }
+    ): void {
+        // Calculate kinetic energy for particle scaling: KE = ½mv²
+        // Using damage as proxy for momentum transfer
+        const kineticEnergy = 0.5 * damage * projectileSpeed * projectileSpeed
+        const normalizedEnergy = Math.min(kineticEnergy / 500, 1) // Normalize to 0-1
+
+        // Base config modified by energy
+        const baseConfig = IMPACT_CONFIGS.hit
+        const energyMultiplier = 0.5 + normalizedEnergy * 1.5 // 0.5x to 2x
+
+        // Lighter enemies show more knockback effect (F=ma, a∝1/m)
+        const massEffect = Math.min(10 / (enemyMass + 1), 2) // Lighter = more particles
+
+        const particleCount = Math.floor(baseConfig.particleCount * energyMultiplier * massEffect)
+        const particleSpeed = baseConfig.particleSpeed * (0.8 + normalizedEnergy * 0.6) * massEffect
+
+        // Spawn directional particle burst (in knockback direction)
+        if (knockbackDir) {
+            this.spawnDirectionalParticleBurst(
+                x,
+                y,
+                particleCount,
+                particleSpeed,
+                knockbackDir,
+                color ?? this.getEnergyColor(normalizedEnergy)
+            )
+        } else {
+            this.spawnParticleBurst(
+                x,
+                y,
+                {
+                    ...baseConfig,
+                    particleCount,
+                    particleSpeed,
+                },
+                color ?? this.getEnergyColor(normalizedEnergy)
+            )
+        }
+
+        // Flash based on energy
+        if (normalizedEnergy > 0.5) {
+            this.flashTimer = 0.05
+            this.flashDuration = 0.05
+            this.flashTargetAlpha = 0.1 + normalizedEnergy * 0.1
+            this.flashOverlay.clear()
+            this.flashOverlay.rect(0, 0, this.width, this.height)
+            this.flashOverlay.fill(color ?? this.getEnergyColor(normalizedEnergy))
+            this.flashOverlay.alpha = this.flashTargetAlpha
+        }
+    }
+
+    /**
+     * Get color based on energy level (blue = low, white = medium, yellow = high)
+     */
+    private getEnergyColor(normalizedEnergy: number): number {
+        if (normalizedEnergy < 0.3) {
+            return 0x88ccff // Low energy - blue
+        } else if (normalizedEnergy < 0.7) {
+            return 0xffffff // Medium energy - white
+        } else {
+            return 0xffdd44 // High energy - yellow/gold
+        }
+    }
+
+    /**
+     * Spawn directional particle burst (particles fly in knockback direction)
+     * Visualizes momentum transfer: p = mv
+     */
+    private spawnDirectionalParticleBurst(
+        x: number,
+        y: number,
+        count: number,
+        speed: number,
+        direction: { x: number; y: number },
+        color: number
+    ): void {
+        const dirAngle = Math.atan2(direction.y, direction.x)
+        const spreadAngle = Math.PI / 3 // 60 degree cone
+
+        for (let i = 0; i < count; i++) {
+            const graphics = this.acquireParticle()
+            if (!graphics) break
+
+            // Random angle within cone centered on knockback direction
+            const angleOffset = (Math.random() - 0.5) * spreadAngle
+            const angle = dirAngle + angleOffset
+            const particleSpeed = speed * (0.5 + Math.random() * 0.5)
+
+            // Update particle graphics
+            graphics.clear()
+            const size = 4 * (0.5 + Math.random() * 0.5)
+            graphics.moveTo(0, -size)
+            graphics.lineTo(size * 0.6, 0)
+            graphics.lineTo(0, size)
+            graphics.lineTo(-size * 0.6, 0)
+            graphics.closePath()
+            graphics.fill(color)
+
+            graphics.position.set(x, y)
+            graphics.visible = true
+            graphics.alpha = 1
+            graphics.scale.set(1)
+
+            const maxLife = 0.25 + Math.random() * 0.15
+
+            this.activeParticles.push({
+                graphics,
+                x,
+                y,
+                vx: Math.cos(angle) * particleSpeed,
+                vy: Math.sin(angle) * particleSpeed,
+                life: maxLife,
+                maxLife,
+                size,
+                rotation: angle, // Orient particle in direction of travel
+                rotationSpeed: (Math.random() - 0.5) * 10,
+            })
+        }
+    }
+
+    /**
      * Spawn particle burst at position
      */
     private spawnParticleBurst(x: number, y: number, config: ImpactConfig, color?: number): void {

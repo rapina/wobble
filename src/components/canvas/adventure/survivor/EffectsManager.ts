@@ -5,10 +5,23 @@ export interface EffectsManagerContext {
     effectContainer: Container
 }
 
+/**
+ * Knockback trail effect - visualizes F=ma (lighter objects move more)
+ * Trail thickness ∝ 1/√mass (thicker for lighter enemies)
+ */
+export interface KnockbackTrail {
+    graphics: Graphics
+    points: Array<{ x: number; y: number }>
+    timer: number
+    mass: number
+    color: number
+}
+
 export class EffectsManager {
     private effectContainer: Container
     private textEffects: TextEffect[] = []
     private hitEffects: HitEffect[] = []
+    private knockbackTrails: KnockbackTrail[] = []
 
     constructor(context: EffectsManagerContext) {
         this.effectContainer = context.effectContainer
@@ -56,13 +69,262 @@ export class EffectsManager {
     }
 
     /**
+     * Show physics formula text effect
+     * Used for merge (momentum conservation) and other physics events
+     */
+    addFormulaEffect(
+        x: number,
+        y: number,
+        formula: string,
+        color = 0x88ccff,
+        fontSize = 14
+    ): void {
+        const textObj = new Text({
+            text: formula,
+            style: new TextStyle({
+                fontFamily: 'monospace, Courier, sans-serif',
+                fontSize,
+                fontWeight: 'bold',
+                fill: color,
+                stroke: { color: 0x000000, width: 2 },
+                dropShadow: {
+                    color: 0x000000,
+                    alpha: 0.5,
+                    blur: 2,
+                    distance: 1,
+                },
+            }),
+        })
+        textObj.anchor.set(0.5)
+        textObj.position.set(x, y)
+        this.effectContainer.addChild(textObj)
+
+        this.textEffects.push({
+            timer: 1.5, // Longer duration for formula visibility
+            text: textObj,
+        })
+    }
+
+    /**
+     * Show merge formula with mass values
+     * Displays: "m₁ + m₂ = M" and "p = mv (보존)"
+     */
+    showMergeFormula(
+        x: number,
+        y: number,
+        mass1: number,
+        mass2: number,
+        totalMass: number
+    ): void {
+        // Show mass equation
+        const massFormula = `${mass1} + ${mass2} = ${totalMass}`
+        this.addFormulaEffect(x, y - 20, massFormula, 0x9b59b6, 12)
+
+        // Show momentum conservation label
+        this.addFormulaEffect(x, y - 5, 'p = mv', 0xaaddff, 10)
+    }
+
+    /**
+     * Show F = ma formula for strong knockback events
+     * Lighter enemies move more (acceleration inversely proportional to mass)
+     */
+    showForceFormula(x: number, y: number, mass: number, acceleration: number): void {
+        // Only show for significant acceleration
+        if (acceleration < 5) return
+
+        // Format F = ma with values
+        const force = (mass * acceleration).toFixed(0)
+        const formula = `F = ${mass}×${acceleration.toFixed(1)} = ${force}`
+        this.addFormulaEffect(x, y - 25, formula, 0xff8866, 11)
+
+        // Show simplified formula
+        this.addFormulaEffect(x, y - 10, 'F = ma', 0xffaa88, 9)
+    }
+
+    /**
+     * Show gravity formula near gravity wells/black holes
+     * F = Gm₁m₂/r²
+     */
+    showGravityFormula(x: number, y: number): void {
+        this.addFormulaEffect(x, y - 15, 'F = Gm₁m₂/r²', 0x6688ff, 11)
+    }
+
+    /**
+     * Show kinetic energy formula for high-energy impacts
+     * KE = ½mv²
+     */
+    showKineticEnergyFormula(x: number, y: number, mass: number, speed: number): void {
+        const ke = (0.5 * mass * speed * speed).toFixed(0)
+        const formula = `KE = ½×${mass}×${speed.toFixed(0)}² = ${ke}`
+        this.addFormulaEffect(x, y - 25, formula, 0x44ddff, 10)
+
+        // Show simplified formula
+        this.addFormulaEffect(x, y - 10, 'KE = ½mv²', 0x66eeff, 9)
+    }
+
+    /**
+     * Show momentum conservation formula for elastic collisions
+     * p = mv (momentum preserved)
+     */
+    showMomentumFormula(x: number, y: number): void {
+        this.addFormulaEffect(x, y - 15, 'p₁ + p₂ = p₁\' + p₂\'', 0xaaddff, 10)
+    }
+
+    /**
+     * Show elastic collision formula
+     * KE₁ = KE₂ (energy conserved)
+     */
+    showElasticCollisionFormula(x: number, y: number): void {
+        this.addFormulaEffect(x, y - 15, 'KE₁ = KE₂', 0xff88cc, 11)
+    }
+
+    /**
+     * Show gravity slingshot effect
+     * Displays "Slingshot!" with arrow indicating boost direction
+     */
+    showSlingshotEffect(projX: number, projY: number, wellX: number, wellY: number): void {
+        // Calculate midpoint between projectile and well
+        const midX = (projX + wellX) / 2
+        const midY = (projY + wellY) / 2
+
+        // Show "Slingshot!" text at the projectile position
+        const textObj = new Text({
+            text: 'Slingshot!',
+            style: new TextStyle({
+                fontFamily: 'monospace, Courier, sans-serif',
+                fontSize: 14,
+                fontWeight: 'bold',
+                fill: 0xffcc00,
+                stroke: { color: 0x000000, width: 3 },
+                dropShadow: {
+                    color: 0xff8800,
+                    alpha: 0.8,
+                    blur: 4,
+                    distance: 0,
+                },
+            }),
+        })
+        textObj.anchor.set(0.5)
+        textObj.position.set(projX, projY - 20)
+        this.effectContainer.addChild(textObj)
+
+        this.textEffects.push({
+            timer: 1.0,
+            text: textObj,
+        })
+
+        // Draw velocity boost arc (curved arrow suggesting the slingshot maneuver)
+        const boostGraphics = new Graphics()
+        const arcRadius = 25
+        const toWellAngle = Math.atan2(wellY - projY, wellX - projX)
+
+        // Draw partial arc showing the curved path
+        boostGraphics.arc(midX, midY, arcRadius, toWellAngle - 0.5, toWellAngle + 0.5, false)
+        boostGraphics.stroke({ color: 0xffdd44, width: 3, alpha: 0.8 })
+
+        // Arrow head at end of arc
+        const arrowX = midX + Math.cos(toWellAngle + 0.5) * arcRadius
+        const arrowY = midY + Math.sin(toWellAngle + 0.5) * arcRadius
+        const arrowAngle = toWellAngle + 0.5 + Math.PI / 2
+
+        boostGraphics.moveTo(
+            arrowX + Math.cos(arrowAngle) * 8,
+            arrowY + Math.sin(arrowAngle) * 8
+        )
+        boostGraphics.lineTo(arrowX, arrowY)
+        boostGraphics.lineTo(
+            arrowX + Math.cos(arrowAngle + Math.PI * 0.6) * 8,
+            arrowY + Math.sin(arrowAngle + Math.PI * 0.6) * 8
+        )
+        boostGraphics.stroke({ color: 0xffdd44, width: 3, alpha: 0.8 })
+
+        this.effectContainer.addChild(boostGraphics)
+
+        this.hitEffects.push({
+            x: midX,
+            y: midY,
+            timer: 0.5,
+            graphics: boostGraphics,
+        })
+    }
+
+    /**
+     * Start a knockback trail for an enemy
+     * Trail thickness ∝ 1/√mass - visualizes F=ma (lighter objects accelerate more)
+     */
+    startKnockbackTrail(x: number, y: number, mass: number, color = 0xff6666): KnockbackTrail {
+        const graphics = new Graphics()
+        this.effectContainer.addChild(graphics)
+
+        const trail: KnockbackTrail = {
+            graphics,
+            points: [{ x, y }],
+            timer: 0.4, // Trail duration
+            mass,
+            color,
+        }
+
+        this.knockbackTrails.push(trail)
+        return trail
+    }
+
+    /**
+     * Add a point to an existing knockback trail
+     */
+    addTrailPoint(trail: KnockbackTrail, x: number, y: number): void {
+        trail.points.push({ x, y })
+        // Limit points to prevent memory issues
+        if (trail.points.length > 20) {
+            trail.points.shift()
+        }
+    }
+
+    /**
+     * Render a knockback trail
+     * Thicker trail for lighter masses (F=ma visualization)
+     */
+    private renderKnockbackTrail(trail: KnockbackTrail): void {
+        const { graphics, points, mass, color, timer } = trail
+
+        if (points.length < 2) return
+
+        graphics.clear()
+
+        // Trail thickness inversely proportional to mass
+        // Light enemy (mass=2): thickness ~3.5
+        // Heavy enemy (mass=20): thickness ~1.1
+        const baseThickness = 5 / Math.sqrt(mass)
+        const alpha = Math.min(1, timer * 2.5) // Fade out over time
+
+        // Draw trail as a series of segments with decreasing thickness
+        for (let i = 1; i < points.length; i++) {
+            const p0 = points[i - 1]
+            const p1 = points[i]
+
+            // Thickness decreases toward the tail
+            const segmentProgress = i / points.length
+            const thickness = baseThickness * segmentProgress
+
+            graphics.moveTo(p0.x, p0.y)
+            graphics.lineTo(p1.x, p1.y)
+            graphics.stroke({
+                color,
+                width: Math.max(1, thickness),
+                alpha: alpha * segmentProgress,
+            })
+        }
+    }
+
+    /**
      * Update all effects
      */
     update(delta: number): void {
+        const deltaSeconds = delta / 60
+
         // Update text effects
         for (let i = this.textEffects.length - 1; i >= 0; i--) {
             const effect = this.textEffects[i]
-            effect.timer -= delta / 60
+            effect.timer -= deltaSeconds
 
             // Fade and rise
             effect.text.alpha = Math.min(1, effect.timer)
@@ -78,7 +340,7 @@ export class EffectsManager {
         // Update hit effects
         for (let i = this.hitEffects.length - 1; i >= 0; i--) {
             const effect = this.hitEffects[i]
-            effect.timer -= delta / 60
+            effect.timer -= deltaSeconds
 
             effect.graphics.alpha = effect.timer / 0.2
             effect.graphics.scale.set(1 + (0.2 - effect.timer) * 3)
@@ -87,6 +349,21 @@ export class EffectsManager {
                 this.effectContainer.removeChild(effect.graphics)
                 effect.graphics.destroy()
                 this.hitEffects.splice(i, 1)
+            }
+        }
+
+        // Update knockback trails
+        for (let i = this.knockbackTrails.length - 1; i >= 0; i--) {
+            const trail = this.knockbackTrails[i]
+            trail.timer -= deltaSeconds
+
+            // Render the trail with current state
+            this.renderKnockbackTrail(trail)
+
+            if (trail.timer <= 0) {
+                this.effectContainer.removeChild(trail.graphics)
+                trail.graphics.destroy()
+                this.knockbackTrails.splice(i, 1)
             }
         }
     }
@@ -117,5 +394,11 @@ export class EffectsManager {
             effect.graphics.destroy()
         }
         this.hitEffects = []
+
+        for (const trail of this.knockbackTrails) {
+            this.effectContainer.removeChild(trail.graphics)
+            trail.graphics.destroy()
+        }
+        this.knockbackTrails = []
     }
 }

@@ -46,7 +46,7 @@ export const STAGES: StageConfig[] = [
             knockbackMult: 1,
         },
         formula: 'newton-second',
-        bgColor: 0x3d6b59, // Balatro felt green
+        bgColor: 0x0a0a1a, // Deep space
         particleColor: 0xc9a227, // Balatro gold
         description: 'F = ma',
         trait: '표준 물리 법칙이 지배한다',

@@ -157,6 +157,7 @@ export const TIER_CONFIGS: Record<EnemyTier, TierConfig> = {
 
 export interface Projectile {
     graphics: Graphics
+    energyAura?: Graphics // Kinetic energy visualization (KE = ½mv² glow)
     x: number
     y: number
     vx: number
@@ -180,6 +181,9 @@ export interface Projectile {
 export interface Enemy {
     graphics: Container
     wobble?: Wobble
+    massRing?: Graphics // Visual ring showing mass (physics visualization)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    knockbackTrail?: any // Active knockback trail (managed by EffectsManager)
     x: number
     y: number
     vx: number

@@ -19,6 +19,9 @@ export class ProjectileSystem {
 
     readonly projectiles: Projectile[] = []
 
+    // Elastic bounce counter for physics stats
+    private bounceCount = 0
+
     constructor(context: ProjectileSystemContext) {
         this.context = context
     }
@@ -32,6 +35,15 @@ export class ProjectileSystem {
      */
     setPhysicsModifiers(modifiers: PhysicsModifiers): void {
         this.physicsModifiers = modifiers
+    }
+
+    /**
+     * Get and reset the elastic bounce count (for physics stats tracking)
+     */
+    getAndResetBounceCount(): number {
+        const count = this.bounceCount
+        this.bounceCount = 0
+        return count
     }
 
     // Fire projectile towards nearest enemy
@@ -96,8 +108,15 @@ export class ProjectileSystem {
             graphics.position.set(playerX, playerY)
             this.context.projectileContainer.addChild(graphics)
 
+            // Create energy aura - kinetic energy visualization (KE = ½mv²)
+            const energyAura = this.createEnergyAura(size)
+            energyAura.position.set(playerX, playerY)
+            // Add aura behind projectile
+            this.context.projectileContainer.addChildAt(energyAura, 0)
+
             const proj: Projectile = {
                 graphics,
+                energyAura,
                 x: playerX,
                 y: playerY,
                 vx: dirX * speed,
@@ -214,6 +233,9 @@ export class ProjectileSystem {
 
             proj.graphics.position.set(proj.x, proj.y)
 
+            // Update energy aura based on kinetic energy (KE = ½mv²)
+            this.updateEnergyAura(proj)
+
             // Remove if too far from camera (but not returning projectiles heading to origin)
             const margin = 500 // Larger margin for infinite map
             const dx = Math.abs(proj.x - cameraX)
@@ -222,6 +244,41 @@ export class ProjectileSystem {
                 this.remove(i)
             }
         }
+    }
+
+    /**
+     * Apply gravity slingshot effects from gravity wells
+     * Returns info about slingshots triggered for visual effects
+     */
+    applySlingshot(
+        slingshotFn: (
+            x: number,
+            y: number,
+            vx: number,
+            vy: number,
+            deltaSeconds: number
+        ) => { vx: number; vy: number; slingshotted: boolean; wellX: number; wellY: number },
+        deltaSeconds: number
+    ): Array<{ x: number; y: number; wellX: number; wellY: number }> {
+        const slingshotEvents: Array<{ x: number; y: number; wellX: number; wellY: number }> = []
+
+        for (const proj of this.projectiles) {
+            const result = slingshotFn(proj.x, proj.y, proj.vx, proj.vy, deltaSeconds)
+
+            if (result.slingshotted) {
+                proj.vx = result.vx
+                proj.vy = result.vy
+
+                slingshotEvents.push({
+                    x: proj.x,
+                    y: proj.y,
+                    wellX: result.wellX,
+                    wellY: result.wellY,
+                })
+            }
+        }
+
+        return slingshotEvents
     }
 
     /**
@@ -309,7 +366,16 @@ export class ProjectileSystem {
         hitEffects: HitEffect[],
         onEnemyKilled: () => void,
         onCreateExplosion: (x: number, y: number) => void,
-        onDamageDealt?: (x: number, y: number, damage: number, isCritical: boolean) => void
+        onDamageDealt?: (x: number, y: number, damage: number, isCritical: boolean) => void,
+        onKnockback?: (enemy: Enemy, knockbackX: number, knockbackY: number) => void,
+        onPhysicsImpact?: (
+            x: number,
+            y: number,
+            damage: number,
+            projectileSpeed: number,
+            enemyMass: number,
+            knockbackDir: { x: number; y: number }
+        ) => void
     ): void {
         for (let pi = this.projectiles.length - 1; pi >= 0; pi--) {
             const proj = this.projectiles[pi]
@@ -354,8 +420,23 @@ export class ProjectileSystem {
                         massRatio *
                         stats.knockbackMultiplier *
                         this.physicsModifiers.knockbackMult
-                    enemy.vx += knockDirX * knockback
-                    enemy.vy += knockDirY * knockback
+                    const knockbackVx = knockDirX * knockback
+                    const knockbackVy = knockDirY * knockback
+                    enemy.vx += knockbackVx
+                    enemy.vy += knockbackVy
+
+                    // Trigger knockback trail visualization (F=ma effect)
+                    if (onKnockback && knockback > 2) {
+                        onKnockback(enemy, knockbackVx, knockbackVy)
+                    }
+
+                    // Trigger physics-based impact particles (KE = ½mv²)
+                    if (onPhysicsImpact) {
+                        onPhysicsImpact(enemy.x, enemy.y, damage, projSpeed, enemy.mass, {
+                            x: knockDirX,
+                            y: knockDirY,
+                        })
+                    }
 
                     // Hit effect
                     this.createHitEffect(proj.x, proj.y, hitEffects)
@@ -399,6 +480,7 @@ export class ProjectileSystem {
                     // 튕김(bounce) 처리: bounce 횟수가 남아있으면 방향 변경
                     if (proj.bounces < proj.maxBounces) {
                         proj.bounces++
+                        this.bounceCount++ // Track for physics stats
                         // 튕길 때마다 크기 50%로 감소
                         proj.scale *= 0.5
                         proj.graphics.scale.set(proj.scale)
@@ -482,11 +564,93 @@ export class ProjectileSystem {
         hitEffects.push({ x, y, timer: 0.2, graphics: effect })
     }
 
+    /**
+     * Create energy aura graphic for kinetic energy visualization
+     * KE = ½mv² - visualizes projectile energy through glow
+     */
+    private createEnergyAura(size: number): Graphics {
+        const aura = new Graphics()
+
+        // Outer glow ring
+        aura.circle(0, 0, size * 2)
+        aura.fill({ color: 0x88ccff, alpha: 0.15 })
+
+        // Inner glow ring
+        aura.circle(0, 0, size * 1.4)
+        aura.fill({ color: 0xaaddff, alpha: 0.2 })
+
+        return aura
+    }
+
+    /**
+     * Update energy aura based on current velocity
+     * Higher speed = more intense glow (relativistic blue-shift effect)
+     */
+    private updateEnergyAura(proj: Projectile): void {
+        if (!proj.energyAura) return
+
+        // Calculate kinetic energy (KE = ½mv²)
+        const speed = Math.sqrt(proj.vx * proj.vx + proj.vy * proj.vy)
+        const kineticEnergy = 0.5 * proj.mass * speed * speed
+
+        // Normalize energy for visual effect (base speed ~8, so KE ~32)
+        const normalizedEnergy = Math.min(kineticEnergy / 50, 1)
+
+        // Update position
+        proj.energyAura.position.set(proj.x, proj.y)
+
+        // Scale aura based on energy
+        const baseScale = proj.scale
+        const energyScale = 1 + normalizedEnergy * 0.5
+        proj.energyAura.scale.set(baseScale * energyScale)
+
+        // Alpha intensity based on energy
+        proj.energyAura.alpha = 0.3 + normalizedEnergy * 0.5
+
+        // Rotation based on movement direction (trail effect)
+        const angle = Math.atan2(proj.vy, proj.vx)
+        proj.energyAura.rotation = angle
+
+        // Color shift toward blue for high speed (relativistic effect)
+        // More intense blue as speed increases
+        if (normalizedEnergy > 0.5) {
+            // Tint toward bright blue/white for very fast projectiles
+            const blueShift = (normalizedEnergy - 0.5) * 2 // 0-1 range above 50%
+            proj.graphics.tint = this.lerpColor(0xf5b041, 0x88ddff, blueShift)
+        } else {
+            proj.graphics.tint = 0xffffff // Normal color
+        }
+    }
+
+    /**
+     * Linear interpolation between two colors
+     */
+    private lerpColor(color1: number, color2: number, t: number): number {
+        const r1 = (color1 >> 16) & 0xff
+        const g1 = (color1 >> 8) & 0xff
+        const b1 = color1 & 0xff
+
+        const r2 = (color2 >> 16) & 0xff
+        const g2 = (color2 >> 8) & 0xff
+        const b2 = color2 & 0xff
+
+        const r = Math.round(r1 + (r2 - r1) * t)
+        const g = Math.round(g1 + (g2 - g1) * t)
+        const b = Math.round(b1 + (b2 - b1) * t)
+
+        return (r << 16) | (g << 8) | b
+    }
+
     // Remove projectile by index
     private remove(index: number): void {
         const proj = this.projectiles[index]
         this.context.projectileContainer.removeChild(proj.graphics)
         proj.graphics.destroy()
+        // Clean up energy aura
+        if (proj.energyAura) {
+            this.context.projectileContainer.removeChild(proj.energyAura)
+            proj.energyAura.destroy()
+        }
         this.projectiles.splice(index, 1)
     }
 
@@ -525,6 +689,11 @@ export class ProjectileSystem {
         for (const proj of this.projectiles) {
             this.context.projectileContainer.removeChild(proj.graphics)
             proj.graphics.destroy()
+            // Clean up energy aura
+            if (proj.energyAura) {
+                this.context.projectileContainer.removeChild(proj.energyAura)
+                proj.energyAura.destroy()
+            }
         }
         this.projectiles.length = 0
     }

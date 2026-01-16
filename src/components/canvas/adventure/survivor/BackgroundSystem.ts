@@ -12,58 +12,40 @@ interface ColorTheme {
 
 const COLOR_THEMES: ColorTheme[] = [
     {
-        // Balatro Green Felt - primary theme
-        name: 'felt',
-        bgTop: 0x3d6b59, // felt green
-        bgBottom: 0x2d5a4a, // darker felt
-        accent1: 0xc9a227, // Balatro gold
-        accent2: 0x4a9eff, // Balatro blue
-        particles: [0x4d7b69, 0x5d8b79, 0xc9a227, 0x4a9eff],
+        // Deep Space - Primary theme
+        name: 'deepSpace',
+        bgTop: 0x0a0a1a, // Deep space blue-black
+        bgBottom: 0x050510, // Near black
+        accent1: 0x00ffff, // Cyan
+        accent2: 0xff00ff, // Magenta
+        particles: [0xffffff, 0x88ccff, 0xffcc88, 0xff88cc], // Stars
     },
     {
-        // Balatro Deep Green
-        name: 'deep',
-        bgTop: 0x2d5a4a, // darker felt
-        bgBottom: 0x1d4a3a, // deep green
-        accent1: 0xe85d4c, // Balatro red
-        accent2: 0xc9a227, // Balatro gold
-        particles: [0x3d6b59, 0x4d7b69, 0xe85d4c, 0xc9a227],
+        // Nebula Purple
+        name: 'nebula',
+        bgTop: 0x1a0a2e, // Deep purple
+        bgBottom: 0x0a0515, // Dark purple-black
+        accent1: 0xcc88ff, // Light purple
+        accent2: 0x00ffcc, // Teal
+        particles: [0xffffff, 0xcc88ff, 0x88ffcc, 0xff88ff],
     },
     {
-        // Balatro Emerald
-        name: 'emerald',
-        bgTop: 0x4d7b69, // lighter felt
-        bgBottom: 0x3d6b59, // felt green
-        accent1: 0xc9a227, // Balatro gold
-        accent2: 0xff6b9d, // Balatro pink
-        particles: [0x5d8b79, 0x6d9b89, 0xc9a227, 0xff6b9d],
+        // Cosmic Blue
+        name: 'cosmic',
+        bgTop: 0x0a1a2e, // Deep blue
+        bgBottom: 0x050a15, // Dark blue-black
+        accent1: 0x4a9eff, // Electric blue
+        accent2: 0xff6b4a, // Orange
+        particles: [0xffffff, 0x88ccff, 0xffaa88, 0x88ffff],
     },
     {
-        // Balatro Night
-        name: 'night',
-        bgTop: 0x374244, // dark panel
-        bgBottom: 0x1a1a2e, // deep dark
-        accent1: 0x4a9eff, // Balatro blue
-        accent2: 0xc9a227, // Balatro gold
-        particles: [0x4a5658, 0x5a6668, 0x4a9eff, 0xc9a227],
-    },
-    {
-        // Balatro Jade
-        name: 'jade',
-        bgTop: 0x5d8b79, // jade green
-        bgBottom: 0x4d7b69, // deeper jade
-        accent1: 0xc9a227, // Balatro gold
-        accent2: 0x4a9eff, // Balatro blue
-        particles: [0x6d9b89, 0x7dab99, 0xc9a227, 0x4a9eff],
-    },
-    {
-        // Balatro Dusk
-        name: 'dusk',
-        bgTop: 0x3d5a5a, // teal felt
-        bgBottom: 0x2d4a4a, // dark teal
-        accent1: 0xe85d4c, // Balatro red
-        accent2: 0xff6b9d, // Balatro pink
-        particles: [0x4d6b6b, 0x5d7b7b, 0xe85d4c, 0xff6b9d],
+        // Void Black
+        name: 'void',
+        bgTop: 0x0f0f1a, // Dark void
+        bgBottom: 0x050508, // Almost black
+        accent1: 0xff4488, // Hot pink
+        accent2: 0x44ff88, // Neon green
+        particles: [0xffffff, 0xff88aa, 0x88ffaa, 0xaaaaff],
     },
 ]
 
@@ -370,11 +352,60 @@ export class BackgroundSystem {
     }
 
     /**
-     * Procedural particles now rendered via shader (WobbleWorldFilter)
-     * Keeping method stub for potential future use
+     * Draw procedural stars in the background
      */
     private drawProceduralParticles(theme: ColorTheme, cameraX: number, cameraY: number): void {
         this.particleGraphics.clear()
+
+        // Calculate visible area with margin
+        const margin = 100
+        const left = cameraX - this.context.width / 2 - margin
+        const top = cameraY - this.context.height / 2 - margin
+        const right = left + this.context.width + margin * 2
+        const bottom = top + this.context.height + margin * 2
+
+        // Grid-based star generation for infinite scrolling
+        const cellSize = 80
+        const startCellX = Math.floor(left / cellSize)
+        const startCellY = Math.floor(top / cellSize)
+        const endCellX = Math.ceil(right / cellSize)
+        const endCellY = Math.ceil(bottom / cellSize)
+
+        for (let cellX = startCellX; cellX <= endCellX; cellX++) {
+            for (let cellY = startCellY; cellY <= endCellY; cellY++) {
+                // Seed based on cell position for consistent stars
+                const seed = cellX * 73856093 + cellY * 19349663
+
+                // 60% chance of star in cell
+                if (this.seededRandom(seed) > 0.6) continue
+
+                // Star position within cell
+                const starX = cellX * cellSize + this.seededRandom(seed + 1) * cellSize
+                const starY = cellY * cellSize + this.seededRandom(seed + 2) * cellSize
+
+                // Star properties
+                const sizeRand = this.seededRandom(seed + 3)
+                const size = sizeRand < 0.7 ? 1 : sizeRand < 0.9 ? 1.5 : 2.5 // Most stars are small
+                const colorIndex = Math.floor(this.seededRandom(seed + 4) * theme.particles.length)
+                const color = theme.particles[colorIndex]
+
+                // Twinkle effect
+                const twinkleSpeed = 2 + this.seededRandom(seed + 5) * 3
+                const twinklePhase = this.seededRandom(seed + 6) * Math.PI * 2
+                const twinkle = 0.5 + 0.5 * Math.sin(this.animTime * twinkleSpeed + twinklePhase)
+                const alpha = 0.3 + twinkle * 0.7
+
+                // Draw star
+                this.particleGraphics.circle(starX, starY, size)
+                this.particleGraphics.fill({ color, alpha })
+
+                // Add glow for larger stars
+                if (size > 1.5) {
+                    this.particleGraphics.circle(starX, starY, size * 2.5)
+                    this.particleGraphics.fill({ color, alpha: alpha * 0.2 })
+                }
+            }
+        }
     }
 
     // Interpolate between two colors

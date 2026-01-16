@@ -300,7 +300,7 @@ export class HudSystem {
         this.xpBarFill.clear()
         if (progressRatio > 0) {
             this.xpBarFill.roundRect(0, 0, barWidth * progressRatio, barHeight, 5)
-            this.xpBarFill.fill(0x3d6b59) // Balatro felt green
+            this.xpBarFill.fill(0x00aacc) // Space cyan
         }
     }
 

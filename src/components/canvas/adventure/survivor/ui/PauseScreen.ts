@@ -63,9 +63,9 @@ export class PauseScreen {
     private createUI(data: PauseData): void {
         this.screenContainer.removeChildren()
 
-        // Balatro theme colors
-        const bgColor = 0x3d6b59 // Felt green background
-        const cardBgColor = 0x374244 // Dark panel
+        // Space theme colors
+        const bgColor = 0x0a0a1a // Deep space background
+        const cardBgColor = 0x1a1a2e // Dark panel
         const cardShadowColor = 0x1a1a1a // Black shadow
         const accentGold = 0xc9a227 // Balatro gold
         const accentBlue = 0x4a9eff // Balatro blue
@@ -222,7 +222,7 @@ export class PauseScreen {
                 xpBarHeight - 6,
                 9
             )
-            xpBarFill.fill(0x3d6b59)
+            xpBarFill.fill(0x00aacc) // Space cyan
             this.screenContainer.addChild(xpBarFill)
         }
 
