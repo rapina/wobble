@@ -31,6 +31,7 @@ export class TimeWarpBehavior extends BaseSkillBehavior<TimeWarpEffect> {
     readonly definition: SkillDefinition<TimeWarpEffect> = {
         id: 'time-warp',
         name: { ko: '시간 왜곡', en: 'Time Warp' },
+        nameShort: { ko: '왜곡', en: 'Warp' },
         description: {
             ko: '주변 적의 시간을 느리게 합니다',
             en: 'Slow down nearby enemies',
@@ -39,6 +40,7 @@ export class TimeWarpBehavior extends BaseSkillBehavior<TimeWarpEffect> {
         color: 0x2c3e50,
         maxLevel: 5,
         category: 'aura',
+        activationType: 'aura',
         formulaId: 'time-dilation',
         physicsVisualType: 'time',
         getLevelEffect: (level: number) => this.getEffect(level),

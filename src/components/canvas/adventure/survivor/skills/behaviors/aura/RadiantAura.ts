@@ -32,6 +32,7 @@ export class RadiantAuraBehavior extends BaseSkillBehavior<RadiantAuraEffect> {
     readonly definition: SkillDefinition<RadiantAuraEffect> = {
         id: 'radiant-aura',
         name: { ko: '복사 오라', en: 'Radiant Aura' },
+        nameShort: { ko: '복사', en: 'Radian' },
         description: {
             ko: '온도의 4제곱에 비례한 지속 데미지 오라',
             en: 'Aura damage scales with T⁴',
@@ -40,6 +41,7 @@ export class RadiantAuraBehavior extends BaseSkillBehavior<RadiantAuraEffect> {
         color: 0xf1c40f,
         maxLevel: 5,
         category: 'aura',
+        activationType: 'aura',
         formulaId: 'stefan-boltzmann',
         physicsVisualType: 'radiant',
         getLevelEffect: (level: number) => this.getEffect(level),

@@ -32,6 +32,7 @@ export class WavePulseBehavior extends BaseSkillBehavior<WavePulseEffect> {
     readonly definition: SkillDefinition<WavePulseEffect> = {
         id: 'wave-pulse',
         name: { ko: '파동 펄스', en: 'Wave Pulse' },
+        nameShort: { ko: '파동', en: 'Wave' },
         description: {
             ko: '사인파처럼 퍼지는 데미지 파동',
             en: 'Damage spreads in sine wave patterns',
@@ -40,6 +41,8 @@ export class WavePulseBehavior extends BaseSkillBehavior<WavePulseEffect> {
         color: 0x3498db,
         maxLevel: 5,
         category: 'player',
+        activationType: 'active',
+        baseCooldown: 2,
         formulaId: 'wave',
         physicsVisualType: 'wave',
         getLevelEffect: (level: number) => this.getEffect(level),

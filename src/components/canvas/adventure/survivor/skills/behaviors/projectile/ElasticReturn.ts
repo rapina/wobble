@@ -31,6 +31,7 @@ export class ElasticReturnBehavior extends BaseSkillBehavior<ElasticReturnEffect
     readonly definition: SkillDefinition<ElasticReturnEffect> = {
         id: 'elastic-return',
         name: { ko: '탄성 회귀', en: 'Elastic Return' },
+        nameShort: { ko: '회귀', en: 'Return' },
         description: {
             ko: '스프링처럼 발사체가 되돌아옵니다',
             en: 'Projectiles return like a spring',
@@ -39,6 +40,7 @@ export class ElasticReturnBehavior extends BaseSkillBehavior<ElasticReturnEffect
         color: 0x9b59b6,
         maxLevel: 5,
         category: 'projectile',
+        activationType: 'passive',
         formulaId: 'hooke',
         physicsVisualType: 'spring',
         getLevelEffect: (level: number) => this.getEffect(level),

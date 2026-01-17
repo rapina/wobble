@@ -31,6 +31,7 @@ export class MomentumPierceBehavior extends BaseSkillBehavior<MomentumPierceEffe
     readonly definition: SkillDefinition<MomentumPierceEffect> = {
         id: 'momentum-pierce',
         name: { ko: '운동량 관통', en: 'Momentum Pierce' },
+        nameShort: { ko: '관통', en: 'Pierce' },
         description: {
             ko: '무거운 탄환이 적을 밀고 지나갑니다',
             en: 'Heavy projectiles push through enemies',
@@ -39,6 +40,7 @@ export class MomentumPierceBehavior extends BaseSkillBehavior<MomentumPierceEffe
         color: 0xe74c3c,
         maxLevel: 5,
         category: 'projectile',
+        activationType: 'passive',
         formulaId: 'momentum',
         physicsVisualType: 'momentum',
         getLevelEffect: (level: number) => this.getEffect(level),

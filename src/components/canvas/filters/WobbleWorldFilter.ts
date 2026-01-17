@@ -91,12 +91,21 @@ vec2 screenToWorld(vec2 screenUV) {
 
 // Diagonal grid for spacetime visualization
 // Wide diamonds like floor viewed from above
+// Now aspect-ratio corrected for consistent grid cell shapes
 float spaceGrid(vec2 uv, float t, float dist) {
     float sp = 0.12;
     float ang = 0.35;
+
+    // Correct for aspect ratio - make X and Y scales equal
+    // This ensures grid cells maintain consistent proportions regardless of screen shape
+    // Safety check: avoid division by zero or invalid dimensions
+    float aspectRatio = (uDimensions.y > 1.0) ? (uDimensions.x / uDimensions.y) : 1.0;
+    aspectRatio = clamp(aspectRatio, 0.1, 10.0); // Clamp to reasonable range
+    vec2 correctedUV = vec2(uv.x / aspectRatio, uv.y);
+
     // Horizontal base with slight tilt - creates wide diamonds
-    float c1 = uv.y + uv.x * ang;
-    float c2 = uv.y - uv.x * ang;
+    float c1 = correctedUV.y + correctedUV.x * ang;
+    float c2 = correctedUV.y - correctedUV.x * ang;
     float m1 = mod(c1, sp);
     float m2 = mod(c2, sp);
     float d1 = min(m1, sp - m1);
@@ -106,7 +115,7 @@ float spaceGrid(vec2 uv, float t, float dist) {
     float l2 = smoothstep(lw * 2.0, lw * 0.3, d2);
     float g = max(l1, l2);
     g += l1 * l2 * 0.3;
-    return g * (0.04 + dist * 0.06); // Very subtle grid - easy on eyes
+    return g * 0.2; // Consistent grid brightness (not affected by distortion)
 }
 
 // Apply gravity distortion - rubber sheet funnel effect (grid sags DOWN near mass)
@@ -611,9 +620,9 @@ void main() {
         // Draw the space grid
         float grid = spaceGrid(gridWorldUV, uTime, gridDistortion);
 
-        // Space theme grid color - subtle dark teal
-        vec3 gridColor = vec3(0.08, 0.18, 0.22); // Dark teal
-        color.rgb += gridColor * grid * 0.4; // Subtle but visible
+        // Space theme grid color - more visible teal
+        vec3 gridColor = vec3(0.15, 0.35, 0.40); // Brighter teal for visibility
+        color.rgb += gridColor * grid * 1.5; // Increased visibility
 
         // === DEBUG MODE - show gravity centers ===
         if (uDebugMode == 1) {

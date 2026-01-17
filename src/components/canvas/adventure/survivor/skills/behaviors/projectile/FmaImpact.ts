@@ -31,6 +31,7 @@ export class FmaImpactBehavior extends BaseSkillBehavior<FmaImpactEffect> {
     readonly definition: SkillDefinition<FmaImpactEffect> = {
         id: 'fma-impact',
         name: { ko: 'F=ma 충격', en: 'F=ma Impact' },
+        nameShort: { ko: '충격', en: 'Impact' },
         description: {
             ko: '큰 질량이 큰 힘을 만듭니다',
             en: 'Greater mass means greater force',
@@ -39,6 +40,7 @@ export class FmaImpactBehavior extends BaseSkillBehavior<FmaImpactEffect> {
         color: 0x9b59b6,
         maxLevel: 5,
         category: 'projectile',
+        activationType: 'passive',
         formulaId: 'newton-second',
         physicsVisualType: 'fma',
         getLevelEffect: (level: number) => this.getEffect(level),

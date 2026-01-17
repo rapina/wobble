@@ -1,5 +1,5 @@
 import { Container, Graphics, Text } from 'pixi.js'
-import { Wobble, WobbleShape } from '../../Wobble'
+import type { WobbleShape } from '../../Wobble'
 import type { EnemyVariantId, EnemyBehavior } from './EnemyVariants'
 import type { FormationId } from './FormationSystem'
 
@@ -167,7 +167,7 @@ export const WOBBLE_STATS: Record<WobbleShape, WobbleStats> = {
     },
 }
 
-// Playable characters (exclude shadow - it's for enemies)
+// Playable characters (all Wobble shapes available)
 export const PLAYABLE_CHARACTERS: WobbleShape[] = [
     'circle',
     'square',
@@ -175,6 +175,7 @@ export const PLAYABLE_CHARACTERS: WobbleShape[] = [
     'star',
     'diamond',
     'pentagon',
+    'shadow',
 ]
 
 // Rank system for result screen
@@ -269,7 +270,7 @@ export interface Projectile {
 
 export interface Enemy {
     graphics: Container
-    wobble?: Wobble
+    wobble?: Container // Angel graphics or legacy Wobble
     massRing?: Graphics // Visual ring showing mass (physics visualization)
     glowEffect?: Graphics // 변종별 글로우 효과
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

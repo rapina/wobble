@@ -32,6 +32,7 @@ export class BeatPulseBehavior extends BaseSkillBehavior<BeatPulseEffect> {
     readonly definition: SkillDefinition<BeatPulseEffect> = {
         id: 'beat-pulse',
         name: { ko: '맥놀이 펄스', en: 'Beat Pulse' },
+        nameShort: { ko: '맥놀이', en: 'Beat' },
         description: {
             ko: '두 주파수 간섭으로 주기적 강화',
             en: 'Interference pattern creates periodic power spikes',
@@ -40,6 +41,7 @@ export class BeatPulseBehavior extends BaseSkillBehavior<BeatPulseEffect> {
         color: 0x2ecc71,
         maxLevel: 5,
         category: 'player',
+        activationType: 'passive',
         formulaId: 'beat-frequency',
         physicsVisualType: 'beat',
         getLevelEffect: (level: number) => this.getEffect(level),

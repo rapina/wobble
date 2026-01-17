@@ -32,6 +32,7 @@ export class CentripetalPulseBehavior extends BaseSkillBehavior<CentripetalPulse
     readonly definition: SkillDefinition<CentripetalPulseEffect> = {
         id: 'centripetal-pulse',
         name: { ko: '원심력 펄스', en: 'Centripetal Pulse' },
+        nameShort: { ko: '펄스', en: 'Pulse' },
         description: {
             ko: '회전하는 힘이 적을 밀어냅니다',
             en: 'Rotating force pushes enemies away',
@@ -40,6 +41,8 @@ export class CentripetalPulseBehavior extends BaseSkillBehavior<CentripetalPulse
         color: 0x2ecc71,
         maxLevel: 5,
         category: 'projectile',
+        activationType: 'active',
+        baseCooldown: 5, // Base 5 second cooldown, reduced by level
         formulaId: 'centripetal',
         physicsVisualType: 'centripetal',
         getLevelEffect: (level: number) => this.getEffect(level),

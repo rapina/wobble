@@ -32,6 +32,7 @@ export class BuoyantBombBehavior extends BaseSkillBehavior<BuoyantBombEffect> {
     readonly definition: SkillDefinition<BuoyantBombEffect> = {
         id: 'buoyant-bomb',
         name: { ko: '부력 폭탄', en: 'Buoyant Bomb' },
+        nameShort: { ko: '부력', en: 'Float' },
         description: {
             ko: '발사체가 떠올랐다 떨어지며 폭발합니다',
             en: 'Projectiles float up then drop explosively',
@@ -40,6 +41,7 @@ export class BuoyantBombBehavior extends BaseSkillBehavior<BuoyantBombEffect> {
         color: 0x1abc9c,
         maxLevel: 5,
         category: 'player',
+        activationType: 'passive',
         formulaId: 'buoyancy',
         physicsVisualType: 'buoyancy',
         getLevelEffect: (level: number) => this.getEffect(level),

@@ -31,6 +31,7 @@ export class RefractionSpreadBehavior extends BaseSkillBehavior<RefractionSpread
     readonly definition: SkillDefinition<RefractionSpreadEffect> = {
         id: 'refraction-spread',
         name: { ko: '굴절 분산', en: 'Refraction Spread' },
+        nameShort: { ko: '분산', en: 'Spread' },
         description: {
             ko: '빛이 여러 각도로 굴절됩니다',
             en: 'Light refracts into multiple beams',
@@ -39,6 +40,7 @@ export class RefractionSpreadBehavior extends BaseSkillBehavior<RefractionSpread
         color: 0xe67e22,
         maxLevel: 5,
         category: 'projectile',
+        activationType: 'passive',
         formulaId: 'snell',
         physicsVisualType: 'refraction',
         getLevelEffect: (level: number) => this.getEffect(level),

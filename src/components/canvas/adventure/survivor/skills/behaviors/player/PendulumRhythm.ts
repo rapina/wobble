@@ -31,6 +31,7 @@ export class PendulumRhythmBehavior extends BaseSkillBehavior<PendulumRhythmEffe
     readonly definition: SkillDefinition<PendulumRhythmEffect> = {
         id: 'pendulum-rhythm',
         name: { ko: '진자 리듬', en: 'Pendulum Rhythm' },
+        nameShort: { ko: '리듬', en: 'Rhythm' },
         description: {
             ko: '주기적으로 공격력이 최대가 됩니다',
             en: 'Damage oscillates with timing',
@@ -39,6 +40,7 @@ export class PendulumRhythmBehavior extends BaseSkillBehavior<PendulumRhythmEffe
         color: 0xe67e22,
         maxLevel: 5,
         category: 'player',
+        activationType: 'passive',
         formulaId: 'pendulum',
         physicsVisualType: 'pendulum',
         getLevelEffect: (level: number) => this.getEffect(level),

@@ -33,6 +33,7 @@ export class PlasmaDischargeBehavior extends BaseSkillBehavior<PlasmaDischargeEf
     readonly definition: SkillDefinition<PlasmaDischargeEffect> = {
         id: 'plasma-discharge',
         name: { ko: '플라즈마 방전', en: 'Plasma Discharge' },
+        nameShort: { ko: '방전', en: 'Plasma' },
         description: {
             ko: '번개처럼 적들을 연결하는 플라즈마 레이저',
             en: 'Lightning laser chains between enemies',
@@ -41,6 +42,8 @@ export class PlasmaDischargeBehavior extends BaseSkillBehavior<PlasmaDischargeEf
         color: 0x00ffff,
         maxLevel: 5,
         category: 'orbital',
+        activationType: 'active',
+        baseCooldown: 3,
         formulaId: 'electric-discharge',
         physicsVisualType: 'plasma',
         getLevelEffect: (level: number) => this.getEffect(level),

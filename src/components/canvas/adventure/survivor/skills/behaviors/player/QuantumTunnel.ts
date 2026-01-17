@@ -33,6 +33,7 @@ export class QuantumTunnelBehavior extends BaseSkillBehavior<QuantumTunnelEffect
     readonly definition: SkillDefinition<QuantumTunnelEffect> = {
         id: 'quantum-tunnel',
         name: { ko: '양자 터널링', en: 'Quantum Tunnel' },
+        nameShort: { ko: '터널', en: 'Tunnel' },
         description: {
             ko: '고스트 모드로 적을 통과하며 데미지',
             en: 'Phase through enemies in ghost mode',
@@ -41,6 +42,8 @@ export class QuantumTunnelBehavior extends BaseSkillBehavior<QuantumTunnelEffect
         color: 0x8e44ad,
         maxLevel: 5,
         category: 'player',
+        activationType: 'active',
+        baseCooldown: 8,
         formulaId: 'tunneling',
         physicsVisualType: 'quantum',
         getLevelEffect: (level: number) => this.getEffect(level),

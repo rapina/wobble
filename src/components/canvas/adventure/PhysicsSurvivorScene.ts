@@ -89,6 +89,19 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private passiveTrait: string = ''
     private studiedFormulas: Set<string> = new Set()
 
+    // Skill stats tracking (accumulated effects per skill)
+    private skillDamageStats: Map<string, {
+        totalDamage: number
+        activations: number
+        slowTime?: number
+        deflections?: number
+        pushForce?: number
+        pullForce?: number
+        chaosApplied?: number
+        bounces?: number
+        pierces?: number
+    }> = new Map()
+
     // Shockwave skill timer
     private shockwaveTimer = 0
 
@@ -145,6 +158,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private laserGlowGraphics: Graphics | null = null
     private laserChainTargets: Array<{ x: number; y: number; enemy: Enemy }> = []
     private laserFlickerPhase = 0 // For lightning flicker effect
+
+    // Persistent Aura Visuals (always shown for aura-type skills)
+    private auraRingsContainer: Container | null = null
+    private auraAnimPhase = 0 // For animated aura effects
 
     // Passive state tracking
     private momentumSpeedBonus = 0
@@ -262,6 +279,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
     // Background container (world-space, inside gameContainer)
     declare private bgContainer: Container
+    declare private filterBaseGraphic: Graphics // Ensures filter always has content to render
 
     // Camera shake system
     private shakeIntensity = 0
@@ -327,6 +345,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.bgContainer = new Container()
         this.gameContainer.addChild(this.bgContainer)
 
+        // Add a fullscreen base graphic to ensure filter always has content to render
+        // Without this, PixiJS may skip the filter when bgContainer appears empty
+        this.filterBaseGraphic = new Graphics()
+        this.bgContainer.addChild(this.filterBaseGraphic)
+
         this.enemyContainer = new Container()
         this.gameContainer.addChild(this.enemyContainer)
 
@@ -335,6 +358,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         this.effectContainer = new Container()
         this.gameContainer.addChild(this.effectContainer)
+
+        // Persistent aura visuals container (always visible for aura skills)
+        this.auraRingsContainer = new Container()
+        this.effectContainer.addChild(this.auraRingsContainer)
 
         this.uiContainer = new Container()
         this.container.addChild(this.uiContainer)
@@ -412,9 +439,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.impactSystem = new ImpactEffectSystem(this.gameContainer, this.width, this.height, {
             particlePoolSize: 100,
         })
-        this.impactSystem.onShake = (intensity, duration) => {
-            this.triggerShake(intensity, duration)
-        }
+        // Camera shake disabled - felt like lag on hit
+        // this.impactSystem.onShake = (intensity, duration) => {
+        //     this.triggerShake(intensity, duration)
+        // }
 
         this.xpOrbSystem = new ExperienceOrbSystem(
             {
@@ -931,6 +959,20 @@ export class PhysicsSurvivorScene extends AdventureScene {
             }
         }
 
+        // Convert skill damage stats to array for HUD
+        const skillStats = Array.from(this.skillDamageStats.entries()).map(([skillId, data]) => ({
+            skillId,
+            totalDamage: data.totalDamage,
+            activations: data.activations,
+            slowTime: data.slowTime,
+            deflections: data.deflections,
+            pushForce: data.pushForce,
+            pullForce: data.pullForce,
+            chaosApplied: data.chaosApplied,
+            bounces: data.bounces,
+            pierces: data.pierces,
+        }))
+
         this.hudSystem.update({
             health: this.playerHealth,
             maxHealth: this.maxPlayerHealth,
@@ -938,10 +980,36 @@ export class PhysicsSurvivorScene extends AdventureScene {
             gameTime: this.gameTime,
             skills: this.playerSkills,
             cooldowns,
+            skillStats,
         })
 
         // Update combo display
         this.hudSystem.updateCombo(this.comboSystem.getState(), this.comboSystem.getComboWindow())
+    }
+
+    /**
+     * Track damage dealt by a specific skill
+     */
+    private trackSkillDamage(skillId: string, damage: number): void {
+        const existing = this.skillDamageStats.get(skillId)
+        if (existing) {
+            existing.totalDamage += damage
+            existing.activations++
+        } else {
+            this.skillDamageStats.set(skillId, { totalDamage: damage, activations: 1 })
+        }
+    }
+
+    /**
+     * Track special effect for a skill (slow, deflect, push, pull, chaos, etc.)
+     */
+    private trackSkillEffect(skillId: string, effectType: 'slowTime' | 'deflections' | 'pushForce' | 'pullForce' | 'chaosApplied' | 'bounces' | 'pierces', value: number): void {
+        const existing = this.skillDamageStats.get(skillId)
+        if (existing) {
+            existing[effectType] = (existing[effectType] || 0) + value
+        } else {
+            this.skillDamageStats.set(skillId, { totalDamage: 0, activations: 0, [effectType]: value })
+        }
     }
 
     private fireProjectile(): void {
@@ -967,8 +1035,18 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.cameraY
         )
 
-        // Track elastic bounces for physics stats
-        this.physicsStats.elasticBounces += this.projectileSystem.getAndResetBounceCount()
+        // Track elastic bounces for physics stats and skill stats
+        const bounceCount = this.projectileSystem.getAndResetBounceCount()
+        this.physicsStats.elasticBounces += bounceCount
+        if (bounceCount > 0) {
+            this.trackSkillEffect('elastic-bounce', 'bounces', bounceCount)
+        }
+
+        // Track pierces for skill stats
+        const pierceCount = this.projectileSystem.getAndResetPierceCount()
+        if (pierceCount > 0) {
+            this.trackSkillEffect('momentum-pierce', 'pierces', pierceCount)
+        }
 
         this.projectileSystem.checkCollisions(
             this.enemySystem.enemies,
@@ -1173,6 +1251,32 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     /**
+     * Update the filter base graphic to cover the visible area
+     * This ensures the gridFilter always has content to render
+     * Without content, PixiJS may skip the filter entirely
+     */
+    private updateFilterBaseGraphic(): void {
+        if (!this.filterBaseGraphic) return
+
+        // Calculate visible area in world coordinates (accounting for gameContainer scale)
+        const scale = 0.75 // gameContainer scale
+        const visibleWidth = this.width / scale
+        const visibleHeight = this.height / scale
+        const margin = 200 // Extra margin for safety
+
+        // Position centered on camera
+        const left = this.cameraX - visibleWidth / 2 - margin
+        const top = this.cameraY - visibleHeight / 2 - margin
+        const w = visibleWidth + margin * 2
+        const h = visibleHeight + margin * 2
+
+        // Draw a transparent rect to give the filter something to work with
+        this.filterBaseGraphic.clear()
+        this.filterBaseGraphic.rect(left, top, w, h)
+        this.filterBaseGraphic.fill({ color: 0x000000, alpha: 0.001 }) // Nearly invisible but gives filter content
+    }
+
+    /**
      * Collect gravity sources (enemies, black holes) for grid distortion
      * Sends largest/closest mass objects to shader (max 8)
      */
@@ -1266,7 +1370,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 if (this.blackHoleDamageCooldown <= 0) {
                     this.takeDamage(3)
                     this.blackHoleDamageCooldown = 0.5
-                    this.triggerShake(5, 0.1)
+                    // Camera shake disabled - felt like lag
                 }
 
                 // Strong push to escape (slingshot effect)
@@ -1356,28 +1460,14 @@ export class PhysicsSurvivorScene extends AdventureScene {
         }, 200)
     }
 
-    private triggerShake(intensity: number, duration: number): void {
-        this.shakeIntensity = Math.max(this.shakeIntensity, intensity)
-        this.shakeDuration = Math.max(this.shakeDuration, duration)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    private triggerShake(_intensity: number, _duration: number): void {
+        // Disabled - camera shake removed for performance
     }
 
-    private updateShake(delta: number): void {
-        if (this.shakeDuration > 0) {
-            const offsetX = (Math.random() - 0.5) * this.shakeIntensity * 2
-            const offsetY = (Math.random() - 0.5) * this.shakeIntensity * 2
-
-            // Apply shake offset relative to camera center position
-            this.gameContainer.position.set(this.centerX + offsetX, this.centerY + offsetY)
-
-            this.shakeIntensity *= this.shakeDecay
-            this.shakeDuration -= delta / 60
-
-            if (this.shakeDuration <= 0) {
-                this.gameContainer.position.set(this.centerX, this.centerY)
-                this.shakeIntensity = 0
-                this.shakeDuration = 0
-            }
-        }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    private updateShake(_delta: number): void {
+        // Disabled - camera shake removed for performance
     }
 
     private updateHitEffects(delta: number): void {
@@ -1470,6 +1560,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 // Small damage
                 const damage = 5 * distFactor * this.stats.damageMultiplier
                 enemy.health -= damage
+
+                // Track damage
+                this.trackSkillDamage('centripetal-pulse', damage)
                 hitCount++
 
                 // Visual feedback
@@ -1576,7 +1669,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 if (dist > wave.radius - waveBandWidth && dist < wave.radius + waveBandWidth) {
                     // Damage based on wave amplitude and distance
                     const damage = this.stats.waveAmplitude * (1 - progress) * 0.05
-                    enemy.health -= damage * this.stats.damageMultiplier
+                    const actualDamage = damage * this.stats.damageMultiplier
+                    enemy.health -= actualDamage
+                    this.trackSkillDamage('wave-pulse', actualDamage)
 
                     // Small knockback away from wave center
                     if (dist > 0) {
@@ -1605,16 +1700,25 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.auraTimer = 0
 
             let hitCount = 0
+            const auraRadius = this.stats.auraRadius
+            const auraRadiusSq = auraRadius * auraRadius
             for (const enemy of this.enemySystem.enemies) {
                 const dx = enemy.x - this.playerX
                 const dy = enemy.y - this.playerY
-                const dist = Math.sqrt(dx * dx + dy * dy)
 
-                if (dist < this.stats.auraRadius) {
+                // Early culling with Manhattan distance
+                if (Math.abs(dx) > auraRadius || Math.abs(dy) > auraRadius) continue
+
+                const distSq = dx * dx + dy * dy
+                if (distSq < auraRadiusSq) {
+                    // Only sqrt when confirmed in range
+                    const dist = Math.sqrt(distSq)
                     // Radiation damage decreases with distance (inverse square)
                     const distFactor = 1 - (dist / this.stats.auraRadius)
                     const damage = this.stats.radiationDamage * distFactor * distFactor * 0.5
-                    enemy.health -= damage * this.stats.damageMultiplier
+                    const actualDamage = damage * this.stats.damageMultiplier
+                    enemy.health -= actualDamage
+                    this.trackSkillDamage('radiant-aura', actualDamage)
                     hitCount++
 
                     // Visual feedback - small glow on damaged enemy
@@ -1656,6 +1760,265 @@ export class PhysicsSurvivorScene extends AdventureScene {
             requestAnimationFrame(fadeOut)
         }
         requestAnimationFrame(fadeOut)
+    }
+
+    /**
+     * Render persistent aura visuals for all active aura-type skills
+     * These visuals are always visible around the player when the skill is active
+     */
+    private renderAuraVisuals(deltaSeconds: number): void {
+        if (!this.auraRingsContainer) return
+
+        // Clear previous frame's aura graphics
+        this.auraRingsContainer.removeChildren()
+
+        // Update animation phase
+        this.auraAnimPhase += deltaSeconds * 2
+
+        // Track which auras to render
+        let yOffset = 0 // For stacking multiple aura rings
+
+        // Radiant Aura - warm radiation ring
+        if (this.stats.auraRadius > 0 && this.stats.radiationDamage > 0) {
+            const auraGraphics = new Graphics()
+            const pulseScale = 1 + Math.sin(this.auraAnimPhase * 2) * 0.05
+            const radius = this.stats.auraRadius * pulseScale
+
+            // Outer glow
+            auraGraphics.circle(0, 0, radius + 10)
+            auraGraphics.fill({ color: 0xff6644, alpha: 0.05 })
+
+            // Main ring
+            auraGraphics.circle(0, 0, radius)
+            auraGraphics.stroke({ color: 0xff6644, width: 3, alpha: 0.3 + Math.sin(this.auraAnimPhase * 3) * 0.1 })
+
+            // Inner pulsing glow
+            auraGraphics.circle(0, 0, radius * 0.8)
+            auraGraphics.stroke({ color: 0xff8866, width: 2, alpha: 0.2 })
+
+            auraGraphics.position.set(this.playerX, this.playerY)
+            this.auraRingsContainer.addChild(auraGraphics)
+            yOffset += 5
+        }
+
+        // Chaos Field - chaotic swirling ring
+        if (this.stats.chaosFieldRadius > 0 && this.stats.chaosStrength > 0) {
+            const chaosGraphics = new Graphics()
+            const radius = this.stats.chaosFieldRadius
+
+            // Draw multiple offset circles for chaotic effect
+            for (let i = 0; i < 3; i++) {
+                const offsetAngle = this.auraAnimPhase * (1 + i * 0.3) + (i * Math.PI * 2) / 3
+                const offsetX = Math.cos(offsetAngle) * 5
+                const offsetY = Math.sin(offsetAngle) * 5
+                chaosGraphics.circle(offsetX, offsetY, radius - i * 5)
+                chaosGraphics.stroke({
+                    color: 0x9b59b6,
+                    width: 2 - i * 0.5,
+                    alpha: 0.25 - i * 0.05,
+                })
+            }
+
+            chaosGraphics.position.set(this.playerX, this.playerY)
+            this.auraRingsContainer.addChild(chaosGraphics)
+            yOffset += 5
+        }
+
+        // Magnetic Shield - magnetic field lines
+        if (this.stats.shieldRadius > 0 && this.stats.deflectionStrength > 0) {
+            const shieldGraphics = new Graphics()
+            const radius = this.stats.shieldRadius
+
+            // Draw magnetic field line pattern
+            const lineCount = 8
+            for (let i = 0; i < lineCount; i++) {
+                const angle = (i / lineCount) * Math.PI * 2 + this.auraAnimPhase * 0.5
+                const x1 = Math.cos(angle) * radius * 0.6
+                const y1 = Math.sin(angle) * radius * 0.6
+                const x2 = Math.cos(angle) * radius
+                const y2 = Math.sin(angle) * radius
+
+                shieldGraphics.moveTo(x1, y1)
+                shieldGraphics.lineTo(x2, y2)
+            }
+            shieldGraphics.stroke({ color: 0x3498db, width: 2, alpha: 0.35 })
+
+            // Outer ring
+            shieldGraphics.circle(0, 0, radius)
+            shieldGraphics.stroke({ color: 0x3498db, width: 2, alpha: 0.25 })
+
+            shieldGraphics.position.set(this.playerX, this.playerY)
+            this.auraRingsContainer.addChild(shieldGraphics)
+            yOffset += 5
+        }
+
+        // Static Repulsion - electric sparks
+        if (this.stats.repulsionRadius > 0 && this.stats.repulsionForce > 0) {
+            const repulseGraphics = new Graphics()
+            const radius = this.stats.repulsionRadius
+
+            // Electric arc pattern
+            const arcCount = 6
+            for (let i = 0; i < arcCount; i++) {
+                const baseAngle = (i / arcCount) * Math.PI * 2 + this.auraAnimPhase
+                const sparkVariation = Math.sin(this.auraAnimPhase * 5 + i) * 0.3
+
+                // Draw jagged lightning-style line
+                const innerR = radius * 0.5
+                const outerR = radius * (0.9 + sparkVariation * 0.1)
+
+                repulseGraphics.moveTo(
+                    Math.cos(baseAngle) * innerR,
+                    Math.sin(baseAngle) * innerR
+                )
+                repulseGraphics.lineTo(
+                    Math.cos(baseAngle + 0.1) * (innerR + outerR) * 0.5,
+                    Math.sin(baseAngle + 0.1) * (innerR + outerR) * 0.5
+                )
+                repulseGraphics.lineTo(
+                    Math.cos(baseAngle) * outerR,
+                    Math.sin(baseAngle) * outerR
+                )
+            }
+            repulseGraphics.stroke({ color: 0xf1c40f, width: 2, alpha: 0.4 })
+
+            // Outer ring
+            repulseGraphics.circle(0, 0, radius)
+            repulseGraphics.stroke({ color: 0xf1c40f, width: 1.5, alpha: 0.2 })
+
+            repulseGraphics.position.set(this.playerX, this.playerY)
+            this.auraRingsContainer.addChild(repulseGraphics)
+            yOffset += 5
+        }
+
+        // Time Warp - time distortion rings
+        if (this.stats.warpRadius > 0 && this.stats.slowFactor > 0) {
+            const timeGraphics = new Graphics()
+            const radius = this.stats.warpRadius
+
+            // Concentric rings with varying speeds (time dilation effect)
+            for (let i = 0; i < 3; i++) {
+                const ringRadius = radius * (0.6 + i * 0.2)
+                const rotationSpeed = 1 - i * 0.3
+                const dashAngle = this.auraAnimPhase * rotationSpeed
+
+                // Draw dashed ring
+                const segments = 12
+                for (let j = 0; j < segments; j += 2) {
+                    const startAngle = dashAngle + (j / segments) * Math.PI * 2
+                    const endAngle = dashAngle + ((j + 1) / segments) * Math.PI * 2
+
+                    timeGraphics.moveTo(
+                        Math.cos(startAngle) * ringRadius,
+                        Math.sin(startAngle) * ringRadius
+                    )
+                    timeGraphics.arc(0, 0, ringRadius, startAngle, endAngle)
+                }
+            }
+            timeGraphics.stroke({ color: 0x2c3e50, width: 2, alpha: 0.3 })
+
+            timeGraphics.position.set(this.playerX, this.playerY)
+            this.auraRingsContainer.addChild(timeGraphics)
+            yOffset += 5
+        }
+
+        // Flow Stream - fluid flow visualization
+        if (this.stats.flowSpeed > 0 && this.stats.suctionForce > 0) {
+            const flowGraphics = new Graphics()
+            const width = this.stats.streamWidth
+
+            // Flow direction based on player movement
+            const flowDirX = this.playerVx !== 0 || this.playerVy !== 0
+                ? this.playerVx / (Math.sqrt(this.playerVx * this.playerVx + this.playerVy * this.playerVy) || 1)
+                : 1
+            const flowDirY = this.playerVx !== 0 || this.playerVy !== 0
+                ? this.playerVy / (Math.sqrt(this.playerVx * this.playerVx + this.playerVy * this.playerVy) || 1)
+                : 0
+
+            // Draw flowing lines
+            const lineCount = 5
+            for (let i = 0; i < lineCount; i++) {
+                const offset = ((i - 2) / 2) * width * 0.8
+                const perpX = -flowDirY * offset
+                const perpY = flowDirX * offset
+                const flowPhase = (this.auraAnimPhase * 3 + i * 0.5) % 1
+
+                const startX = perpX - flowDirX * 80 * flowPhase
+                const startY = perpY - flowDirY * 80 * flowPhase
+                const endX = perpX + flowDirX * 80 * (1 - flowPhase)
+                const endY = perpY + flowDirY * 80 * (1 - flowPhase)
+
+                flowGraphics.moveTo(startX, startY)
+                flowGraphics.lineTo(endX, endY)
+            }
+            flowGraphics.stroke({ color: 0x1abc9c, width: 2, alpha: 0.3 })
+
+            flowGraphics.position.set(this.playerX, this.playerY)
+            this.auraRingsContainer.addChild(flowGraphics)
+            yOffset += 5
+        }
+
+        // Magnetic Pull - inward spiraling lines
+        if (this.stats.magneticPullRadius > 0 && this.stats.magneticPullStrength > 0) {
+            const pullGraphics = new Graphics()
+            const radius = this.stats.magneticPullRadius
+
+            // Draw spiraling inward lines
+            const spiralCount = 4
+            for (let i = 0; i < spiralCount; i++) {
+                const baseAngle = (i / spiralCount) * Math.PI * 2 + this.auraAnimPhase
+
+                // Spiral from outer to inner
+                const outerX = Math.cos(baseAngle) * radius
+                const outerY = Math.sin(baseAngle) * radius
+                const innerAngle = baseAngle + Math.PI * 0.5
+                const innerX = Math.cos(innerAngle) * radius * 0.3
+                const innerY = Math.sin(innerAngle) * radius * 0.3
+
+                pullGraphics.moveTo(outerX, outerY)
+                pullGraphics.quadraticCurveTo(
+                    Math.cos(baseAngle + 0.3) * radius * 0.6,
+                    Math.sin(baseAngle + 0.3) * radius * 0.6,
+                    innerX,
+                    innerY
+                )
+            }
+            pullGraphics.stroke({ color: 0x34495e, width: 2, alpha: 0.35 })
+
+            // Outer ring
+            pullGraphics.circle(0, 0, radius)
+            pullGraphics.stroke({ color: 0x34495e, width: 1.5, alpha: 0.2 })
+
+            pullGraphics.position.set(this.playerX, this.playerY)
+            this.auraRingsContainer.addChild(pullGraphics)
+        }
+
+        // Orbital Strike (aura type) - show orbit path
+        if (this.stats.orbitCount > 0 && this.stats.orbitRadius > 0) {
+            const orbitGraphics = new Graphics()
+            const radius = this.stats.orbitRadius
+
+            // Orbit path ring
+            orbitGraphics.circle(0, 0, radius)
+            orbitGraphics.stroke({ color: 0x8e44ad, width: 1.5, alpha: 0.2 })
+
+            orbitGraphics.position.set(this.playerX, this.playerY)
+            this.auraRingsContainer.addChild(orbitGraphics)
+        }
+
+        // Torque Slash (aura type) - show slash arc
+        if (this.stats.slashRadius > 0 && this.stats.slashDamage > 0) {
+            const slashGraphics = new Graphics()
+            const radius = this.stats.slashRadius
+
+            // Slash trail arc
+            const trailLength = Math.PI * 0.5
+            slashGraphics.arc(0, 0, radius, this.slashAngle - trailLength, this.slashAngle)
+            slashGraphics.stroke({ color: 0xc0392b, width: 3, alpha: 0.25 })
+
+            slashGraphics.position.set(this.playerX, this.playerY)
+            this.auraRingsContainer.addChild(slashGraphics)
+        }
     }
 
     /**
@@ -1705,7 +2068,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
             const dist = Math.sqrt(dx * dx + dy * dy)
 
             if (dist < radius) {
-                enemy.health -= damage * this.stats.damageMultiplier
+                const actualDamage = damage * this.stats.damageMultiplier
+                enemy.health -= actualDamage
+                this.trackSkillDamage('beat-pulse', actualDamage)
                 hitCount++
             }
         }
@@ -1748,12 +2113,18 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private updateChaosField(deltaSeconds: number): void {
         if (this.stats.chaosFieldRadius <= 0 || this.stats.chaosStrength <= 0) return
 
+        const chaosRadius = this.stats.chaosFieldRadius
+        const chaosRadiusSq = chaosRadius * chaosRadius
         for (const enemy of this.enemySystem.enemies) {
             const dx = enemy.x - this.playerX
             const dy = enemy.y - this.playerY
-            const dist = Math.sqrt(dx * dx + dy * dy)
 
-            if (dist < this.stats.chaosFieldRadius) {
+            // Early culling
+            if (Math.abs(dx) > chaosRadius || Math.abs(dy) > chaosRadius) continue
+
+            const distSq = dx * dx + dy * dy
+            if (distSq < chaosRadiusSq) {
+                const dist = Math.sqrt(distSq)
                 // Apply random velocity perturbation
                 const chaosIntensity = 1 - dist / this.stats.chaosFieldRadius
                 const perturbation = this.stats.chaosStrength * chaosIntensity * deltaSeconds
@@ -1762,6 +2133,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 const randomAngle = Math.random() * Math.PI * 2
                 enemy.vx += Math.cos(randomAngle) * perturbation
                 enemy.vy += Math.sin(randomAngle) * perturbation
+
+                // Track chaos applied
+                this.trackSkillEffect('chaos-field', 'chaosApplied', perturbation)
 
                 // Small random spin (visual chaos)
                 if (enemy.wobble && Math.random() < 0.02) {
@@ -1812,6 +2186,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
                     // Also push along stream direction (Bernoulli effect)
                     enemy.vx += flowDirX * this.stats.flowSpeed * deltaSeconds * 0.1
                     enemy.vy += flowDirY * this.stats.flowSpeed * deltaSeconds * 0.1
+
+                    // Track pull force applied
+                    this.trackSkillEffect('flow-stream', 'pullForce', force)
                 }
             }
         }
@@ -1840,6 +2217,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 const ny = -dy / dist
                 enemy.vx += nx * force
                 enemy.vy += ny * force
+
+                // Track pull force applied
+                this.trackSkillEffect('magnetic-pull', 'pullForce', force)
             }
         }
     }
@@ -1867,8 +2247,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
             const dist = Math.sqrt(dx * dx + dy * dy)
 
             if (dist < this.stats.chainRadius && dist > 0) {
-                enemy.health -= damage * (1 - dist / this.stats.chainRadius)
+                const actualDamage = damage * (1 - dist / this.stats.chainRadius)
+                enemy.health -= actualDamage
                 chainHits++
+
+                // Track damage
+                this.trackSkillDamage('decay-chain', actualDamage)
 
                 // Small knockback
                 const nx = dx / dist
@@ -1931,6 +2315,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         if (nearest) {
             nearest.enemy.health -= chainDamage
+
+            // Track damage
+            this.trackSkillDamage('heat-chain', chainDamage)
 
             // Visual chain line
             const line = new Graphics()
@@ -2113,6 +2500,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
                         // Apply damage
                         const damage = this.stats.orbitDamage * this.stats.damageMultiplier
                         enemy.health -= damage
+
+                        // Track damage
+                        this.trackSkillDamage('orbital-strike', damage)
 
                         // Set hit cooldown
                         orbital.hitCooldowns.set(enemy.id, 0.3)
@@ -2347,6 +2737,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 const damage = this.stats.ghostDamage * this.stats.damageMultiplier
                 enemy.health -= damage
 
+                // Track damage
+                this.trackSkillDamage('quantum-tunnel', damage)
+
                 // Visual feedback
                 if (enemy.wobble) {
                     this.impactSystem.addScalePunch(enemy.wobble, 0.2, 0.15)
@@ -2459,6 +2852,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
             for (const target of this.laserChainTargets) {
                 target.enemy.health -= damageThisFrame
+
+                // Track damage
+                this.trackSkillDamage('plasma-discharge', damageThisFrame)
 
                 // Small visual feedback
                 if (target.enemy.wobble && Math.random() < 0.1) {
@@ -2715,6 +3111,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private updateStaticRepulsion(deltaSeconds: number): void {
         if (this.stats.repulsionRadius <= 0) return
 
+        let totalPush = 0
         for (const enemy of this.enemySystem.enemies) {
             const dx = enemy.x - this.playerX
             const dy = enemy.y - this.playerY
@@ -2731,7 +3128,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 const ny = dy / dist
                 enemy.vx += (nx * force) / Math.sqrt(enemy.mass)
                 enemy.vy += (ny * force) / Math.sqrt(enemy.mass)
+                totalPush += force
             }
+        }
+        if (totalPush > 0) {
+            this.trackSkillEffect('static-repulsion', 'pushForce', totalPush)
         }
     }
 
@@ -2741,6 +3142,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private updateTimeWarp(deltaSeconds: number): void {
         if (this.stats.warpRadius <= 0) return
 
+        let totalSlowApplied = 0
         for (const enemy of this.enemySystem.enemies) {
             const dx = enemy.x - this.playerX
             const dy = enemy.y - this.playerY
@@ -2750,12 +3152,16 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 // Slow enemy speed
                 const slowAmount = this.stats.slowFactor
                 enemy.speed = enemy.speed * (1 - slowAmount * deltaSeconds * 2)
+                totalSlowApplied += deltaSeconds * slowAmount
                 // Minimum speed floor
                 const baseSpeed = 1.0
                 if (enemy.speed < baseSpeed * 0.3) {
                     enemy.speed = baseSpeed * 0.3
                 }
             }
+        }
+        if (totalSlowApplied > 0) {
+            this.trackSkillEffect('time-warp', 'slowTime', totalSlowApplied)
         }
     }
 
@@ -2799,6 +3205,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
                 enemy.vx += deflectX * deflectStrength * currentSpeed * distFactor
                 enemy.vy += deflectY * deflectStrength * currentSpeed * distFactor
+
+                // Track deflection
+                this.trackSkillEffect('magnetic-shield', 'deflections', 1)
             }
         }
     }
@@ -2836,7 +3245,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
             if (dist < this.stats.slashRadius + enemy.size / 2) {
                 // Hit!
-                enemy.health -= this.stats.slashDamage * this.stats.damageMultiplier
+                const actualDamage = this.stats.slashDamage * this.stats.damageMultiplier
+                enemy.health -= actualDamage
+                this.trackSkillDamage('torque-slash', actualDamage)
                 this.slashHitCooldowns.set(enemy.id, 0.3) // 0.3s cooldown
 
                 // Small knockback in blade direction
@@ -2935,6 +3346,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 const falloff = 1 - dist / radius
                 const finalDamage = damage * Math.max(0.3, falloff)
                 enemy.health -= finalDamage
+
+                // Track damage
+                this.trackSkillDamage('buoyant-bomb', finalDamage)
 
                 // Knockback away from explosion
                 const knockDir = dist > 0 ? { x: dx / dist, y: dy / dist } : { x: 0, y: -1 }
@@ -3373,6 +3787,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.gridFilter.setPlayerPosition(this.playerX, this.playerY)
         }
 
+        // Update filter base graphic to ensure filter always has content
+        this.updateFilterBaseGraphic()
+
         this.backgroundSystem.update(
             delta,
             this.playerSkills.length,
@@ -3459,6 +3876,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 this.gridFilter.setCameraPosition(this.cameraX, this.cameraY)
             }
 
+            // Update filter base graphic during hitstop too
+            this.updateFilterBaseGraphic()
+
             this.backgroundSystem.update(
                 rawDeltaSeconds * 60,
                 this.playerSkills.length,
@@ -3497,6 +3917,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.gridFilter.cleanupRipples() // Clean up expired ripple effects
             this.updateGridGravitySources()
         }
+
+        // Update filter base graphic to ensure filter always has content
+        this.updateFilterBaseGraphic()
 
         this.backgroundSystem.update(
             delta,
@@ -3611,6 +4034,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         // Phase 6 orbital skills
         this.updateOrbitalStrike(deltaSeconds)
+
+        // Render persistent aura visuals (for aura-type skills)
+        this.renderAuraVisuals(deltaSeconds)
 
         // Ghost mode (Quantum Tunneling)
         this.updateGhostMode(deltaSeconds)

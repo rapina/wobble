@@ -21,9 +21,72 @@ export class ProjectileSystem {
 
     // Elastic bounce counter for physics stats
     private bounceCount = 0
+    // Pierce counter for skill stats
+    private pierceCount = 0
+
+    // Object pools for performance
+    private graphicsPool: Graphics[] = []
+    private auraPool: Graphics[] = []
+    private readonly MAX_POOL_SIZE = 50
 
     constructor(context: ProjectileSystemContext) {
         this.context = context
+    }
+
+    /**
+     * Acquire a graphics object from pool or create new
+     */
+    private acquireGraphics(size: number): Graphics {
+        const graphics = this.graphicsPool.pop() ?? new Graphics()
+        graphics.clear()
+        graphics.circle(0, 0, size)
+        graphics.fill(0xf5b041)
+        graphics.circle(0, 0, size * 0.6)
+        graphics.stroke({ color: 0xffffff, width: 2 })
+        graphics.visible = true
+        graphics.alpha = 1
+        graphics.scale.set(1)
+        return graphics
+    }
+
+    /**
+     * Release graphics back to pool
+     */
+    private releaseGraphics(graphics: Graphics): void {
+        graphics.visible = false
+        this.context.projectileContainer.removeChild(graphics)
+        if (this.graphicsPool.length < this.MAX_POOL_SIZE) {
+            this.graphicsPool.push(graphics)
+        } else {
+            graphics.destroy()
+        }
+    }
+
+    /**
+     * Acquire aura from pool or create new
+     */
+    private acquireAura(size: number): Graphics {
+        const aura = this.auraPool.pop() ?? new Graphics()
+        aura.clear()
+        aura.circle(0, 0, size * 2)
+        aura.fill({ color: 0x88ccff, alpha: 0.15 })
+        aura.visible = true
+        aura.alpha = 1
+        aura.scale.set(1)
+        return aura
+    }
+
+    /**
+     * Release aura back to pool
+     */
+    private releaseAura(aura: Graphics): void {
+        aura.visible = false
+        this.context.projectileContainer.removeChild(aura)
+        if (this.auraPool.length < this.MAX_POOL_SIZE) {
+            this.auraPool.push(aura)
+        } else {
+            aura.destroy()
+        }
     }
 
     updateContext(context: Partial<ProjectileSystemContext>): void {
@@ -43,6 +106,15 @@ export class ProjectileSystem {
     getAndResetBounceCount(): number {
         const count = this.bounceCount
         this.bounceCount = 0
+        return count
+    }
+
+    /**
+     * Get and reset the pierce count (for skill stats tracking)
+     */
+    getAndResetPierceCount(): number {
+        const count = this.pierceCount
+        this.pierceCount = 0
         return count
     }
 
@@ -98,18 +170,13 @@ export class ProjectileSystem {
             // Reduce damage per projectile when spread (but not too much for power fantasy)
             const damage = spreadCount > 1 ? baseDamage / Math.sqrt(spreadCount) : baseDamage
 
-            // Create projectile graphics
-            const graphics = new Graphics()
-            graphics.circle(0, 0, size)
-            graphics.fill(0xf5b041)
-            graphics.circle(0, 0, size * 0.6)
-            graphics.stroke({ color: 0xffffff, width: 2 })
-
+            // Acquire projectile graphics from pool
+            const graphics = this.acquireGraphics(size)
             graphics.position.set(playerX, playerY)
             this.context.projectileContainer.addChild(graphics)
 
-            // Create energy aura - kinetic energy visualization (KE = ½mv²)
-            const energyAura = this.createEnergyAura(size)
+            // Acquire energy aura from pool
+            const energyAura = this.acquireAura(size)
             energyAura.position.set(playerX, playerY)
             // Add aura behind projectile
             this.context.projectileContainer.addChildAt(energyAura, 0)
@@ -381,18 +448,27 @@ export class ProjectileSystem {
             const proj = this.projectiles[pi]
             let shouldRemove = false
 
+            // Cache projectile speed squared for knockback (calculated once per projectile)
+            const projSpeedSq = proj.vx * proj.vx + proj.vy * proj.vy
+
             for (const enemy of enemies) {
                 // 이미 맞춘 적은 스킵
                 if (proj.hitEnemyIds.has(enemy.id)) continue
 
                 const dx = proj.x - enemy.x
                 const dy = proj.y - enemy.y
-                const dist = Math.sqrt(dx * dx + dy * dy)
+
+                // Early culling with Manhattan distance (faster than sqrt)
+                const maxRange = 80 // Max possible collision range
+                if (Math.abs(dx) > maxRange || Math.abs(dy) > maxRange) continue
+
+                const distSq = dx * dx + dy * dy
                 // 탄환 크기에 scale 반영
                 const minDist =
                     this.baseSize * stats.projectileSizeMultiplier * proj.scale + enemy.size / 2
+                const minDistSq = minDist * minDist
 
-                if (dist < minDist) {
+                if (distSq < minDistSq) {
                     // Calculate damage
                     const damage = proj.damage
 
@@ -400,8 +476,8 @@ export class ProjectileSystem {
                     enemy.health -= damage
                     proj.hitEnemyIds.add(enemy.id)
 
-                    // Knockback - push in projectile direction
-                    const projSpeed = Math.sqrt(proj.vx * proj.vx + proj.vy * proj.vy)
+                    // Knockback - push in projectile direction (sqrt only on hit)
+                    const projSpeed = Math.sqrt(projSpeedSq)
                     const knockDirX = proj.vx / (projSpeed || 1)
                     const knockDirY = proj.vy / (projSpeed || 1)
                     // Base knockback (reduced by enemy mass)
@@ -460,6 +536,7 @@ export class ProjectileSystem {
                     // 관통(pierce) 처리: 관통 횟수가 남아있으면 계속 진행
                     if (proj.pierces < proj.maxPierces) {
                         proj.pierces++
+                        this.pierceCount++ // Track for skill stats
                         // 관통 시 데미지 감소 (10% 씩)
                         proj.damage *= 0.9
                         continue // 다음 적도 체크
@@ -632,13 +709,14 @@ export class ProjectileSystem {
     // Remove projectile by index
     private remove(index: number): void {
         const proj = this.projectiles[index]
-        this.context.projectileContainer.removeChild(proj.graphics)
-        proj.graphics.destroy()
-        // Clean up energy aura
+        // Release graphics back to pool
+        this.releaseGraphics(proj.graphics)
+        // Release energy aura back to pool
         if (proj.energyAura) {
-            this.context.projectileContainer.removeChild(proj.energyAura)
-            proj.energyAura.destroy()
+            this.releaseAura(proj.energyAura)
         }
+        // Clear hitEnemyIds set
+        proj.hitEnemyIds.clear()
         this.projectiles.splice(index, 1)
     }
 

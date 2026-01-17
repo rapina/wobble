@@ -32,6 +32,7 @@ export class HeatChainBehavior extends BaseSkillBehavior<HeatChainEffect> {
     readonly definition: SkillDefinition<HeatChainEffect> = {
         id: 'heat-chain',
         name: { ko: '열 전도 체인', en: 'Heat Chain' },
+        nameShort: { ko: '열전도', en: 'Heat' },
         description: {
             ko: '데미지가 인접한 적에게 전도됨',
             en: 'Damage conducts to nearby enemies',
@@ -40,6 +41,7 @@ export class HeatChainBehavior extends BaseSkillBehavior<HeatChainEffect> {
         color: 0xe67e22,
         maxLevel: 5,
         category: 'trigger',
+        activationType: 'passive',
         formulaId: 'thermal-conduction',
         physicsVisualType: 'conduction',
         getLevelEffect: (level: number) => this.getEffect(level),

@@ -31,6 +31,7 @@ export class MagneticShieldBehavior extends BaseSkillBehavior<MagneticShieldEffe
     readonly definition: SkillDefinition<MagneticShieldEffect> = {
         id: 'magnetic-shield',
         name: { ko: '자기장 방어', en: 'Magnetic Shield' },
+        nameShort: { ko: '자기장', en: 'Shield' },
         description: {
             ko: '자기장이 적의 경로를 휘게 합니다',
             en: 'Magnetic field deflects enemies',
@@ -39,6 +40,7 @@ export class MagneticShieldBehavior extends BaseSkillBehavior<MagneticShieldEffe
         color: 0x3498db,
         maxLevel: 5,
         category: 'aura',
+        activationType: 'aura',
         formulaId: 'lorentz',
         physicsVisualType: 'magnetic',
         getLevelEffect: (level: number) => this.getEffect(level),

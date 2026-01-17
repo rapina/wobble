@@ -32,6 +32,7 @@ export class FlowStreamBehavior extends BaseSkillBehavior<FlowStreamEffect> {
     readonly definition: SkillDefinition<FlowStreamEffect> = {
         id: 'flow-stream',
         name: { ko: '유체 흐름', en: 'Flow Stream' },
+        nameShort: { ko: '흐름', en: 'Flow' },
         description: {
             ko: '빠른 흐름이 적을 끌어당김',
             en: 'Fast flow pulls enemies in',
@@ -40,6 +41,7 @@ export class FlowStreamBehavior extends BaseSkillBehavior<FlowStreamEffect> {
         color: 0x1abc9c,
         maxLevel: 5,
         category: 'aura',
+        activationType: 'aura',
         formulaId: 'bernoulli',
         physicsVisualType: 'bernoulli',
         getLevelEffect: (level: number) => this.getEffect(level),

@@ -32,6 +32,7 @@ export class ChaosFieldBehavior extends BaseSkillBehavior<ChaosFieldEffect> {
     readonly definition: SkillDefinition<ChaosFieldEffect> = {
         id: 'chaos-field',
         name: { ko: '혼돈장', en: 'Chaos Field' },
+        nameShort: { ko: '혼돈', en: 'Chaos' },
         description: {
             ko: '엔트로피 증가로 적 이동 경로 교란',
             en: 'Entropy randomizes enemy movement',
@@ -40,6 +41,7 @@ export class ChaosFieldBehavior extends BaseSkillBehavior<ChaosFieldEffect> {
         color: 0x8e44ad,
         maxLevel: 5,
         category: 'aura',
+        activationType: 'aura',
         formulaId: 'entropy',
         physicsVisualType: 'entropy',
         getLevelEffect: (level: number) => this.getEffect(level),

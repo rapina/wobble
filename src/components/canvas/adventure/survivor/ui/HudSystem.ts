@@ -1,6 +1,8 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js'
 import { PlayerProgress, getXpForLevel, GAME_DURATION_SECONDS } from '../types'
-import { PlayerSkill, getSkillDefinition } from '../skills'
+import type { PlayerSkill } from '../skills'
+import { getSkillDefinition } from '../skills/registry'
+import type { SkillDefinition } from '../skills/types'
 import { ComboState } from '../ComboSystem'
 import {
     BALATRO_COLORS,
@@ -8,6 +10,7 @@ import {
     drawBalatroCard,
     drawBalatroBadge,
 } from './BalatroButton'
+import { t, DEFAULT_LANGUAGE } from '@/utils/localization'
 
 export interface HudContext {
     uiContainer: Container
@@ -21,6 +24,20 @@ export interface SkillCooldown {
     max: number // Max cooldown time
 }
 
+export interface SkillStats {
+    skillId: string
+    totalDamage: number // Accumulated damage dealt by this skill
+    activations: number // Number of times the skill was activated/triggered
+    // Special effect stats
+    slowTime?: number // Total time enemies were slowed (Time Warp)
+    deflections?: number // Number of deflections (Magnetic Shield)
+    pushForce?: number // Total push force applied (Static Repulsion)
+    pullForce?: number // Total pull force applied (Magnetic Pull, Flow Stream)
+    chaosApplied?: number // Chaos effect applied (Chaos Field)
+    bounces?: number // Number of bounces (Elastic Bounce)
+    pierces?: number // Number of pierces (Momentum Pierce)
+}
+
 export interface HudState {
     health: number
     maxHealth: number
@@ -28,6 +45,7 @@ export interface HudState {
     gameTime: number
     skills: PlayerSkill[]
     cooldowns?: SkillCooldown[] // Cooldown states for active skills
+    skillStats?: SkillStats[] // Accumulated stats per skill
 }
 
 export class HudSystem {
@@ -66,6 +84,10 @@ export class HudSystem {
 
     // Internal state for comparison
     private lastState: HudState | null = null
+
+    // Skill flash animation state
+    private skillFlashTimers: Map<string, number> = new Map()
+    private previousSkillStats: Map<string, number> = new Map() // Track previous stat values
 
     constructor(context: HudContext) {
         this.uiContainer = context.uiContainer
@@ -250,7 +272,7 @@ export class HudSystem {
         this.updateXpBar(state.progress)
         this.updateTimer(state.gameTime)
         this.updateLevel(state.progress.level)
-        this.updateSkillList(state.skills, state.cooldowns || [])
+        this.updateSkillList(state.skills, state.cooldowns || [], state.skillStats || [])
         this.lastState = state
     }
 
@@ -343,92 +365,275 @@ export class HudSystem {
         this.levelText.text = `${level}`
     }
 
-    private updateSkillList(skills: PlayerSkill[], cooldowns: SkillCooldown[]): void {
+    private updateSkillList(skills: PlayerSkill[], cooldowns: SkillCooldown[], skillStats: SkillStats[]): void {
         this.skillListContainer.removeChildren()
 
-        // Vertical list layout
-        const rowHeight = 22
-        const maxVisibleSkills = 10
+        // Update flash timers (decay)
+        const now = Date.now()
+        for (const [skillId, startTime] of this.skillFlashTimers) {
+            if (now - startTime > 500) {
+                this.skillFlashTimers.delete(skillId)
+            }
+        }
+
+        // Vertical list layout with skill name + level + cooldown gauge + stats on right
+        const rowHeight = 32
+        const rowWidth = 90
+        const statsWidth = 55 // Extra space for stats on the right
+        const maxVisibleSkills = 8
 
         const visibleSkills = skills.slice(0, maxVisibleSkills)
 
         visibleSkills.forEach((skill, index) => {
-            const skillDef = getSkillDefinition(skill.skillId)
+            const skillDef = getSkillDefinition(skill.skillId) as SkillDefinition | undefined
             if (!skillDef) return
 
             const rowContainer = new Container()
             rowContainer.position.set(0, index * rowHeight)
 
-            // Find cooldown
+            // Find cooldown and stats
             const cooldown = cooldowns.find((cd) => cd.skillId === skill.skillId)
+            const stats = skillStats.find((s) => s.skillId === skill.skillId)
+            const hasCooldown = cooldown !== undefined
             const isOnCooldown = cooldown && cooldown.current > 0
-            const cooldownRatio = cooldown ? cooldown.current / cooldown.max : 0
+            const cooldownRatio = cooldown ? 1 - cooldown.current / cooldown.max : 1 // Progress ratio (fills up)
+
+            // Check for stat changes to trigger flash
+            const statDisplay = this.getSkillStatDisplay(skill.skillId, stats)
+            const currentStatValue = this.getSkillStatValue(skill.skillId, stats)
+            const previousStatValue = this.previousSkillStats.get(skill.skillId) ?? 0
+
+            if (currentStatValue > previousStatValue && previousStatValue > 0) {
+                // Stat increased - trigger flash
+                this.skillFlashTimers.set(skill.skillId, now)
+            }
+            this.previousSkillStats.set(skill.skillId, currentStatValue)
+
+            // Check if currently flashing
+            const flashStartTime = this.skillFlashTimers.get(skill.skillId)
+            const isFlashing = flashStartTime !== undefined
+            const flashProgress = isFlashing ? (now - flashStartTime) / 500 : 0 // 0 to 1 over 500ms
+            const flashAlpha = isFlashing ? Math.max(0, 1 - flashProgress) : 0
+
+            // Determine skill type indicator color
+            const isActiveSkill = skillDef.activationType === 'active'
+            const isAuraSkill = skillDef.activationType === 'aura'
+            const typeColor = isAuraSkill ? 0x9b59b6 : isActiveSkill ? 0xe74c3c : skillDef.color
+
+            // Flash overlay (behind everything else in the row)
+            if (isFlashing) {
+                const flashOverlay = new Graphics()
+                flashOverlay.roundRect(0, 0, rowWidth, 28, 5)
+                flashOverlay.fill({ color: 0xffffff, alpha: flashAlpha * 0.4 })
+                rowContainer.addChild(flashOverlay)
+            }
 
             // Skill row background
             const rowBg = new Graphics()
-            rowBg.roundRect(0, 0, 60, 20, 4)
-            rowBg.fill({ color: BALATRO_COLORS.bgCard, alpha: 0.9 })
-            rowBg.roundRect(0, 0, 60, 20, 4)
+            rowBg.roundRect(0, 0, rowWidth, 28, 5)
+            rowBg.fill({ color: BALATRO_COLORS.bgCard, alpha: 0.92 })
+            rowBg.roundRect(0, 0, rowWidth, 28, 5)
             rowBg.stroke({
-                color: isOnCooldown ? BALATRO_COLORS.textMuted : skillDef.color,
-                width: 1.5,
+                color: isFlashing ? 0xffffff : (isOnCooldown ? BALATRO_COLORS.textMuted : typeColor),
+                width: isFlashing ? 2 : 1.5,
             })
             rowContainer.addChild(rowBg)
 
-            // Cooldown overlay
-            if (isOnCooldown && cooldownRatio > 0) {
-                const overlay = new Graphics()
-                const fillWidth = 60 * cooldownRatio
-                overlay.roundRect(0, 0, fillWidth, 20, 4)
-                overlay.fill({ color: 0x000000, alpha: 0.5 })
-                rowContainer.addChild(overlay)
-            }
+            // Left color indicator bar (shows skill type)
+            const typeIndicator = new Graphics()
+            typeIndicator.roundRect(2, 2, 4, 24, 2)
+            typeIndicator.fill({ color: typeColor, alpha: isOnCooldown ? 0.4 : 1 })
+            rowContainer.addChild(typeIndicator)
 
-            // Skill icon
-            const iconText = new Text({
-                text: skillDef.icon,
+            // Skill name (using nameShort for compact display)
+            const skillName = t(skillDef.nameShort, DEFAULT_LANGUAGE)
+            const nameText = new Text({
+                text: skillName,
                 style: new TextStyle({
                     fontFamily: 'Arial, sans-serif',
                     fontSize: 10,
-                    fill: isOnCooldown ? BALATRO_COLORS.textMuted : skillDef.color,
-                }),
-            })
-            iconText.anchor.set(0.5)
-            iconText.position.set(12, 10)
-            rowContainer.addChild(iconText)
-
-            // Level text
-            const levelText = new Text({
-                text: `Lv${skill.level}`,
-                style: new TextStyle({
-                    fontFamily: 'Arial, sans-serif',
-                    fontSize: 9,
                     fontWeight: 'bold',
                     fill: isOnCooldown ? BALATRO_COLORS.textMuted : BALATRO_COLORS.textPrimary,
                 }),
             })
-            levelText.anchor.set(0, 0.5)
-            levelText.position.set(24, 10)
+            nameText.anchor.set(0, 0.5)
+            nameText.position.set(10, 9)
+            rowContainer.addChild(nameText)
+
+            // Level badge
+            const levelBadge = new Graphics()
+            levelBadge.roundRect(rowWidth - 22, 2, 18, 12, 3)
+            levelBadge.fill({ color: isOnCooldown ? BALATRO_COLORS.textMuted : BALATRO_COLORS.gold })
+            rowContainer.addChild(levelBadge)
+
+            const levelText = new Text({
+                text: `${skill.level}`,
+                style: new TextStyle({
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 9,
+                    fontWeight: 'bold',
+                    fill: 0x000000,
+                }),
+            })
+            levelText.anchor.set(0.5)
+            levelText.position.set(rowWidth - 13, 8)
             rowContainer.addChild(levelText)
 
-            // Cooldown timer
-            if (isOnCooldown) {
-                const cdText = new Text({
-                    text: cooldown!.current.toFixed(1),
+            // Cooldown gauge bar (show if skill has cooldown tracking)
+            if (hasCooldown) {
+                const gaugeWidth = rowWidth - 12
+                const gaugeHeight = 3
+                const gaugeY = 22
+
+                // Gauge background
+                const gaugeBg = new Graphics()
+                gaugeBg.roundRect(8, gaugeY, gaugeWidth, gaugeHeight, 1.5)
+                gaugeBg.fill({ color: BALATRO_COLORS.bgCardLight })
+                rowContainer.addChild(gaugeBg)
+
+                // Gauge fill (progress)
+                if (cooldownRatio > 0) {
+                    const gaugeFill = new Graphics()
+                    const fillWidth = Math.max(0, gaugeWidth * cooldownRatio)
+                    gaugeFill.roundRect(8, gaugeY, fillWidth, gaugeHeight, 1.5)
+                    gaugeFill.fill({ color: cooldownRatio >= 1 ? BALATRO_COLORS.cyan : BALATRO_COLORS.gold })
+                    rowContainer.addChild(gaugeFill)
+                }
+            }
+            // Aura indicator (persistent glow effect indicator) - only if no cooldown
+            else if (isAuraSkill) {
+                const auraIndicator = new Graphics()
+                auraIndicator.circle(rowWidth - 30, 20, 3)
+                auraIndicator.fill({ color: 0x9b59b6, alpha: 0.8 })
+                // Pulsing glow effect
+                const pulsePhase = (Date.now() / 1000) * 2
+                const pulseAlpha = 0.3 + 0.3 * Math.sin(pulsePhase)
+                auraIndicator.circle(rowWidth - 30, 20, 5)
+                auraIndicator.fill({ color: 0x9b59b6, alpha: pulseAlpha })
+                rowContainer.addChild(auraIndicator)
+            }
+
+            // Accumulated stats display (on the RIGHT side of the skill row)
+            if (statDisplay) {
+                const statText = new Text({
+                    text: statDisplay.text,
                     style: new TextStyle({
                         fontFamily: 'Arial, sans-serif',
-                        fontSize: 8,
+                        fontSize: 9,
                         fontWeight: 'bold',
-                        fill: BALATRO_COLORS.gold,
+                        fill: isFlashing ? 0xffffff : statDisplay.color,
                     }),
                 })
-                cdText.anchor.set(1, 0.5)
-                cdText.position.set(56, 10)
-                rowContainer.addChild(cdText)
+                statText.anchor.set(0, 0.5)
+                statText.position.set(rowWidth + 6, 14)
+                rowContainer.addChild(statText)
             }
 
             this.skillListContainer.addChild(rowContainer)
         })
+    }
+
+    /**
+     * Get the numeric value of a skill's primary stat for change detection
+     */
+    private getSkillStatValue(skillId: string, stats: SkillStats | undefined): number {
+        if (!stats) return 0
+
+        // Return the primary stat value based on skill type
+        if (stats.totalDamage > 0) return stats.totalDamage
+        if (stats.slowTime !== undefined && stats.slowTime > 0) return stats.slowTime
+        if (stats.deflections !== undefined && stats.deflections > 0) return stats.deflections
+        if (stats.pushForce !== undefined && stats.pushForce > 0) return stats.pushForce
+        if (stats.pullForce !== undefined && stats.pullForce > 0) return stats.pullForce
+        if (stats.chaosApplied !== undefined && stats.chaosApplied > 0) return stats.chaosApplied
+        if (stats.bounces !== undefined && stats.bounces > 0) return stats.bounces
+        if (stats.pierces !== undefined && stats.pierces > 0) return stats.pierces
+        if (stats.activations > 0) return stats.activations
+
+        return 0
+    }
+
+    /**
+     * Get the appropriate stat display for a skill
+     */
+    private getSkillStatDisplay(skillId: string, stats: SkillStats | undefined): { text: string; color: number } | null {
+        if (!stats) return null
+
+        // Damage-based skills
+        if (stats.totalDamage > 0) {
+            const damageSkills = [
+                'radiant-aura', 'wave-pulse', 'torque-slash', 'beat-pulse',
+                'orbital-strike', 'plasma-discharge', 'centripetal-pulse',
+                'quantum-tunnel', 'decay-chain', 'heat-chain', 'buoyant-bomb'
+            ]
+            if (damageSkills.includes(skillId)) {
+                return { text: `${this.formatNumber(stats.totalDamage)} dmg`, color: BALATRO_COLORS.red }
+            }
+        }
+
+        // Time Warp - slow time
+        if (skillId === 'time-warp' && stats.slowTime !== undefined && stats.slowTime > 0) {
+            return { text: `${stats.slowTime.toFixed(1)}s slow`, color: 0x2c3e50 }
+        }
+
+        // Magnetic Shield - deflections
+        if (skillId === 'magnetic-shield' && stats.deflections !== undefined && stats.deflections > 0) {
+            return { text: `${this.formatNumber(stats.deflections)} deflect`, color: 0x3498db }
+        }
+
+        // Static Repulsion - push force
+        if (skillId === 'static-repulsion' && stats.pushForce !== undefined && stats.pushForce > 0) {
+            return { text: `${this.formatNumber(stats.pushForce)} push`, color: 0xf1c40f }
+        }
+
+        // Magnetic Pull - pull force
+        if (skillId === 'magnetic-pull' && stats.pullForce !== undefined && stats.pullForce > 0) {
+            return { text: `${this.formatNumber(stats.pullForce)} pull`, color: 0x34495e }
+        }
+
+        // Flow Stream - pull/suction
+        if (skillId === 'flow-stream' && stats.pullForce !== undefined && stats.pullForce > 0) {
+            return { text: `${this.formatNumber(stats.pullForce)} suction`, color: 0x1abc9c }
+        }
+
+        // Chaos Field - chaos applied
+        if (skillId === 'chaos-field' && stats.chaosApplied !== undefined && stats.chaosApplied > 0) {
+            return { text: `${this.formatNumber(stats.chaosApplied)} chaos`, color: 0x9b59b6 }
+        }
+
+        // Elastic Bounce - bounces
+        if (skillId === 'elastic-bounce' && stats.bounces !== undefined && stats.bounces > 0) {
+            return { text: `${this.formatNumber(stats.bounces)} bounce`, color: 0x3498db }
+        }
+
+        // Momentum Pierce - pierces
+        if (skillId === 'momentum-pierce' && stats.pierces !== undefined && stats.pierces > 0) {
+            return { text: `${this.formatNumber(stats.pierces)} pierce`, color: 0xe74c3c }
+        }
+
+        // Fallback to damage if available
+        if (stats.totalDamage > 0) {
+            return { text: `${this.formatNumber(stats.totalDamage)} dmg`, color: BALATRO_COLORS.red }
+        }
+
+        // Activations as fallback
+        if (stats.activations > 0) {
+            return { text: `${this.formatNumber(stats.activations)}x`, color: BALATRO_COLORS.textSecondary }
+        }
+
+        return null
+    }
+
+    /**
+     * Format number for compact display (e.g., 1234 -> 1.2k)
+     */
+    private formatNumber(num: number): string {
+        if (num >= 1000000) {
+            return (num / 1000000).toFixed(1) + 'm'
+        } else if (num >= 1000) {
+            return (num / 1000).toFixed(1) + 'k'
+        }
+        return Math.round(num).toString()
     }
 
     /**

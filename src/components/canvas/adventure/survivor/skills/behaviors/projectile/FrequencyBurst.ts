@@ -30,6 +30,7 @@ export class FrequencyBurstBehavior extends BaseSkillBehavior<FrequencyBurstEffe
     readonly definition: SkillDefinition<FrequencyBurstEffect> = {
         id: 'frequency-burst',
         name: { ko: '진동수 증폭', en: 'Frequency Burst' },
+        nameShort: { ko: '속사', en: 'Rapid' },
         description: {
             ko: '높은 진동수로 빠르게 발사합니다',
             en: 'Higher frequency means faster fire rate',
@@ -38,6 +39,7 @@ export class FrequencyBurstBehavior extends BaseSkillBehavior<FrequencyBurstEffe
         color: 0xf1c40f,
         maxLevel: 5,
         category: 'projectile',
+        activationType: 'passive',
         formulaId: 'photoelectric',
         physicsVisualType: 'frequency',
         getLevelEffect: (level: number) => this.getEffect(level),

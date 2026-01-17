@@ -30,6 +30,7 @@ export class GravityPullBehavior extends BaseSkillBehavior<GravityPullEffect> {
     readonly definition: SkillDefinition<GravityPullEffect> = {
         id: 'gravity-pull',
         name: { ko: '중력 유도', en: 'Gravity Pull' },
+        nameShort: { ko: '유도', en: 'Homing' },
         description: {
             ko: '중력으로 적을 향해 휘어집니다',
             en: 'Projectiles curve toward enemies',
@@ -38,6 +39,7 @@ export class GravityPullBehavior extends BaseSkillBehavior<GravityPullEffect> {
         color: 0x1abc9c,
         maxLevel: 5,
         category: 'projectile',
+        activationType: 'passive',
         formulaId: 'gravity',
         physicsVisualType: 'gravity',
         getLevelEffect: (level: number) => this.getEffect(level),

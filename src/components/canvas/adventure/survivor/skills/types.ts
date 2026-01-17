@@ -7,6 +7,14 @@ import type { Projectile, Enemy, PlayerStats } from '../types'
 // ============================================
 
 /**
+ * Skill activation type - determines visual and cooldown behavior
+ */
+export type SkillActivationType =
+    | 'passive' // Always active, modifies projectiles/stats (no visual, no cooldown)
+    | 'aura' // Persistent aura around player (visible ring/glow, no cooldown)
+    | 'active' // Triggers periodically (has cooldown, shows effect when triggered)
+
+/**
  * Skill categories for organization and behavior grouping
  */
 export type SkillCategory =
@@ -39,11 +47,14 @@ export interface SkillEffect {
 export interface SkillDefinition<T extends SkillEffect = SkillEffect> {
     readonly id: string
     readonly name: LocalizedText
+    readonly nameShort: LocalizedText // Abbreviated name for HUD (max 6 chars)
     readonly description: LocalizedText
     readonly icon: string
     readonly color: number
     readonly maxLevel: number
     readonly category: SkillCategory
+    readonly activationType: SkillActivationType // passive, aura, or active
+    readonly baseCooldown?: number // Base cooldown in seconds (for active skills)
     readonly formulaId?: string
     readonly physicsVisualType?: string
     getLevelEffect(level: number): T

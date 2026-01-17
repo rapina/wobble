@@ -31,6 +31,7 @@ export class StaticRepulsionBehavior extends BaseSkillBehavior<StaticRepulsionEf
     readonly definition: SkillDefinition<StaticRepulsionEffect> = {
         id: 'static-repulsion',
         name: { ko: '정전기 반발', en: 'Static Repulsion' },
+        nameShort: { ko: '반발', en: 'Repel' },
         description: {
             ko: '전하가 적을 지속적으로 밀어냅니다',
             en: 'Electric charge pushes enemies away',
@@ -39,6 +40,7 @@ export class StaticRepulsionBehavior extends BaseSkillBehavior<StaticRepulsionEf
         color: 0xf1c40f,
         maxLevel: 5,
         category: 'aura',
+        activationType: 'aura',
         formulaId: 'coulomb',
         physicsVisualType: 'electric',
         getLevelEffect: (level: number) => this.getEffect(level),

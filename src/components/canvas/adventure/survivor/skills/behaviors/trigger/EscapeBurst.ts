@@ -32,6 +32,7 @@ export class EscapeBurstBehavior extends BaseSkillBehavior<EscapeBurstEffect> {
     readonly definition: SkillDefinition<EscapeBurstEffect> = {
         id: 'escape-burst',
         name: { ko: '탈출 속도 폭발', en: 'Escape Burst' },
+        nameShort: { ko: '탈출', en: 'Escape' },
         description: {
             ko: '충분한 속도로 중력을 벗어나며 폭발',
             en: 'Escape gravity with an explosive burst',
@@ -40,6 +41,7 @@ export class EscapeBurstBehavior extends BaseSkillBehavior<EscapeBurstEffect> {
         color: 0x2ecc71,
         maxLevel: 5,
         category: 'trigger',
+        activationType: 'passive',
         formulaId: 'escape-velocity',
         physicsVisualType: 'escape',
         getLevelEffect: (level: number) => this.getEffect(level),

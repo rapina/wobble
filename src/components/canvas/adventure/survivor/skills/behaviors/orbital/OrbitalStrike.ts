@@ -32,6 +32,7 @@ export class OrbitalStrikeBehavior extends BaseSkillBehavior<OrbitalStrikeEffect
     readonly definition: SkillDefinition<OrbitalStrikeEffect> = {
         id: 'orbital-strike',
         name: { ko: '궤도 폭격', en: 'Orbital Strike' },
+        nameShort: { ko: '궤도', en: 'Orbit' },
         description: {
             ko: '플레이어 주변을 도는 위성 공격체',
             en: 'Orbiting projectiles damage nearby enemies',
@@ -40,6 +41,7 @@ export class OrbitalStrikeBehavior extends BaseSkillBehavior<OrbitalStrikeEffect
         color: 0x8e44ad,
         maxLevel: 5,
         category: 'orbital',
+        activationType: 'aura',
         formulaId: 'kepler-third',
         physicsVisualType: 'orbital',
         getLevelEffect: (level: number) => this.getEffect(level),

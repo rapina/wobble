@@ -30,6 +30,7 @@ export class PressureWaveBehavior extends BaseSkillBehavior<PressureWaveEffect> 
     readonly definition: SkillDefinition<PressureWaveEffect> = {
         id: 'pressure-wave',
         name: { ko: '압력파', en: 'Pressure Wave' },
+        nameShort: { ko: '압력', en: 'Blast' },
         description: {
             ko: '기체 팽창으로 폭발적 압력을 만듭니다',
             en: 'Gas expansion creates explosive pressure',
@@ -38,6 +39,7 @@ export class PressureWaveBehavior extends BaseSkillBehavior<PressureWaveEffect> 
         color: 0xf39c12,
         maxLevel: 5,
         category: 'projectile',
+        activationType: 'passive',
         formulaId: 'ideal-gas',
         physicsVisualType: 'pressure',
         getLevelEffect: (level: number) => this.getEffect(level),

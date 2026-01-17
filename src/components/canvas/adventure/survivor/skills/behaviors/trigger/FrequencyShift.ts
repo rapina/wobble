@@ -32,6 +32,7 @@ export class FrequencyShiftBehavior extends BaseSkillBehavior<FrequencyShiftEffe
     readonly definition: SkillDefinition<FrequencyShiftEffect> = {
         id: 'frequency-shift',
         name: { ko: '주파수 편이', en: 'Frequency Shift' },
+        nameShort: { ko: '편이', en: 'Shift' },
         description: {
             ko: '접근하는 적에게 더 강한 데미지',
             en: 'More damage to approaching enemies',
@@ -40,6 +41,7 @@ export class FrequencyShiftBehavior extends BaseSkillBehavior<FrequencyShiftEffe
         color: 0x3498db,
         maxLevel: 5,
         category: 'trigger',
+        activationType: 'passive',
         formulaId: 'doppler',
         physicsVisualType: 'doppler',
         getLevelEffect: (level: number) => this.getEffect(level),

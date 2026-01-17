@@ -260,9 +260,10 @@ export class ExperienceOrbSystem {
 
                 const dx = orbA.x - orbB.x
                 const dy = orbA.y - orbB.y
-                const dist = Math.sqrt(dx * dx + dy * dy)
+                const distSq = dx * dx + dy * dy
+                const mergeRadiusSq = mergeRadius * mergeRadius
 
-                if (dist < mergeRadius) {
+                if (distSq < mergeRadiusSq) {
                     // Merge B into A
                     orbA.xpValue += orbB.xpValue
 
@@ -368,13 +369,14 @@ export class ExperienceOrbSystem {
                 continue
             }
 
-            // Calculate distance to player
+            // Calculate distance to player (squared for comparison)
             const dx = playerX - orb.x
             const dy = playerY - orb.y
-            const dist = Math.sqrt(dx * dx + dy * dy)
+            const distSq = dx * dx + dy * dy
+            const collectRadiusSq = this.collectRadius * this.collectRadius
 
             // Check collection by player
-            if (dist < this.collectRadius) {
+            if (distSq < collectRadiusSq) {
                 this.collectOrb(orb, i)
                 continue
             }
@@ -383,17 +385,21 @@ export class ExperienceOrbSystem {
             if (blackHole) {
                 const bhDx = blackHole.x - orb.x
                 const bhDy = blackHole.y - orb.y
-                const bhDist = Math.sqrt(bhDx * bhDx + bhDy * bhDy)
+                const bhDistSq = bhDx * bhDx + bhDy * bhDy
+                const consumeRadiusSq = blackHole.consumeRadius * blackHole.consumeRadius
+                const pullRadiusSq = blackHole.pullRadius * blackHole.pullRadius
 
                 // Check if consumed by black hole
-                if (bhDist < blackHole.consumeRadius) {
+                if (bhDistSq < consumeRadiusSq) {
                     // Sucked into the void - destroy without giving XP
                     this.consumeOrb(orb, i)
                     continue
                 }
 
                 // Strong pull toward black hole
-                if (bhDist < blackHole.pullRadius) {
+                if (bhDistSq < pullRadiusSq) {
+                    // Only calculate sqrt when needed for direction/strength
+                    const bhDist = Math.sqrt(bhDistSq)
                     const pullStrength = 1 - bhDist / blackHole.pullRadius
                     const pullForce = pullStrength * 8 // Stronger than player magnet
 
@@ -404,9 +410,11 @@ export class ExperienceOrbSystem {
                     orb.vx += nx * pullForce * deltaSeconds * 60
                     orb.vy += ny * pullForce * deltaSeconds * 60
 
-                    // Speed cap
-                    const speed = Math.sqrt(orb.vx * orb.vx + orb.vy * orb.vy)
-                    if (speed > 12) {
+                    // Speed cap (use squared comparison)
+                    const speedSq = orb.vx * orb.vx + orb.vy * orb.vy
+                    if (speedSq > 144) {
+                        // 12^2 = 144
+                        const speed = Math.sqrt(speedSq)
                         orb.vx = (orb.vx / speed) * 12
                         orb.vy = (orb.vy / speed) * 12
                     }
@@ -435,8 +443,11 @@ export class ExperienceOrbSystem {
             // Magnetic attraction to player
             // Super magnet attracts all orbs, normal magnet only nearby
             const effectiveMagnetRadius = this.superMagnetActive ? 9999 : this.magnetRadius
+            const effectiveMagnetRadiusSq = effectiveMagnetRadius * effectiveMagnetRadius
 
-            if (dist < effectiveMagnetRadius) {
+            if (distSq < effectiveMagnetRadiusSq) {
+                // Only calculate sqrt when we need it for direction/strength
+                const dist = Math.sqrt(distSq)
                 // Accelerate towards player
                 // Super magnet uses stronger attraction
                 const magnetStrength = this.superMagnetActive

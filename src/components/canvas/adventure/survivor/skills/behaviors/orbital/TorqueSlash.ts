@@ -32,6 +32,7 @@ export class TorqueSlashBehavior extends BaseSkillBehavior<TorqueSlashEffect> {
     readonly definition: SkillDefinition<TorqueSlashEffect> = {
         id: 'torque-slash',
         name: { ko: '토크 회전참', en: 'Torque Slash' },
+        nameShort: { ko: '회전', en: 'Slash' },
         description: {
             ko: '회전하는 칼날이 주변 적을 벱니다',
             en: 'Spinning blade damages nearby enemies',
@@ -40,6 +41,7 @@ export class TorqueSlashBehavior extends BaseSkillBehavior<TorqueSlashEffect> {
         color: 0xc0392b,
         maxLevel: 5,
         category: 'orbital',
+        activationType: 'aura',
         formulaId: 'torque',
         physicsVisualType: 'torque',
         getLevelEffect: (level: number) => this.getEffect(level),

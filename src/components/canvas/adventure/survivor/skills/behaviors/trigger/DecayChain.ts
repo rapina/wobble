@@ -32,6 +32,7 @@ export class DecayChainBehavior extends BaseSkillBehavior<DecayChainEffect> {
     readonly definition: SkillDefinition<DecayChainEffect> = {
         id: 'decay-chain',
         name: { ko: '붕괴 연쇄', en: 'Decay Chain' },
+        nameShort: { ko: '붕괴', en: 'Decay' },
         description: {
             ko: '적 처치 시 확률적 연쇄 폭발',
             en: 'Chain explosions on enemy death',
@@ -40,6 +41,7 @@ export class DecayChainBehavior extends BaseSkillBehavior<DecayChainEffect> {
         color: 0x2ecc71,
         maxLevel: 5,
         category: 'trigger',
+        activationType: 'passive',
         formulaId: 'radioactive-decay',
         physicsVisualType: 'decay',
         getLevelEffect: (level: number) => this.getEffect(level),

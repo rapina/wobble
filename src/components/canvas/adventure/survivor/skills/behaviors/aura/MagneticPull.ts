@@ -32,6 +32,7 @@ export class MagneticPullBehavior extends BaseSkillBehavior<MagneticPullEffect> 
     readonly definition: SkillDefinition<MagneticPullEffect> = {
         id: 'magnetic-pull',
         name: { ko: '자기 흡인', en: 'Magnetic Pull' },
+        nameShort: { ko: '흡인', en: 'Pull' },
         description: {
             ko: '자성을 가진 것들을 끌어당김',
             en: 'Pull magnetic objects toward you',
@@ -40,6 +41,7 @@ export class MagneticPullBehavior extends BaseSkillBehavior<MagneticPullEffect> 
         color: 0x34495e,
         maxLevel: 5,
         category: 'aura',
+        activationType: 'aura',
         formulaId: 'magnetic-field',
         physicsVisualType: 'magnet',
         getLevelEffect: (level: number) => this.getEffect(level),

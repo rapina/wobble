@@ -30,6 +30,7 @@ export class ElasticBounceBehavior extends BaseSkillBehavior<ElasticBounceEffect
     readonly definition: SkillDefinition<ElasticBounceEffect> = {
         id: 'elastic-bounce',
         name: { ko: '탄성 충돌', en: 'Elastic Collision' },
+        nameShort: { ko: '탄성', en: 'Bounce' },
         description: {
             ko: '운동량을 보존하며 튕겨갑니다',
             en: 'Projectiles conserve momentum when bouncing',
@@ -38,6 +39,7 @@ export class ElasticBounceBehavior extends BaseSkillBehavior<ElasticBounceEffect
         color: 0x3498db,
         maxLevel: 5,
         category: 'projectile',
+        activationType: 'passive',
         formulaId: 'elastic-collision',
         physicsVisualType: 'elastic',
         getLevelEffect: (level: number) => this.getEffect(level),

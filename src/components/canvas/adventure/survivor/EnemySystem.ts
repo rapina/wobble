@@ -1,5 +1,5 @@
 import { Container, Graphics } from 'pixi.js'
-import { Wobble } from '../../Wobble'
+import { AngelGraphics, getAngelShape, getAngelCoreColor } from './AngelGraphics'
 import { Enemy, EnemyTier, TIER_CONFIGS, HitEffect } from './types'
 import { PhysicsModifiers, DEFAULT_PHYSICS, applyVortex } from './PhysicsModifiers'
 import type { KnockbackTrail } from './EffectsManager'
@@ -249,15 +249,18 @@ export class EnemySystem {
         const tintColor = variant.colorTint ?? baseColor
         const finalColor = variantId === 'normal' ? baseColor : tintColor
 
-        const wobble = new Wobble({
+        // Create Angel-style geometric enemy
+        const angelShape = getAngelShape(tier, variantId)
+        const coreColor = getAngelCoreColor(variantId)
+        const angel = new AngelGraphics({
             size,
             color: finalColor,
-            shape: 'shadow',
-            expression: 'angry',
-            showShadow: false,
+            shape: angelShape,
+            coreColor,
+            pulseSpeed: tier === 'boss' ? 1 : tier === 'large' ? 1.5 : 2,
         })
-        wobble.position.set(x, y)
-        this.context.enemyContainer.addChild(wobble)
+        angel.position.set(x, y)
+        this.context.enemyContainer.addChild(angel)
 
         const mass = 2 * config.healthMultiplier * variant.massMult
 
@@ -275,8 +278,8 @@ export class EnemySystem {
         }
 
         const enemy: Enemy = {
-            graphics: wobble,
-            wobble,
+            graphics: angel,
+            wobble: angel, // Angel replaces Wobble
             massRing,
             glowEffect,
             x,
@@ -429,10 +432,14 @@ export class EnemySystem {
 
             // Limit speed (allow more overspeed for chargers)
             const maxSpeedMult = enemy.behavior === 'charge' && enemy.behaviorState?.charging ? 4 : 2
-            const speed = Math.sqrt(enemy.vx * enemy.vx + enemy.vy * enemy.vy)
-            if (speed > enemy.speed * maxSpeedMult) {
-                enemy.vx = (enemy.vx / speed) * enemy.speed * maxSpeedMult
-                enemy.vy = (enemy.vy / speed) * enemy.speed * maxSpeedMult
+            const maxSpeed = enemy.speed * maxSpeedMult
+            const speedSq = enemy.vx * enemy.vx + enemy.vy * enemy.vy
+            const maxSpeedSq = maxSpeed * maxSpeed
+            if (speedSq > maxSpeedSq) {
+                // Only calculate sqrt when we need to clamp
+                const speed = Math.sqrt(speedSq)
+                enemy.vx = (enemy.vx / speed) * maxSpeed
+                enemy.vy = (enemy.vy / speed) * maxSpeed
             }
 
             // Apply velocity
@@ -478,12 +485,9 @@ export class EnemySystem {
                 }
             }
 
-            // Animate wobble phase with look direction
-            if (enemy.wobble) {
-                enemy.wobble.updateOptions({
-                    wobblePhase: animPhase,
-                    lookDirection: { x: dx / dist, y: dy / dist },
-                })
+            // Animate Angel graphics
+            if (enemy.wobble && 'update' in enemy.wobble) {
+                (enemy.wobble as AngelGraphics).update(delta)
             }
         }
     }
@@ -637,7 +641,7 @@ export class EnemySystem {
     // Check for enemy collisions and potential merges
     checkCollisions(deltaSeconds: number, hitEffects: HitEffect[]): void {
         // Early exit optimization for large enemy counts
-        const maxCheckDist = 150 // Max distance to check collisions
+        const maxCheckDist = 100 // Max distance to check collisions (reduced for perf)
 
         for (let i = 0; i < this.enemies.length; i++) {
             for (let j = i + 1; j < this.enemies.length; j++) {
@@ -653,10 +657,13 @@ export class EnemySystem {
                 // Quick distance check - skip if clearly too far (avoid sqrt)
                 if (Math.abs(dx) > maxCheckDist || Math.abs(dy) > maxCheckDist) continue
 
-                const dist = Math.sqrt(dx * dx + dy * dy)
+                const distSq = dx * dx + dy * dy
                 const minDist = e1.size / 2 + e2.size / 2
+                const minDistSq = minDist * minDist
 
-                if (dist < minDist && dist > 0) {
+                if (distSq < minDistSq && distSq > 0) {
+                    // Only calculate sqrt when collision detected (rare)
+                    const dist = Math.sqrt(distSq)
                     const key = this.getOverlapKey(e1, e2)
                     const tier1 = TIER_CONFIGS[e1.tier]
                     const tier2 = TIER_CONFIGS[e2.tier]
@@ -737,8 +744,8 @@ export class EnemySystem {
             e2.graphics.position.set(e2.x, e2.y)
 
             const scale = 1 - progress * 0.4
-            e1.wobble?.updateOptions({ scaleX: scale, scaleY: scale })
-            e2.wobble?.updateOptions({ scaleX: scale, scaleY: scale })
+            e1.wobble?.scale.set(scale)
+            e2.wobble?.scale.set(scale)
 
             if (progress >= 1) {
                 this.completeMerge(e1, e2, centerX, centerY, gameTime, hitEffects)

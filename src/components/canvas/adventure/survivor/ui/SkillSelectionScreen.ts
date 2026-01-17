@@ -30,6 +30,7 @@ interface SkillCard {
     def: SkillDefinition
     cardBg: Graphics
     isHovered: boolean
+    targetY: number // Animation target Y position
 }
 
 export class SkillSelectionScreen {
@@ -187,21 +188,21 @@ export class SkillSelectionScreen {
         }
 
         // Animate skill cards (deal from top with stagger)
-        const cardTargetY = this.centerY + 35
         this.skillCards.forEach((card, i) => {
             const delay = 0.15 + i * 0.1
             const duration = 0.4
             const progress = Math.max(0, Math.min(1, (this.animTime - delay) / duration))
+            const targetY = card.targetY
 
             if (progress < 1) {
                 const eased = easeOutBack(progress)
                 // Deal from above target position
-                const startY = cardTargetY - 200
-                card.container.position.y = startY + (cardTargetY - startY) * eased
+                const startY = targetY - 150
+                card.container.position.y = startY + (targetY - startY) * eased
                 card.container.alpha = progress
                 card.container.scale.set(0.8 + 0.2 * eased)
             } else {
-                card.container.position.y = cardTargetY
+                card.container.position.y = targetY
                 card.container.alpha = 1
                 card.container.scale.set(1)
             }
@@ -248,9 +249,9 @@ export class SkillSelectionScreen {
 
         // Main card container for the selection area
         const mainCardWidth = Math.min(360, this.width - 30)
-        const mainCardHeight = 320
+        const mainCardHeight = 300
         const mainCardX = this.centerX - mainCardWidth / 2
-        const mainCardY = this.centerY - mainCardHeight / 2 - 20
+        const mainCardY = this.centerY - mainCardHeight / 2
 
         // Main card background
         const mainCard = new Graphics()
@@ -313,17 +314,18 @@ export class SkillSelectionScreen {
 
         // Card layout - 3 cards horizontal
         const cardWidth = 100
-        const cardHeight = 200
+        const cardHeight = 220
         const cardGap = 10
         const totalWidth = candidates.length * cardWidth + (candidates.length - 1) * cardGap
         const startX = this.centerX - totalWidth / 2 + cardWidth / 2
+        const cardCenterY = mainCardY + 50 + cardHeight / 2 // Position cards inside main card
 
         candidates.forEach((candidate, index) => {
             const def = getSkillDefinition(candidate.skillId)
             if (!def) return
 
             const cardContainer = new Container()
-            cardContainer.position.set(startX + index * (cardWidth + cardGap), this.centerY + 35)
+            cardContainer.position.set(startX + index * (cardWidth + cardGap), cardCenterY)
             cardContainer.alpha = 0
             this.screenContainer.addChild(cardContainer)
 
@@ -333,6 +335,7 @@ export class SkillSelectionScreen {
             this.skillCards.push({
                 ...card,
                 container: cardContainer,
+                targetY: cardCenterY,
             })
         })
 
