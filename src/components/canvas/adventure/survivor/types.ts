@@ -1,5 +1,7 @@
 import { Container, Graphics, Text } from 'pixi.js'
 import { Wobble, WobbleShape } from '../../Wobble'
+import type { EnemyVariantId, EnemyBehavior } from './EnemyVariants'
+import type { FormationId } from './FormationSystem'
 
 // Game state type
 export type GameState =
@@ -14,9 +16,95 @@ export type GameState =
     | 'victory'
     | 'result'
 
-// Game duration constants
-export const GAME_DURATION_SECONDS = 180 // 3 minutes to win
-export const BOSS_SPAWN_TIME = 150 // Boss spawns at 2:30
+// Game duration constants (10-minute power fantasy session)
+export const GAME_DURATION_SECONDS = 600 // 10 minutes to win
+export const BOSS_SPAWN_TIME = 540 // Boss spawns at 9:00
+
+// Skill system limits
+export const MAX_SKILLS = 10 // Maximum number of different skills player can have
+
+// ==================== DIFFICULTY CONFIG ====================
+// All difficulty-related parameters in one place for easy tuning
+
+export interface DifficultyConfig {
+    // Enemy spawning
+    maxEnemies: number // Maximum enemies on screen
+    spawnInterval: {
+        start: number // Seconds between spawns at game start
+        end: number // Seconds between spawns at max difficulty
+        rampTime: number // Seconds to reach max spawn rate
+    }
+    spawnCount: {
+        start: number // Enemies per spawn at game start
+        end: number // Enemies per spawn at max difficulty
+        rampTime: number // Seconds to reach max spawn count
+    }
+
+    // Enemy strength
+    healthMultiplier: {
+        start: number // Health multiplier at game start
+        end: number // Health multiplier at game end
+        curve: number // Exponent for scaling curve (1 = linear, >1 = late game harder)
+    }
+
+    // Enemy tier distribution (changes over time)
+    tierWeights: {
+        early: { small: number; medium: number; large: number } // 0-3 min
+        mid: { small: number; medium: number; large: number } // 3-6 min
+        late: { small: number; medium: number; large: number } // 6-10 min
+    }
+}
+
+export const DEFAULT_DIFFICULTY: DifficultyConfig = {
+    maxEnemies: 120,
+
+    spawnInterval: {
+        start: 1.0, // 1 spawn event per second initially
+        end: 0.3, // 3+ spawn events per second late game
+        rampTime: 300, // Reach max at 5 minutes
+    },
+
+    spawnCount: {
+        start: 2, // 2 enemies per spawn initially
+        end: 5, // 5 enemies per spawn late game
+        rampTime: 400, // Reach max at ~6.5 minutes
+    },
+
+    healthMultiplier: {
+        start: 1.0,
+        end: 4.0,
+        curve: 1.5, // Exponential curve - late game gets hard fast
+    },
+
+    tierWeights: {
+        early: { small: 0.8, medium: 0.18, large: 0.02 },
+        mid: { small: 0.5, medium: 0.35, large: 0.15 },
+        late: { small: 0.3, medium: 0.4, large: 0.3 },
+    },
+}
+
+// Helper function to get difficulty value at a given time
+export function getDifficultyValue(
+    gameTime: number,
+    start: number,
+    end: number,
+    rampTime: number,
+    curve: number = 1
+): number {
+    const progress = Math.min(1, gameTime / rampTime)
+    const curvedProgress = Math.pow(progress, curve)
+    return start + (end - start) * curvedProgress
+}
+
+// Helper to get tier weights based on game time
+export function getTierWeights(
+    gameTime: number,
+    config: DifficultyConfig
+): { small: number; medium: number; large: number } {
+    if (gameTime < 180) return config.tierWeights.early // 0-3 min
+    if (gameTime < 360) return config.tierWeights.mid // 3-6 min
+    return config.tierWeights.late // 6-10 min
+}
 
 // Wobble character stats (Brotato-style)
 export interface WobbleStats {
@@ -183,6 +271,7 @@ export interface Enemy {
     graphics: Container
     wobble?: Wobble
     massRing?: Graphics // Visual ring showing mass (physics visualization)
+    glowEffect?: Graphics // 변종별 글로우 효과
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     knockbackTrail?: any // Active knockback trail (managed by EffectsManager)
     x: number
@@ -199,6 +288,27 @@ export interface Enemy {
     id: number
     merging: boolean
     mergeTarget?: Enemy
+
+    // Variant system fields
+    variant: EnemyVariantId
+    behavior: EnemyBehavior
+    behaviorState?: {
+        // Charger behavior
+        charging?: boolean
+        chargeCooldown?: number
+        chargeDirection?: { x: number; y: number }
+        // Orbit behavior
+        orbitAngle?: number
+        // Zigzag behavior
+        zigzagPhase?: number
+        // Ghost behavior
+        fadeAlpha?: number
+        teleportCooldown?: number
+    }
+
+    // Formation fields
+    formationId?: FormationId
+    formationIndex?: number
 }
 
 export interface TextEffect {
@@ -259,9 +369,11 @@ export interface PlayerStats {
     dropRadius: number
     dropDamage: number
 
-    // Quantum Tunnel - phase through enemies
-    tunnelChance: number // 0-1, 0 = disabled
-    tunnelDamageBonus: number
+    // Quantum Tunnel - ghost mode (phase through enemies)
+    ghostCooldown: number // 0 = disabled
+    ghostDuration: number
+    ghostDamage: number
+    ghostTrailCount: number
 
     // Pendulum Rhythm - oscillating damage
     rhythmPeriod: number // 0 = disabled
@@ -335,6 +447,12 @@ export interface PlayerStats {
     orbitRadius: number // distance from player
     orbitDamage: number // damage per hit
 
+    // Plasma Discharge - Raiden-style lightning laser
+    laserDamage: number // 0 = disabled, DPS to connected enemies
+    laserChainCount: number // Number of enemies to chain to
+    laserRange: number // Max range to first target
+    laserChainRange: number // Max range between chain targets
+
     // Passive-derived stats
     damageReduction: number // 0-1, damage reduction percentage
     critChance: number // 0-1, chance to crit
@@ -376,8 +494,10 @@ export const DEFAULT_PLAYER_STATS: PlayerStats = {
     floatDuration: 0,
     dropRadius: 0,
     dropDamage: 0,
-    tunnelChance: 0,
-    tunnelDamageBonus: 0,
+    ghostCooldown: 0,
+    ghostDuration: 0,
+    ghostDamage: 0,
+    ghostTrailCount: 0,
     rhythmPeriod: 0,
     peakDamageBonus: 0,
     slashRadius: 0,
@@ -422,6 +542,12 @@ export const DEFAULT_PLAYER_STATS: PlayerStats = {
     orbitCount: 0,
     orbitRadius: 0,
     orbitDamage: 0,
+
+    // Plasma Discharge defaults
+    laserDamage: 0,
+    laserChainCount: 0,
+    laserRange: 0,
+    laserChainRange: 0,
 
     damageReduction: 0,
     critChance: 0,

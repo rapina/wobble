@@ -393,15 +393,8 @@ export class ProjectileSystem {
                     this.baseSize * stats.projectileSizeMultiplier * proj.scale + enemy.size / 2
 
                 if (dist < minDist) {
-                    // Check for quantum tunneling (phase through enemy)
-                    const tunnelChance = stats.tunnelChance || 0
-                    const tunneled = tunnelChance > 0 && Math.random() < tunnelChance
-
-                    // Calculate damage (extra for tunnel)
-                    let damage = proj.damage
-                    if (tunneled) {
-                        damage *= 1 + (stats.tunnelDamageBonus || 0)
-                    }
+                    // Calculate damage
+                    const damage = proj.damage
 
                     // Hit!
                     enemy.health -= damage
@@ -450,7 +443,7 @@ export class ProjectileSystem {
                             enemy.x,
                             enemy.y - enemy.size / 2,
                             finalDamage,
-                            isCritical || tunneled
+                            isCritical
                         )
                     }
 
@@ -462,11 +455,6 @@ export class ProjectileSystem {
                     // Check if enemy died
                     if (enemy.health <= 0) {
                         onEnemyKilled()
-                    }
-
-                    // Quantum tunnel: phase through without consuming pierce/bounce
-                    if (tunneled) {
-                        continue // Continue through enemy without being absorbed
                     }
 
                     // 관통(pierce) 처리: 관통 횟수가 남아있으면 계속 진행

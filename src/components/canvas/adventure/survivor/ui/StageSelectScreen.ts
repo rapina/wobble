@@ -5,6 +5,10 @@ import {
     createBalatroButton,
     createBalatroCircleButton,
     BALATRO_COLORS,
+    BALATRO_DESIGN,
+    drawBalatroCard,
+    drawBalatroBadge,
+    drawCornerDots,
 } from './BalatroButton'
 
 export interface StageSelectContext {
@@ -83,7 +87,8 @@ export class StageSelectScreen {
 
         // Card container subtle float animation
         if (this.stageCardContainer) {
-            const baseY = 185 // previewY from createUI (cardY+35+105+25)
+            // baseY = cardY(15) + headerY_offset(35) + dotsY_offset(90) + 20 = 160
+            const baseY = 160
             const float = Math.sin(this.animPhase * 1.5) * 3
             this.stageCardContainer.position.y = baseY + float
         }
@@ -103,6 +108,11 @@ export class StageSelectScreen {
         if (this.startButton) {
             const pulse = 1 + Math.sin(this.animPhase * 3) * 0.02
             this.startButton.scale.set(pulse)
+        }
+
+        // Animate decorative dots
+        if (this.decorDots) {
+            this.decorDots.alpha = 0.3 + Math.sin(this.animPhase * 2) * 0.2
         }
     }
 
@@ -131,82 +141,76 @@ export class StageSelectScreen {
         this.selectStage(prevIndex)
     }
 
+    // Decorative dots for animation
+    private decorDots: Graphics | null = null
+
     private createUI(): void {
         this.screenContainer.removeChildren()
 
         const stage = STAGES[this.selectedIndex]
-
-        // === THEME COLORS (based on stage) ===
-        const bgTopColor = stage.bgColor
-        const bgBottomColor = this.darkenColor(bgTopColor, 0.4)
-        const cardBgColor = 0x374244 // Dark panel (Balatro style)
-        const cardShadowColor = 0x1a1a1a
-        const textDark = 0xffffff
-        const textMuted = 0xaaaaaa
         const accentColor = stage.particleColor
 
-        // Gradient background (stage theme)
+        // Dark background with Balatro feel
         const bg = new Graphics()
-        const bands = 10
-        for (let i = 0; i < bands; i++) {
-            const y = (i / bands) * this.height
-            const h = this.height / bands + 1
-            const blend = i / (bands - 1)
-            const color = this.blendColors(bgTopColor, bgBottomColor, blend)
-            bg.rect(0, y, this.width, h)
-            bg.fill(color)
-        }
+        bg.rect(0, 0, this.width, this.height)
+        bg.fill({ color: BALATRO_COLORS.bgDark, alpha: 0.95 })
         this.screenContainer.addChild(bg)
 
-        // Subtle dot pattern
+        // Subtle dot pattern overlay
         const pattern = new Graphics()
-        for (let row = 0; row < 40; row++) {
-            for (let col = 0; col < 25; col++) {
-                const px = col * 18 + (row % 2) * 9
-                const py = row * 18
-                pattern.circle(px, py, 1.2)
+        for (let x = 0; x < this.width; x += 20) {
+            for (let y = 0; y < this.height; y += 20) {
+                pattern.circle(x, y, 1)
                 pattern.fill({ color: 0xffffff, alpha: 0.03 })
             }
         }
         this.screenContainer.addChild(pattern)
 
         // Main card
-        const cardX = 20
-        const cardY = 20
-        const cardWidth = this.width - 40
-        const cardHeight = this.height - 40
+        const cardPadding = Math.min(15, this.width * 0.04)
+        const cardX = cardPadding
+        const cardY = cardPadding
+        const cardWidth = this.width - cardPadding * 2
+        const cardHeight = this.height - cardPadding * 2
 
-        // Card shadow
-        const cardShadow = new Graphics()
-        cardShadow.roundRect(cardX + 5, cardY + 8, cardWidth, cardHeight, 20)
-        cardShadow.fill({ color: cardShadowColor, alpha: 0.5 })
-        this.screenContainer.addChild(cardShadow)
-
-        // Card background
+        // Main card background using Balatro utility
         const card = new Graphics()
-        card.roundRect(cardX, cardY, cardWidth, cardHeight, 20)
-        card.fill(cardBgColor)
-        card.roundRect(cardX, cardY, cardWidth, cardHeight, 20)
-        card.stroke({ color: 0x1a1a1a, width: 4 })
+        drawBalatroCard(card, cardX, cardY, cardWidth, cardHeight, {
+            bgColor: BALATRO_COLORS.bgCard,
+            borderColor: accentColor,
+            borderWidth: BALATRO_DESIGN.borderWidth,
+            radius: BALATRO_DESIGN.radiusLarge,
+        })
         this.screenContainer.addChild(card)
 
-        // ========== 1. HEADER SECTION ==========
-        const headerY = cardY + 35
+        // Decorative corner dots
+        this.decorDots = new Graphics()
+        drawCornerDots(this.decorDots, cardX, cardY, cardWidth, cardHeight, accentColor)
+        this.screenContainer.addChild(this.decorDots)
 
-        // "SELECT STAGE" title
+        // Title badge
+        const badgeW = 160
+        const badgeH = 32
+        const badge = new Graphics()
+        drawBalatroBadge(badge, this.centerX - badgeW / 2, cardY - 16, badgeW, badgeH, accentColor)
+        this.screenContainer.addChild(badge)
+
         const titleText = new Text({
             text: 'SELECT STAGE',
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: 'bold',
-                fill: textMuted,
-                letterSpacing: 4,
+                fill: 0x000000,
+                letterSpacing: BALATRO_DESIGN.letterSpacing,
             }),
         })
         titleText.anchor.set(0.5)
-        titleText.position.set(this.centerX, headerY)
+        titleText.position.set(this.centerX, cardY - 2)
         this.screenContainer.addChild(titleText)
+
+        // ========== 1. HEADER SECTION ==========
+        const headerY = cardY + 35
 
         // Stage icon (larger)
         const iconText = new Text({
@@ -218,7 +222,7 @@ export class StageSelectScreen {
             }),
         })
         iconText.anchor.set(0.5)
-        iconText.position.set(this.centerX, headerY + 40)
+        iconText.position.set(this.centerX, headerY + 25)
         this.screenContainer.addChild(iconText)
 
         // Stage name
@@ -226,18 +230,18 @@ export class StageSelectScreen {
             text: t(stage.name, 'ko'),
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: 'bold',
-                fill: textDark,
+                fill: BALATRO_COLORS.textPrimary,
                 letterSpacing: 2,
             }),
         })
         this.stageNameText.anchor.set(0.5)
-        this.stageNameText.position.set(this.centerX, headerY + 80)
+        this.stageNameText.position.set(this.centerX, headerY + 65)
         this.screenContainer.addChild(this.stageNameText)
 
         // Stage indicator (page dots)
-        const dotsY = headerY + 105
+        const dotsY = headerY + 90
         const dotGap = 20
         const totalDotsWidth = (STAGES.length - 1) * dotGap
         STAGES.forEach((s, i) => {
@@ -253,33 +257,31 @@ export class StageSelectScreen {
             }
             dot.circle(dotX, dotsY, isSelected ? 6 : 4)
             dot.fill({
-                color: isSelected ? stageColor : textMuted,
+                color: isSelected ? stageColor : BALATRO_COLORS.textMuted,
                 alpha: isSelected ? 1 : 0.35,
             })
             this.screenContainer.addChild(dot)
         })
 
         // ========== 2. PREVIEW SECTION ==========
-        const previewY = dotsY + 25
-        const previewWidth = cardWidth - 80
-        const previewHeight = 180
-        const previewX = cardX + 40
+        const previewY = dotsY + 20
+        const previewWidth = cardWidth - 60
+        const previewHeight = 150
+        const previewX = cardX + 30
 
         // Stage card container for floating animation
         this.stageCardContainer = new Container()
         this.stageCardContainer.position.set(previewX, previewY)
         this.screenContainer.addChild(this.stageCardContainer)
 
-        // Preview outer glow
-        const previewGlow = new Graphics()
-        previewGlow.roundRect(-4, -4, previewWidth + 8, previewHeight + 8, 16)
-        previewGlow.fill({ color: accentColor, alpha: 0.15 })
-        this.stageCardContainer.addChild(previewGlow)
-
-        // Preview background with stage color
+        // Preview background with stage color (using Balatro card style)
         const previewBg = new Graphics()
-        previewBg.roundRect(0, 0, previewWidth, previewHeight, 14)
-        previewBg.fill(stage.bgColor)
+        drawBalatroCard(previewBg, 0, 0, previewWidth, previewHeight, {
+            bgColor: stage.bgColor,
+            borderColor: accentColor,
+            borderWidth: BALATRO_DESIGN.borderWidth,
+            radius: BALATRO_DESIGN.radiusMedium,
+        })
         this.stageCardContainer.addChild(previewBg)
 
         // Gradient overlay for depth
@@ -294,7 +296,7 @@ export class StageSelectScreen {
         }
         // Apply mask to gradient
         const previewMask = new Graphics()
-        previewMask.roundRect(0, 0, previewWidth, previewHeight, 14)
+        previewMask.roundRect(0, 0, previewWidth, previewHeight, BALATRO_DESIGN.radiusMedium)
         previewMask.fill(0xffffff)
         this.stageCardContainer.addChild(previewMask)
         previewGradient.mask = previewMask
@@ -302,12 +304,6 @@ export class StageSelectScreen {
 
         // Stage-specific visual elements
         this.drawStagePreviewElements(previewWidth, previewHeight, stage)
-
-        // Preview border
-        const previewBorder = new Graphics()
-        previewBorder.roundRect(0, 0, previewWidth, previewHeight, 14)
-        previewBorder.stroke({ color: accentColor, width: 3, alpha: 0.9 })
-        this.stageCardContainer.addChild(previewBorder)
 
         // Arrow buttons (positioned below preview, wider spacing)
         const arrowY = previewY + previewHeight + 22
@@ -332,22 +328,18 @@ export class StageSelectScreen {
 
         // ========== 3. GIMMICK INFO SECTION ==========
         const infoY = arrowY + 38 // Below arrow buttons
-        const infoBoxWidth = cardWidth - 60
-        const infoBoxX = cardX + 30
-        const infoBoxHeight = 115
+        const infoBoxWidth = cardWidth - 40
+        const infoBoxX = cardX + 20
+        const infoBoxHeight = 100
 
-        // Info box shadow
-        const infoBoxShadow = new Graphics()
-        infoBoxShadow.roundRect(infoBoxX + 3, infoY + 4, infoBoxWidth, infoBoxHeight, 14)
-        infoBoxShadow.fill({ color: 0x1a1a1a, alpha: 0.3 })
-        this.screenContainer.addChild(infoBoxShadow)
-
-        // Info box background (more contrasting)
+        // Info box background using Balatro card style
         const infoBox = new Graphics()
-        infoBox.roundRect(infoBoxX, infoY, infoBoxWidth, infoBoxHeight, 14)
-        infoBox.fill({ color: 0x2a3235, alpha: 0.95 })
-        infoBox.roundRect(infoBoxX, infoY, infoBoxWidth, infoBoxHeight, 14)
-        infoBox.stroke({ color: accentColor, width: 2, alpha: 0.6 })
+        drawBalatroCard(infoBox, infoBoxX, infoY, infoBoxWidth, infoBoxHeight, {
+            bgColor: BALATRO_COLORS.bgCardLight,
+            borderColor: accentColor,
+            borderWidth: 2,
+            radius: BALATRO_DESIGN.radiusMedium,
+        })
         this.screenContainer.addChild(infoBox)
 
         // Physics formula (large, centered)
@@ -355,13 +347,13 @@ export class StageSelectScreen {
             text: stage.description,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 26,
+                fontSize: 24,
                 fontWeight: 'bold',
                 fill: accentColor,
             }),
         })
         formulaLabel.anchor.set(0.5)
-        formulaLabel.position.set(this.centerX, infoY + 28)
+        formulaLabel.position.set(this.centerX, infoY + 25)
         this.screenContainer.addChild(formulaLabel)
         this.formulaText = formulaLabel
 
@@ -381,13 +373,13 @@ export class StageSelectScreen {
             text: gimmick.title,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: 'bold',
-                fill: textDark,
+                fill: BALATRO_COLORS.textPrimary,
             }),
         })
         gimmickTitle.anchor.set(0.5)
-        gimmickTitle.position.set(this.centerX, infoY + 58)
+        gimmickTitle.position.set(this.centerX, infoY + 50)
         this.screenContainer.addChild(gimmickTitle)
         this.stageDescText = gimmickTitle
 
@@ -396,20 +388,20 @@ export class StageSelectScreen {
             text: gimmick.desc,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 11,
-                fill: textMuted,
+                fontSize: 10,
+                fill: BALATRO_COLORS.textSecondary,
                 wordWrap: true,
                 wordWrapWidth: infoBoxWidth - 30,
                 align: 'center',
-                lineHeight: 15,
+                lineHeight: 14,
             }),
         })
         gimmickDesc.anchor.set(0.5, 0)
-        gimmickDesc.position.set(this.centerX, infoY + 78)
+        gimmickDesc.position.set(this.centerX, infoY + 68)
         this.screenContainer.addChild(gimmickDesc)
 
         // ========== 4. DIFFICULTY INDICATOR ==========
-        const difficultyY = infoY + infoBoxHeight + 15
+        const difficultyY = infoY + infoBoxHeight + 12
         const difficulties: Record<string, { level: number; label: string }> = {
             normal: { level: 1, label: 'NORMAL' },
             // Additional difficulty ratings will be added here after redesign
@@ -423,7 +415,7 @@ export class StageSelectScreen {
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 9,
                 fontWeight: 'bold',
-                fill: textMuted,
+                fill: BALATRO_COLORS.textSecondary,
                 letterSpacing: 1,
             }),
         })
@@ -445,10 +437,10 @@ export class StageSelectScreen {
                 const angle = (j * Math.PI) / 5 - Math.PI / 2
                 const radius = j % 2 === 0 ? 8 : 4
                 points.push(starX + Math.cos(angle) * radius)
-                points.push(difficultyY + 18 + Math.sin(angle) * radius)
+                points.push(difficultyY + 16 + Math.sin(angle) * radius)
             }
             star.poly(points)
-            star.fill({ color: isFilled ? accentColor : textMuted, alpha: isFilled ? 1 : 0.3 })
+            star.fill({ color: isFilled ? accentColor : BALATRO_COLORS.textMuted, alpha: isFilled ? 1 : 0.3 })
             this.screenContainer.addChild(star)
         }
 
@@ -464,7 +456,7 @@ export class StageSelectScreen {
             }),
         })
         diffText.anchor.set(0.5)
-        diffText.position.set(this.centerX, difficultyY + 38)
+        diffText.position.set(this.centerX, difficultyY + 34)
         this.screenContainer.addChild(diffText)
 
         // ========== 5. ACTION BUTTONS ==========

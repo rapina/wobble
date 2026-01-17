@@ -249,6 +249,68 @@ export class EffectsManager {
     }
 
     /**
+     * Show absorb effect - particles fly from enemy position toward player
+     * Used for Kirby/io-style absorption mechanic
+     */
+    showAbsorbEffect(
+        fromX: number,
+        fromY: number,
+        toX: number,
+        toY: number,
+        color = 0x4ade80
+    ): void {
+        // Create multiple particles that fly toward player
+        const particleCount = 6
+        const spreadAngle = Math.PI * 0.5 // 90 degree spread
+
+        const baseAngle = Math.atan2(toY - fromY, toX - fromX)
+
+        for (let i = 0; i < particleCount; i++) {
+            const graphics = new Graphics()
+
+            // Small circle particle
+            const size = 3 + Math.random() * 3
+            graphics.circle(0, 0, size)
+            graphics.fill({ color, alpha: 0.8 })
+
+            // Start at enemy position with slight offset
+            const offsetAngle = baseAngle + (Math.random() - 0.5) * spreadAngle
+            const offsetDist = Math.random() * 15
+            const startX = fromX + Math.cos(offsetAngle) * offsetDist
+            const startY = fromY + Math.sin(offsetAngle) * offsetDist
+
+            graphics.position.set(startX, startY)
+            this.effectContainer.addChild(graphics)
+
+            // Store as hit effect with custom timer
+            this.hitEffects.push({
+                x: startX,
+                y: startY,
+                timer: 0.3 + Math.random() * 0.2, // Varied durations
+                graphics,
+            })
+
+            // Animate toward player using custom update
+            // Note: The hit effects update will fade these out
+            // For now, just show expanding particles
+        }
+
+        // Also show a "sucking" ring effect at enemy position
+        const ringGraphics = new Graphics()
+        ringGraphics.circle(0, 0, 20)
+        ringGraphics.stroke({ color, width: 3, alpha: 0.6 })
+        ringGraphics.position.set(fromX, fromY)
+        this.effectContainer.addChild(ringGraphics)
+
+        this.hitEffects.push({
+            x: fromX,
+            y: fromY,
+            timer: 0.25,
+            graphics: ringGraphics,
+        })
+    }
+
+    /**
      * Start a knockback trail for an enemy
      * Trail thickness ∝ 1/√mass - visualizes F=ma (lighter objects accelerate more)
      */

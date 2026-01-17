@@ -1,6 +1,14 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js'
-import { PlayerSkill, SKILL_DEFINITIONS, getCurrentLevelDescription } from '../skills'
+import { PlayerSkill, SKILL_DEFINITIONS, getCurrentLevelDescription, getNextLevelDescription } from '../skills'
 import { t } from '@/utils/localization'
+import {
+    BALATRO_COLORS,
+    BALATRO_DESIGN,
+    drawBalatroCard,
+    drawBalatroBadge,
+    drawCornerDots,
+    createBalatroButton,
+} from './BalatroButton'
 
 export interface PauseScreenContext {
     container: Container
@@ -23,7 +31,10 @@ export class PauseScreen {
     private width: number
     private height: number
     private centerX: number
+    private centerY: number
     private isVisible = false
+    private decorDots: Graphics | null = null
+    private animTime = 0
 
     // Callbacks
     onResume?: () => void
@@ -34,6 +45,7 @@ export class PauseScreen {
         this.width = context.width
         this.height = context.height
         this.centerX = context.width / 2
+        this.centerY = context.height / 2
     }
 
     get visible(): boolean {
@@ -42,6 +54,7 @@ export class PauseScreen {
 
     show(data: PauseData): void {
         this.isVisible = true
+        this.animTime = 0
         this.screenContainer.visible = true
         this.createUI(data)
     }
@@ -52,8 +65,14 @@ export class PauseScreen {
         this.screenContainer.removeChildren()
     }
 
-    update(_deltaSeconds: number): void {
-        // No animation needed for pause screen
+    update(deltaSeconds: number): void {
+        if (!this.isVisible) return
+        this.animTime += deltaSeconds
+
+        // Animate decorative dots
+        if (this.decorDots) {
+            this.decorDots.alpha = 0.3 + Math.sin(this.animTime * 2) * 0.2
+        }
     }
 
     reset(): void {
@@ -63,116 +82,89 @@ export class PauseScreen {
     private createUI(data: PauseData): void {
         this.screenContainer.removeChildren()
 
-        // Space theme colors
-        const bgColor = 0x0a0a1a // Deep space background
-        const cardBgColor = 0x1a1a2e // Dark panel
-        const cardShadowColor = 0x1a1a1a // Black shadow
-        const accentGold = 0xc9a227 // Balatro gold
-        const accentBlue = 0x4a9eff // Balatro blue
-        const accentRed = 0xe85d4c // Balatro red
-
-        // Semi-transparent felt background
+        // Dark background with Balatro feel
         const bg = new Graphics()
         bg.rect(0, 0, this.width, this.height)
-        bg.fill({ color: bgColor, alpha: 0.92 })
+        bg.fill({ color: BALATRO_COLORS.bgDark, alpha: 0.95 })
         bg.eventMode = 'static'
         bg.on('pointerdown', () => this.onResume?.())
         this.screenContainer.addChild(bg)
 
-        // Vignette effect
-        const vignette = new Graphics()
-        for (let i = 0; i < 5; i++) {
-            const alpha = 0.12 * (1 - i / 5)
-            vignette.rect(0, i * 30, this.width, 30)
-            vignette.fill({ color: 0x000000, alpha })
-            vignette.rect(0, this.height - (i + 1) * 30, this.width, 30)
-            vignette.fill({ color: 0x000000, alpha })
+        // Subtle dot pattern
+        const dots = new Graphics()
+        for (let x = 0; x < this.width; x += 20) {
+            for (let y = 0; y < this.height; y += 20) {
+                dots.circle(x, y, 1)
+                dots.fill({ color: 0xffffff, alpha: 0.03 })
+            }
         }
-        this.screenContainer.addChild(vignette)
+        this.screenContainer.addChild(dots)
 
-        // Responsive card sizing - compact to fit content
-        const cardPadding = Math.min(24, this.width * 0.06)
+        // Responsive card sizing
+        const cardPadding = Math.min(20, this.width * 0.05)
         const cardWidth = this.width - cardPadding * 2
-        // Calculate height based on content: stats + xp + skills + buttons
         const hasSkills = data.skills.length > 0
-        const skillRows = data.skills.length // Show all skills
-        const baseHeight = 180 // Stats + XP bar
-        const skillsHeight = hasSkills ? 30 + skillRows * 33 : 0
+        const skillRows = Math.min(data.skills.length, 5) // Max 5 skills shown
+        const baseHeight = 170
+        const skillItemHeight = 56
+        const skillItemGap = 6
+        const skillsHeight = hasSkills ? 26 + skillRows * (skillItemHeight + skillItemGap) : 0
         const buttonsHeight = 60
         const cardHeight = baseHeight + skillsHeight + buttonsHeight
         const cardX = cardPadding
-        const cardY = (this.height - cardHeight) / 2 - 10
+        const cardY = (this.height - cardHeight) / 2
 
-        // Card shadow
-        const cardShadow = new Graphics()
-        cardShadow.roundRect(cardX + 3, cardY + 6, cardWidth, cardHeight, 14)
-        cardShadow.fill({ color: cardShadowColor, alpha: 0.5 })
-        this.screenContainer.addChild(cardShadow)
-
-        // Card background - Balatro style with thick black border
+        // Main card background
         const card = new Graphics()
-        card.roundRect(cardX, cardY, cardWidth, cardHeight, 14)
-        card.fill(cardBgColor)
-        card.roundRect(cardX, cardY, cardWidth, cardHeight, 14)
-        card.stroke({ color: 0x1a1a1a, width: 4 })
+        drawBalatroCard(card, cardX, cardY, cardWidth, cardHeight, {
+            bgColor: BALATRO_COLORS.bgCard,
+            borderColor: BALATRO_COLORS.gold,
+            borderWidth: BALATRO_DESIGN.borderWidth,
+            radius: BALATRO_DESIGN.radiusLarge,
+        })
         card.eventMode = 'static'
         this.screenContainer.addChild(card)
 
-        // Title badge (like HomeScreen)
-        const badgeWidth = 140
-        const badgeHeight = 36
-        const badgeShadow = new Graphics()
-        badgeShadow.roundRect(
-            this.centerX - badgeWidth / 2 + 2,
-            cardY - 18 + 3,
-            badgeWidth,
-            badgeHeight,
-            8
-        )
-        badgeShadow.fill({ color: cardShadowColor, alpha: 0.5 })
-        this.screenContainer.addChild(badgeShadow)
+        // Decorative corner dots
+        this.decorDots = new Graphics()
+        drawCornerDots(this.decorDots, cardX, cardY, cardWidth, cardHeight)
+        this.screenContainer.addChild(this.decorDots)
 
+        // Title badge
+        const badgeW = 140
+        const badgeH = 36
         const badge = new Graphics()
-        badge.roundRect(this.centerX - badgeWidth / 2, cardY - 18, badgeWidth, badgeHeight, 8)
-        badge.fill(accentGold)
-        badge.roundRect(this.centerX - badgeWidth / 2, cardY - 18, badgeWidth, badgeHeight, 8)
-        badge.stroke({ color: 0x1a1a1a, width: 3 })
+        drawBalatroBadge(badge, this.centerX - badgeW / 2, cardY - 18, badgeW, badgeH, BALATRO_COLORS.gold)
         this.screenContainer.addChild(badge)
 
-        const titleStyle = new TextStyle({
-            fontFamily: 'Arial, sans-serif',
-            fontSize: 16,
-            fontWeight: 'bold',
-            fill: 0x000000,
-            letterSpacing: 3,
+        const title = new Text({
+            text: 'PAUSED',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 16,
+                fontWeight: 'bold',
+                fill: 0x000000,
+                letterSpacing: BALATRO_DESIGN.letterSpacing,
+            }),
         })
-        const title = new Text({ text: 'PAUSED', style: titleStyle })
         title.anchor.set(0.5)
         title.position.set(this.centerX, cardY)
         this.screenContainer.addChild(title)
 
-        // Inner content padding
-        const innerPadding = Math.min(16, cardWidth * 0.05)
+        // Inner content
+        const innerPadding = 14
         const contentX = cardX + innerPadding
         const contentWidth = cardWidth - innerPadding * 2
 
-        // Stats section - horizontal layout for Level and Time
-        const statsY = cardY + 35
+        // Stats section
+        const statsY = cardY + 38
         const statBoxWidth = (contentWidth - 10) / 2
-        const statBoxHeight = 50
+        const statBoxHeight = 48
 
-        // Level box (gold accent)
-        this.createStatBox(
-            contentX,
-            statsY,
-            statBoxWidth,
-            statBoxHeight,
-            'LEVEL',
-            `Lv. ${data.level}`,
-            accentGold
-        )
+        // Level box
+        this.createStatBox(contentX, statsY, statBoxWidth, statBoxHeight, 'LEVEL', `${data.level}`, BALATRO_COLORS.gold)
 
-        // Time box (blue accent)
+        // Time box
         const mins = Math.floor(data.gameTime / 60)
         const secs = Math.floor(data.gameTime % 60)
         this.createStatBox(
@@ -182,47 +174,44 @@ export class PauseScreen {
             statBoxHeight,
             'TIME',
             `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`,
-            accentBlue
+            BALATRO_COLORS.blue
         )
 
-        // XP Bar - full width below stats
+        // XP Bar
         const xpBarY = statsY + statBoxHeight + 12
-        const xpBarHeight = 24
+        const xpBarHeight = 22
 
-        // XP label
-        const xpLabelStyle = new TextStyle({
-            fontFamily: 'Arial, sans-serif',
-            fontSize: 10,
-            fontWeight: 'bold',
-            fill: 0xaaaaaa,
+        const xpLabel = new Text({
+            text: 'EXP',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 10,
+                fontWeight: 'bold',
+                fill: BALATRO_COLORS.textSecondary,
+            }),
         })
-        const xpLabel = new Text({ text: 'EXP', style: xpLabelStyle })
         xpLabel.anchor.set(0, 0.5)
         xpLabel.position.set(contentX, xpBarY + xpBarHeight / 2)
         this.screenContainer.addChild(xpLabel)
 
+        const xpBarX = contentX + 32
+        const xpBarWidth = contentWidth - 32
+
         // XP bar background
-        const xpBarX = contentX + 35
-        const xpBarWidth = contentWidth - 35
         const xpBarBg = new Graphics()
-        xpBarBg.roundRect(xpBarX, xpBarY, xpBarWidth, xpBarHeight, 12)
-        xpBarBg.fill({ color: 0x2d3b38, alpha: 1 })
-        xpBarBg.roundRect(xpBarX, xpBarY, xpBarWidth, xpBarHeight, 12)
-        xpBarBg.stroke({ color: 0x1a1a1a, width: 2 })
+        xpBarBg.roundRect(xpBarX, xpBarY, xpBarWidth, xpBarHeight, 8)
+        xpBarBg.fill(BALATRO_COLORS.bgCardLight)
+        xpBarBg.roundRect(xpBarX, xpBarY, xpBarWidth, xpBarHeight, 8)
+        xpBarBg.stroke({ color: 0x3a3a4e, width: 2 })
         this.screenContainer.addChild(xpBarBg)
 
-        // XP bar fill - Balatro green
+        // XP bar fill
         const xpRatio = data.xp / (data.xp + data.xpToNextLevel)
         if (xpRatio > 0) {
             const xpBarFill = new Graphics()
-            xpBarFill.roundRect(
-                xpBarX + 3,
-                xpBarY + 3,
-                Math.max(0, (xpBarWidth - 6) * xpRatio),
-                xpBarHeight - 6,
-                9
-            )
-            xpBarFill.fill(0x00aacc) // Space cyan
+            const fillWidth = Math.max(0, (xpBarWidth - 4) * xpRatio)
+            xpBarFill.roundRect(xpBarX + 2, xpBarY + 2, fillWidth, xpBarHeight - 4, 6)
+            xpBarFill.fill(BALATRO_COLORS.cyan)
             this.screenContainer.addChild(xpBarFill)
         }
 
@@ -233,7 +222,7 @@ export class PauseScreen {
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 10,
                 fontWeight: 'bold',
-                fill: 0xffffff,
+                fill: BALATRO_COLORS.textPrimary,
             }),
         })
         xpText.anchor.set(0.5)
@@ -241,133 +230,75 @@ export class PauseScreen {
         this.screenContainer.addChild(xpText)
 
         // Skills section
-        const skillsY = xpBarY + xpBarHeight + 15
+        const skillsY = xpBarY + xpBarHeight + 14
         if (data.skills.length > 0) {
-            const skillsLabelStyle = new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 11,
-                fontWeight: 'bold',
-                fill: 0xaaaaaa,
-                letterSpacing: 1,
-            })
             const skillsLabel = new Text({
                 text: `SKILLS (${data.skills.length})`,
-                style: skillsLabelStyle,
+                style: new TextStyle({
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 10,
+                    fontWeight: 'bold',
+                    fill: BALATRO_COLORS.textSecondary,
+                    letterSpacing: 1,
+                }),
             })
             skillsLabel.anchor.set(0.5)
             skillsLabel.position.set(this.centerX, skillsY)
             this.screenContainer.addChild(skillsLabel)
 
-            // Skill items
-            const skillItemHeight = 28
-            const skillItemGap = 5
-            const skillStartY = skillsY + 20
+            const skillStartY = skillsY + 16
+            const maxSkillsShown = 5
 
-            // Show all skills
-            data.skills.forEach((skill, i) => {
+            data.skills.slice(0, maxSkillsShown).forEach((skill, i) => {
                 const skillDef = SKILL_DEFINITIONS[skill.skillId]
                 if (!skillDef) return
 
                 const itemY = skillStartY + i * (skillItemHeight + skillItemGap)
-                const itemWidth = contentWidth
-                const itemX = contentX
-
-                // Skill pill shadow
-                const pillShadow = new Graphics()
-                pillShadow.roundRect(
-                    itemX + 2,
-                    itemY + 3,
-                    itemWidth,
-                    skillItemHeight,
-                    skillItemHeight / 2
-                )
-                pillShadow.fill({ color: 0x1a1a1a, alpha: 0.3 })
-                this.screenContainer.addChild(pillShadow)
-
-                // Skill pill background
-                const pillBg = new Graphics()
-                pillBg.roundRect(itemX, itemY, itemWidth, skillItemHeight, skillItemHeight / 2)
-                pillBg.fill({ color: 0x2d3b38, alpha: 1 })
-                pillBg.roundRect(itemX, itemY, itemWidth, skillItemHeight, skillItemHeight / 2)
-                pillBg.stroke({ color: skillDef.color, width: 2, alpha: 0.8 })
-                this.screenContainer.addChild(pillBg)
-
-                // Skill icon
-                const iconText = new Text({
-                    text: skillDef.icon,
-                    style: new TextStyle({
-                        fontFamily: 'Arial, sans-serif',
-                        fontSize: 13,
-                        fill: skillDef.color,
-                    }),
-                })
-                iconText.anchor.set(0.5)
-                iconText.position.set(itemX + 18, itemY + skillItemHeight / 2)
-                this.screenContainer.addChild(iconText)
-
-                // Skill name and level
-                const skillNameText = new Text({
-                    text: `${t(skillDef.name, 'ko')} Lv.${skill.level}`,
-                    style: new TextStyle({
-                        fontFamily: 'Arial, sans-serif',
-                        fontSize: 11,
-                        fontWeight: 'bold',
-                        fill: 0xffffff,
-                    }),
-                })
-                skillNameText.anchor.set(0, 0.5)
-                skillNameText.position.set(itemX + 34, itemY + skillItemHeight / 2)
-                this.screenContainer.addChild(skillNameText)
-
-                // Skill effect (only show if there's enough space)
-                if (itemWidth > 180) {
-                    const effectDesc = getCurrentLevelDescription(skill.skillId, skill.level)
-                    if (effectDesc) {
-                        const effectText = new Text({
-                            text: effectDesc,
-                            style: new TextStyle({
-                                fontFamily: 'Arial, sans-serif',
-                                fontSize: 9,
-                                fill: 0xaaaaaa,
-                            }),
-                        })
-                        effectText.anchor.set(1, 0.5)
-                        effectText.position.set(itemX + itemWidth - 12, itemY + skillItemHeight / 2)
-                        this.screenContainer.addChild(effectText)
-                    }
-                }
+                this.createSkillCard(contentX, itemY, contentWidth, skillItemHeight, skill, skillDef)
             })
+
+            // Show "more skills" indicator if needed
+            if (data.skills.length > maxSkillsShown) {
+                const moreText = new Text({
+                    text: `+${data.skills.length - maxSkillsShown} more...`,
+                    style: new TextStyle({
+                        fontFamily: 'Arial, sans-serif',
+                        fontSize: 10,
+                        fill: BALATRO_COLORS.textMuted,
+                        fontStyle: 'italic',
+                    }),
+                })
+                moreText.anchor.set(0.5)
+                moreText.position.set(this.centerX, skillStartY + maxSkillsShown * (skillItemHeight + skillItemGap))
+                this.screenContainer.addChild(moreText)
+            }
         }
 
-        // Action buttons - inside card at bottom
-        const btnY = cardY + cardHeight - 30
+        // Action buttons
+        const btnY = cardY + cardHeight - 35
         const btnWidth = Math.min(100, (contentWidth - 20) / 2)
-        const btnGap = 15
+        const btnGap = 12
 
-        // Resume button (primary - blue)
-        const resumeBtn = this.createButton(
-            'RESUME',
-            -btnWidth / 2 - btnGap / 2,
-            btnWidth,
-            accentBlue,
-            () => {
-                this.onResume?.()
-            }
-        )
-        resumeBtn.position.y = btnY
+        // Resume button
+        const resumeBtn = createBalatroButton({
+            label: 'RESUME',
+            width: btnWidth,
+            height: 40,
+            color: BALATRO_COLORS.blue,
+            onClick: () => this.onResume?.(),
+        })
+        resumeBtn.position.set(this.centerX - btnWidth / 2 - btnGap / 2, btnY)
         this.screenContainer.addChild(resumeBtn)
 
-        // Exit button (secondary - red)
-        const exitBtn = this.createButton(
-            'EXIT',
-            btnWidth / 2 + btnGap / 2,
-            btnWidth,
-            accentRed,
-            () => {
-                this.onExit?.()
-            }
-        )
-        exitBtn.position.y = btnY
+        // Exit button
+        const exitBtn = createBalatroButton({
+            label: 'EXIT',
+            width: btnWidth,
+            height: 40,
+            color: BALATRO_COLORS.red,
+            onClick: () => this.onExit?.(),
+        })
+        exitBtn.position.set(this.centerX + btnWidth / 2 + btnGap / 2, btnY)
         this.screenContainer.addChild(exitBtn)
     }
 
@@ -380,21 +311,15 @@ export class PauseScreen {
         value: string,
         accentColor: number
     ): void {
-        // Box shadow
-        const shadow = new Graphics()
-        shadow.roundRect(x + 2, y + 3, width, height, 10)
-        shadow.fill({ color: 0x1a1a1a, alpha: 0.3 })
-        this.screenContainer.addChild(shadow)
+        const box = new Graphics()
+        drawBalatroCard(box, x, y, width, height, {
+            bgColor: BALATRO_COLORS.bgCardLight,
+            borderColor: accentColor,
+            borderWidth: 2,
+            radius: BALATRO_DESIGN.radiusSmall,
+        })
+        this.screenContainer.addChild(box)
 
-        // Box background - Balatro darker panel
-        const boxBg = new Graphics()
-        boxBg.roundRect(x, y, width, height, 10)
-        boxBg.fill({ color: 0x2d3b38, alpha: 1 })
-        boxBg.roundRect(x, y, width, height, 10)
-        boxBg.stroke({ color: accentColor, width: 2, alpha: 0.8 })
-        this.screenContainer.addChild(boxBg)
-
-        // Label
         const labelText = new Text({
             text: label,
             style: new TextStyle({
@@ -406,69 +331,143 @@ export class PauseScreen {
             }),
         })
         labelText.anchor.set(0.5)
-        labelText.position.set(x + width / 2, y + 14)
+        labelText.position.set(x + width / 2, y + 13)
         this.screenContainer.addChild(labelText)
 
-        // Value
         const valueText = new Text({
             text: value,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 16,
                 fontWeight: 'bold',
-                fill: 0xffffff,
+                fill: BALATRO_COLORS.textPrimary,
             }),
         })
         valueText.anchor.set(0.5)
-        valueText.position.set(x + width / 2, y + 34)
+        valueText.position.set(x + width / 2, y + 32)
         this.screenContainer.addChild(valueText)
     }
 
-    private createButton(
-        label: string,
-        offsetX: number,
+    private createSkillCard(
+        x: number,
+        y: number,
         width: number,
-        color: number,
-        onClick: () => void
-    ): Container {
-        const btn = new Container()
-        btn.position.set(this.centerX + offsetX, 0)
-        btn.eventMode = 'static'
-        btn.cursor = 'pointer'
+        height: number,
+        skill: PlayerSkill,
+        skillDef: typeof SKILL_DEFINITIONS[string]
+    ): void {
+        // Skill card background
+        const cardBg = new Graphics()
+        drawBalatroCard(cardBg, x, y, width, height, {
+            bgColor: BALATRO_COLORS.bgCardLight,
+            borderColor: skillDef.color,
+            borderWidth: 2,
+            radius: BALATRO_DESIGN.radiusSmall,
+        })
+        this.screenContainer.addChild(cardBg)
 
-        const btnHeight = 40
-        const cardShadowColor = 0x1a1a1a
+        // Left accent bar
+        const accentBar = new Graphics()
+        accentBar.roundRect(x + 4, y + 6, 4, height - 12, 2)
+        accentBar.fill(skillDef.color)
+        this.screenContainer.addChild(accentBar)
 
-        // Shadow
-        const shadow = new Graphics()
-        shadow.roundRect(-width / 2 + 2, -btnHeight / 2 + 4, width, btnHeight, 10)
-        shadow.fill({ color: cardShadowColor, alpha: 0.5 })
-        btn.addChild(shadow)
-
-        // Colored background (like HomeScreen buttons)
-        const bg = new Graphics()
-        bg.roundRect(-width / 2, -btnHeight / 2, width, btnHeight, 10)
-        bg.fill(color)
-        bg.roundRect(-width / 2, -btnHeight / 2, width, btnHeight, 10)
-        bg.stroke({ color: 0x1a1a1a, width: 3 })
-        btn.addChild(bg)
-
-        // Text color based on background
-        const text = new Text({
-            text: label,
+        // Icon
+        const iconText = new Text({
+            text: skillDef.icon,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 13,
-                fontWeight: 'bold',
-                fill: 0xffffff, // White text on colored background
-                letterSpacing: 1,
+                fontSize: 14,
+                fill: skillDef.color,
             }),
         })
-        text.anchor.set(0.5)
-        btn.addChild(text)
+        iconText.anchor.set(0, 0.5)
+        iconText.position.set(x + 14, y + 13)
+        this.screenContainer.addChild(iconText)
 
-        btn.on('pointerdown', onClick)
+        // Name
+        const nameText = new Text({
+            text: t(skillDef.name, 'ko'),
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 11,
+                fontWeight: 'bold',
+                fill: BALATRO_COLORS.textPrimary,
+            }),
+        })
+        nameText.anchor.set(0, 0.5)
+        nameText.position.set(x + 32, y + 13)
+        this.screenContainer.addChild(nameText)
 
-        return btn
+        // Level dots
+        const maxLevel = 5
+        const dotSize = 5
+        const dotGap = 3
+        const dotsStartX = x + width - 10 - maxLevel * (dotSize + dotGap)
+        for (let lvl = 1; lvl <= maxLevel; lvl++) {
+            const dot = new Graphics()
+            const dotX = dotsStartX + (lvl - 1) * (dotSize + dotGap)
+            dot.circle(dotX + dotSize / 2, y + 13, dotSize / 2)
+            dot.fill(lvl <= skill.level ? skillDef.color : BALATRO_COLORS.textMuted)
+            this.screenContainer.addChild(dot)
+        }
+
+        // Current effect
+        const currentEffect = getCurrentLevelDescription(skill.skillId, skill.level)
+        if (currentEffect) {
+            const currentText = new Text({
+                text: `▸ ${currentEffect}`,
+                style: new TextStyle({
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 9,
+                    fill: BALATRO_COLORS.textSecondary,
+                }),
+            })
+            currentText.anchor.set(0, 0.5)
+            currentText.position.set(x + 14, y + 30)
+            this.screenContainer.addChild(currentText)
+        }
+
+        // Next level preview
+        const nextEffect = getNextLevelDescription(skill.skillId, skill.level)
+        if (nextEffect && skill.level < maxLevel) {
+            const nextLabel = new Text({
+                text: 'Next:',
+                style: new TextStyle({
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 8,
+                    fontWeight: 'bold',
+                    fill: BALATRO_COLORS.textMuted,
+                }),
+            })
+            nextLabel.anchor.set(0, 0.5)
+            nextLabel.position.set(x + 14, y + 44)
+            this.screenContainer.addChild(nextLabel)
+
+            const nextText = new Text({
+                text: nextEffect,
+                style: new TextStyle({
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 8,
+                    fill: BALATRO_COLORS.green,
+                }),
+            })
+            nextText.anchor.set(0, 0.5)
+            nextText.position.set(x + 42, y + 44)
+            this.screenContainer.addChild(nextText)
+        } else if (skill.level >= maxLevel) {
+            const maxText = new Text({
+                text: '✦ MAX LEVEL',
+                style: new TextStyle({
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 8,
+                    fontWeight: 'bold',
+                    fill: BALATRO_COLORS.gold,
+                }),
+            })
+            maxText.anchor.set(0, 0.5)
+            maxText.position.set(x + 14, y + 44)
+            this.screenContainer.addChild(maxText)
+        }
     }
 }

@@ -1,11 +1,19 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js'
 import { Wobble, WobbleShape, WOBBLE_CHARACTERS } from '../../../Wobble'
 import { PLAYABLE_CHARACTERS, WOBBLE_STATS } from '../types'
-import { SKILL_DEFINITIONS, PASSIVE_DEFINITIONS, getCharacterSkillConfig, SkillDefinition } from '../skills'
+import { SKILL_DEFINITIONS, PASSIVE_DEFINITIONS, getCharacterSkillConfig, LegacySkillDefinition as SkillDefinition } from '../skills'
 import { useCollectionStore } from '@/stores/collectionStore'
 import { useProgressStore, isSkillUnlocked } from '@/stores/progressStore'
 import { t } from '@/utils/localization'
-import { createBalatroButton, createBalatroCircleButton, BALATRO_COLORS } from './BalatroButton'
+import {
+    createBalatroButton,
+    createBalatroCircleButton,
+    BALATRO_COLORS,
+    BALATRO_DESIGN,
+    drawBalatroCard,
+    drawBalatroBadge,
+    drawCornerDots,
+} from './BalatroButton'
 
 export interface CharacterSelectContext {
     container: Container
@@ -136,6 +144,11 @@ export class CharacterSelectScreen {
             const pulse = 1 + Math.sin(this.animPhase * 3 + Math.PI) * 0.02
             this.exitButton.scale.set(pulse)
         }
+
+        // Animate decorative dots
+        if (this.decorDots) {
+            this.decorDots.alpha = 0.3 + Math.sin(this.animPhase * 2) * 0.2
+        }
     }
 
     reset(): void {
@@ -164,74 +177,75 @@ export class CharacterSelectScreen {
         this.selectCharacterByIndex(prevIndex)
     }
 
+    // Decorative dots for animation
+    private decorDots: Graphics | null = null
+
     private createUI(): void {
         this.screenContainer.removeChildren()
-
-        // === SPACE THEME COLORS ===
-        const bgTopColor = 0x0a0a1a
-        const bgBottomColor = 0x050510
-        const cardBgColor = 0x1a1a2e
-        const cardShadowColor = 0x1a1a1a
-        const textDark = 0xffffff
-        const textMuted = 0xaaaaaa
 
         const selectedShape = this.getSelectedCharacter()
         const selectedChar = WOBBLE_CHARACTERS[selectedShape]
         const skillConfig = getCharacterSkillConfig(selectedShape)
         const charStats = WOBBLE_STATS[selectedShape]
 
-        // Background gradient
+        // Dark background with Balatro feel
         const bg = new Graphics()
-        const bands = 8
-        for (let i = 0; i < bands; i++) {
-            const y = (i / bands) * this.height
-            const h = this.height / bands + 1
-            const blend = i / (bands - 1)
-            const r1 = (bgTopColor >> 16) & 0xff
-            const g1 = (bgTopColor >> 8) & 0xff
-            const b1 = bgTopColor & 0xff
-            const r2 = (bgBottomColor >> 16) & 0xff
-            const g2 = (bgBottomColor >> 8) & 0xff
-            const b2 = bgBottomColor & 0xff
-            const r = Math.round(r1 + (r2 - r1) * blend)
-            const g = Math.round(g1 + (g2 - g1) * blend)
-            const b = Math.round(b1 + (b2 - b1) * blend)
-            const color = (r << 16) | (g << 8) | b
-            bg.rect(0, y, this.width, h)
-            bg.fill(color)
-        }
+        bg.rect(0, 0, this.width, this.height)
+        bg.fill({ color: BALATRO_COLORS.bgDark, alpha: 0.95 })
         this.screenContainer.addChild(bg)
 
-        // Star pattern
-        const stars = new Graphics()
-        for (let i = 0; i < 60; i++) {
-            const px = Math.random() * this.width
-            const py = Math.random() * this.height
-            const size = Math.random() < 0.8 ? 1 : 1.5
-            stars.circle(px, py, size)
-            stars.fill({ color: 0xffffff, alpha: 0.2 + Math.random() * 0.4 })
+        // Subtle dot pattern overlay
+        const pattern = new Graphics()
+        for (let x = 0; x < this.width; x += 20) {
+            for (let y = 0; y < this.height; y += 20) {
+                pattern.circle(x, y, 1)
+                pattern.fill({ color: 0xffffff, alpha: 0.03 })
+            }
         }
-        this.screenContainer.addChild(stars)
+        this.screenContainer.addChild(pattern)
 
         // Main card
-        const cardX = 15
-        const cardY = 15
-        const cardWidth = this.width - 30
-        const cardHeight = this.height - 30
+        const cardPadding = Math.min(15, this.width * 0.04)
+        const cardX = cardPadding
+        const cardY = cardPadding
+        const cardWidth = this.width - cardPadding * 2
+        const cardHeight = this.height - cardPadding * 2
 
-        // Card shadow
-        const cardShadow = new Graphics()
-        cardShadow.roundRect(cardX + 4, cardY + 6, cardWidth, cardHeight, 16)
-        cardShadow.fill({ color: cardShadowColor, alpha: 0.4 })
-        this.screenContainer.addChild(cardShadow)
-
-        // Card background
+        // Main card background using Balatro utility
         const card = new Graphics()
-        card.roundRect(cardX, cardY, cardWidth, cardHeight, 16)
-        card.fill(cardBgColor)
-        card.roundRect(cardX, cardY, cardWidth, cardHeight, 16)
-        card.stroke({ color: 0x1a1a1a, width: 4 })
+        drawBalatroCard(card, cardX, cardY, cardWidth, cardHeight, {
+            bgColor: BALATRO_COLORS.bgCard,
+            borderColor: BALATRO_COLORS.gold,
+            borderWidth: BALATRO_DESIGN.borderWidth,
+            radius: BALATRO_DESIGN.radiusLarge,
+        })
         this.screenContainer.addChild(card)
+
+        // Decorative corner dots
+        this.decorDots = new Graphics()
+        drawCornerDots(this.decorDots, cardX, cardY, cardWidth, cardHeight)
+        this.screenContainer.addChild(this.decorDots)
+
+        // Title badge
+        const badgeW = 180
+        const badgeH = 32
+        const badge = new Graphics()
+        drawBalatroBadge(badge, this.centerX - badgeW / 2, cardY - 16, badgeW, badgeH, BALATRO_COLORS.gold)
+        this.screenContainer.addChild(badge)
+
+        const titleText = new Text({
+            text: 'SELECT CHARACTER',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 12,
+                fontWeight: 'bold',
+                fill: 0x000000,
+                letterSpacing: BALATRO_DESIGN.letterSpacing,
+            }),
+        })
+        titleText.anchor.set(0.5)
+        titleText.position.set(this.centerX, cardY - 2)
+        this.screenContainer.addChild(titleText)
 
         // ========== 1. CHARACTER SECTION (LARGE, CENTERED) ==========
         const charCenterY = 100
@@ -242,7 +256,7 @@ export class CharacterSelectScreen {
 
         // Character wobble (LARGER)
         this.previewWobble = new Wobble({
-            size: 100, // Increased from 70
+            size: 100,
             shape: selectedShape,
             expression: 'happy',
             color: selectedChar.color,
@@ -258,7 +272,7 @@ export class CharacterSelectScreen {
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 18,
                 fontWeight: 'bold',
-                fill: textDark,
+                fill: BALATRO_COLORS.textPrimary,
             }),
         })
         charNameText.anchor.set(0.5)
@@ -277,11 +291,12 @@ export class CharacterSelectScreen {
             const passivePillWidth = 160
             const passivePillHeight = 28
 
+            // Use Balatro card style for passive pill
             const passivePill = new Graphics()
             passivePill.roundRect(-passivePillWidth / 2, 0, passivePillWidth, passivePillHeight, 14)
-            passivePill.fill({ color: passiveDef.color, alpha: 0.2 })
+            passivePill.fill(BALATRO_COLORS.bgCardLight)
             passivePill.roundRect(-passivePillWidth / 2, 0, passivePillWidth, passivePillHeight, 14)
-            passivePill.stroke({ color: passiveDef.color, width: 2, alpha: 0.6 })
+            passivePill.stroke({ color: passiveDef.color, width: 2 })
             passiveContainer.addChild(passivePill)
 
             const passiveText = new Text({
@@ -290,7 +305,7 @@ export class CharacterSelectScreen {
                     fontFamily: 'Arial, sans-serif',
                     fontSize: 11,
                     fontWeight: 'bold',
-                    fill: textDark,
+                    fill: BALATRO_COLORS.textPrimary,
                 }),
             })
             passiveText.anchor.set(0.5)
@@ -303,7 +318,7 @@ export class CharacterSelectScreen {
                 style: new TextStyle({
                     fontFamily: 'Arial, sans-serif',
                     fontSize: 9,
-                    fill: textMuted,
+                    fill: BALATRO_COLORS.textSecondary,
                     wordWrap: true,
                     wordWrapWidth: 200,
                     align: 'center',
@@ -325,7 +340,7 @@ export class CharacterSelectScreen {
             const dotX = -charTotalDotsWidth / 2 + i * charDotGap
             dot.circle(dotX, charDotsY, isSelected ? 5 : 3)
             dot.fill({
-                color: isSelected ? charColor : textMuted,
+                color: isSelected ? charColor : BALATRO_COLORS.textMuted,
                 alpha: isSelected ? 1 : 0.3,
             })
             this.characterCardContainer.addChild(dot)
@@ -358,11 +373,11 @@ export class CharacterSelectScreen {
         const barGap = 18
 
         const statItems = [
-            { label: 'HP', value: charStats.healthMultiplier, color: 0x2ecc71 },
-            { label: 'DMG', value: charStats.damageMultiplier, color: 0xe74c3c },
-            { label: 'RATE', value: charStats.fireRateMultiplier, color: 0xf39c12 },
-            { label: 'SPD', value: charStats.moveSpeedMultiplier, color: 0x3498db },
-            { label: 'KNOCK', value: charStats.knockbackMultiplier, color: 0x9b59b6 },
+            { label: 'HP', value: charStats.healthMultiplier, color: BALATRO_COLORS.green },
+            { label: 'DMG', value: charStats.damageMultiplier, color: BALATRO_COLORS.red },
+            { label: 'RATE', value: charStats.fireRateMultiplier, color: BALATRO_COLORS.gold },
+            { label: 'SPD', value: charStats.moveSpeedMultiplier, color: BALATRO_COLORS.blue },
+            { label: 'KNOCK', value: charStats.knockbackMultiplier, color: BALATRO_COLORS.cyan },
         ]
 
         statItems.forEach((stat, index) => {
@@ -374,7 +389,7 @@ export class CharacterSelectScreen {
                     fontFamily: 'Arial, sans-serif',
                     fontSize: 10,
                     fontWeight: 'bold',
-                    fill: textMuted,
+                    fill: BALATRO_COLORS.textSecondary,
                 }),
             })
             label.anchor.set(0, 0.5)
@@ -385,7 +400,7 @@ export class CharacterSelectScreen {
             const barWidth = statsWidth - 80
             const barBg = new Graphics()
             barBg.roundRect(barBgX, y - barHeight / 2, barWidth, barHeight, 4)
-            barBg.fill({ color: textMuted, alpha: 0.15 })
+            barBg.fill(BALATRO_COLORS.bgCardLight)
             this.screenContainer.addChild(barBg)
 
             const normalizedValue = Math.min(1, Math.max(0, (stat.value - 0.5) / 1.5))
@@ -393,7 +408,7 @@ export class CharacterSelectScreen {
             if (fillWidth > 0) {
                 const barFill = new Graphics()
                 barFill.roundRect(barBgX, y - barHeight / 2, fillWidth, barHeight, 4)
-                barFill.fill({ color: stat.color, alpha: 0.8 })
+                barFill.fill(stat.color)
                 this.screenContainer.addChild(barFill)
             }
 
@@ -403,7 +418,7 @@ export class CharacterSelectScreen {
                     fontFamily: 'Arial, sans-serif',
                     fontSize: 10,
                     fontWeight: 'bold',
-                    fill: textDark,
+                    fill: BALATRO_COLORS.textPrimary,
                 }),
             })
             valueText.anchor.set(1, 0.5)
@@ -424,7 +439,7 @@ export class CharacterSelectScreen {
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 10,
                 fontWeight: 'bold',
-                fill: textMuted,
+                fill: BALATRO_COLORS.textSecondary,
                 letterSpacing: 1,
             }),
         })
@@ -512,15 +527,15 @@ export class CharacterSelectScreen {
             this.skillContentContainer.addChild(skillIcon)
 
             const bg = new Graphics()
-            bg.roundRect(0, 0, skillIconSize, skillIconSize, 6)
+            bg.roundRect(0, 0, skillIconSize, skillIconSize, BALATRO_DESIGN.radiusSmall)
             if (isUnlocked) {
-                bg.fill({ color: skillDef.color, alpha: 0.25 })
-                bg.roundRect(0, 0, skillIconSize, skillIconSize, 6)
-                bg.stroke({ color: skillDef.color, width: 1.5, alpha: 0.7 })
+                bg.fill(BALATRO_COLORS.bgCardLight)
+                bg.roundRect(0, 0, skillIconSize, skillIconSize, BALATRO_DESIGN.radiusSmall)
+                bg.stroke({ color: skillDef.color, width: 2 })
             } else {
-                bg.fill({ color: 0x333333, alpha: 0.3 })
-                bg.roundRect(0, 0, skillIconSize, skillIconSize, 6)
-                bg.stroke({ color: 0x444444, width: 1, alpha: 0.4 })
+                bg.fill({ color: BALATRO_COLORS.bgCard, alpha: 0.5 })
+                bg.roundRect(0, 0, skillIconSize, skillIconSize, BALATRO_DESIGN.radiusSmall)
+                bg.stroke({ color: BALATRO_COLORS.textMuted, width: 1, alpha: 0.3 })
             }
             skillIcon.addChild(bg)
 
@@ -547,7 +562,7 @@ export class CharacterSelectScreen {
                     text: '?',
                     style: new TextStyle({
                         fontSize: 12,
-                        fill: 0x666666,
+                        fill: BALATRO_COLORS.textMuted,
                         fontWeight: 'bold',
                     }),
                 })
@@ -567,7 +582,7 @@ export class CharacterSelectScreen {
             // Up arrow
             const upArrow = new Text({
                 text: '▲',
-                style: new TextStyle({ fontSize: 8, fill: textMuted }),
+                style: new TextStyle({ fontSize: 8, fill: BALATRO_COLORS.textMuted }),
             })
             upArrow.anchor.set(0.5)
             upArrow.position.set(-15, 0)
@@ -577,7 +592,7 @@ export class CharacterSelectScreen {
             // Scroll hint
             const scrollHint = new Text({
                 text: 'scroll',
-                style: new TextStyle({ fontSize: 8, fill: textMuted }),
+                style: new TextStyle({ fontSize: 8, fill: BALATRO_COLORS.textMuted }),
             })
             scrollHint.anchor.set(0.5)
             scrollHint.position.set(0, 0)
@@ -587,7 +602,7 @@ export class CharacterSelectScreen {
             // Down arrow
             const downArrow = new Text({
                 text: '▼',
-                style: new TextStyle({ fontSize: 8, fill: textMuted }),
+                style: new TextStyle({ fontSize: 8, fill: BALATRO_COLORS.textMuted }),
             })
             downArrow.anchor.set(0.5)
             downArrow.position.set(15, 0)
@@ -603,12 +618,12 @@ export class CharacterSelectScreen {
         this.skillDescContainer.position.set(this.centerX, descY)
         this.screenContainer.addChild(this.skillDescContainer)
 
-        // Description background
+        // Description background using Balatro card style
         const descBg = new Graphics()
-        descBg.roundRect(-descWidth / 2, 0, descWidth, 48, 8)
-        descBg.fill({ color: 0x1a1a2e, alpha: 0.6 })
-        descBg.roundRect(-descWidth / 2, 0, descWidth, 48, 8)
-        descBg.stroke({ color: textMuted, width: 1, alpha: 0.2 })
+        descBg.roundRect(-descWidth / 2, 0, descWidth, 48, BALATRO_DESIGN.radiusSmall)
+        descBg.fill(BALATRO_COLORS.bgCardLight)
+        descBg.roundRect(-descWidth / 2, 0, descWidth, 48, BALATRO_DESIGN.radiusSmall)
+        descBg.stroke({ color: BALATRO_COLORS.textMuted, width: 1, alpha: 0.3 })
         this.skillDescContainer.addChild(descBg)
 
         // Skill name text
@@ -618,7 +633,7 @@ export class CharacterSelectScreen {
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 11,
                 fontWeight: 'bold',
-                fill: textMuted,
+                fill: BALATRO_COLORS.textSecondary,
             }),
         })
         this.skillDescNameText.anchor.set(0.5, 0)
@@ -631,7 +646,7 @@ export class CharacterSelectScreen {
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 9,
-                fill: textMuted,
+                fill: BALATRO_COLORS.textSecondary,
                 wordWrap: true,
                 wordWrapWidth: descWidth - 20,
                 align: 'center',
@@ -670,13 +685,13 @@ export class CharacterSelectScreen {
             this.skillDescNameText.text = `${skillDef.icon} ${t(skillDef.name, 'ko')}`
             this.skillDescNameText.style.fill = skillDef.color
             this.skillDescText.text = t(skillDef.description, 'ko')
-            this.skillDescText.style.fill = 0xcccccc
+            this.skillDescText.style.fill = BALATRO_COLORS.textSecondary
         } else {
             this.skillDescNameText.text = `🔒 ${t(skillDef.name, 'ko')}`
-            this.skillDescNameText.style.fill = 0x666666
+            this.skillDescNameText.style.fill = BALATRO_COLORS.textMuted
             const formulaHint = skillDef.formulaId ? `(관련 공식을 학습하면 해금)` : '(잠금됨)'
             this.skillDescText.text = formulaHint
-            this.skillDescText.style.fill = 0x666666
+            this.skillDescText.style.fill = BALATRO_COLORS.textMuted
         }
     }
 

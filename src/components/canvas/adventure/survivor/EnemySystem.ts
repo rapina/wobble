@@ -3,6 +3,15 @@ import { Wobble } from '../../Wobble'
 import { Enemy, EnemyTier, TIER_CONFIGS, HitEffect } from './types'
 import { PhysicsModifiers, DEFAULT_PHYSICS, applyVortex } from './PhysicsModifiers'
 import type { KnockbackTrail } from './EffectsManager'
+import {
+    EnemyVariantId,
+    EnemyVariantDef,
+    ENEMY_VARIANTS,
+    getAvailableVariants,
+    selectRandomVariant,
+    getVariant,
+} from './EnemyVariants'
+import { FormationSpawner, FormationId, FORMATIONS, SpawnPoint } from './FormationSystem'
 
 interface EnemySystemContext {
     enemyContainer: Container
@@ -35,6 +44,13 @@ export class EnemySystem {
     // Maximum enemy count to prevent O(n²) collision explosion
     private readonly maxEnemyCount: number
 
+    // Formation system
+    private formationSpawner: FormationSpawner
+
+    // Formation spawn timer
+    private formationTimer = 0
+    private formationInterval = 8 // 기본 포메이션 간격 (초)
+
     readonly mergeThreshold = 0.75 // seconds of overlap before merge
     readonly enemies: Enemy[] = []
 
@@ -42,6 +58,7 @@ export class EnemySystem {
         this.context = context
         // Default max 50 enemies - keeps collision checks under 1250 per frame
         this.maxEnemyCount = context.maxEnemyCount ?? 50
+        this.formationSpawner = new FormationSpawner()
     }
 
     /**
@@ -63,7 +80,7 @@ export class EnemySystem {
     }
 
     // Spawn enemy at random edge (relative to player position for infinite map)
-    spawnAtEdge(gameTime: number, playerX: number, playerY: number): boolean {
+    spawnAtEdge(gameTime: number, playerX: number, playerY: number, tier: EnemyTier = 'small'): boolean {
         // Check enemy limit before spawning
         if (!this.canSpawn()) {
             return false
@@ -76,33 +93,165 @@ export class EnemySystem {
         const x = playerX + Math.cos(angle) * spawnDistance
         const y = playerY + Math.sin(angle) * spawnDistance
 
-        this.spawnAtTier(x, y, 'small', gameTime)
+        // Select a random variant based on game time and tier
+        const availableVariants = getAvailableVariants(gameTime, tier)
+        const variant = selectRandomVariant(availableVariants)
+
+        this.spawnAtTier(x, y, tier, gameTime, { variant: variant.id })
         return true
     }
 
-    // Spawn enemy at specific tier
+    /**
+     * Try to spawn a formation
+     * Returns true if a formation was spawned
+     */
+    trySpawnFormation(
+        gameTime: number,
+        deltaSeconds: number,
+        playerX: number,
+        playerY: number,
+        tier: EnemyTier = 'small'
+    ): boolean {
+        // Update formation cooldowns
+        this.formationSpawner.update(deltaSeconds)
+
+        // Update formation timer
+        this.formationTimer += deltaSeconds
+
+        // Process any pending delayed spawns
+        const pendingSpawns = this.formationSpawner.getPendingSpawns(gameTime)
+        for (const spawn of pendingSpawns) {
+            if (!this.canSpawn()) break
+            const x = spawn.centerX + spawn.point.offsetX
+            const y = spawn.centerY + spawn.point.offsetY
+            const spawnTier = spawn.point.tier ?? spawn.tier
+            const variantId = spawn.point.variant ?? 'normal'
+            this.spawnAtTier(x, y, spawnTier, gameTime, {
+                variant: variantId,
+                formationId: spawn.formationId,
+            })
+        }
+
+        // Check if it's time for a new formation
+        // Reduce interval as game progresses (more frequent formations)
+        const progressivInterval = Math.max(4, this.formationInterval - gameTime / 100)
+        if (this.formationTimer < progressivInterval) {
+            return false
+        }
+
+        this.formationTimer = 0
+
+        // Get available formations
+        const available = this.formationSpawner.getAvailableFormations(gameTime, this.enemies.length)
+        if (available.length === 0) {
+            return false
+        }
+
+        // Random chance to spawn a formation (50%)
+        if (Math.random() > 0.5) {
+            return false
+        }
+
+        // Select and spawn formation
+        const formation = this.formationSpawner.selectFormation(available)
+        const immediatePoints = this.formationSpawner.spawnFormation(
+            formation,
+            playerX,
+            playerY,
+            gameTime,
+            tier
+        )
+
+        // Spawn immediate enemies
+        for (const point of immediatePoints) {
+            if (!this.canSpawn()) break
+            const x = playerX + point.offsetX
+            const y = playerY + point.offsetY
+            const spawnTier = point.tier ?? tier
+            const variantId = point.variant ?? 'normal'
+            this.spawnAtTier(x, y, spawnTier, gameTime, {
+                variant: variantId,
+                formationId: formation.id,
+            })
+        }
+
+        return true
+    }
+
+    /**
+     * Force spawn a specific formation
+     */
+    forceFormation(
+        formationId: FormationId,
+        gameTime: number,
+        playerX: number,
+        playerY: number,
+        tier: EnemyTier = 'small'
+    ): void {
+        const formation = this.formationSpawner.forceFormation(formationId)
+        const points = this.formationSpawner.spawnFormation(
+            formation,
+            playerX,
+            playerY,
+            gameTime,
+            tier
+        )
+
+        for (const point of points) {
+            if (!this.canSpawn()) break
+            const x = playerX + point.offsetX
+            const y = playerY + point.offsetY
+            const spawnTier = point.tier ?? tier
+            const variantId = point.variant ?? 'normal'
+            this.spawnAtTier(x, y, spawnTier, gameTime, {
+                variant: variantId,
+                formationId: formation.id,
+            })
+        }
+    }
+
+    // Spawn enemy at specific tier with optional variant
     spawnAtTier(
         x: number,
         y: number,
         tier: EnemyTier,
         gameTime: number,
-        overrides?: { vx?: number; vy?: number; health?: number; maxHealth?: number }
+        overrides?: {
+            vx?: number
+            vy?: number
+            health?: number
+            maxHealth?: number
+            variant?: EnemyVariantId
+            formationId?: FormationId
+        }
     ): void {
         const config = TIER_CONFIGS[tier]
-        // Aggressive difficulty scaling: very weak early, strong late
-        // t=0: mult=1, t=60: mult=2, t=120: mult=3, t=180: mult=4
-        const difficultyMult = 1 + gameTime / 60
+        const variantId = overrides?.variant ?? 'normal'
+        const variant = getVariant(variantId)
 
-        // Low base health for easy early kills (3 HP base)
-        // t=0: 3*1*1=3 HP (1-2 shots), t=180: 3*4*1=12 HP (much harder)
-        const maxHealth = overrides?.maxHealth ?? 3 * difficultyMult * config.healthMultiplier
+        // 10-minute difficulty curve: exponential scaling for late game pressure
+        const progress = gameTime / 600 // 0 to 1 over 10 minutes
+        const difficultyMult = 1 + Math.pow(progress, 1.5) * 3
+
+        // Apply variant modifiers
+        const maxHealth =
+            overrides?.maxHealth ?? 3 * difficultyMult * config.healthMultiplier * variant.healthMult
         const health = overrides?.health ?? maxHealth
-        const speed =
+        const baseSpeed =
             this.context.baseEnemySpeed * (0.8 + Math.random() * 0.4) * config.speedMultiplier
+        const speed = baseSpeed * variant.speedMult
+
+        // Size with variant modifier
+        const size = config.size * (variant.scaleModifier ?? 1)
+
+        // Color: blend tier color with variant tint
+        const baseColor = config.color
+        const tintColor = variant.colorTint ?? baseColor
+        const finalColor = variantId === 'normal' ? baseColor : tintColor
 
         const wobble = new Wobble({
-            size: config.size,
-            color: config.color,
+            size,
+            color: finalColor,
             shape: 'shadow',
             expression: 'angry',
             showShadow: false,
@@ -110,17 +259,26 @@ export class EnemySystem {
         wobble.position.set(x, y)
         this.context.enemyContainer.addChild(wobble)
 
-        const mass = 2 * config.healthMultiplier
+        const mass = 2 * config.healthMultiplier * variant.massMult
 
         // Create mass ring - physics visualization (m ∝ ring thickness)
-        const massRing = this.createMassRing(config.size, mass, tier)
+        const massRing = this.createMassRing(size, mass, tier, variant)
         massRing.position.set(x, y)
         this.context.enemyContainer.addChild(massRing)
+
+        // Create glow effect if variant has one
+        let glowEffect: Graphics | undefined
+        if (variant.glowColor && variant.glowIntensity) {
+            glowEffect = this.createGlowEffect(size, variant.glowColor, variant.glowIntensity)
+            glowEffect.position.set(x, y)
+            this.context.enemyContainer.addChild(glowEffect)
+        }
 
         const enemy: Enemy = {
             graphics: wobble,
             wobble,
             massRing,
+            glowEffect,
             x,
             y,
             vx: overrides?.vx ?? 0,
@@ -129,20 +287,77 @@ export class EnemySystem {
             maxHealth,
             speed,
             mass,
-            size: config.size,
+            size,
             tier,
             id: this.nextEnemyId++,
             merging: false,
+            // Variant fields
+            variant: variantId,
+            behavior: variant.behavior,
+            behaviorState: this.initBehaviorState(variant),
+            // Formation fields
+            formationId: overrides?.formationId,
         }
 
         this.enemies.push(enemy)
     }
 
     /**
+     * Initialize behavior state based on variant
+     */
+    private initBehaviorState(variant: EnemyVariantDef): Enemy['behaviorState'] {
+        switch (variant.behavior) {
+            case 'charge':
+                return {
+                    charging: false,
+                    chargeCooldown: variant.behaviorParams?.chargeCooldown ?? 2,
+                }
+            case 'orbit':
+                return {
+                    orbitAngle: Math.random() * Math.PI * 2,
+                }
+            case 'zigzag':
+                return {
+                    zigzagPhase: Math.random() * Math.PI * 2,
+                }
+            case 'teleport':
+                return {
+                    fadeAlpha: 1,
+                    teleportCooldown: 3,
+                }
+            default:
+                return undefined
+        }
+    }
+
+    /**
+     * Create glow effect for variants
+     */
+    private createGlowEffect(size: number, color: number, intensity: number): Graphics {
+        const glow = new Graphics()
+        const glowRadius = size * 0.8
+
+        // Multiple layers for glow effect
+        for (let i = 3; i >= 1; i--) {
+            const layerRadius = glowRadius * (1 + i * 0.2)
+            const layerAlpha = intensity * (0.2 / i)
+            glow.circle(0, 0, layerRadius)
+            glow.fill({ color, alpha: layerAlpha })
+        }
+
+        return glow
+    }
+
+    /**
      * Create a mass ring graphic for physics visualization
      * Ring thickness and intensity scale with mass (F = ma visualization)
      */
-    private createMassRing(size: number, mass: number, tier: EnemyTier): Graphics {
+    private createMassRing(
+        size: number,
+        mass: number,
+        tier: EnemyTier,
+        variant?: EnemyVariantDef
+    ): Graphics {
         const ring = new Graphics()
 
         // Ring properties scale with mass
@@ -150,26 +365,27 @@ export class EnemySystem {
         const strokeWidth = Math.sqrt(mass) * 1.5 + 1 // √m scaling for visual balance
         const baseAlpha = 0.2 + Math.min(mass * 0.03, 0.4) // More opaque for heavier
 
-        // Color based on tier - heavier = more intense blue/purple
-        const colors: Record<EnemyTier, number> = {
+        // Color based on tier, or variant color if present
+        const tierColors: Record<EnemyTier, number> = {
             small: 0x4488ff, // Light blue
             medium: 0x6644ff, // Blue-purple
             large: 0x8844ff, // Purple
             boss: 0xaa44ff, // Bright purple
         }
+        const ringColor = variant?.colorTint ?? tierColors[tier]
 
         ring.circle(0, 0, ringRadius)
         ring.stroke({
-            color: colors[tier],
+            color: ringColor,
             width: strokeWidth,
             alpha: baseAlpha,
         })
 
-        // Add inner glow for medium+ tiers
-        if (tier !== 'small') {
+        // Add inner glow for medium+ tiers or special variants
+        if (tier !== 'small' || (variant && variant.id !== 'normal')) {
             ring.circle(0, 0, ringRadius * 0.85)
             ring.stroke({
-                color: colors[tier],
+                color: ringColor,
                 width: strokeWidth * 0.5,
                 alpha: baseAlpha * 0.5,
             })
@@ -178,25 +394,20 @@ export class EnemySystem {
         return ring
     }
 
-    // Update enemy positions (move towards player)
+    // Update enemy positions with behavior-based movement
     update(delta: number, playerX: number, playerY: number, animPhase: number): void {
         const { width, height } = this.context
+        const deltaSeconds = delta / 60
 
         for (const enemy of this.enemies) {
             const dx = playerX - enemy.x
             const dy = playerY - enemy.y
             const dist = Math.sqrt(dx * dx + dy * dy) || 1
 
-            // Add velocity towards player
-            const accel = 0.1 * delta
-            enemy.vx += (dx / dist) * accel * enemy.speed
-            enemy.vy += (dy / dist) * accel * enemy.speed
+            // Apply behavior-specific movement
+            this.applyBehavior(enemy, dx, dy, dist, delta, deltaSeconds, animPhase)
 
-            // Note: Stage gravity is NOT applied to enemies
-            // Enemies should always chase the player regardless of world physics
-            // Gravity wells pull enemies via the vortex system instead
-
-            // Apply vortex pull if configured
+            // Apply vortex pull if configured (affects all behaviors)
             if (this.physicsModifiers.vortexCenter && this.physicsModifiers.vortexStrength) {
                 const vortexResult = applyVortex(
                     enemy.x,
@@ -216,12 +427,12 @@ export class EnemySystem {
                 enemy.vy = vortexResult.vy
             }
 
-            // Limit speed
+            // Limit speed (allow more overspeed for chargers)
+            const maxSpeedMult = enemy.behavior === 'charge' && enemy.behaviorState?.charging ? 4 : 2
             const speed = Math.sqrt(enemy.vx * enemy.vx + enemy.vy * enemy.vy)
-            if (speed > enemy.speed * 2) {
-                // Allow some overspeed from physics
-                enemy.vx = (enemy.vx / speed) * enemy.speed * 2
-                enemy.vy = (enemy.vy / speed) * enemy.speed * 2
+            if (speed > enemy.speed * maxSpeedMult) {
+                enemy.vx = (enemy.vx / speed) * enemy.speed * maxSpeedMult
+                enemy.vy = (enemy.vy / speed) * enemy.speed * maxSpeedMult
             }
 
             // Apply velocity
@@ -232,42 +443,194 @@ export class EnemySystem {
             enemy.vx *= this.physicsModifiers.friction
             enemy.vy *= this.physicsModifiers.friction
 
-            // Infinite map - no wall boundaries
-            // Enemies can move freely in world space
-
+            // Update positions
             enemy.graphics.position.set(enemy.x, enemy.y)
 
             // Update mass ring position
             if (enemy.massRing) {
                 enemy.massRing.position.set(enemy.x, enemy.y)
 
-                // Boss mass ring pulses to show massive gravity
-                if (enemy.tier === 'boss') {
+                // Pulse effect for boss or special variants
+                const variant = getVariant(enemy.variant)
+                if (enemy.tier === 'boss' || variant.pulseEffect) {
                     const pulseScale = 1 + Math.sin(animPhase * 3) * 0.15
                     enemy.massRing.scale.set(pulseScale)
                     enemy.massRing.alpha = 0.5 + Math.sin(animPhase * 2) * 0.2
                 }
             }
 
+            // Update glow effect position
+            if (enemy.glowEffect) {
+                enemy.glowEffect.position.set(enemy.x, enemy.y)
+
+                // Pulsing glow
+                const pulseAlpha = 0.6 + Math.sin(animPhase * 2) * 0.3
+                enemy.glowEffect.alpha = pulseAlpha
+            }
+
             // Update knockback trail (F=ma visualization)
             if (enemy.knockbackTrail && this.context.onAddTrailPoint) {
-                const speed = Math.sqrt(enemy.vx * enemy.vx + enemy.vy * enemy.vy)
-                // Only add points while moving fast (knockback in progress)
-                if (speed > 1) {
+                const currentSpeed = Math.sqrt(enemy.vx * enemy.vx + enemy.vy * enemy.vy)
+                if (currentSpeed > 1) {
                     this.context.onAddTrailPoint(enemy.knockbackTrail, enemy.x, enemy.y)
                 } else {
-                    // Knockback finished, clear trail reference
                     enemy.knockbackTrail = undefined
                 }
             }
 
-            // Animate wobble phase
+            // Animate wobble phase with look direction
             if (enemy.wobble) {
                 enemy.wobble.updateOptions({
                     wobblePhase: animPhase,
                     lookDirection: { x: dx / dist, y: dy / dist },
                 })
             }
+        }
+    }
+
+    /**
+     * Apply behavior-specific movement
+     */
+    private applyBehavior(
+        enemy: Enemy,
+        dx: number,
+        dy: number,
+        dist: number,
+        delta: number,
+        deltaSeconds: number,
+        animPhase: number
+    ): void {
+        const accel = 0.1 * delta
+        const variant = getVariant(enemy.variant)
+
+        switch (enemy.behavior) {
+            case 'chase':
+                // Standard chase behavior
+                enemy.vx += (dx / dist) * accel * enemy.speed
+                enemy.vy += (dy / dist) * accel * enemy.speed
+                break
+
+            case 'charge': {
+                // Charge then rest behavior
+                const state = enemy.behaviorState!
+                if (state.charging) {
+                    // Charging - move fast in charge direction
+                    const chargeSpeed = variant.behaviorParams?.chargeSpeed ?? 8
+                    enemy.vx = state.chargeDirection!.x * chargeSpeed
+                    enemy.vy = state.chargeDirection!.y * chargeSpeed
+
+                    // Check if we've traveled far enough or hit something
+                    state.chargeCooldown! -= deltaSeconds
+                    if (state.chargeCooldown! <= 0) {
+                        state.charging = false
+                        state.chargeCooldown = variant.behaviorParams?.chargeCooldown ?? 2.5
+                    }
+                } else {
+                    // Cooldown - slow chase
+                    enemy.vx += (dx / dist) * accel * enemy.speed * 0.3
+                    enemy.vy += (dy / dist) * accel * enemy.speed * 0.3
+
+                    state.chargeCooldown! -= deltaSeconds
+                    if (state.chargeCooldown! <= 0 && dist < 300) {
+                        // Start charging
+                        state.charging = true
+                        state.chargeDirection = { x: dx / dist, y: dy / dist }
+                        state.chargeCooldown = 0.5 // Charge duration
+                    }
+                }
+                break
+            }
+
+            case 'orbit': {
+                // Orbit around player
+                const state = enemy.behaviorState!
+                const orbitRadius = variant.behaviorParams?.orbitRadius ?? 100
+                const orbitSpeed = variant.behaviorParams?.orbitSpeed ?? 1.5
+
+                state.orbitAngle! += orbitSpeed * deltaSeconds
+
+                // Target position on orbit
+                const targetX = dx + Math.cos(state.orbitAngle!) * orbitRadius
+                const targetY = dy + Math.sin(state.orbitAngle!) * orbitRadius
+
+                // Move toward orbit position
+                const toDist = Math.sqrt(targetX * targetX + targetY * targetY) || 1
+                enemy.vx += (targetX / toDist) * accel * enemy.speed
+                enemy.vy += (targetY / toDist) * accel * enemy.speed
+                break
+            }
+
+            case 'zigzag': {
+                // Zigzag toward player
+                const state = enemy.behaviorState!
+                const amplitude = variant.behaviorParams?.zigzagAmplitude ?? 30
+                const frequency = variant.behaviorParams?.zigzagFrequency ?? 3
+
+                state.zigzagPhase! += frequency * deltaSeconds
+
+                // Calculate perpendicular direction
+                const perpX = -dy / dist
+                const perpY = dx / dist
+                const zigOffset = Math.sin(state.zigzagPhase!) * amplitude
+
+                // Move toward player with zigzag offset
+                const targetDx = dx + perpX * zigOffset
+                const targetDy = dy + perpY * zigOffset
+                const targetDist = Math.sqrt(targetDx * targetDx + targetDy * targetDy) || 1
+
+                enemy.vx += (targetDx / targetDist) * accel * enemy.speed
+                enemy.vy += (targetDy / targetDist) * accel * enemy.speed
+                break
+            }
+
+            case 'teleport': {
+                // Ghost behavior - phase in/out, teleport
+                const state = enemy.behaviorState!
+
+                // Fade effect
+                state.fadeAlpha = 0.5 + Math.sin(animPhase * 4) * 0.5
+                if (enemy.wobble) {
+                    enemy.wobble.alpha = state.fadeAlpha!
+                }
+
+                // Slow chase
+                enemy.vx += (dx / dist) * accel * enemy.speed * 0.5
+                enemy.vy += (dy / dist) * accel * enemy.speed * 0.5
+
+                // Random teleport
+                state.teleportCooldown! -= deltaSeconds
+                if (state.teleportCooldown! <= 0 && dist > 150) {
+                    // Teleport closer to player
+                    const teleportDist = 80 + Math.random() * 80
+                    const teleportAngle = Math.random() * Math.PI * 2
+                    enemy.x = enemy.x + dx * 0.5 + Math.cos(teleportAngle) * teleportDist
+                    enemy.y = enemy.y + dy * 0.5 + Math.sin(teleportAngle) * teleportDist
+                    enemy.vx = 0
+                    enemy.vy = 0
+                    state.teleportCooldown = 2 + Math.random() * 2
+                }
+                break
+            }
+
+            case 'flee': {
+                // Flee when close, chase when far
+                if (dist < 150) {
+                    // Run away
+                    enemy.vx -= (dx / dist) * accel * enemy.speed * 1.5
+                    enemy.vy -= (dy / dist) * accel * enemy.speed * 1.5
+                } else if (dist > 300) {
+                    // Approach slowly
+                    enemy.vx += (dx / dist) * accel * enemy.speed * 0.5
+                    enemy.vy += (dy / dist) * accel * enemy.speed * 0.5
+                }
+                // Otherwise maintain distance
+                break
+            }
+
+            default:
+                // Fallback to chase
+                enemy.vx += (dx / dist) * accel * enemy.speed
+                enemy.vy += (dy / dist) * accel * enemy.speed
         }
     }
 
@@ -395,6 +758,11 @@ export class EnemySystem {
                 this.context.enemyContainer.removeChild(enemy.massRing)
                 enemy.massRing.destroy()
             }
+            // Clean up glow effect
+            if (enemy.glowEffect) {
+                this.context.enemyContainer.removeChild(enemy.glowEffect)
+                enemy.glowEffect.destroy()
+            }
             this.enemies.splice(index, 1)
         }
     }
@@ -416,6 +784,11 @@ export class EnemySystem {
                 if (enemy.massRing) {
                     this.context.enemyContainer.removeChild(enemy.massRing)
                     enemy.massRing.destroy()
+                }
+                // Clean up glow effect
+                if (enemy.glowEffect) {
+                    this.context.enemyContainer.removeChild(enemy.glowEffect)
+                    enemy.glowEffect.destroy()
                 }
                 this.enemies.splice(i, 1)
                 score += 10
@@ -444,6 +817,11 @@ export class EnemySystem {
                 if (enemy.massRing) {
                     this.context.enemyContainer.removeChild(enemy.massRing)
                     enemy.massRing.destroy()
+                }
+                // Clean up glow effect
+                if (enemy.glowEffect) {
+                    this.context.enemyContainer.removeChild(enemy.glowEffect)
+                    enemy.glowEffect.destroy()
                 }
                 this.enemies.splice(i, 1)
                 removed++
@@ -475,11 +853,19 @@ export class EnemySystem {
                 this.context.enemyContainer.removeChild(enemy.massRing)
                 enemy.massRing.destroy()
             }
+            // Clean up glow effect
+            if (enemy.glowEffect) {
+                this.context.enemyContainer.removeChild(enemy.glowEffect)
+                enemy.glowEffect.destroy()
+            }
         }
         this.enemies.length = 0
         this.overlapTracker.clear()
         this.pendingMerges = []
         this.nextEnemyId = 0
+        // Reset formation system
+        this.formationSpawner.reset()
+        this.formationTimer = 0
     }
 
     // Private helpers
@@ -538,8 +924,9 @@ export class EnemySystem {
         const healthRatio1 = e1.health / e1.maxHealth
         const healthRatio2 = e2.health / e2.maxHealth
         const avgHealthRatio = (healthRatio1 + healthRatio2) / 2
-        const difficultyMult = 1 + gameTime / 60 // Aggressive scaling
-        const newMaxHealth = 3 * difficultyMult * config.healthMultiplier // Low base
+        const progress = gameTime / 600 // 0 to 1 over 10 minutes
+        const difficultyMult = 1 + Math.pow(progress, 1.5) * 3
+        const newMaxHealth = 3 * difficultyMult * config.healthMultiplier
         const newHealth = newMaxHealth * avgHealthRatio
 
         // Remove old enemies

@@ -9,7 +9,7 @@ import {
     calculateCombinedSkillStats,
 } from './survivor/skills'
 import { t } from '@/utils/localization'
-import { CRTFilter } from '../filters/CRTFilter'
+// CRT Filter removed for cleaner visuals
 import { WobbleWorldFilter } from '../filters/WobbleWorldFilter'
 import { useCollectionStore } from '@/stores/collectionStore'
 import { useProgressStore } from '@/stores/progressStore'
@@ -27,6 +27,10 @@ import {
     getLevelFromXp,
     GAME_DURATION_SECONDS,
     BOSS_SPAWN_TIME,
+    DifficultyConfig,
+    DEFAULT_DIFFICULTY,
+    getDifficultyValue,
+    getTierWeights,
     EnemySystem,
     ProjectileSystem,
     BackgroundSystem,
@@ -47,6 +51,7 @@ import {
     getStageById,
     WorldGenerator,
     BlackHoleSystem,
+    PickupSystem,
     type StageConfig,
     type BlackHoleInfo,
     type GeneratedWorld,
@@ -126,6 +131,21 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }> = []
     private lastOrbitCount = 0 // Track changes to recreate orbitals
 
+    // Ghost mode state (Quantum Tunneling skill)
+    private isGhostMode = false
+    private ghostTimer = 0 // Time remaining in ghost mode
+    private ghostCooldownTimer = 0 // Time until ghost mode can be used again
+    private ghostTrailTimer = 0 // Timer for spawning afterimages
+    private ghostTrailPositions: Array<{ x: number; y: number; alpha: number; graphics: Graphics }> =
+        []
+    private ghostHitEnemies: Set<number> = new Set() // Enemies hit during this ghost mode
+
+    // Plasma Discharge state (Raiden-style lightning laser)
+    private laserGraphics: Graphics | null = null
+    private laserGlowGraphics: Graphics | null = null
+    private laserChainTargets: Array<{ x: number; y: number; enemy: Enemy }> = []
+    private laserFlickerPhase = 0 // For lightning flicker effect
+
     // Passive state tracking
     private momentumSpeedBonus = 0
     private consecutiveHits = 0
@@ -141,8 +161,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     declare private effectContainer: Container
     declare private uiContainer: Container
 
-    // CRT Filter
-    declare private crtFilter: CRTFilter
+    // CRT Filter removed
     // Wobble World Filter - physics atmosphere (main scene effects, no grid)
     declare private wobbleFilter: WobbleWorldFilter
     // Grid Filter - background only (grid effect behind characters)
@@ -169,6 +188,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private playerVx = 0
     private playerVy = 0
 
+    // Player collision size (fixed, no mass system)
+    private readonly playerSize = 25
+
     // Camera system (follows player)
     private cameraX = 0
     private cameraY = 0
@@ -194,6 +216,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     declare private projectileSystem: ProjectileSystem
     declare private backgroundSystem: BackgroundSystem
     declare private xpOrbSystem: ExperienceOrbSystem
+    declare private pickupSystem: PickupSystem
     declare private damageTextSystem: FloatingDamageText
     declare private impactSystem: ImpactEffectSystem
     declare private effectsManager: EffectsManager
@@ -224,9 +247,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private fireRate = 0.35
     private fireTimer = 0
 
-    // Enemy spawn
-    private spawnRate = 1.0 // Faster initial spawn (was 2)
+    // Enemy spawn (controlled by difficulty config)
     private spawnTimer = 0
+    private _difficulty: DifficultyConfig | null = null
+    private get difficulty(): DifficultyConfig {
+        return this._difficulty ?? DEFAULT_DIFFICULTY
+    }
 
     // Animation
     private animPhase = 0
@@ -289,6 +315,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     protected setup(): void {
+        // Initialize difficulty config
+        this._difficulty = DEFAULT_DIFFICULTY
+
         // Game container (holds all world-space elements including background)
         this.gameContainer = new Container()
         this.gameContainer.scale.set(0.75) // Zoom out to show more of the battlefield
@@ -335,10 +364,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
         openingContainer.visible = false
         this.container.addChild(openingContainer)
 
-        // CRT Filter
-        this.crtFilter = CRTFilter.subtle()
-        this.crtFilter.setDimensions(this.width, this.height)
-
         // Wobble World Filter - physics atmosphere (no grid, applies to whole scene)
         this.wobbleFilter = WobbleWorldFilter.subtle()
         this.wobbleFilter.setDimensions(this.width, this.height)
@@ -353,13 +378,14 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.gridFilter.setGravityOffset(-0.68, -0.65)
         this.bgContainer.filters = [this.gridFilter] // Apply grid to background only
 
-        this.container.filters = [this.wobbleFilter, this.crtFilter]
+        this.container.filters = [this.wobbleFilter]
 
         // Initialize core systems
         this.backgroundSystem = new BackgroundSystem({
             worldContainer: this.bgContainer,
             width: this.width,
             height: this.height,
+            scale: 0.75, // Match gameContainer scale for proper coverage
         })
 
         this.enemySystem = new EnemySystem({
@@ -368,6 +394,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
             width: this.width,
             height: this.height,
             baseEnemySpeed: 1.5,
+            maxEnemyCount: this.difficulty.maxEnemies,
         })
 
         this.projectileSystem = new ProjectileSystem({
@@ -381,7 +408,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
             poolSize: 30,
         })
 
-        this.impactSystem = new ImpactEffectSystem(this.container, this.width, this.height, {
+        // Use gameContainer (with camera transform) so particles appear at correct world coordinates
+        this.impactSystem = new ImpactEffectSystem(this.gameContainer, this.width, this.height, {
             particlePoolSize: 100,
         })
         this.impactSystem.onShake = (intensity, duration) => {
@@ -398,6 +426,25 @@ export class PhysicsSurvivorScene extends AdventureScene {
         )
         this.xpOrbSystem.onXpCollected = (xp) => {
             this.onXpCollected(xp)
+        }
+
+        // Pickup system (magnet, health, bomb pickups)
+        this.pickupSystem = new PickupSystem(
+            {
+                container: this.effectContainer,
+                width: this.width,
+                height: this.height,
+            },
+            {
+                magnetSpawnInterval: 25, // Spawn magnet every 25 seconds
+                magnetSpawnChance: 0.6, // 60% chance
+                magnetDuration: 4, // 4 seconds of attraction
+                spawnRadius: 250,
+            }
+        )
+        this.pickupSystem.onMagnetCollected = () => {
+            // Show effect text
+            this.damageTextSystem.spawnCustom(this.playerX, this.playerY - 40, '🧲 MAGNET!', 'combo')
         }
 
         // World entity systems for each stage
@@ -598,9 +645,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     protected onResize(): void {
-        if (this.crtFilter) {
-            this.crtFilter.setDimensions(this.width, this.height)
-        }
         if (this.wobbleFilter) {
             this.wobbleFilter.setDimensions(this.width, this.height)
         }
@@ -760,8 +804,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.stats.floatDuration = skillStats.floatDuration
         this.stats.dropRadius = skillStats.dropRadius
         this.stats.dropDamage = skillStats.dropDamage
-        this.stats.tunnelChance = skillStats.tunnelChance
-        this.stats.tunnelDamageBonus = skillStats.tunnelDamageBonus
+        this.stats.ghostCooldown = skillStats.ghostCooldown
+        this.stats.ghostDuration = skillStats.ghostDuration
+        this.stats.ghostDamage = skillStats.ghostDamage
+        this.stats.ghostTrailCount = skillStats.ghostTrailCount
         this.stats.rhythmPeriod = skillStats.rhythmPeriod
         this.stats.peakDamageBonus = skillStats.peakDamageBonus
         this.stats.slashRadius = skillStats.slashRadius
@@ -806,6 +852,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.stats.orbitCount = skillStats.orbitCount
         this.stats.orbitRadius = skillStats.orbitRadius
         this.stats.orbitDamage = skillStats.orbitDamage
+
+        // Plasma Discharge (Raiden-style laser)
+        this.stats.laserDamage = skillStats.laserDamage
+        this.stats.laserChainCount = skillStats.laserChainCount
+        this.stats.laserRange = skillStats.laserRange
+        this.stats.laserChainRange = skillStats.laserChainRange
 
         this.applyPassiveToStats()
     }
@@ -858,6 +910,25 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 current: bombInterval - this.buoyantBombTimer,
                 max: bombInterval,
             })
+        }
+
+        // Ghost Mode (Quantum Tunneling)
+        if (this.stats.ghostCooldown > 0) {
+            // Show cooldown timer when not in ghost mode
+            // Show duration remaining when in ghost mode
+            if (this.isGhostMode) {
+                cooldowns.push({
+                    skillId: 'quantum-tunnel',
+                    current: 0, // Active = no cooldown shown
+                    max: this.stats.ghostDuration,
+                })
+            } else {
+                cooldowns.push({
+                    skillId: 'quantum-tunnel',
+                    current: this.ghostCooldownTimer,
+                    max: this.stats.ghostCooldown,
+                })
+            }
         }
 
         this.hudSystem.update({
@@ -1006,19 +1077,40 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     private spawnEnemy(): void {
-        this.enemySystem.spawnAtEdge(this.gameTime, this.playerX, this.playerY)
+        // Determine tier based on game time
+        const tierWeights = getTierWeights(this.gameTime, this.difficulty)
+        const roll = Math.random()
+        let tier: 'small' | 'medium' | 'large' = 'small'
+
+        if (roll < tierWeights.large) {
+            tier = 'large'
+        } else if (roll < tierWeights.large + tierWeights.medium) {
+            tier = 'medium'
+        }
+
+        this.enemySystem.spawnAtEdge(this.gameTime, this.playerX, this.playerY, tier)
     }
 
+    /**
+     * Check collisions between player and enemies
+     * All enemy contact deals damage (vampire survivors style)
+     * Skip damage during ghost mode (quantum tunneling)
+     */
     private checkPlayerCollisions(): void {
+        // Skip collision damage during ghost mode (player is invincible)
+        if (this.isGhostMode) return
+
         for (const enemy of this.enemySystem.enemies) {
             const dx = enemy.x - this.playerX
             const dy = enemy.y - this.playerY
             const dist = Math.sqrt(dx * dx + dy * dy)
-            const minDist = 25 + enemy.size / 2
+            const minDist = this.playerSize + enemy.size / 2
 
             if (dist < minDist) {
+                // Take damage from any enemy contact
                 this.playerHealth -= 1
 
+                // Push enemy back
                 const nx = dx / (dist || 1)
                 const ny = dy / (dist || 1)
                 enemy.vx += nx * 3
@@ -1044,24 +1136,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     /**
-     * Update CRT filter distortion based on black hole proximity
+     * Update visual distortion based on black hole proximity
+     * CRT filter removed - this is now a no-op but kept for compatibility
      */
     private updateBlackHoleDistortion(): void {
-        if (!this.crtFilter) return
-
-        const intensity = this.blackHoleProximityEffect
-
-        // Increase chromatic aberration (RGB split) - creates "being pulled apart" feel
-        this.crtFilter.chromaticAberration = this.baseChromaticAberration + intensity * 2.5
-
-        // Increase curvature (barrel distortion) - screen warping
-        this.crtFilter.curvatureStrength = this.baseCurvatureStrength + intensity * 0.08
-
-        // Increase vignette (tunnel vision) - darkness closing in
-        this.crtFilter.vignetteStrength = this.baseVignetteStrength + intensity * 0.6
-
-        // Increase flicker - instability
-        this.crtFilter.flickerIntensity = this.baseFlickerIntensity + intensity * 0.03
+        // CRT distortion removed for cleaner visuals
     }
 
     /**
@@ -2100,6 +2179,509 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     // ============================================
+    // GHOST MODE (Quantum Tunneling)
+    // ============================================
+
+    /**
+     * Update Ghost Mode (양자 터널링) - phase through enemies dealing damage
+     * Player becomes invincible and deals damage to enemies they pass through
+     */
+    private updateGhostMode(deltaSeconds: number): void {
+        // Check if ghost mode skill is active
+        if (this.stats.ghostCooldown <= 0) {
+            this.isGhostMode = false
+            return
+        }
+
+        // Update cooldown timer
+        if (this.ghostCooldownTimer > 0) {
+            this.ghostCooldownTimer -= deltaSeconds
+        }
+
+        // Update ghost mode duration
+        if (this.isGhostMode) {
+            this.ghostTimer -= deltaSeconds
+
+            // Update afterimage trails
+            this.updateGhostTrails(deltaSeconds)
+
+            // Check collision with enemies for damage (pass-through damage)
+            this.checkGhostCollisions()
+
+            // End ghost mode
+            if (this.ghostTimer <= 0) {
+                this.endGhostMode()
+            }
+        } else if (this.ghostCooldownTimer <= 0) {
+            // Auto-activate ghost mode when cooldown is ready
+            this.activateGhostMode()
+        }
+    }
+
+    /**
+     * Activate ghost mode
+     */
+    private activateGhostMode(): void {
+        if (this.isGhostMode) return
+
+        this.isGhostMode = true
+        this.ghostTimer = this.stats.ghostDuration
+        this.ghostCooldownTimer = this.stats.ghostCooldown
+        this.ghostHitEnemies.clear()
+        this.ghostTrailTimer = 0
+
+        // Visual effect - player becomes semi-transparent
+        if (this.player) {
+            this.player.alpha = 0.5
+        }
+
+        // Activation effect
+        this.showGhostActivationEffect()
+
+        // Feedback
+        this.damageTextSystem.spawnCustom(this.playerX, this.playerY - 40, '👻 GHOST!', 'combo')
+    }
+
+    /**
+     * End ghost mode
+     */
+    private endGhostMode(): void {
+        this.isGhostMode = false
+        this.ghostTimer = 0
+
+        // Restore player visibility
+        if (this.player) {
+            this.player.alpha = 1.0
+        }
+
+        // Clean up trails
+        this.cleanupGhostTrails()
+    }
+
+    /**
+     * Update ghost trails (afterimages)
+     */
+    private updateGhostTrails(deltaSeconds: number): void {
+        const trailInterval = this.stats.ghostDuration / Math.max(1, this.stats.ghostTrailCount)
+
+        this.ghostTrailTimer += deltaSeconds
+
+        // Spawn new trail
+        if (this.ghostTrailTimer >= trailInterval && this.ghostTrailPositions.length < this.stats.ghostTrailCount) {
+            this.ghostTrailTimer = 0
+            this.spawnGhostTrail()
+        }
+
+        // Update existing trails (fade out)
+        for (let i = this.ghostTrailPositions.length - 1; i >= 0; i--) {
+            const trail = this.ghostTrailPositions[i]
+            trail.alpha -= deltaSeconds * 2 // Fade over 0.5 seconds
+
+            if (trail.alpha <= 0) {
+                this.effectContainer.removeChild(trail.graphics)
+                trail.graphics.destroy()
+                this.ghostTrailPositions.splice(i, 1)
+            } else {
+                trail.graphics.alpha = trail.alpha * 0.6
+            }
+        }
+    }
+
+    /**
+     * Spawn a ghost trail at current player position
+     */
+    private spawnGhostTrail(): void {
+        // Create a semi-transparent copy of player silhouette
+        const trail = new Graphics()
+        const size = this.playerSize
+
+        // Draw ghost silhouette
+        trail.circle(0, 0, size)
+        trail.fill({ color: 0x88ffff, alpha: 0.4 })
+        trail.circle(0, 0, size * 0.8)
+        trail.fill({ color: 0xaaffff, alpha: 0.3 })
+        trail.circle(0, 0, size * 0.5)
+        trail.fill({ color: 0xffffff, alpha: 0.2 })
+
+        trail.position.set(this.playerX, this.playerY)
+        trail.alpha = 0.6
+        this.effectContainer.addChild(trail)
+
+        this.ghostTrailPositions.push({
+            x: this.playerX,
+            y: this.playerY,
+            alpha: 1.0,
+            graphics: trail,
+        })
+    }
+
+    /**
+     * Clean up all ghost trails
+     */
+    private cleanupGhostTrails(): void {
+        for (const trail of this.ghostTrailPositions) {
+            this.effectContainer.removeChild(trail.graphics)
+            trail.graphics.destroy()
+        }
+        this.ghostTrailPositions = []
+    }
+
+    /**
+     * Check ghost collision with enemies and deal damage
+     */
+    private checkGhostCollisions(): void {
+        for (const enemy of this.enemySystem.enemies) {
+            // Skip already hit enemies
+            if (this.ghostHitEnemies.has(enemy.id)) continue
+
+            const dx = enemy.x - this.playerX
+            const dy = enemy.y - this.playerY
+            const dist = Math.sqrt(dx * dx + dy * dy)
+            const hitRange = this.playerSize + enemy.size / 2
+
+            if (dist < hitRange) {
+                // Mark as hit
+                this.ghostHitEnemies.add(enemy.id)
+
+                // Deal damage
+                const damage = this.stats.ghostDamage * this.stats.damageMultiplier
+                enemy.health -= damage
+
+                // Visual feedback
+                if (enemy.wobble) {
+                    this.impactSystem.addScalePunch(enemy.wobble, 0.2, 0.15)
+                }
+
+                // Damage number
+                this.damageTextSystem.spawn(enemy.x, enemy.y - 20, Math.round(damage), 'critical')
+
+                // Hit effect
+                this.showGhostHitEffect(enemy.x, enemy.y)
+
+                // Small screen shake
+                this.triggerShake(2, 0.1)
+            }
+        }
+    }
+
+    /**
+     * Show ghost mode activation effect
+     */
+    private showGhostActivationEffect(): void {
+        // Expanding ring effect
+        const ring = new Graphics()
+        ring.circle(0, 0, 10)
+        ring.stroke({ color: 0x88ffff, width: 3, alpha: 0.8 })
+        ring.position.set(this.playerX, this.playerY)
+        this.effectContainer.addChild(ring)
+
+        let ringRadius = 10
+        const maxRadius = 60
+        const expandSpeed = 200
+
+        const animate = () => {
+            ringRadius += expandSpeed / 60
+            const progress = ringRadius / maxRadius
+
+            if (progress >= 1) {
+                this.effectContainer.removeChild(ring)
+                ring.destroy()
+                return
+            }
+
+            ring.clear()
+            ring.circle(0, 0, ringRadius)
+            ring.stroke({
+                color: 0x88ffff,
+                width: 3 * (1 - progress),
+                alpha: 0.8 * (1 - progress),
+            })
+
+            requestAnimationFrame(animate)
+        }
+        requestAnimationFrame(animate)
+    }
+
+    /**
+     * Show ghost hit effect on enemy
+     */
+    private showGhostHitEffect(x: number, y: number): void {
+        const effect = new Graphics()
+        effect.circle(0, 0, 15)
+        effect.fill({ color: 0x88ffff, alpha: 0.6 })
+        effect.position.set(x, y)
+        this.effectContainer.addChild(effect)
+
+        let timer = 0.2
+
+        const animate = () => {
+            timer -= 1 / 60
+            if (timer <= 0) {
+                this.effectContainer.removeChild(effect)
+                effect.destroy()
+                return
+            }
+
+            const progress = 1 - timer / 0.2
+            effect.alpha = 0.6 * (1 - progress)
+            effect.scale.set(1 + progress * 1.5)
+
+            requestAnimationFrame(animate)
+        }
+        requestAnimationFrame(animate)
+    }
+
+    // ============================================
+    // PLASMA DISCHARGE (Raiden-style Lightning Laser)
+    // ============================================
+
+    /**
+     * Update Plasma Discharge - lightning laser that chains between enemies
+     * Inspired by Raiden's iconic lightning weapon
+     */
+    private updatePlasmaLaser(deltaSeconds: number): void {
+        // Check if laser skill is active
+        if (this.stats.laserDamage <= 0) {
+            this.cleanupLaser()
+            return
+        }
+
+        // Update flicker phase for lightning effect
+        this.laserFlickerPhase += deltaSeconds * 30 // Fast flicker
+
+        // Find chain targets
+        this.updateLaserChainTargets()
+
+        // Apply damage to chain targets
+        if (this.laserChainTargets.length > 0) {
+            const damagePerSecond = this.stats.laserDamage * this.stats.damageMultiplier
+            const damageThisFrame = damagePerSecond * deltaSeconds
+
+            for (const target of this.laserChainTargets) {
+                target.enemy.health -= damageThisFrame
+
+                // Small visual feedback
+                if (target.enemy.wobble && Math.random() < 0.1) {
+                    this.impactSystem.addScalePunch(target.enemy.wobble, 0.1, 0.05)
+                }
+            }
+        }
+
+        // Update visual
+        this.drawLaserBeam()
+    }
+
+    /**
+     * Find enemies to chain the laser to
+     */
+    private updateLaserChainTargets(): void {
+        this.laserChainTargets = []
+
+        if (this.enemySystem.enemies.length === 0) return
+
+        const maxChains = this.stats.laserChainCount
+        const maxRange = this.stats.laserRange
+        const chainRange = this.stats.laserChainRange
+
+        // Find first target (closest enemy within range)
+        let closestEnemy: Enemy | null = null
+        let closestDist = maxRange
+
+        for (const enemy of this.enemySystem.enemies) {
+            const dx = enemy.x - this.playerX
+            const dy = enemy.y - this.playerY
+            const dist = Math.sqrt(dx * dx + dy * dy)
+
+            if (dist < closestDist) {
+                closestDist = dist
+                closestEnemy = enemy
+            }
+        }
+
+        if (!closestEnemy) return
+
+        // Add first target
+        this.laserChainTargets.push({
+            x: closestEnemy.x,
+            y: closestEnemy.y,
+            enemy: closestEnemy,
+        })
+
+        // Chain to additional enemies
+        const usedEnemies = new Set<number>([closestEnemy.id])
+        let lastX = closestEnemy.x
+        let lastY = closestEnemy.y
+
+        for (let i = 1; i < maxChains; i++) {
+            let nextEnemy: Enemy | null = null
+            let nextDist = chainRange
+
+            for (const enemy of this.enemySystem.enemies) {
+                if (usedEnemies.has(enemy.id)) continue
+
+                const dx = enemy.x - lastX
+                const dy = enemy.y - lastY
+                const dist = Math.sqrt(dx * dx + dy * dy)
+
+                if (dist < nextDist) {
+                    nextDist = dist
+                    nextEnemy = enemy
+                }
+            }
+
+            if (!nextEnemy) break
+
+            usedEnemies.add(nextEnemy.id)
+            this.laserChainTargets.push({
+                x: nextEnemy.x,
+                y: nextEnemy.y,
+                enemy: nextEnemy,
+            })
+
+            lastX = nextEnemy.x
+            lastY = nextEnemy.y
+        }
+    }
+
+    /**
+     * Draw the lightning laser beam with zigzag effect
+     */
+    private drawLaserBeam(): void {
+        // Create graphics if needed
+        if (!this.laserGlowGraphics) {
+            this.laserGlowGraphics = new Graphics()
+            this.effectContainer.addChild(this.laserGlowGraphics)
+        }
+        if (!this.laserGraphics) {
+            this.laserGraphics = new Graphics()
+            this.effectContainer.addChild(this.laserGraphics)
+        }
+
+        // Clear previous frame
+        this.laserGlowGraphics.clear()
+        this.laserGraphics.clear()
+
+        if (this.laserChainTargets.length === 0) return
+
+        // Draw glow layer (wider, more transparent)
+        this.drawLightningPath(this.laserGlowGraphics, 0x00ffff, 8, 0.3)
+
+        // Draw main beam (thinner, brighter)
+        this.drawLightningPath(this.laserGraphics, 0xffffff, 3, 0.9)
+    }
+
+    /**
+     * Draw lightning path with zigzag segments
+     */
+    private drawLightningPath(
+        graphics: Graphics,
+        color: number,
+        width: number,
+        alpha: number
+    ): void {
+        // Start from player
+        let startX = this.playerX
+        let startY = this.playerY
+
+        for (const target of this.laserChainTargets) {
+            // Draw zigzag lightning to this target
+            this.drawLightningSegment(graphics, startX, startY, target.x, target.y, color, width, alpha)
+
+            // Next segment starts from this target
+            startX = target.x
+            startY = target.y
+        }
+    }
+
+    /**
+     * Draw a single lightning segment with zigzag effect
+     */
+    private drawLightningSegment(
+        graphics: Graphics,
+        x1: number,
+        y1: number,
+        x2: number,
+        y2: number,
+        color: number,
+        width: number,
+        alpha: number
+    ): void {
+        const dx = x2 - x1
+        const dy = y2 - y1
+        const dist = Math.sqrt(dx * dx + dy * dy)
+
+        if (dist < 1) return
+
+        // Number of zigzag segments based on distance
+        const segments = Math.max(3, Math.floor(dist / 20))
+
+        // Perpendicular direction for zigzag
+        const perpX = -dy / dist
+        const perpY = dx / dist
+
+        // Flicker intensity
+        const flickerIntensity = 0.7 + Math.sin(this.laserFlickerPhase) * 0.3
+
+        // Build path
+        let currentX = x1
+        let currentY = y1
+
+        graphics.moveTo(currentX, currentY)
+
+        for (let i = 1; i <= segments; i++) {
+            const t = i / segments
+
+            // Base position along line
+            const baseX = x1 + dx * t
+            const baseY = y1 + dy * t
+
+            // Add zigzag offset (except for last point)
+            let offsetX = 0
+            let offsetY = 0
+
+            if (i < segments) {
+                // Randomize zigzag each frame for lightning effect
+                const zigzagAmount = 8 + Math.sin(this.laserFlickerPhase * 2 + i * 3) * 6
+                const direction = ((i % 2) * 2 - 1) * (Math.sin(this.laserFlickerPhase + i) > 0 ? 1 : -1)
+                offsetX = perpX * zigzagAmount * direction * flickerIntensity
+                offsetY = perpY * zigzagAmount * direction * flickerIntensity
+            }
+
+            currentX = baseX + offsetX
+            currentY = baseY + offsetY
+
+            graphics.lineTo(currentX, currentY)
+        }
+
+        graphics.stroke({
+            color,
+            width: width * flickerIntensity,
+            alpha: alpha * flickerIntensity,
+        })
+
+        // Draw impact point at target
+        graphics.circle(x2, y2, 6 * flickerIntensity)
+        graphics.fill({ color, alpha: alpha * 0.5 * flickerIntensity })
+    }
+
+    /**
+     * Clean up laser graphics
+     */
+    private cleanupLaser(): void {
+        if (this.laserGraphics) {
+            this.effectContainer.removeChild(this.laserGraphics)
+            this.laserGraphics.destroy()
+            this.laserGraphics = null
+        }
+        if (this.laserGlowGraphics) {
+            this.effectContainer.removeChild(this.laserGlowGraphics)
+            this.laserGlowGraphics.destroy()
+            this.laserGlowGraphics = null
+        }
+        this.laserChainTargets = []
+    }
+
+    // ============================================
     // NEW SKILL UPDATE METHODS
     // ============================================
 
@@ -2463,6 +3045,14 @@ export class PhysicsSurvivorScene extends AdventureScene {
             orb.graphics.position.set(orb.x, orb.y)
         }
 
+        // Offset all pickups
+        for (const pickup of this.pickupSystem.getPickups()) {
+            pickup.x -= offsetX
+            pickup.y -= offsetY
+            pickup.graphics.position.set(pickup.x, pickup.y)
+            pickup.glowGraphics.position.set(pickup.x, pickup.y)
+        }
+
         // Update camera to new player position
         this.cameraX = 0
         this.cameraY = 0
@@ -2743,6 +3333,18 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.cleanupOrbitals()
         this.orbitAngle = 0
         this.lastOrbitCount = 0
+
+        // Ghost mode (Quantum Tunneling) reset
+        this.isGhostMode = false
+        this.ghostTimer = 0
+        this.ghostCooldownTimer = 0
+        this.ghostTrailTimer = 0
+        this.ghostHitEnemies.clear()
+        this.cleanupGhostTrails()
+
+        // Plasma Discharge reset
+        this.laserFlickerPhase = 0
+        this.cleanupLaser()
     }
 
     private applyCharacterStats(): void {
@@ -2760,9 +3362,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
         const deltaSeconds = ticker.deltaMS / 1000
         this.animPhase += deltaSeconds
 
-        if (this.crtFilter) {
-            this.crtFilter.time = this.animPhase
-        }
         if (this.wobbleFilter) {
             this.wobbleFilter.time = this.animPhase
             this.wobbleFilter.setCameraPosition(this.cameraX, this.cameraY)
@@ -2851,7 +3450,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.animPhase += rawDeltaSeconds
 
             // Update filter time and camera during hitstop
-            if (this.crtFilter) this.crtFilter.time = this.animPhase
             if (this.wobbleFilter) {
                 this.wobbleFilter.time = this.animPhase
                 this.wobbleFilter.setCameraPosition(this.cameraX, this.cameraY)
@@ -2887,7 +3485,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.gameTime += deltaSeconds
 
         // Update filter time and camera during gameplay
-        if (this.crtFilter) this.crtFilter.time = this.animPhase
         if (this.wobbleFilter) {
             this.wobbleFilter.time = this.animPhase
             this.wobbleFilter.setCameraPosition(this.cameraX, this.cameraY)
@@ -2912,9 +3509,16 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Update world entities and their effects
         this.updateWorldEntities(deltaSeconds)
 
+        // Update pickups (magnet, health, etc.)
+        this.pickupSystem.update(deltaSeconds, this.playerX, this.playerY)
+
+        // Sync magnet effect to XP orb system
+        this.xpOrbSystem.setSuperMagnet(this.pickupSystem.isMagnetActive())
+
         // Update XP orbs
         this.xpOrbSystem.update(deltaSeconds, this.playerX, this.playerY)
 
+        // Auto-fire (vampire survivors style - player just moves)
         this.fireTimer += deltaSeconds
         const effectiveFireRate = this.fireRate * this.stats.fireRateMultiplier
         if (this.fireTimer >= effectiveFireRate && this.enemySystem.enemies.length > 0) {
@@ -2923,11 +3527,47 @@ export class PhysicsSurvivorScene extends AdventureScene {
         }
 
         this.spawnTimer += deltaSeconds
-        // Slower spawn rate scaling for power fantasy (was /60, min 0.5)
-        // Spawn rate: starts at 1.0s, decreases to 0.3s over 3 minutes
-        const currentSpawnRate = Math.max(0.3, this.spawnRate - this.gameTime / 200)
+
+        // Determine current tier weights
+        const tierWeights = getTierWeights(this.gameTime, this.difficulty)
+        const tierRoll = Math.random()
+        let currentTier: 'small' | 'medium' | 'large' = 'small'
+        if (tierRoll < tierWeights.large) {
+            currentTier = 'large'
+        } else if (tierRoll < tierWeights.large + tierWeights.medium) {
+            currentTier = 'medium'
+        }
+
+        // Try to spawn formations (this handles its own timing)
+        this.enemySystem.trySpawnFormation(
+            this.gameTime,
+            deltaSeconds,
+            this.playerX,
+            this.playerY,
+            currentTier
+        )
+
+        // Spawn rate from difficulty config
+        const { spawnInterval, spawnCount } = this.difficulty
+        const currentSpawnRate = getDifficultyValue(
+            this.gameTime,
+            spawnInterval.start,
+            spawnInterval.end,
+            spawnInterval.rampTime
+        )
         if (this.spawnTimer >= currentSpawnRate) {
-            this.spawnEnemy()
+            // Spawn multiple enemies at once
+            const enemyCount = Math.floor(
+                getDifficultyValue(
+                    this.gameTime,
+                    spawnCount.start,
+                    spawnCount.end,
+                    spawnCount.rampTime
+                )
+            )
+            for (let i = 0; i < enemyCount; i++) {
+                this.spawnEnemy()
+            }
             this.spawnTimer = 0
         }
 
@@ -2937,7 +3577,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
             return
         }
 
-        // Boss spawn at 2:30
+        // Boss spawn at 9:00
         if (this.gameTime >= BOSS_SPAWN_TIME && !this.bossSpawned) {
             this.spawnFinalBoss()
         }
@@ -2971,6 +3611,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         // Phase 6 orbital skills
         this.updateOrbitalStrike(deltaSeconds)
+
+        // Ghost mode (Quantum Tunneling)
+        this.updateGhostMode(deltaSeconds)
+
+        // Plasma Discharge (Raiden-style laser)
+        this.updatePlasmaLaser(deltaSeconds)
 
         this.effectsManager.update(delta)
         // PhysicsSkillVisuals disabled due to PixiJS Batcher conflicts
@@ -3176,6 +3822,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.damageTextSystem.reset()
         this.impactSystem.reset()
         this.xpOrbSystem.reset()
+        this.pickupSystem.reset()
         // Reset visual distortion
         this.blackHoleProximityEffect = 0
         this.updateBlackHoleDistortion()
@@ -3261,6 +3908,18 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.orbitAngle = 0
         this.lastOrbitCount = 0
 
+        // Ghost mode (Quantum Tunneling) reset
+        this.isGhostMode = false
+        this.ghostTimer = 0
+        this.ghostCooldownTimer = 0
+        this.ghostTrailTimer = 0
+        this.ghostHitEnemies.clear()
+        this.cleanupGhostTrails()
+
+        // Plasma Discharge reset
+        this.laserFlickerPhase = 0
+        this.cleanupLaser()
+
         this.resetStats()
         this.fireTimer = 0
         this.spawnTimer = 0
@@ -3320,17 +3979,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
      * Disabled during character/stage selection, enabled during gameplay
      */
     private updateFilterVisibility(enabled: boolean): void {
-        if (this.crtFilter) {
-            // Disable scanlines, chromatic aberration, etc. during selection
-            if (enabled) {
-                this.crtFilter.scanlineIntensity = 0.015 // subtle preset value
-                this.crtFilter.chromaticAberration = this.baseChromaticAberration
-            } else {
-                this.crtFilter.scanlineIntensity = 0
-                this.crtFilter.chromaticAberration = 0
-            }
-        }
-
         if (this.wobbleFilter) {
             // Disable wobble effects during selection
             this.wobbleFilter.wobbleIntensity = enabled ? this.baseWobbleIntensity : 0

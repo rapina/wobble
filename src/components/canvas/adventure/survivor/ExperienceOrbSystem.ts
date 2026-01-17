@@ -77,6 +77,9 @@ export class ExperienceOrbSystem {
     private magnetRadius: number
     private collectRadius: number
 
+    // Super magnet mode (attracts all orbs regardless of distance)
+    private superMagnetActive = false
+
     // Callback when XP is collected
     onXpCollected?: (xp: number, totalXp: number) => void
 
@@ -429,13 +432,21 @@ export class ExperienceOrbSystem {
                 }
             }
 
-            // Magnetic attraction to player when close
-            if (dist < this.magnetRadius) {
+            // Magnetic attraction to player
+            // Super magnet attracts all orbs, normal magnet only nearby
+            const effectiveMagnetRadius = this.superMagnetActive ? 9999 : this.magnetRadius
+
+            if (dist < effectiveMagnetRadius) {
                 // Accelerate towards player
-                const magnetStrength = 1 - dist / this.magnetRadius
+                // Super magnet uses stronger attraction
+                const magnetStrength = this.superMagnetActive
+                    ? 0.8 + (1 - Math.min(dist / 500, 1)) * 0.2  // Strong even at distance
+                    : 1 - dist / this.magnetRadius
+                const maxSpeed = this.superMagnetActive ? 25 : 15
+
                 orb.collectSpeed = Math.min(
-                    orb.collectSpeed + magnetStrength * 20 * deltaSeconds,
-                    15
+                    orb.collectSpeed + magnetStrength * (this.superMagnetActive ? 40 : 20) * deltaSeconds,
+                    maxSpeed
                 )
 
                 const nx = dx / dist
@@ -523,6 +534,20 @@ export class ExperienceOrbSystem {
     }
 
     /**
+     * Enable/disable super magnet mode (attracts all orbs)
+     */
+    setSuperMagnet(active: boolean): void {
+        this.superMagnetActive = active
+    }
+
+    /**
+     * Check if super magnet is active
+     */
+    isSuperMagnetActive(): boolean {
+        return this.superMagnetActive
+    }
+
+    /**
      * Reset the system
      */
     reset(): void {
@@ -532,6 +557,7 @@ export class ExperienceOrbSystem {
         this._orbs = []
         this.totalXpCollected = 0
         this.mergeTimer = 0
+        this.superMagnetActive = false
     }
 
     /**

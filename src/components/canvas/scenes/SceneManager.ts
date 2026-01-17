@@ -13,6 +13,7 @@ import { CoulombScene } from './CoulombScene'
 import { PowerScene } from './PowerScene'
 import { LorentzScene } from './LorentzScene'
 import { CapacitorScene } from './CapacitorScene'
+import { ElectricDischargeScene } from './ElectricDischargeScene'
 import { TimeDilationScene } from './TimeDilationScene'
 import { SnellScene } from './SnellScene'
 import { HeatScene } from './HeatScene'
@@ -75,6 +76,7 @@ const sceneMap: Record<string, SceneConstructor> = {
     'electric-power': PowerScene,
     lorentz: LorentzScene,
     capacitor: CapacitorScene,
+    'electric-discharge': ElectricDischargeScene,
     'time-dilation': TimeDilationScene,
     snell: SnellScene,
     heat: HeatScene,

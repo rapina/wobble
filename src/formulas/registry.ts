@@ -35,6 +35,7 @@ import { coulomb } from './coulomb'
 import { electricPower } from './electric-power'
 import { lorentz } from './lorentz'
 import { capacitor } from './capacitor'
+import { electricDischarge } from './electric-discharge'
 // Special / Modern Physics
 import { buoyancy } from './buoyancy'
 import { photoelectric } from './photoelectric'
@@ -97,6 +98,7 @@ export const formulas: Record<string, Formula> = {
     'electric-power': electricPower,
     lorentz: lorentz,
     capacitor: capacitor,
+    'electric-discharge': electricDischarge,
     // Special / Modern Physics
     buoyancy: buoyancy,
     photoelectric: photoelectric,

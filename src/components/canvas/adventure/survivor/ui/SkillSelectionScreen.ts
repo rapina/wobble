@@ -1,13 +1,21 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js'
 import {
     PlayerSkill,
-    SkillDefinition,
+    LegacySkillDefinition as SkillDefinition,
     getSkillDefinition,
     SKILL_DEFINITIONS,
 } from '../skills'
+import { MAX_SKILLS } from '../types'
 import { easeOutBack } from '../utils'
 import { WaveText } from '../../WaveText'
 import { t } from '@/utils/localization'
+import {
+    BALATRO_COLORS,
+    BALATRO_DESIGN,
+    drawBalatroCard,
+    drawBalatroBadge,
+    drawCornerDots,
+} from './BalatroButton'
 
 export interface SkillSelectionContext {
     container: Container
@@ -35,6 +43,7 @@ export class SkillSelectionScreen {
     private levelUpBanner: Container | null = null
     private levelUpWaveText: WaveText | null = null
     private skillCards: SkillCard[] = []
+    private decorDots: Graphics | null = null
 
     // Animation state
     private animTime = 0
@@ -105,6 +114,7 @@ export class SkillSelectionScreen {
     /**
      * Pick N random skills from the unlocked pool
      * Prioritizes skills that can be upgraded (not at max level)
+     * Limits total skills to MAX_SKILLS (10) - won't offer new skills if at limit
      */
     private pickRandomSkills(count: number): Array<{ skillId: string; currentLevel: number }> {
         // Get all unlocked skills, or all skills if none unlocked
@@ -112,12 +122,23 @@ export class SkillSelectionScreen {
             ? this.unlockedSkillIds
             : Object.keys(SKILL_DEFINITIONS)
 
+        // Count current unique skills
+        const currentSkillCount = this.currentSkills.size
+        const atSkillLimit = currentSkillCount >= MAX_SKILLS
+
         // Filter to skills that can be added or upgraded
         const available = pool.filter(id => {
             const def = getSkillDefinition(id)
             if (!def) return false
             const currentLevel = this.currentSkills.get(id) || 0
-            return currentLevel < def.maxLevel
+
+            // If at max level, can't upgrade further
+            if (currentLevel >= def.maxLevel) return false
+
+            // If at skill limit and this is a new skill, don't include it
+            if (atSkillLimit && currentLevel === 0) return false
+
+            return true
         })
 
         // Shuffle and pick
@@ -166,7 +187,7 @@ export class SkillSelectionScreen {
         }
 
         // Animate skill cards (deal from top with stagger)
-        const cardTargetY = this.centerY + 20
+        const cardTargetY = this.centerY + 35
         this.skillCards.forEach((card, i) => {
             const delay = 0.15 + i * 0.1
             const duration = 0.4
@@ -191,6 +212,11 @@ export class SkillSelectionScreen {
                 card.container.scale.set(1.05 + wobble)
             }
         })
+
+        // Animate decorative dots
+        if (this.decorDots) {
+            this.decorDots.alpha = 0.3 + Math.sin(this.animTime * 2) * 0.2
+        }
     }
 
     /**
@@ -204,74 +230,90 @@ export class SkillSelectionScreen {
     }
 
     private createUI(candidates: Array<{ skillId: string; currentLevel: number }>): void {
-        // Dark space overlay
+        // Dark background with Balatro feel
         const bg = new Graphics()
         bg.rect(0, 0, this.width, this.height)
-        bg.fill({ color: 0x0a0a1a, alpha: 0.92 })
+        bg.fill({ color: BALATRO_COLORS.bgDark, alpha: 0.95 })
         this.screenContainer.addChild(bg)
 
-        // Stars in background
-        this.drawStars(bg)
+        // Subtle dot pattern (Balatro style)
+        const dots = new Graphics()
+        for (let x = 0; x < this.width; x += 20) {
+            for (let y = 0; y < this.height; y += 20) {
+                dots.circle(x, y, 1)
+                dots.fill({ color: 0xffffff, alpha: 0.03 })
+            }
+        }
+        this.screenContainer.addChild(dots)
 
-        // Level up banner - centered above cards
+        // Main card container for the selection area
+        const mainCardWidth = Math.min(360, this.width - 30)
+        const mainCardHeight = 320
+        const mainCardX = this.centerX - mainCardWidth / 2
+        const mainCardY = this.centerY - mainCardHeight / 2 - 20
+
+        // Main card background
+        const mainCard = new Graphics()
+        drawBalatroCard(mainCard, mainCardX, mainCardY, mainCardWidth, mainCardHeight, {
+            bgColor: BALATRO_COLORS.bgCard,
+            borderColor: BALATRO_COLORS.gold,
+            borderWidth: BALATRO_DESIGN.borderWidth,
+            radius: BALATRO_DESIGN.radiusLarge,
+        })
+        this.screenContainer.addChild(mainCard)
+
+        // Decorative corner dots
+        this.decorDots = new Graphics()
+        drawCornerDots(this.decorDots, mainCardX, mainCardY, mainCardWidth, mainCardHeight)
+        this.screenContainer.addChild(this.decorDots)
+
+        // Level up banner - positioned above main card
         this.levelUpBanner = new Container()
-        this.levelUpBanner.position.set(this.centerX, this.centerY - 120)
+        this.levelUpBanner.position.set(this.centerX, mainCardY - 8)
         this.levelUpBanner.scale.set(0)
         this.screenContainer.addChild(this.levelUpBanner)
 
-        // Banner background - Balatro style hexagonal
+        // Banner background - Balatro style badge
+        const bannerW = 160
+        const bannerH = 36
         const bannerBg = new Graphics()
-        const bannerW = 180
-        const bannerH = 45
-        bannerBg.moveTo(-bannerW / 2, 0)
-        bannerBg.lineTo(-bannerW / 2 + 20, -bannerH / 2)
-        bannerBg.lineTo(bannerW / 2 - 20, -bannerH / 2)
-        bannerBg.lineTo(bannerW / 2, 0)
-        bannerBg.lineTo(bannerW / 2 - 20, bannerH / 2)
-        bannerBg.lineTo(-bannerW / 2 + 20, bannerH / 2)
-        bannerBg.closePath()
-        bannerBg.fill(0x1a1a2e)
-        bannerBg.stroke({ color: 0xc9a227, width: 3 })
+        drawBalatroBadge(bannerBg, -bannerW / 2, -bannerH / 2, bannerW, bannerH, BALATRO_COLORS.gold)
         this.levelUpBanner.addChild(bannerBg)
 
-        // Level up text - Gold
+        // Level up text - Black on gold
         this.levelUpWaveText = new WaveText({
             text: `LEVEL ${this.currentLevel}`,
             style: {
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: 'bold',
-                fill: 0xc9a227,
-                dropShadow: {
-                    color: 0x000000,
-                    blur: 4,
-                    distance: 0,
-                    alpha: 0.8,
-                },
+                fill: 0x000000,
+                letterSpacing: BALATRO_DESIGN.letterSpacing,
             },
-            amplitude: 3,
-            frequency: 5,
-            phaseOffset: 0.4,
-            letterSpacing: 4,
+            amplitude: 2,
+            frequency: 4,
+            phaseOffset: 0.3,
+            letterSpacing: 3,
         })
         this.levelUpBanner.addChild(this.levelUpWaveText)
 
-        // Subtitle - below banner, above cards
+        // Subtitle - inside main card
         const subtitleText = new Text({
             text: 'Choose a skill to upgrade',
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 13,
-                fill: 0x88ccff,
+                fontSize: 12,
+                fill: BALATRO_COLORS.textSecondary,
+                letterSpacing: 1,
             }),
         })
         subtitleText.anchor.set(0.5)
-        subtitleText.position.set(this.centerX, this.centerY - 75)
+        subtitleText.position.set(this.centerX, mainCardY + 35)
         this.screenContainer.addChild(subtitleText)
 
-        // Card layout - 3 cards horizontal (compact for mobile)
-        const cardWidth = 85
-        const cardHeight = 125
+        // Card layout - 3 cards horizontal
+        const cardWidth = 100
+        const cardHeight = 200
         const cardGap = 10
         const totalWidth = candidates.length * cardWidth + (candidates.length - 1) * cardGap
         const startX = this.centerX - totalWidth / 2 + cardWidth / 2
@@ -281,7 +323,7 @@ export class SkillSelectionScreen {
             if (!def) return
 
             const cardContainer = new Container()
-            cardContainer.position.set(startX + index * (cardWidth + cardGap), this.centerY + 20)
+            cardContainer.position.set(startX + index * (cardWidth + cardGap), this.centerY + 35)
             cardContainer.alpha = 0
             this.screenContainer.addChild(cardContainer)
 
@@ -296,12 +338,18 @@ export class SkillSelectionScreen {
 
         // If no candidates, show message
         if (candidates.length === 0) {
+            const noSkillCard = new Graphics()
+            drawBalatroCard(noSkillCard, this.centerX - 120, this.centerY - 40, 240, 80, {
+                borderColor: BALATRO_COLORS.textMuted,
+            })
+            this.screenContainer.addChild(noSkillCard)
+
             const noSkillText = new Text({
                 text: 'All skills at max level!',
                 style: new TextStyle({
                     fontFamily: 'Arial, sans-serif',
-                    fontSize: 16,
-                    fill: 0xffffff,
+                    fontSize: 14,
+                    fill: BALATRO_COLORS.textPrimary,
                     fontWeight: 'bold',
                 }),
             })
@@ -315,73 +363,57 @@ export class SkillSelectionScreen {
         }
     }
 
-    private drawStars(bg: Graphics): void {
-        // Simple procedural stars
-        for (let i = 0; i < 50; i++) {
-            const x = Math.random() * this.width
-            const y = Math.random() * this.height
-            const size = Math.random() < 0.8 ? 1 : 2
-            const alpha = 0.3 + Math.random() * 0.5
-            bg.circle(x, y, size)
-            bg.fill({ color: 0xffffff, alpha })
-        }
-    }
-
     private createSkillCard(
         skillId: string,
         currentLevel: number,
         def: SkillDefinition,
         cardWidth: number,
         cardHeight: number,
-        index: number
+        _index: number
     ): { container: Container; cardBg: Graphics; skillId: string; currentLevel: number; def: SkillDefinition; isHovered: boolean } {
         const container = new Container()
 
-        // Card shadow
-        const shadow = new Graphics()
-        shadow.roundRect(-cardWidth / 2 + 4, -cardHeight / 2 + 6, cardWidth, cardHeight, 8)
-        shadow.fill({ color: 0x000000, alpha: 0.5 })
-        container.addChild(shadow)
-
-        // Card background - Balatro style with thick border
+        // Card background with Balatro style
         const cardBg = new Graphics()
-        // Main card
-        cardBg.roundRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 8)
-        cardBg.fill(0x1a1a2e)
-        // Border
-        cardBg.roundRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 8)
-        cardBg.stroke({ color: def.color, width: 3 })
-        // Inner highlight
-        cardBg.roundRect(-cardWidth / 2 + 4, -cardHeight / 2 + 4, cardWidth - 8, cardHeight - 8, 6)
-        cardBg.stroke({ color: 0x2a2a3e, width: 1 })
+        drawBalatroCard(cardBg, -cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, {
+            bgColor: BALATRO_COLORS.bgCard,
+            borderColor: def.color,
+            borderWidth: BALATRO_DESIGN.borderWidth,
+            radius: BALATRO_DESIGN.radiusMedium,
+        })
         container.addChild(cardBg)
 
-        // Top banner with level
+        // Top banner with level (NEW or upgrade)
         const isNewSkill = currentLevel === 0
         const nextLevel = currentLevel + 1
+        const bannerColor = isNewSkill ? BALATRO_COLORS.green : BALATRO_COLORS.blue
+
         const topBanner = new Graphics()
-        topBanner.roundRect(-cardWidth / 2 + 6, -cardHeight / 2 + 6, cardWidth - 12, 22, 4)
-        topBanner.fill(isNewSkill ? 0x2e7d32 : 0x1565c0)
+        topBanner.roundRect(-cardWidth / 2 + 6, -cardHeight / 2 + 8, cardWidth - 12, 24, 4)
+        topBanner.fill(bannerColor)
+        topBanner.roundRect(-cardWidth / 2 + 6, -cardHeight / 2 + 8, cardWidth - 12, 24, 4)
+        topBanner.stroke({ color: BALATRO_COLORS.border, width: 2 })
         container.addChild(topBanner)
 
         const levelLabel = new Text({
             text: isNewSkill ? 'NEW!' : `Lv.${currentLevel} → ${nextLevel}`,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: 'bold',
                 fill: 0xffffff,
             }),
         })
         levelLabel.anchor.set(0.5)
-        levelLabel.position.set(0, -cardHeight / 2 + 17)
+        levelLabel.position.set(0, -cardHeight / 2 + 20)
         container.addChild(levelLabel)
 
-        // Skill icon (centered, scaled for smaller card)
+        // Skill icon (centered in upper area)
+        const iconY = -35
         const iconBg = new Graphics()
-        iconBg.circle(0, -18, 22)
+        iconBg.circle(0, iconY, 30)
         iconBg.fill({ color: def.color, alpha: 0.2 })
-        iconBg.circle(0, -18, 22)
+        iconBg.circle(0, iconY, 30)
         iconBg.stroke({ color: def.color, width: 2 })
         container.addChild(iconBg)
 
@@ -389,29 +421,29 @@ export class SkillSelectionScreen {
             text: def.icon,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 22,
+                fontSize: 28,
                 fill: def.color,
             }),
         })
         iconText.anchor.set(0.5)
-        iconText.position.set(0, -18)
+        iconText.position.set(0, iconY)
         container.addChild(iconText)
 
-        // Skill name
+        // Skill name (centered)
         const nameText = new Text({
             text: t(def.name, 'ko'),
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 10,
+                fontSize: 13,
                 fontWeight: 'bold',
-                fill: 0xffffff,
+                fill: BALATRO_COLORS.textPrimary,
                 wordWrap: true,
-                wordWrapWidth: cardWidth - 12,
+                wordWrapWidth: cardWidth - 14,
                 align: 'center',
             }),
         })
         nameText.anchor.set(0.5)
-        nameText.position.set(0, 18)
+        nameText.position.set(0, 15)
         container.addChild(nameText)
 
         // Short description
@@ -419,14 +451,15 @@ export class SkillSelectionScreen {
             text: t(def.description, 'ko'),
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 7,
-                fill: 0xaaaaaa,
+                fontSize: 10,
+                fill: BALATRO_COLORS.textSecondary,
                 wordWrap: true,
-                wordWrapWidth: cardWidth - 12,
+                wordWrapWidth: cardWidth - 16,
                 align: 'center',
+                lineHeight: 14,
             }),
         })
-        descText.anchor.set(0.5)
+        descText.anchor.set(0.5, 0)
         descText.position.set(0, 38)
         container.addChild(descText)
 
@@ -446,11 +479,25 @@ export class SkillSelectionScreen {
         container.on('pointerdown', () => this.handleCardSelect(skillId, currentLevel))
         container.on('pointerover', () => {
             cardData.isHovered = true
-            cardBg.tint = 0xcccccc
+            // Highlight effect
+            cardBg.clear()
+            drawBalatroCard(cardBg, -cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, {
+                bgColor: BALATRO_COLORS.bgCardLight,
+                borderColor: BALATRO_COLORS.gold,
+                borderWidth: BALATRO_DESIGN.borderWidth,
+                radius: BALATRO_DESIGN.radiusMedium,
+            })
         })
         container.on('pointerout', () => {
             cardData.isHovered = false
-            cardBg.tint = 0xffffff
+            // Restore original style
+            cardBg.clear()
+            drawBalatroCard(cardBg, -cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, {
+                bgColor: BALATRO_COLORS.bgCard,
+                borderColor: def.color,
+                borderWidth: BALATRO_DESIGN.borderWidth,
+                radius: BALATRO_DESIGN.radiusMedium,
+            })
             // Reset scale when not hovered
             const card = this.skillCards.find(c => c.skillId === skillId)
             if (card && this.animTime > 0.5) {

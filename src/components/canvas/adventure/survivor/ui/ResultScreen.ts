@@ -3,6 +3,14 @@ import { RANK_CONFIGS, getRankFromTime } from '../types'
 import { PlayerSkill, SKILL_DEFINITIONS } from '../skills'
 import { easeOutQuad, easeOutBack } from '../utils'
 import { shareGameResult } from '@/utils/share'
+import {
+    BALATRO_COLORS,
+    BALATRO_DESIGN,
+    drawBalatroCard,
+    drawBalatroBadge,
+    drawCornerDots,
+    createBalatroButton,
+} from './BalatroButton'
 
 export interface ResultScreenContext {
     container: Container
@@ -98,64 +106,65 @@ export class ResultScreen {
         this.animTime += deltaSeconds
         const children = this.screenContainer.children
 
-        // New structure:
-        // 0: bg, 1: pattern, 2: cardShadow, 3: card, 4: title
-        // 5: timeLabel, 6: resultTimeText
-        // 7: killsLabel, 8: resultKillsText
-        // 9: levelLabel, 10: resultWaveText
-        // 11: divider
-        // 12+: skill icons (variable count)
+        // New Balatro structure:
+        // 0: bg, 1: pattern, 2: card, 3: decorDots, 4: badge, 5: title
+        // 6-8: stat box 1 (box, label, value)
+        // 9-11: stat box 2 (box, label, value)
+        // 12-14: stat box 3 (box, label, value)
+        // 15+: skill label, skill icons (if skills > 0)
         // then: resultRankCard
+        // then: physics card (if physicsStats)
         // then: resultButtons
 
-        // Step 0: Fade in card and title (0.0s - 0.3s)
+        // Step 0: Fade in card, decorDots, badge, and title (0.0s - 0.3s)
         if (this.animTime >= 0 && this.animStep === 0) {
             const progress = Math.min(1, this.animTime / 0.3)
-            if (children[3]) children[3].alpha = progress // card
-            if (children[4]) children[4].alpha = progress // title
+            if (children[2]) children[2].alpha = progress // card
+            if (children[3]) children[3].alpha = progress // decorDots
+            if (children[4]) children[4].alpha = progress // badge
+            if (children[5]) children[5].alpha = progress // title
             if (this.animTime >= 0.3) this.animStep = 1
         }
 
-        // Step 1: Show time stat (0.3s - 0.6s)
+        // Step 1: Show stat boxes with counting animation (0.3s - 0.9s)
         if (this.animTime >= 0.3 && this.animStep === 1) {
-            const progress = Math.min(1, (this.animTime - 0.3) / 0.3)
-            if (children[5]) children[5].alpha = progress // timeLabel
-            this.resultTimeText.alpha = progress
+            const progress = Math.min(1, (this.animTime - 0.3) / 0.6)
+
+            // Fade in stat boxes (indices 6-14)
+            for (let i = 6; i <= 14; i++) {
+                if (children[i]) children[i].alpha = Math.min(1, progress * 2)
+            }
+
+            // Animate time value
             this.displayedTime = this.data.gameTime * easeOutQuad(progress)
             const mins = Math.floor(this.displayedTime / 60)
             const secs = Math.floor(this.displayedTime % 60)
-            this.resultTimeText.text = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+            if (this.resultTimeText) {
+                this.resultTimeText.text = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+            }
+
+            // Animate kills value
+            const totalKills = Math.floor(this.data.score / 10)
+            this.displayedKills = Math.floor(totalKills * easeOutQuad(progress))
+            if (this.resultKillsText) {
+                this.resultKillsText.text = this.displayedKills.toString()
+            }
+
             if (progress >= 1) this.animStep = 2
         }
 
-        // Step 2: Show kills stat (0.6s - 0.9s)
-        if (this.animTime >= 0.6 && this.animStep === 2) {
-            const progress = Math.min(1, (this.animTime - 0.6) / 0.3)
-            if (children[7]) children[7].alpha = progress // killsLabel
-            this.resultKillsText.alpha = progress
-            const totalKills = Math.floor(this.data.score / 10)
-            this.displayedKills = Math.floor(totalKills * easeOutQuad(progress))
-            this.resultKillsText.text = this.displayedKills.toString()
-            if (progress >= 1) this.animStep = 3
-        }
+        // Step 2: Pop in skill icons (0.9s - 1.4s)
+        if (this.animTime >= 0.9 && this.animStep === 2) {
+            // Find skill icon containers (they have scale.set(0) initially)
+            const skillIconStartIndex = this.data.skills.length > 0 ? 16 : -1 // After skill label
 
-        // Step 3: Show level stat (0.9s - 1.1s)
-        if (this.animTime >= 0.9 && this.animStep === 3) {
-            const progress = Math.min(1, (this.animTime - 0.9) / 0.2)
-            if (children[9]) children[9].alpha = progress // levelLabel
-            this.resultWaveText.alpha = progress
-            if (progress >= 1) this.animStep = 4
-        }
-
-        // Step 4: Pop in skill icons (1.1s - 1.6s)
-        if (this.animTime >= 1.1 && this.animStep === 4) {
-            const skillStartIndex = 12 // After divider
-            if (this.data.skills.length > 0) {
+            if (skillIconStartIndex > 0 && this.data.skills.length > 0) {
                 for (let i = 0; i < this.data.skills.length; i++) {
-                    const iconTime = 1.1 + i * 0.08
+                    const iconTime = 0.9 + i * 0.08
                     if (this.animTime >= iconTime) {
-                        const icon = children[skillStartIndex + i] as Container
-                        if (icon) {
+                        const childIndex = skillIconStartIndex + i
+                        const icon = children[childIndex] as Container
+                        if (icon && icon.scale) {
                             const progress = Math.min(1, (this.animTime - iconTime) / 0.12)
                             icon.alpha = progress
                             icon.scale.set(easeOutBack(progress))
@@ -163,34 +172,40 @@ export class ResultScreen {
                     }
                 }
             }
-            const skillAnimDone = 1.1 + this.data.skills.length * 0.08 + 0.15
+
+            const skillAnimDone = 0.9 + this.data.skills.length * 0.08 + 0.15
             if (this.animTime >= skillAnimDone) {
-                this.animStep = 5
+                this.animStep = 3
             }
         }
 
-        // Step 5: Reveal rank card (1.6s - 2.0s)
-        if (this.animTime >= 1.6 && this.animStep === 5) {
-            const progress = Math.min(1, (this.animTime - 1.6) / 0.3)
+        // Step 3: Reveal rank card (1.4s - 1.8s)
+        if (this.animTime >= 1.4 && this.animStep === 3) {
+            const progress = Math.min(1, (this.animTime - 1.4) / 0.3)
             this.resultRankCard.scale.set(easeOutBack(progress))
 
             if (progress >= 1 && !this.rankRevealed) {
                 this.rankRevealed = true
             }
-            if (this.animTime >= 1.9) this.animStep = 6
+            if (this.animTime >= 1.7) this.animStep = 4
         }
 
-        // Step 6: Show buttons (1.9s+)
-        if (this.animTime >= 1.9 && this.animStep === 6) {
-            const progress = Math.min(1, (this.animTime - 1.9) / 0.2)
+        // Step 4: Show buttons (1.7s+)
+        if (this.animTime >= 1.7 && this.animStep === 4) {
+            const progress = Math.min(1, (this.animTime - 1.7) / 0.2)
             this.resultButtons.alpha = progress
-            if (progress >= 1) this.animStep = 7
+            if (progress >= 1) this.animStep = 5
         }
 
         // Rank card pulse animation
         if (this.rankRevealed) {
             const pulse = 1 + Math.sin(this.animTime * 4) * 0.03
             this.resultRankCard.scale.set(pulse)
+        }
+
+        // Decorative dots animation
+        if (this.decorDots) {
+            this.decorDots.alpha = 0.3 + Math.sin(this.animTime * 2) * 0.2
         }
     }
 
@@ -204,176 +219,135 @@ export class ResultScreen {
         this.data = null
     }
 
+    // Decorative dots for animation
+    private decorDots: Graphics | null = null
+
     private createUI(): void {
         this.screenContainer.removeChildren()
 
         if (!this.data) return
 
-        // Space theme colors
-        const bgTopColor = 0x0a0a1a // deep space
-        const bgBottomColor = 0x050510 // near black
-        const cardBgColor = 0x1a1a2e // dark panel
-        const cardShadowColor = 0x1a1a1a // black shadow
-        const textDark = 0xffffff // white text
-        const textMuted = 0xaaaaaa // light gray
-        const accentGold = 0xc9a227 // Balatro gold
-
-        // Gradient background
+        // Dark background with Balatro feel
         const bg = new Graphics()
-        const bands = 8
-        for (let i = 0; i < bands; i++) {
-            const y = (i / bands) * this.height
-            const h = this.height / bands + 1
-            const blend = i / (bands - 1)
-            const r1 = (bgTopColor >> 16) & 0xff
-            const g1 = (bgTopColor >> 8) & 0xff
-            const b1 = bgTopColor & 0xff
-            const r2 = (bgBottomColor >> 16) & 0xff
-            const g2 = (bgBottomColor >> 8) & 0xff
-            const b2 = bgBottomColor & 0xff
-            const r = Math.round(r1 + (r2 - r1) * blend)
-            const g = Math.round(g1 + (g2 - g1) * blend)
-            const b = Math.round(b1 + (b2 - b1) * blend)
-            const color = (r << 16) | (g << 8) | b
-            bg.rect(0, y, this.width, h)
-            bg.fill(color)
-        }
+        bg.rect(0, 0, this.width, this.height)
+        bg.fill({ color: BALATRO_COLORS.bgDark, alpha: 0.95 })
         this.screenContainer.addChild(bg)
 
         // Subtle dot pattern overlay (Balatro style)
         const pattern = new Graphics()
-        for (let row = 0; row < 30; row++) {
-            for (let col = 0; col < 20; col++) {
-                const px = col * 25 + (row % 2) * 12
-                const py = row * 25
-                pattern.circle(px, py, 2)
-                pattern.fill({ color: 0xffffff, alpha: 0.08 })
+        for (let x = 0; x < this.width; x += 20) {
+            for (let y = 0; y < this.height; y += 20) {
+                pattern.circle(x, y, 1)
+                pattern.fill({ color: 0xffffff, alpha: 0.03 })
             }
         }
         this.screenContainer.addChild(pattern)
 
-        // Main card container
-        const cardWidth = this.width - 40
+        // Responsive card sizing
+        const cardPadding = Math.min(20, this.width * 0.05)
+        const cardWidth = this.width - cardPadding * 2
         const cardHeight = 360
         const cardY = 40
-        const cardX = 20
+        const cardX = cardPadding
 
-        // Card shadow
-        const cardShadow = new Graphics()
-        cardShadow.roundRect(cardX + 4, cardY + 6, cardWidth, cardHeight, 16)
-        cardShadow.fill({ color: cardShadowColor, alpha: 0.4 })
-        this.screenContainer.addChild(cardShadow)
-
-        // Main card background - Balatro style with thick black border
+        // Main card background using Balatro utility
         const card = new Graphics()
-        card.roundRect(cardX, cardY, cardWidth, cardHeight, 16)
-        card.fill(cardBgColor)
-        card.roundRect(cardX, cardY, cardWidth, cardHeight, 16)
-        card.stroke({ color: 0x1a1a1a, width: 4 })
+        drawBalatroCard(card, cardX, cardY, cardWidth, cardHeight, {
+            bgColor: BALATRO_COLORS.bgCard,
+            borderColor: BALATRO_COLORS.gold,
+            borderWidth: BALATRO_DESIGN.borderWidth,
+            radius: BALATRO_DESIGN.radiusLarge,
+        })
         card.alpha = 0
         this.screenContainer.addChild(card)
 
-        // Title
-        const titleStyle = new TextStyle({
-            fontFamily: 'Arial, sans-serif',
-            fontSize: 24,
-            fontWeight: 'bold',
-            fill: textDark,
-            letterSpacing: 4,
+        // Decorative corner dots
+        this.decorDots = new Graphics()
+        drawCornerDots(this.decorDots, cardX, cardY, cardWidth, cardHeight)
+        this.screenContainer.addChild(this.decorDots)
+
+        // Title badge
+        const badgeW = 160
+        const badgeH = 36
+        const badge = new Graphics()
+        drawBalatroBadge(badge, this.centerX - badgeW / 2, cardY - 18, badgeW, badgeH, BALATRO_COLORS.gold)
+        this.screenContainer.addChild(badge)
+
+        const title = new Text({
+            text: 'SURVIVED',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 16,
+                fontWeight: 'bold',
+                fill: 0x000000,
+                letterSpacing: BALATRO_DESIGN.letterSpacing,
+            }),
         })
-        const title = new Text({ text: 'SURVIVED', style: titleStyle })
         title.anchor.set(0.5)
-        title.position.set(this.centerX, cardY + 40)
+        title.position.set(this.centerX, cardY)
         title.alpha = 0
         this.screenContainer.addChild(title)
 
-        // Stats section - clean text layout
-        const statsY = cardY + 90
-        const statGap = 50
-        const labelX = this.centerX - 50
-        const valueX = this.centerX + 50
+        // Inner content
+        const innerPadding = 14
+        const contentX = cardX + innerPadding
+        const contentWidth = cardWidth - innerPadding * 2
 
-        // Label style
-        const labelStyle = new TextStyle({
-            fontFamily: 'Arial, sans-serif',
-            fontSize: 14,
-            fontWeight: 'bold',
-            fill: textMuted,
-            letterSpacing: 2,
-        })
+        // Stats section with stat boxes
+        const statsY = cardY + 38
+        const statBoxWidth = (contentWidth - 20) / 3
+        const statBoxHeight = 58
 
-        // Value style
-        const valueStyle = new TextStyle({
-            fontFamily: 'Arial, sans-serif',
-            fontSize: 22,
-            fontWeight: 'bold',
-            fill: textDark,
-        })
+        // Time stat box
+        this.createStatBox(contentX, statsY, statBoxWidth, statBoxHeight, 'TIME', '00:00', BALATRO_COLORS.blue)
 
-        // Time stat
-        const timeLabel = new Text({ text: 'TIME', style: labelStyle })
-        timeLabel.anchor.set(1, 0.5)
-        timeLabel.position.set(labelX, statsY)
-        timeLabel.alpha = 0
-        this.screenContainer.addChild(timeLabel)
+        // Kills stat box
+        this.createStatBox(contentX + statBoxWidth + 10, statsY, statBoxWidth, statBoxHeight, 'KILLS', '0', BALATRO_COLORS.red)
 
-        this.resultTimeText = new Text({ text: '00:00', style: valueStyle })
-        this.resultTimeText.anchor.set(0, 0.5)
-        this.resultTimeText.position.set(valueX, statsY)
-        this.resultTimeText.alpha = 0
-        this.screenContainer.addChild(this.resultTimeText)
+        // Level stat box
+        this.createStatBox(contentX + (statBoxWidth + 10) * 2, statsY, statBoxWidth, statBoxHeight, 'LEVEL', this.data.level.toString(), BALATRO_COLORS.gold)
 
-        // Kills stat
-        const killsLabel = new Text({ text: 'KILLS', style: labelStyle })
-        killsLabel.anchor.set(1, 0.5)
-        killsLabel.position.set(labelX, statsY + statGap)
-        killsLabel.alpha = 0
-        this.screenContainer.addChild(killsLabel)
+        // Create hidden text elements for animation
+        this.resultTimeText = this.screenContainer.children.find(
+            (c) => c instanceof Text && (c as Text).text === '00:00'
+        ) as Text
+        this.resultKillsText = this.screenContainer.children.find(
+            (c) => c instanceof Text && (c as Text).text === '0'
+        ) as Text
+        this.resultWaveText = this.screenContainer.children.find(
+            (c) => c instanceof Text && (c as Text).text === this.data!.level.toString()
+        ) as Text
 
-        this.resultKillsText = new Text({ text: '0', style: valueStyle })
-        this.resultKillsText.anchor.set(0, 0.5)
-        this.resultKillsText.position.set(valueX, statsY + statGap)
-        this.resultKillsText.alpha = 0
-        this.screenContainer.addChild(this.resultKillsText)
-
-        // Level stat
-        const levelLabel = new Text({ text: 'LEVEL', style: labelStyle })
-        levelLabel.anchor.set(1, 0.5)
-        levelLabel.position.set(labelX, statsY + statGap * 2)
-        levelLabel.alpha = 0
-        this.screenContainer.addChild(levelLabel)
-
-        this.resultWaveText = new Text({
-            text: this.data.level.toString(),
-            style: valueStyle,
-        })
-        this.resultWaveText.anchor.set(0, 0.5)
-        this.resultWaveText.position.set(valueX, statsY + statGap * 2)
-        this.resultWaveText.alpha = 0
-        this.screenContainer.addChild(this.resultWaveText)
-
-        // Divider line
-        const divider = new Graphics()
-        divider.moveTo(cardX + 30, statsY + statGap * 2.5 + 10)
-        divider.lineTo(cardX + cardWidth - 30, statsY + statGap * 2.5 + 10)
-        divider.stroke({ color: textMuted, width: 1, alpha: 0.3 })
-        this.screenContainer.addChild(divider)
-
-        // Skill icons row - clean pill badges
-        const skillY = statsY + statGap * 3
+        // Skills section
+        const skillsY = statsY + statBoxHeight + 20
         if (this.data.skills.length > 0) {
-            const pillHeight = 28
-            const pillGap = 6
-            const pillPadding = 12
+            const skillsLabel = new Text({
+                text: `SKILLS (${this.data.skills.length})`,
+                style: new TextStyle({
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 10,
+                    fontWeight: 'bold',
+                    fill: BALATRO_COLORS.textSecondary,
+                    letterSpacing: 1,
+                }),
+            })
+            skillsLabel.anchor.set(0.5)
+            skillsLabel.position.set(this.centerX, skillsY)
+            this.screenContainer.addChild(skillsLabel)
 
-            // Calculate total width for centering
+            // Skill pills row
+            const pillY = skillsY + 22
+            const pillHeight = 26
+            const pillGap = 6
+
+            // Calculate widths for centering
             let totalWidth = 0
             const skillWidths: number[] = []
             this.data.skills.forEach((playerSkill) => {
                 const skillDef = SKILL_DEFINITIONS[playerSkill.skillId]
                 if (!skillDef) return
                 const text = `${skillDef.icon} Lv.${playerSkill.level}`
-                const estimatedWidth = text.length * 8 + pillPadding * 2
+                const estimatedWidth = text.length * 7 + 16
                 skillWidths.push(estimatedWidth)
                 totalWidth += estimatedWidth
             })
@@ -386,37 +360,25 @@ export class ResultScreen {
                 if (!skillDef) return
 
                 const iconContainer = new Container()
-                iconContainer.position.set(currentX + skillWidths[i] / 2, skillY)
+                iconContainer.position.set(currentX + skillWidths[i] / 2, pillY)
                 iconContainer.alpha = 0
                 iconContainer.scale.set(0)
 
-                // Pill background
+                // Skill pill background with color accent
                 const pill = new Graphics()
-                pill.roundRect(
-                    -skillWidths[i] / 2,
-                    -pillHeight / 2,
-                    skillWidths[i],
-                    pillHeight,
-                    pillHeight / 2
-                )
-                pill.fill({ color: textMuted, alpha: 0.15 })
-                pill.roundRect(
-                    -skillWidths[i] / 2,
-                    -pillHeight / 2,
-                    skillWidths[i],
-                    pillHeight,
-                    pillHeight / 2
-                )
-                pill.stroke({ color: textMuted, width: 1, alpha: 0.3 })
+                pill.roundRect(-skillWidths[i] / 2, -pillHeight / 2, skillWidths[i], pillHeight, pillHeight / 2)
+                pill.fill(BALATRO_COLORS.bgCardLight)
+                pill.roundRect(-skillWidths[i] / 2, -pillHeight / 2, skillWidths[i], pillHeight, pillHeight / 2)
+                pill.stroke({ color: skillDef.color, width: 2 })
                 iconContainer.addChild(pill)
 
                 const iconText = new Text({
                     text: `${skillDef.icon} Lv.${playerSkill.level}`,
                     style: new TextStyle({
                         fontFamily: 'Arial, sans-serif',
-                        fontSize: 12,
+                        fontSize: 10,
                         fontWeight: 'bold',
-                        fill: textDark,
+                        fill: BALATRO_COLORS.textPrimary,
                     }),
                 })
                 iconText.anchor.set(0.5)
@@ -427,8 +389,8 @@ export class ResultScreen {
             })
         }
 
-        // Rank card - clean rounded rectangle
-        const rankY = this.data.skills.length > 0 ? cardY + cardHeight - 60 : statsY + statGap * 3
+        // Rank card - positioned based on skills
+        const rankY = this.data.skills.length > 0 ? cardY + cardHeight - 70 : statsY + statBoxHeight + 50
         this.resultRankCard = new Container()
         this.resultRankCard.position.set(this.centerX, rankY)
         this.resultRankCard.scale.set(0)
@@ -436,27 +398,17 @@ export class ResultScreen {
 
         const rank = getRankFromTime(this.data.gameTime)
         const rankConfig = RANK_CONFIGS[rank]
-        const rankBoxWidth = 80
-        const rankBoxHeight = 60
+        const rankBoxWidth = 90
+        const rankBoxHeight = 70
 
-        // Rank shadow
-        const rankShadow = new Graphics()
-        rankShadow.roundRect(
-            -rankBoxWidth / 2 + 3,
-            -rankBoxHeight / 2 + 4,
-            rankBoxWidth,
-            rankBoxHeight,
-            12
-        )
-        rankShadow.fill({ color: cardShadowColor, alpha: 0.3 })
-        this.resultRankCard.addChild(rankShadow)
-
-        // Rank badge background - Balatro style with thick black border
+        // Rank badge using Balatro card style
         const rankBg = new Graphics()
-        rankBg.roundRect(-rankBoxWidth / 2, -rankBoxHeight / 2, rankBoxWidth, rankBoxHeight, 12)
-        rankBg.fill(cardBgColor)
-        rankBg.roundRect(-rankBoxWidth / 2, -rankBoxHeight / 2, rankBoxWidth, rankBoxHeight, 12)
-        rankBg.stroke({ color: 0x1a1a1a, width: 4 })
+        drawBalatroCard(rankBg, -rankBoxWidth / 2, -rankBoxHeight / 2, rankBoxWidth, rankBoxHeight, {
+            bgColor: BALATRO_COLORS.bgCardLight,
+            borderColor: rankConfig.color,
+            borderWidth: BALATRO_DESIGN.borderWidth,
+            radius: BALATRO_DESIGN.radiusMedium,
+        })
         this.resultRankCard.addChild(rankBg)
 
         // Rank letter
@@ -470,136 +422,163 @@ export class ResultScreen {
             }),
         })
         rankText.anchor.set(0.5)
+        rankText.position.set(0, -5)
         this.resultRankCard.addChild(rankText)
 
-        // Rank message below card
+        // Rank message
         const messageText = new Text({
             text: rankConfig.message,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 13,
+                fontSize: 10,
                 fontWeight: 'bold',
-                fill: textMuted,
+                fill: BALATRO_COLORS.textSecondary,
             }),
         })
         messageText.anchor.set(0.5)
-        messageText.position.set(0, rankBoxHeight / 2 + 15)
+        messageText.position.set(0, rankBoxHeight / 2 + 12)
         this.resultRankCard.addChild(messageText)
 
         // Physics stats section (below card, compact layout)
         if (this.data.physicsStats) {
             const physicsY = cardY + cardHeight + 15
-            const physicsStyle = new TextStyle({
-                fontFamily: 'monospace, Courier, sans-serif',
-                fontSize: 10,
-                fontWeight: 'bold',
-                fill: 0x88ccff,
-                letterSpacing: 1,
-            })
 
-            // Physics formula header
+            // Physics card
+            const physicsCardWidth = cardWidth - 40
+            const physicsCard = new Graphics()
+            drawBalatroCard(physicsCard, cardX + 20, physicsY - 5, physicsCardWidth, 45, {
+                bgColor: BALATRO_COLORS.bgCard,
+                borderColor: BALATRO_COLORS.cyan,
+                borderWidth: 2,
+                radius: BALATRO_DESIGN.radiusSmall,
+            })
+            this.screenContainer.addChild(physicsCard)
+
+            // Physics header
             const physicsHeader = new Text({
                 text: '⚛ PHYSICS',
                 style: new TextStyle({
-                    ...physicsStyle,
-                    fontSize: 11,
-                    fill: 0xaaddff,
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 9,
+                    fontWeight: 'bold',
+                    fill: BALATRO_COLORS.cyan,
+                    letterSpacing: 1,
                 }),
             })
             physicsHeader.anchor.set(0.5)
-            physicsHeader.position.set(this.centerX, physicsY)
+            physicsHeader.position.set(this.centerX, physicsY + 8)
             this.screenContainer.addChild(physicsHeader)
 
-            // Stats in a single line with formulas
+            // Stats line
             const stats = this.data.physicsStats
-            const momentum = (stats.totalMomentum / 1000).toFixed(1) // Convert to k units
+            const momentum = (stats.totalMomentum / 1000).toFixed(1)
             const statsLine = `p=${momentum}k · bounces=${stats.elasticBounces} · m=${stats.mergedMass} · sling=${stats.slingshotCount}`
 
             const physicsText = new Text({
                 text: statsLine,
-                style: physicsStyle,
+                style: new TextStyle({
+                    fontFamily: 'monospace, Courier, sans-serif',
+                    fontSize: 9,
+                    fontWeight: 'bold',
+                    fill: BALATRO_COLORS.textSecondary,
+                }),
             })
             physicsText.anchor.set(0.5)
-            physicsText.position.set(this.centerX, physicsY + 15)
+            physicsText.position.set(this.centerX, physicsY + 25)
             this.screenContainer.addChild(physicsText)
         }
 
-        // Action buttons - Balatro-style rounded rectangle buttons
+        // Action buttons using Balatro button utility
         this.resultButtons = new Container()
-        this.resultButtons.position.set(this.centerX, this.height - 60)
+        this.resultButtons.position.set(0, 0)
         this.resultButtons.alpha = 0
         this.screenContainer.addChild(this.resultButtons)
 
-        // Retry button - Balatro blue
-        const retryBtn = this.createTextButton('RETRY', -55, 0x4a9eff, () => {
-            this.onRetry?.()
+        const btnY = this.height - 50
+        const btnWidth = Math.min(100, (cardWidth - 30) / 2)
+        const btnGap = 12
+
+        // Retry button
+        const retryBtn = createBalatroButton({
+            label: 'RETRY',
+            width: btnWidth,
+            height: 40,
+            color: BALATRO_COLORS.blue,
+            onClick: () => this.onRetry?.(),
         })
+        retryBtn.position.set(this.centerX - btnWidth / 2 - btnGap / 2, btnY)
         this.resultButtons.addChild(retryBtn)
 
-        // Share button - Balatro gold
-        const shareBtn = this.createTextButton('SHARE', 55, 0xc9a227, () => {
-            if (!this.data) return
-            const kills = Math.floor(this.data.score / 10)
-            const rank = getRankFromTime(this.data.gameTime)
-            shareGameResult(
-                {
-                    score: this.data.score,
-                    kills,
-                    time: this.data.gameTime,
-                    level: this.data.level,
-                    rank,
-                },
-                navigator.language.startsWith('ko') ? 'ko' : 'en'
-            )
+        // Share button
+        const shareBtn = createBalatroButton({
+            label: 'SHARE',
+            width: btnWidth,
+            height: 40,
+            color: BALATRO_COLORS.gold,
+            onClick: () => {
+                if (!this.data) return
+                const kills = Math.floor(this.data.score / 10)
+                const rankValue = getRankFromTime(this.data.gameTime)
+                shareGameResult(
+                    {
+                        score: this.data.score,
+                        kills,
+                        time: this.data.gameTime,
+                        level: this.data.level,
+                        rank: rankValue,
+                    },
+                    navigator.language.startsWith('ko') ? 'ko' : 'en'
+                )
+            },
         })
+        shareBtn.position.set(this.centerX + btnWidth / 2 + btnGap / 2, btnY)
         this.resultButtons.addChild(shareBtn)
     }
 
-    private createTextButton(
+    private createStatBox(
+        x: number,
+        y: number,
+        width: number,
+        height: number,
         label: string,
-        offsetX: number,
-        color: number,
-        onClick: () => void
-    ): Container {
-        const btn = new Container()
-        btn.position.set(offsetX, 0)
-        btn.eventMode = 'static'
-        btn.cursor = 'pointer'
+        value: string,
+        accentColor: number
+    ): void {
+        const box = new Graphics()
+        drawBalatroCard(box, x, y, width, height, {
+            bgColor: BALATRO_COLORS.bgCardLight,
+            borderColor: accentColor,
+            borderWidth: 2,
+            radius: BALATRO_DESIGN.radiusSmall,
+        })
+        this.screenContainer.addChild(box)
 
-        const btnWidth = 90
-        const btnHeight = 40
-        const cardShadowColor = 0x1a1a1a
-
-        // Shadow
-        const shadow = new Graphics()
-        shadow.roundRect(-btnWidth / 2 + 2, -btnHeight / 2 + 4, btnWidth, btnHeight, 10)
-        shadow.fill({ color: cardShadowColor, alpha: 0.5 })
-        btn.addChild(shadow)
-
-        // Colored background (like HomeScreen buttons)
-        const bg = new Graphics()
-        bg.roundRect(-btnWidth / 2, -btnHeight / 2, btnWidth, btnHeight, 10)
-        bg.fill(color)
-        bg.roundRect(-btnWidth / 2, -btnHeight / 2, btnWidth, btnHeight, 10)
-        bg.stroke({ color: 0x1a1a1a, width: 3 })
-        btn.addChild(bg)
-
-        // Text color based on background (black on gold, white on others)
-        const text = new Text({
+        const labelText = new Text({
             text: label,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 14,
+                fontSize: 9,
                 fontWeight: 'bold',
-                fill: color === 0xc9a227 ? 0x000000 : 0xffffff,
+                fill: accentColor,
                 letterSpacing: 1,
             }),
         })
-        text.anchor.set(0.5)
-        btn.addChild(text)
+        labelText.anchor.set(0.5)
+        labelText.position.set(x + width / 2, y + 15)
+        this.screenContainer.addChild(labelText)
 
-        btn.on('pointerdown', onClick)
-
-        return btn
+        const valueText = new Text({
+            text: value,
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 18,
+                fontWeight: 'bold',
+                fill: BALATRO_COLORS.textPrimary,
+            }),
+        })
+        valueText.anchor.set(0.5)
+        valueText.position.set(x + width / 2, y + 38)
+        this.screenContainer.addChild(valueText)
     }
+
 }

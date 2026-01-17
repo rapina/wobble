@@ -76,6 +76,7 @@ interface BackgroundSystemContext {
     worldContainer: Container // All world-space elements (gradient, grid, particles)
     width: number
     height: number
+    scale?: number // Optional scale factor (default 1.0, use 0.75 for zoomed-out view)
 }
 
 // Collapse fragment for game over effect
@@ -108,6 +109,9 @@ export class BackgroundSystem {
     private readonly THEME_DURATION = 90 // seconds per theme
     private readonly TRANSITION_DURATION = 5 // seconds for smooth transition
 
+    // Scale factor for calculating visible area margin
+    private scale: number = 1.0
+
     // Collapse effect state
     private isCollapsing = false
     private collapseTime = 0
@@ -119,6 +123,7 @@ export class BackgroundSystem {
 
     constructor(context: BackgroundSystemContext) {
         this.context = context
+        this.scale = context.scale ?? 1.0
 
         // All layers in world-space (inside gameContainer, moves with camera)
         this.gradientGraphics = new Graphics()
@@ -294,11 +299,15 @@ export class BackgroundSystem {
         const bgColor = this.lerpColor(from.bgBottom, to.bgBottom, t)
 
         // Calculate visible area in world space
-        const margin = 100
-        const left = cameraX - this.context.width / 2 - margin
-        const top = cameraY - this.context.height / 2 - margin
-        const w = this.context.width + margin * 2
-        const h = this.context.height + margin * 2
+        // When scaled (e.g., 0.75), the visible world area is larger (width/scale x height/scale)
+        // Add extra margin to ensure full coverage
+        const scaledWidth = this.context.width / this.scale
+        const scaledHeight = this.context.height / this.scale
+        const margin = 150 // Extra margin for safety
+        const left = cameraX - scaledWidth / 2 - margin
+        const top = cameraY - scaledHeight / 2 - margin
+        const w = scaledWidth + margin * 2
+        const h = scaledHeight + margin * 2
 
         // Draw single solid color
         this.gradientGraphics.rect(left, top, w, h)
@@ -357,12 +366,14 @@ export class BackgroundSystem {
     private drawProceduralParticles(theme: ColorTheme, cameraX: number, cameraY: number): void {
         this.particleGraphics.clear()
 
-        // Calculate visible area with margin
-        const margin = 100
-        const left = cameraX - this.context.width / 2 - margin
-        const top = cameraY - this.context.height / 2 - margin
-        const right = left + this.context.width + margin * 2
-        const bottom = top + this.context.height + margin * 2
+        // Calculate visible area with margin (accounting for scale)
+        const scaledWidth = this.context.width / this.scale
+        const scaledHeight = this.context.height / this.scale
+        const margin = 150
+        const left = cameraX - scaledWidth / 2 - margin
+        const top = cameraY - scaledHeight / 2 - margin
+        const right = left + scaledWidth + margin * 2
+        const bottom = top + scaledHeight + margin * 2
 
         // Grid-based star generation for infinite scrolling
         const cellSize = 80
