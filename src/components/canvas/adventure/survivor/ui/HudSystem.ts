@@ -48,19 +48,12 @@ export class HudSystem {
     private width: number
     private height: number
 
-    // Main HUD card container
-    private hudCard!: Container
-    private hudCardBg!: Graphics
-
-    // Health display
-    private healthContainer!: Container
-    private healthBar!: Graphics
-
-    // XP display
+    // Top XP bar (full width)
+    private xpBarContainer!: Container
     private xpBarBg!: Graphics
     private xpBarFill!: Graphics
-    private levelBadge!: Graphics
     private levelText!: Text
+    private xpText!: Text
 
     // Timer
     private timerContainer!: Container
@@ -92,91 +85,60 @@ export class HudSystem {
     }
 
     private setup(): void {
-        // === Top-left HUD Card ===
-        this.hudCard = new Container()
-        this.hudCard.position.set(10, 10)
-        this.uiContainer.addChild(this.hudCard)
+        const barHeight = 8
+        const barPadding = 0
 
-        // HUD card background
-        this.hudCardBg = new Graphics()
-        drawBalatroCard(this.hudCardBg, 0, 0, 200, 70, {
-            bgColor: BALATRO_COLORS.bgCard,
-            borderColor: BALATRO_COLORS.gold,
-            borderWidth: 2,
-            radius: BALATRO_DESIGN.radiusMedium,
-        })
-        this.hudCard.addChild(this.hudCardBg)
+        // === Top XP Bar (Full Width) ===
+        this.xpBarContainer = new Container()
+        this.xpBarContainer.position.set(barPadding, barPadding)
+        this.uiContainer.addChild(this.xpBarContainer)
 
-        // === Health Section ===
-        this.healthContainer = new Container()
-        this.healthContainer.position.set(12, 12)
-        this.hudCard.addChild(this.healthContainer)
-
-        // Health icon badge
-        const healthBadge = new Graphics()
-        drawBalatroBadge(healthBadge, 0, 0, 28, 28, BALATRO_COLORS.red)
-        this.healthContainer.addChild(healthBadge)
-
-        // Heart symbol
-        const heartText = new Text({
-            text: '♥',
-            style: new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 14,
-                fill: 0xffffff,
-            }),
-        })
-        heartText.anchor.set(0.5)
-        heartText.position.set(14, 14)
-        this.healthContainer.addChild(heartText)
-
-        // Health hearts display
-        this.healthBar = new Graphics()
-        this.healthBar.position.set(36, 0)
-        this.healthContainer.addChild(this.healthBar)
-
-        // === Level & XP Section ===
-        const xpY = 42
-
-        // Level badge
-        this.levelBadge = new Graphics()
-        drawBalatroBadge(this.levelBadge, 12, xpY, 28, 20, BALATRO_COLORS.gold)
-        this.hudCard.addChild(this.levelBadge)
-
-        // Level text
-        this.levelText = new Text({
-            text: '1',
-            style: new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 11,
-                fontWeight: 'bold',
-                fill: 0x000000,
-            }),
-        })
-        this.levelText.anchor.set(0.5)
-        this.levelText.position.set(26, xpY + 10)
-        this.hudCard.addChild(this.levelText)
-
-        // XP bar background
+        // XP bar background (full width, thin)
         this.xpBarBg = new Graphics()
-        this.xpBarBg.roundRect(48, xpY + 2, 100, 16, 6)
-        this.xpBarBg.fill(BALATRO_COLORS.bgCardLight)
-        this.xpBarBg.roundRect(48, xpY + 2, 100, 16, 6)
-        this.xpBarBg.stroke({ color: 0x3a3a4e, width: 2 })
-        this.hudCard.addChild(this.xpBarBg)
+        this.xpBarBg.roundRect(0, 0, this.width - barPadding * 2, barHeight, 0)
+        this.xpBarBg.fill({ color: BALATRO_COLORS.bgCard, alpha: 0.85 })
+        this.xpBarContainer.addChild(this.xpBarBg)
 
         // XP bar fill
         this.xpBarFill = new Graphics()
-        this.hudCard.addChild(this.xpBarFill)
+        this.xpBarContainer.addChild(this.xpBarFill)
 
-        // === Timer (Top-center) ===
+        // Level text (centered in bar)
+        this.levelText = new Text({
+            text: 'Lv.1',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 7,
+                fontWeight: 'bold',
+                fill: BALATRO_COLORS.gold,
+            }),
+        })
+        this.levelText.anchor.set(1, 0.5)
+        this.levelText.position.set(this.width / 2 - 4, barHeight / 2)
+        this.xpBarContainer.addChild(this.levelText)
+
+        // XP text (centered in bar, next to level)
+        this.xpText = new Text({
+            text: '0/100',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 7,
+                fontWeight: 'bold',
+                fill: BALATRO_COLORS.textSecondary,
+            }),
+        })
+        this.xpText.anchor.set(0, 0.5)
+        this.xpText.position.set(this.width / 2 + 4, barHeight / 2)
+        this.xpBarContainer.addChild(this.xpText)
+
+        // === Timer (Top-center, below XP bar) ===
         this.timerContainer = new Container()
-        this.timerContainer.position.set(this.width / 2 - 30, 10)
+        this.timerContainer.position.set(this.width / 2 - 30, barHeight + 6)
         this.uiContainer.addChild(this.timerContainer)
 
         // Timer background
         this.timerBg = new Graphics()
-        drawBalatroCard(this.timerBg, 0, 0, 60, 36, {
+        drawBalatroCard(this.timerBg, 0, 0, 60, 28, {
             bgColor: BALATRO_COLORS.bgCard,
             borderColor: BALATRO_COLORS.blue,
             borderWidth: 2,
@@ -189,19 +151,19 @@ export class HudSystem {
             text: '10:00',
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 14,
+                fontSize: 12,
                 fontWeight: 'bold',
                 fill: BALATRO_COLORS.textPrimary,
                 letterSpacing: 1,
             }),
         })
         this.timeText.anchor.set(0.5)
-        this.timeText.position.set(30, 18)
+        this.timeText.position.set(30, 14)
         this.timerContainer.addChild(this.timeText)
 
-        // === Skill List (Below HUD Card) ===
+        // === Skill List (Below timer, left side) ===
         this.skillListContainer = new Container()
-        this.skillListContainer.position.set(10, 90)
+        this.skillListContainer.position.set(10, barHeight + 12)
         this.uiContainer.addChild(this.skillListContainer)
 
         // === Combo Display (Top-right, below timer) ===
@@ -263,48 +225,10 @@ export class HudSystem {
      * Update HUD display
      */
     update(state: HudState): void {
-        this.updateHealthBar(state.health, state.maxHealth)
         this.updateXpBar(state.progress)
         this.updateTimer(state.gameTime)
-        this.updateLevel(state.progress.level)
         this.updateSkillList(state.skills, state.cooldowns || [], state.skillStats || [])
         this.lastState = state
-    }
-
-    private updateHealthBar(health: number, maxHealth: number): void {
-        this.healthBar.clear()
-
-        // Calculate hearts (max 6)
-        const maxHearts = 6
-        const healthPerHeart = maxHealth / maxHearts
-        const fullHearts = Math.floor(health / healthPerHeart)
-        const partialHeart = (health % healthPerHeart) / healthPerHeart
-
-        const heartSize = 16
-        const heartGap = 4
-
-        for (let i = 0; i < maxHearts; i++) {
-            const x = i * (heartSize + heartGap)
-            const y = 6
-
-            let fillColor: number
-            let fillAlpha = 1
-
-            if (i < fullHearts) {
-                fillColor = BALATRO_COLORS.red
-            } else if (i === fullHearts && partialHeart > 0) {
-                fillColor = BALATRO_COLORS.red
-                fillAlpha = 0.3 + partialHeart * 0.7
-            } else {
-                fillColor = BALATRO_COLORS.bgCardLight
-            }
-
-            // Draw heart-shaped indicator
-            this.healthBar.roundRect(x, y, heartSize, heartSize, 4)
-            this.healthBar.fill({ color: fillColor, alpha: fillAlpha })
-            this.healthBar.roundRect(x, y, heartSize, heartSize, 4)
-            this.healthBar.stroke({ color: BALATRO_COLORS.border, width: 1.5 })
-        }
     }
 
     private updateXpBar(progress: PlayerProgress): void {
@@ -315,16 +239,21 @@ export class HudSystem {
         const xpNeeded = nextLevelXp - currentLevelXp
         const progressRatio = Math.min(1, xpInLevel / xpNeeded)
 
-        const barX = 50
-        const barY = 44
-        const barWidth = 96
-        const barHeight = 12
+        const barHeight = 8
+        const barWidth = this.width
 
+        // Update level text
+        this.levelText.text = `Lv.${currentLevel}`
+
+        // Update XP text
+        this.xpText.text = `${Math.floor(xpInLevel)}/${xpNeeded}`
+
+        // Update XP bar fill
         this.xpBarFill.clear()
         const fillWidth = Math.max(0, barWidth * progressRatio)
         if (fillWidth > 0) {
-            this.xpBarFill.roundRect(barX, barY, fillWidth, barHeight, 4)
-            this.xpBarFill.fill(BALATRO_COLORS.cyan)
+            this.xpBarFill.roundRect(0, 0, fillWidth, barHeight, 0)
+            this.xpBarFill.fill({ color: BALATRO_COLORS.cyan, alpha: 0.7 })
         }
     }
 
@@ -348,16 +277,12 @@ export class HudSystem {
             this.timeText.style.fill = BALATRO_COLORS.textPrimary
         }
 
-        drawBalatroCard(this.timerBg, 0, 0, 60, 36, {
+        drawBalatroCard(this.timerBg, 0, 0, 60, 28, {
             bgColor: BALATRO_COLORS.bgCard,
             borderColor,
             borderWidth: 2,
             radius: BALATRO_DESIGN.radiusSmall,
         })
-    }
-
-    private updateLevel(level: number): void {
-        this.levelText.text = `${level}`
     }
 
     private updateSkillList(

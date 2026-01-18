@@ -71,8 +71,37 @@ export class PhysicsSkillVisuals {
     private effectContainer: Container
     private effects: PhysicsEffect[] = []
 
+    // Deferred destruction queue - PixiJS v8 requires destruction outside render cycle
+    private destructionQueue: Container[] = []
+    private destructionScheduled = false
+
     constructor(effectContainer: Container) {
         this.effectContainer = effectContainer
+    }
+
+    /**
+     * Queue a Container for deferred destruction.
+     * PixiJS v8 with Vulkan/WebGL batching requires destruction outside render cycle.
+     */
+    private queueDestroy(container: Container): void {
+        this.destructionQueue.push(container)
+        if (!this.destructionScheduled) {
+            this.destructionScheduled = true
+            queueMicrotask(() => this.processDestructionQueue())
+        }
+    }
+
+    /**
+     * Process the destruction queue - called after render cycle completes
+     */
+    private processDestructionQueue(): void {
+        this.destructionScheduled = false
+        for (const container of this.destructionQueue) {
+            if (!container.destroyed) {
+                container.destroy({ children: true })
+            }
+        }
+        this.destructionQueue.length = 0
     }
 
     /**
@@ -583,9 +612,9 @@ export class PhysicsSkillVisuals {
             const shouldContinue = effect.update(delta)
 
             if (!shouldContinue || effect.timer <= 0) {
-                // Remove from parent and destroy to free GPU memory
+                // Remove from parent and queue for deferred destruction
                 this.effectContainer.removeChild(effect.container)
-                effect.container.destroy({ children: true })
+                this.queueDestroy(effect.container)
                 this.effects.splice(i, 1)
             }
         }
@@ -615,7 +644,7 @@ export class PhysicsSkillVisuals {
     reset(): void {
         for (const effect of this.effects) {
             this.effectContainer.removeChild(effect.container)
-            effect.container.destroy({ children: true })
+            this.queueDestroy(effect.container)
         }
         this.effects = []
     }

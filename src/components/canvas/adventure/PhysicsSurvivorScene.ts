@@ -223,6 +223,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
     // Player (world coordinates - infinite map)
     declare private player: Wobble
+    declare private playerHealthBar: Graphics // HP gauge below player
     private playerX = 0
     private playerY = 0
     private playerVx = 0
@@ -302,6 +303,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
     // Hit effects (shared with systems)
     private hitEffects: HitEffect[] = []
+
+    // Deferred destruction queue - PixiJS v8 requires destruction outside render cycle
+    private destructionQueue: Graphics[] = []
+    private destructionScheduled = false
 
     // Debug system - reads from localStorage, set via Settings
     private debugEnabled = localStorage.getItem('wobble-debug-enabled') === 'true'
@@ -716,6 +721,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.player.position.set(this.playerX, this.playerY)
         this.gameContainer.addChild(this.player)
 
+        // Player HP gauge (below player character)
+        this.playerHealthBar = new Graphics()
+        this.gameContainer.addChild(this.playerHealthBar)
+        this.updatePlayerHealthBar()
+
         // Initialize camera position
         this.gameContainer.pivot.set(this.cameraX, this.cameraY)
         this.gameContainer.position.set(this.centerX, this.centerY)
@@ -995,6 +1005,48 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         // Update combo display
         this.hudSystem.updateCombo(this.comboSystem.getState(), this.comboSystem.getComboWindow())
+    }
+
+    /**
+     * Update player HP gauge (follows player in world space)
+     */
+    private updatePlayerHealthBar(): void {
+        if (!this.playerHealthBar) return
+
+        this.playerHealthBar.clear()
+
+        const barWidth = 40
+        const barHeight = 4
+        const barY = 28 // Distance below player center
+
+        // Position bar below player
+        const barX = this.playerX - barWidth / 2
+        const barYPos = this.playerY + barY
+
+        // Background (dark)
+        this.playerHealthBar.roundRect(barX, barYPos, barWidth, barHeight, 2)
+        this.playerHealthBar.fill({ color: 0x1a1a2e, alpha: 0.8 })
+
+        // Health fill
+        const healthRatio = Math.max(0, this.playerHealth / this.maxPlayerHealth)
+        const fillWidth = barWidth * healthRatio
+
+        if (fillWidth > 0) {
+            // Color based on health
+            let fillColor = 0x2ecc71 // Green
+            if (healthRatio < 0.3) {
+                fillColor = 0xe74c3c // Red
+            } else if (healthRatio < 0.6) {
+                fillColor = 0xf39c12 // Orange
+            }
+
+            this.playerHealthBar.roundRect(barX, barYPos, fillWidth, barHeight, 2)
+            this.playerHealthBar.fill({ color: fillColor, alpha: 0.9 })
+        }
+
+        // Border
+        this.playerHealthBar.roundRect(barX, barYPos, barWidth, barHeight, 2)
+        this.playerHealthBar.stroke({ color: 0x2a2a4e, width: 1 })
     }
 
     /**
@@ -1509,10 +1561,36 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
             if (effect.timer <= 0) {
                 this.effectContainer.removeChild(effect.graphics)
-                // Don't call destroy() during render cycle - let GC handle it
+                this.queueDestroy(effect.graphics)
                 this.hitEffects.splice(i, 1)
             }
         }
+    }
+
+    /**
+     * Queue a Graphics object for deferred destruction.
+     * PixiJS v8 with Vulkan/WebGL batching requires destruction outside render cycle.
+     */
+    private queueDestroy(graphics: Graphics): void {
+        this.destructionQueue.push(graphics)
+        if (!this.destructionScheduled) {
+            this.destructionScheduled = true
+            // Use queueMicrotask to defer destruction until after current render cycle
+            queueMicrotask(() => this.processDestructionQueue())
+        }
+    }
+
+    /**
+     * Process the destruction queue - called after render cycle completes
+     */
+    private processDestructionQueue(): void {
+        this.destructionScheduled = false
+        for (const graphics of this.destructionQueue) {
+            if (!graphics.destroyed) {
+                graphics.destroy()
+            }
+        }
+        this.destructionQueue.length = 0
     }
 
     /**
@@ -3981,6 +4059,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Update player position in world space
         this.player.position.set(this.playerX, this.playerY)
 
+        // Update player HP gauge
+        this.updatePlayerHealthBar()
+
         // Camera follows player
         this.cameraX = this.playerX
         this.cameraY = this.playerY
@@ -4873,10 +4954,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.generatedWorld = null
         this.blackHoleDamageCooldown = 0
 
-        // Reset hit effects
-        // Don't call destroy() synchronously as it can corrupt PixiJS v8's shared Batcher
+        // Reset hit effects - use deferred destruction for PixiJS v8 compatibility
         for (const effect of this.hitEffects) {
             this.effectContainer.removeChild(effect.graphics)
+            this.queueDestroy(effect.graphics)
         }
         this.hitEffects = []
 
