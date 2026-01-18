@@ -612,4 +612,16 @@ export class BackgroundSystem {
     getCurrentTheme(): ColorTheme {
         return COLOR_THEMES[this.currentThemeIndex]
     }
+
+    // Destroy all graphics and cleanup
+    destroy(): void {
+        this.gradientGraphics.destroy()
+        this.gridGraphics.destroy()
+        this.waveGraphics.destroy()
+        this.particleGraphics.destroy()
+        this.collapseGraphics.destroy()
+
+        this.waveLayers = []
+        this.collapseFragments = []
+    }
 }

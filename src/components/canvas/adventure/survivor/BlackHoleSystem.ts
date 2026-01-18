@@ -421,6 +421,14 @@ export class BlackHoleSystem {
      * Destroy and cleanup
      */
     destroy(): void {
+        // Destroy all Graphics objects to free GPU memory
+        this.accretionDiskBack.destroy()
+        this.eventHorizon.destroy()
+        this.coreGlow.destroy()
+        this.photonSphere.destroy()
+        this.lensingRing.destroy()
+        this.accretionDiskFront.destroy()
+
         this.container.removeChildren()
         this.particles = []
         this.absorbedObjects = []

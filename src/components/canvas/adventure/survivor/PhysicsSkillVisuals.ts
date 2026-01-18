@@ -583,10 +583,9 @@ export class PhysicsSkillVisuals {
             const shouldContinue = effect.update(delta)
 
             if (!shouldContinue || effect.timer <= 0) {
-                // Just hide - don't remove or destroy to avoid Batcher conflicts
-                // Let garbage collection handle it later
-                effect.container.visible = false
-                effect.container.alpha = 0
+                // Remove from parent and destroy to free GPU memory
+                this.effectContainer.removeChild(effect.container)
+                effect.container.destroy({ children: true })
                 this.effects.splice(i, 1)
             }
         }
@@ -615,10 +614,16 @@ export class PhysicsSkillVisuals {
      */
     reset(): void {
         for (const effect of this.effects) {
-            // Just hide - don't remove or destroy to avoid Batcher conflicts
-            effect.container.visible = false
-            effect.container.alpha = 0
+            this.effectContainer.removeChild(effect.container)
+            effect.container.destroy({ children: true })
         }
         this.effects = []
+    }
+
+    /**
+     * Destroy all effects and cleanup
+     */
+    destroy(): void {
+        this.reset()
     }
 }

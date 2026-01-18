@@ -104,7 +104,8 @@ export class SkillSelectionScreen {
         this.screenContainer.visible = true
         this.setCurrentSkills(skills)
 
-        // Clear previous
+        // Clean up previous cards properly (remove event listeners, destroy filters)
+        this.cleanupCards()
         this.screenContainer.removeChildren()
         this.skillCards = []
 
@@ -262,13 +263,50 @@ export class SkillSelectionScreen {
     }
 
     /**
+     * Clean up skill cards - remove event listeners and destroy filters
+     */
+    private cleanupCards(): void {
+        for (const card of this.skillCards) {
+            // Remove event listeners
+            card.container.removeAllListeners()
+
+            // Destroy holographic filter
+            if (card.holoFilter) {
+                card.holoFilter.destroy()
+            }
+
+            // Destroy sparkles graphics
+            if (card.sparkles) {
+                card.sparkles.destroy()
+            }
+        }
+
+        // Clean up wave text
+        if (this.levelUpWaveText) {
+            this.levelUpWaveText.destroy()
+            this.levelUpWaveText = null
+        }
+
+        this.skillCards = []
+    }
+
+    /**
      * Reset the screen
      */
     reset(): void {
+        this.cleanupCards()
         this.hide()
         this.animTime = 0
         this.currentLevel = 1
         this.currentSkills.clear()
+    }
+
+    /**
+     * Destroy the screen and cleanup all resources
+     */
+    destroy(): void {
+        this.cleanupCards()
+        this.screenContainer.removeChildren()
     }
 
     private createUI(candidates: Array<{ skillId: string; currentLevel: number }>): void {
