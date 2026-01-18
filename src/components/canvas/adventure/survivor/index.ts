@@ -44,5 +44,10 @@ export {
     type BlackHoleConfig,
 } from './WorldGenerator'
 export { BlackHoleSystem } from './BlackHoleSystem'
-export { PickupSystem, type Pickup, type PickupType, type PickupSystemOptions } from './PickupSystem'
+export {
+    PickupSystem,
+    type Pickup,
+    type PickupType,
+    type PickupSystemOptions,
+} from './PickupSystem'
 export * from './ui'

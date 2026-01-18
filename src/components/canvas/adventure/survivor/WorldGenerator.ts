@@ -157,7 +157,10 @@ export class WorldGenerator {
         }
     }
 
-    private async generateEnemySpawns(duration: number, difficulty: number): Promise<EnemySpawnEvent[]> {
+    private async generateEnemySpawns(
+        duration: number,
+        difficulty: number
+    ): Promise<EnemySpawnEvent[]> {
         const spawns: EnemySpawnEvent[] = []
 
         // Base spawn rate starts slow, increases over time
@@ -235,7 +238,11 @@ export class WorldGenerator {
 
         // Black hole pulses - periodic gravity surges
         const pulseInterval = 30 - difficulty * 2 // 20-28 seconds between pulses
-        for (let t = pulseInterval; t < duration; t += pulseInterval * this.rng.nextFloat(0.8, 1.2)) {
+        for (
+            let t = pulseInterval;
+            t < duration;
+            t += pulseInterval * this.rng.nextFloat(0.8, 1.2)
+        ) {
             events.push({
                 time: t,
                 type: 'blackhole_pulse',

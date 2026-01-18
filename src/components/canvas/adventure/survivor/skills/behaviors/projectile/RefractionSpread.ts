@@ -43,6 +43,7 @@ export class RefractionSpreadBehavior extends BaseSkillBehavior<RefractionSpread
         activationType: 'passive',
         formulaId: 'snell',
         physicsVisualType: 'refraction',
+        requires: ['projectile'], // Only appears when player has projectile skill
         getLevelEffect: (level: number) => this.getEffect(level),
     }
 

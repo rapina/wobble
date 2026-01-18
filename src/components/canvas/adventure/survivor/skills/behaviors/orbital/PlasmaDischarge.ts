@@ -23,11 +23,41 @@ export class PlasmaDischargeBehavior extends BaseSkillBehavior<PlasmaDischargeEf
     readonly category: SkillCategory = 'orbital'
 
     protected readonly levelEffects: PlasmaDischargeEffect[] = [
-        { type: 'plasma-discharge', laserDamage: 15, laserChainCount: 2, laserRange: 200, laserChainRange: 100 },
-        { type: 'plasma-discharge', laserDamage: 22, laserChainCount: 3, laserRange: 230, laserChainRange: 120 },
-        { type: 'plasma-discharge', laserDamage: 30, laserChainCount: 4, laserRange: 260, laserChainRange: 140 },
-        { type: 'plasma-discharge', laserDamage: 40, laserChainCount: 5, laserRange: 300, laserChainRange: 160 },
-        { type: 'plasma-discharge', laserDamage: 55, laserChainCount: 7, laserRange: 350, laserChainRange: 180 },
+        {
+            type: 'plasma-discharge',
+            laserDamage: 15,
+            laserChainCount: 2,
+            laserRange: 200,
+            laserChainRange: 100,
+        },
+        {
+            type: 'plasma-discharge',
+            laserDamage: 22,
+            laserChainCount: 3,
+            laserRange: 230,
+            laserChainRange: 120,
+        },
+        {
+            type: 'plasma-discharge',
+            laserDamage: 30,
+            laserChainCount: 4,
+            laserRange: 260,
+            laserChainRange: 140,
+        },
+        {
+            type: 'plasma-discharge',
+            laserDamage: 40,
+            laserChainCount: 5,
+            laserRange: 300,
+            laserChainRange: 160,
+        },
+        {
+            type: 'plasma-discharge',
+            laserDamage: 55,
+            laserChainCount: 7,
+            laserRange: 350,
+            laserChainRange: 180,
+        },
     ]
 
     readonly definition: SkillDefinition<PlasmaDischargeEffect> = {

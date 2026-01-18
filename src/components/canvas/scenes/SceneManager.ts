@@ -59,6 +59,7 @@ import { MagneticFieldScene } from './MagneticFieldScene'
 import { RotationalEnergyScene } from './RotationalEnergyScene'
 import { InverseSquareScene } from './InverseSquareScene'
 import { BeatFrequencyScene } from './BeatFrequencyScene'
+import { BeerLambertScene } from './BeerLambertScene'
 
 type SceneConstructor = new (app: Application) => BaseScene
 
@@ -122,6 +123,7 @@ const sceneMap: Record<string, SceneConstructor> = {
     'rotational-energy': RotationalEnergyScene,
     'inverse-square': InverseSquareScene,
     'beat-frequency': BeatFrequencyScene,
+    'beer-lambert': BeerLambertScene,
 }
 
 export function getSceneClass(formulaId: string): SceneConstructor | null {

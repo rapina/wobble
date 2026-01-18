@@ -90,20 +90,34 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private studiedFormulas: Set<string> = new Set()
 
     // Skill stats tracking (accumulated effects per skill)
-    private skillDamageStats: Map<string, {
-        totalDamage: number
-        activations: number
-        slowTime?: number
-        deflections?: number
-        pushForce?: number
-        pullForce?: number
-        chaosApplied?: number
-        bounces?: number
-        pierces?: number
-    }> = new Map()
+    private skillDamageStats: Map<
+        string,
+        {
+            totalDamage: number
+            activations: number
+            slowTime?: number
+            deflections?: number
+            pushForce?: number
+            pullForce?: number
+            chaosApplied?: number
+            bounces?: number
+            pierces?: number
+        }
+    > = new Map()
 
-    // Shockwave skill timer
+    // Auto-fire projectile timer
+    private shootTimer = 0
+    private readonly baseFireInterval = 0.5 // Base fire rate: 2 shots per second
+
+    // Shockwave skill timer and charging effect
     private shockwaveTimer = 0
+    private shockwaveChargeGraphics: Graphics | null = null
+    private shockwaveChargeParticles: Array<{
+        angle: number
+        radius: number
+        speed: number
+        size: number
+    }> = []
 
     // Phase 3 cooldown-based skill timers
     private wavePulseTimer = 0
@@ -118,7 +132,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
         radius: number
         maxRadius: number
         graphics: Graphics
+        hitEnemies: Set<number> // Track enemies hit by this wave ring
+        ringIndex: number // Which ring in the wave set
+        spawnTime: number // When this ring was spawned (for staggered timing)
     }> = []
+    private waveChargeGraphics: Graphics | null = null
+    private waveRipples: Array<{ angle: number; dist: number; size: number }> = []
 
     // New skill timers and state
     private pendulumPhase = 0 // Current phase of pendulum rhythm (radians)
@@ -149,8 +168,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private ghostTimer = 0 // Time remaining in ghost mode
     private ghostCooldownTimer = 0 // Time until ghost mode can be used again
     private ghostTrailTimer = 0 // Timer for spawning afterimages
-    private ghostTrailPositions: Array<{ x: number; y: number; alpha: number; graphics: Graphics }> =
-        []
+    private ghostTrailPositions: Array<{
+        x: number
+        y: number
+        alpha: number
+        graphics: Graphics
+    }> = []
     private ghostHitEnemies: Set<number> = new Set() // Enemies hit during this ghost mode
 
     // Plasma Discharge state (Raiden-style lightning laser)
@@ -260,10 +283,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private blackHoleSystem: BlackHoleSystem | null = null
     private blackHoleDamageCooldown = 0 // Cooldown between damage ticks
 
-    // Fire system - faster baseline for power fantasy (was 0.5)
-    private fireRate = 0.35
-    private fireTimer = 0
-
     // Enemy spawn (controlled by difficulty config)
     private spawnTimer = 0
     private _difficulty: DifficultyConfig | null = null
@@ -280,11 +299,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
     // Background container (world-space, inside gameContainer)
     declare private bgContainer: Container
     declare private filterBaseGraphic: Graphics // Ensures filter always has content to render
-
-    // Camera shake system
-    private shakeIntensity = 0
-    private shakeDuration = 0
-    private readonly shakeDecay = 0.9
 
     // Hit effects (shared with systems)
     private hitEffects: HitEffect[] = []
@@ -439,10 +453,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.impactSystem = new ImpactEffectSystem(this.gameContainer, this.width, this.height, {
             particlePoolSize: 100,
         })
-        // Camera shake disabled - felt like lag on hit
-        // this.impactSystem.onShake = (intensity, duration) => {
-        //     this.triggerShake(intensity, duration)
-        // }
 
         this.xpOrbSystem = new ExperienceOrbSystem(
             {
@@ -472,7 +482,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
         )
         this.pickupSystem.onMagnetCollected = () => {
             // Show effect text
-            this.damageTextSystem.spawnCustom(this.playerX, this.playerY - 40, '🧲 MAGNET!', 'combo')
+            this.damageTextSystem.spawnCustom(
+                this.playerX,
+                this.playerY - 40,
+                '🧲 MAGNET!',
+                'combo'
+            )
         }
 
         // World entity systems for each stage
@@ -782,16 +797,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Visual celebration based on multi-kill count
         if (killCount >= 5) {
             // Epic multi-kill (5+)
-            this.triggerShake(12, 0.25)
             this.impactSystem.triggerSlowMotion(0.3, 0.2)
             this.damageTextSystem.spawnCustom(this.playerX, this.playerY - 70, name, 'critical')
         } else if (killCount >= 3) {
             // Good multi-kill (3-4)
-            this.triggerShake(6, 0.15)
             this.damageTextSystem.spawnCustom(this.playerX, this.playerY - 70, name, 'combo')
         } else {
             // Double kill
-            this.triggerShake(3, 0.1)
             this.damageTextSystem.spawnCustom(this.playerX, this.playerY - 70, name, 'normal')
         }
     }
@@ -821,6 +833,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.stats.shockwaveInterval = skillStats.shockwaveInterval
         this.stats.shockwaveRadius = skillStats.shockwaveRadius
         this.stats.shockwaveKnockback = skillStats.shockwaveKnockback
+        this.stats.shockwaveDamage = skillStats.shockwaveDamage
 
         // New skills
         this.stats.returnDistance = skillStats.returnDistance
@@ -849,6 +862,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.stats.wavelength = skillStats.wavelength
         this.stats.waveAmplitude = skillStats.waveAmplitude
         this.stats.waveSpeed = skillStats.waveSpeed
+        this.stats.waveDamage = skillStats.waveDamage
+        this.stats.waveCount = skillStats.waveCount
         this.stats.auraRadius = skillStats.auraRadius
         this.stats.radiationDamage = skillStats.radiationDamage
         this.stats.beatFreq1 = skillStats.beatFreq1
@@ -1003,27 +1018,52 @@ export class PhysicsSurvivorScene extends AdventureScene {
     /**
      * Track special effect for a skill (slow, deflect, push, pull, chaos, etc.)
      */
-    private trackSkillEffect(skillId: string, effectType: 'slowTime' | 'deflections' | 'pushForce' | 'pullForce' | 'chaosApplied' | 'bounces' | 'pierces', value: number): void {
+    private trackSkillEffect(
+        skillId: string,
+        effectType:
+            | 'slowTime'
+            | 'deflections'
+            | 'pushForce'
+            | 'pullForce'
+            | 'chaosApplied'
+            | 'bounces'
+            | 'pierces',
+        value: number
+    ): void {
         const existing = this.skillDamageStats.get(skillId)
         if (existing) {
             existing[effectType] = (existing[effectType] || 0) + value
         } else {
-            this.skillDamageStats.set(skillId, { totalDamage: 0, activations: 0, [effectType]: value })
+            this.skillDamageStats.set(skillId, {
+                totalDamage: 0,
+                activations: 0,
+                [effectType]: value,
+            })
         }
     }
 
-    private fireProjectile(): void {
-        // Apply pendulum rhythm damage multiplier
-        const effectiveStats = {
-            ...this.stats,
-            damageMultiplier: this.stats.damageMultiplier * this.pendulumDamageMultiplier,
+    /**
+     * Auto-fire projectiles based on fire rate
+     * Only fires if player has a projectile-based skill active
+     */
+    private updateAutoFire(deltaSeconds: number): void {
+        // Check if player has projectile capability (Kinetic Shot or similar)
+        // Fire rate is controlled by fireRateMultiplier (lower = faster)
+        const fireInterval = this.baseFireInterval * this.stats.fireRateMultiplier
+
+        this.shootTimer += deltaSeconds
+
+        if (this.shootTimer >= fireInterval) {
+            this.shootTimer = 0
+
+            // Fire projectile toward nearest enemy
+            this.projectileSystem.fire(
+                this.playerX,
+                this.playerY,
+                this.enemySystem.enemies,
+                this.stats
+            )
         }
-        this.projectileSystem.fire(
-            this.playerX,
-            this.playerY,
-            this.enemySystem.enemies,
-            effectiveStats
-        )
     }
 
     private updateProjectiles(delta: number): void {
@@ -1065,11 +1105,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
                     const dx = enemy.x - x
                     const dy = enemy.y - (y + enemy.size / 2)
                     if (Math.abs(dx) < enemy.size && Math.abs(dy) < enemy.size && enemy.wobble) {
-                        this.impactSystem.addScalePunch(
-                            enemy.wobble,
-                            isCritical ? 0.4 : 0.25,
-                            isCritical ? 0.2 : 0.12
-                        )
                         break
                     }
                 }
@@ -1077,7 +1112,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
             // Knockback trail callback - visualizes F=ma (lighter = thicker trail)
             (enemy, knockbackVx, knockbackVy) => {
                 // Track momentum transfer (p = mv)
-                const knockbackMag = Math.sqrt(knockbackVx * knockbackVx + knockbackVy * knockbackVy)
+                const knockbackMag = Math.sqrt(
+                    knockbackVx * knockbackVx + knockbackVy * knockbackVy
+                )
                 this.physicsStats.totalMomentum += enemy.mass * knockbackMag
 
                 // Only show trail for significant knockback
@@ -1144,7 +1181,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
             // Grid ripple effect - amplitude based on mass (physics: E = ½mv²)
             const rippleAmplitude =
-                enemy.tier === 'boss' ? 1.5 : enemy.tier === 'large' ? 1.0 : enemy.tier === 'medium' ? 0.6 : 0.3
+                enemy.tier === 'boss'
+                    ? 1.5
+                    : enemy.tier === 'large'
+                      ? 1.0
+                      : enemy.tier === 'medium'
+                        ? 0.6
+                        : 0.3
             this.gridFilter.addRipple(enemy.x, enemy.y, rippleAmplitude)
 
             // Phase 5: Decay Chain - chance to trigger chain explosion on death
@@ -1392,7 +1435,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
             const dist = Math.sqrt(dx * dx + dy * dy)
             const distortionParams = this.blackHoleSystem.getDistortionParams()
             const maxProximity = distortionParams.radius * 2
-            this.blackHoleProximityEffect = Math.max(0, 1 - dist / maxProximity) * distortionParams.strength
+            this.blackHoleProximityEffect =
+                Math.max(0, 1 - dist / maxProximity) * distortionParams.strength
 
             // Add black hole to grid distortion
             // Position needs to be relative to camera for shader alignment
@@ -1402,7 +1446,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
                         x: bhPos.x - this.cameraX,
                         y: bhPos.y - this.cameraY,
                         mass: distortionParams.mass * 0.02, // Strong grid distortion
-                    }
+                    },
                 ]
                 // Add to existing gravity sources
                 const existingCount = this.enemySystem.enemies.length
@@ -1448,7 +1492,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 this.damageTextSystem.spawn(enemy.x, enemy.y - enemy.size / 2, damage, 'explosion')
 
                 if (enemy.wobble) {
-                    this.impactSystem.addScalePunch(enemy.wobble, 0.35, 0.15)
+                    // Scale punch disabled
+                    // this.impactSystem.addScalePunch(enemy.wobble, 0.35, 0.15)
                 }
             }
         }
@@ -1458,16 +1503,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
             this.effectContainer.removeChild(explosion)
             explosion.destroy()
         }, 200)
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    private triggerShake(_intensity: number, _duration: number): void {
-        // Disabled - camera shake removed for performance
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    private updateShake(_delta: number): void {
-        // Disabled - camera shake removed for performance
     }
 
     private updateHitEffects(delta: number): void {
@@ -1487,12 +1522,27 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
     /**
      * Update shockwave skill (원심력 펄스)
+     * Shows charging effect while on cooldown
      */
     private updateShockwave(deltaSeconds: number): void {
         // Check if shockwave skill is active
-        if (this.stats.shockwaveInterval <= 0) return
+        if (this.stats.shockwaveInterval <= 0) {
+            // Clean up graphics if skill was removed
+            if (this.shockwaveChargeGraphics) {
+                this.effectContainer.removeChild(this.shockwaveChargeGraphics)
+                this.shockwaveChargeGraphics.destroy()
+                this.shockwaveChargeGraphics = null
+            }
+            return
+        }
 
         this.shockwaveTimer += deltaSeconds
+
+        // Calculate charge progress (0 to 1)
+        const chargeProgress = Math.min(1, this.shockwaveTimer / this.stats.shockwaveInterval)
+
+        // Update charging visual effect
+        this.updateShockwaveChargeEffect(chargeProgress, deltaSeconds)
 
         if (this.shockwaveTimer >= this.stats.shockwaveInterval) {
             this.shockwaveTimer = 0
@@ -1501,82 +1551,337 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     /**
+     * Update the charging visual effect for shockwave
+     */
+    private updateShockwaveChargeEffect(progress: number, deltaSeconds: number): void {
+        const px = this.playerX
+        const py = this.playerY
+        const maxRadius = this.stats.shockwaveRadius
+
+        // Create graphics if needed
+        if (!this.shockwaveChargeGraphics) {
+            this.shockwaveChargeGraphics = new Graphics()
+            this.effectContainer.addChild(this.shockwaveChargeGraphics)
+
+            // Initialize orbiting particles
+            this.shockwaveChargeParticles = []
+            for (let i = 0; i < 6; i++) {
+                this.shockwaveChargeParticles.push({
+                    angle: (Math.PI * 2 * i) / 6,
+                    radius: maxRadius * 0.8,
+                    speed: 2 + Math.random() * 0.5,
+                    size: 3 + Math.random() * 2,
+                })
+            }
+        }
+
+        const g = this.shockwaveChargeGraphics
+        g.clear()
+
+        // Colors
+        const baseColor = 0x2ecc71
+        const glowColor = 0x58d68d
+
+        // === Effect 1: Outer charging ring (grows with progress) ===
+        const ringRadius = 20 + (maxRadius - 20) * progress * 0.4
+        const ringAlpha = 0.15 + progress * 0.2
+
+        // Dashed/segmented ring effect
+        const segments = 8
+        for (let i = 0; i < segments; i++) {
+            const startAngle = (Math.PI * 2 * i) / segments + this.animPhase * 0.5
+            const endAngle = startAngle + (Math.PI * 2) / segments * 0.6 * progress
+
+            g.arc(px, py, ringRadius, startAngle, endAngle)
+            g.stroke({
+                color: baseColor,
+                width: 2 + progress * 2,
+                alpha: ringAlpha,
+            })
+        }
+
+        // === Effect 2: Inner pulsing glow ===
+        if (progress > 0.3) {
+            const pulsePhase = Math.sin(this.animPhase * 4) * 0.5 + 0.5
+            const innerRadius = 15 + pulsePhase * 10 * progress
+            const innerAlpha = (progress - 0.3) * 0.3 * (0.5 + pulsePhase * 0.5)
+
+            g.circle(px, py, innerRadius)
+            g.fill({ color: baseColor, alpha: innerAlpha })
+        }
+
+        // === Effect 3: Orbiting energy particles (spiral inward as charging) ===
+        for (const particle of this.shockwaveChargeParticles) {
+            // Rotate and spiral inward
+            particle.angle += particle.speed * deltaSeconds
+            particle.radius = maxRadius * (0.8 - progress * 0.5) + Math.sin(particle.angle * 2) * 10
+
+            const particleX = px + Math.cos(particle.angle) * particle.radius
+            const particleY = py + Math.sin(particle.angle) * particle.radius
+
+            // Particle grows with progress
+            const particleSize = particle.size * (0.5 + progress * 0.8)
+            const particleAlpha = 0.3 + progress * 0.5
+
+            g.circle(particleX, particleY, particleSize)
+            g.fill({ color: glowColor, alpha: particleAlpha })
+        }
+
+        // === Effect 4: Ready flash when fully charged ===
+        if (progress > 0.9) {
+            const readyPulse = Math.sin(this.animPhase * 10) * 0.5 + 0.5
+            const readyRadius = 25 + readyPulse * 15
+
+            g.circle(px, py, readyRadius)
+            g.fill({ color: baseColor, alpha: 0.2 + readyPulse * 0.2 })
+
+            // Outer ready ring
+            g.circle(px, py, ringRadius + 5)
+            g.stroke({
+                color: 0xffffff,
+                width: 2,
+                alpha: 0.3 + readyPulse * 0.3,
+            })
+        }
+    }
+
+    /**
      * Trigger shockwave effect - pushes enemies away from player
+     * Physics: Centripetal Force F = mv²/r creates outward pressure wave
      */
     private triggerShockwave(): void {
         const radius = this.stats.shockwaveRadius
         const knockback = this.stats.shockwaveKnockback
+        const px = this.playerX
+        const py = this.playerY
 
-        // Visual effect - expanding ring
-        const ring = new Graphics()
-        ring.circle(0, 0, 10)
-        ring.stroke({ color: 0x2ecc71, width: 4, alpha: 0.8 })
-        ring.position.set(this.playerX, this.playerY)
-        this.effectContainer.addChild(ring)
+        // Colors for the pulse effect
+        const primaryColor = 0x2ecc71 // Green
+        const secondaryColor = 0x27ae60 // Darker green
+        const accentColor = 0x58d68d // Light green
 
-        // Animate ring expansion
-        let ringRadius = 10
-        const expandSpeed = radius * 4 // Expand to full radius in 0.25 seconds
-        const ringUpdate = () => {
-            ringRadius += expandSpeed / 60
-            const progress = ringRadius / radius
+        // === VISUAL EFFECT 1: Multi-ring expansion ===
+        // Create 3 rings with staggered timing for depth
+        for (let i = 0; i < 3; i++) {
+            const delay = i * 50 // 50ms stagger
+            setTimeout(() => {
+                const ring = new Graphics()
+                ring.position.set(px, py)
+                this.effectContainer.addChild(ring)
 
-            if (progress >= 1) {
-                this.effectContainer.removeChild(ring)
-                ring.destroy()
+                let ringRadius = 15
+                const ringColor = i === 0 ? primaryColor : i === 1 ? secondaryColor : accentColor
+                const baseWidth = 6 - i * 1.5 // Outer rings thinner
+                const expandDuration = 0.3 + i * 0.05
+
+                const startTime = performance.now()
+                const ringUpdate = () => {
+                    const elapsed = (performance.now() - startTime) / 1000
+                    const progress = Math.min(1, elapsed / expandDuration)
+
+                    if (progress >= 1 || ring.destroyed) {
+                        if (!ring.destroyed) {
+                            this.effectContainer.removeChild(ring)
+                            ring.destroy()
+                        }
+                        return
+                    }
+
+                    // Ease out for smooth expansion
+                    const eased = 1 - Math.pow(1 - progress, 3)
+                    ringRadius = 15 + (radius - 15) * eased
+
+                    ring.clear()
+                    ring.circle(0, 0, ringRadius)
+                    ring.stroke({
+                        color: ringColor,
+                        width: baseWidth * (1 - progress * 0.7),
+                        alpha: 0.9 * (1 - progress),
+                    })
+
+                    requestAnimationFrame(ringUpdate)
+                }
+                requestAnimationFrame(ringUpdate)
+            }, delay)
+        }
+
+        // === VISUAL EFFECT 2: Center flash/glow ===
+        const centerGlow = new Graphics()
+        centerGlow.circle(0, 0, 30)
+        centerGlow.fill({ color: primaryColor, alpha: 0.6 })
+        centerGlow.position.set(px, py)
+        this.effectContainer.addChild(centerGlow)
+
+        let glowPhase = 0
+        const glowUpdate = () => {
+            glowPhase += 1 / 10 // 10 frames
+            if (glowPhase >= 1 || centerGlow.destroyed) {
+                if (!centerGlow.destroyed) {
+                    this.effectContainer.removeChild(centerGlow)
+                    centerGlow.destroy()
+                }
                 return
             }
 
-            ring.clear()
-            ring.circle(0, 0, ringRadius)
-            ring.stroke({
-                color: 0x2ecc71,
-                width: 4 * (1 - progress),
-                alpha: 0.8 * (1 - progress),
-            })
+            centerGlow.clear()
+            const glowRadius = 30 + 20 * glowPhase
+            centerGlow.circle(0, 0, glowRadius)
+            centerGlow.fill({ color: primaryColor, alpha: 0.6 * (1 - glowPhase) })
 
-            requestAnimationFrame(ringUpdate)
+            requestAnimationFrame(glowUpdate)
         }
-        requestAnimationFrame(ringUpdate)
+        requestAnimationFrame(glowUpdate)
 
-        // Apply knockback to enemies within radius
+        // === VISUAL EFFECT 3: Radial energy particles ===
+        const particleCount = 12
+        for (let i = 0; i < particleCount; i++) {
+            const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * 0.3
+            const speed = 4 + Math.random() * 3
+            const particle = new Graphics()
+
+            // Diamond/energy shape
+            const size = 4 + Math.random() * 3
+            particle.moveTo(0, -size)
+            particle.lineTo(size * 0.5, 0)
+            particle.lineTo(0, size)
+            particle.lineTo(-size * 0.5, 0)
+            particle.closePath()
+            particle.fill(accentColor)
+            particle.position.set(px, py)
+            particle.rotation = angle
+            this.effectContainer.addChild(particle)
+
+            let pLife = 1
+            const pVx = Math.cos(angle) * speed
+            const pVy = Math.sin(angle) * speed
+            const pUpdate = () => {
+                pLife -= 0.04
+                if (pLife <= 0 || particle.destroyed) {
+                    if (!particle.destroyed) {
+                        this.effectContainer.removeChild(particle)
+                        particle.destroy()
+                    }
+                    return
+                }
+
+                particle.position.x += pVx
+                particle.position.y += pVy
+                particle.alpha = pLife
+                particle.scale.set(pLife)
+
+                requestAnimationFrame(pUpdate)
+            }
+            requestAnimationFrame(pUpdate)
+        }
+
+        // === GAMEPLAY: Apply knockback and damage ===
         let hitCount = 0
+        let totalDamage = 0
+        const baseDamage = this.stats.shockwaveDamage || 40 // Use skill damage
         for (const enemy of this.enemySystem.enemies) {
-            const dx = enemy.x - this.playerX
-            const dy = enemy.y - this.playerY
+            const dx = enemy.x - px
+            const dy = enemy.y - py
             const dist = Math.sqrt(dx * dx + dy * dy)
 
             if (dist < radius && dist > 0) {
-                // Knockback force decreases with distance
+                // Knockback force: stronger when closer (F ∝ 1/r)
                 const distFactor = 1 - dist / radius
                 const force = (knockback * distFactor) / Math.sqrt(enemy.mass)
 
                 // Push away from player
                 const nx = dx / dist
                 const ny = dy / dist
-                enemy.vx += nx * force * 0.1
-                enemy.vy += ny * force * 0.1
+                enemy.vx += nx * force * 0.2 // Strong knockback
+                enemy.vy += ny * force * 0.2
 
-                // Small damage
-                const damage = 5 * distFactor * this.stats.damageMultiplier
+                // Damage: full at center, 50% at edge (0.5 + distFactor * 0.5)
+                const damageScale = 0.5 + distFactor * 0.5
+                const damage = baseDamage * damageScale * this.stats.damageMultiplier
                 enemy.health -= damage
+                totalDamage += damage
 
                 // Track damage
                 this.trackSkillDamage('centripetal-pulse', damage)
                 hitCount++
 
-                // Visual feedback
-                if (enemy.wobble) {
-                    this.impactSystem.addScalePunch(enemy.wobble, 0.2, 0.1)
-                }
+                // === VISUAL EFFECT 4: Hit sparks on enemies ===
+                this.spawnPulseHitEffect(enemy.x, enemy.y, nx, ny, distFactor)
+
+                // Show damage number on each enemy hit
+                this.damageTextSystem.spawn(enemy.x, enemy.y - 20, Math.round(damage))
             }
         }
 
-        // Screen shake based on hit count
+        // Show hit summary
         if (hitCount > 0) {
-            this.triggerShake(3 + hitCount * 0.5, 0.15)
-            this.damageTextSystem.spawnCustom(this.playerX, this.playerY - 40, `PULSE!`, 'combo')
+            this.damageTextSystem.spawnCustom(px, py - 50, `PULSE ×${hitCount}`, 'combo')
         }
+    }
+
+    /**
+     * Spawn hit effect when pulse hits an enemy
+     */
+    private spawnPulseHitEffect(x: number, y: number, nx: number, ny: number, intensity: number): void {
+        // Create small burst particles in knockback direction
+        const sparkCount = 3 + Math.floor(intensity * 3)
+        const baseAngle = Math.atan2(ny, nx)
+
+        for (let i = 0; i < sparkCount; i++) {
+            const spark = new Graphics()
+            const angle = baseAngle + (Math.random() - 0.5) * 1.2
+            const speed = 2 + Math.random() * 3 * intensity
+            const size = 2 + Math.random() * 2
+
+            spark.circle(0, 0, size)
+            spark.fill(0x58d68d)
+            spark.position.set(x, y)
+            this.effectContainer.addChild(spark)
+
+            let life = 1
+            const vx = Math.cos(angle) * speed
+            const vy = Math.sin(angle) * speed
+            const sparkUpdate = () => {
+                life -= 0.08
+                if (life <= 0 || spark.destroyed) {
+                    if (!spark.destroyed) {
+                        this.effectContainer.removeChild(spark)
+                        spark.destroy()
+                    }
+                    return
+                }
+
+                spark.position.x += vx
+                spark.position.y += vy
+                spark.alpha = life
+                spark.scale.set(0.5 + life * 0.5)
+
+                requestAnimationFrame(sparkUpdate)
+            }
+            requestAnimationFrame(sparkUpdate)
+        }
+
+        // Impact flash at hit position
+        const flash = new Graphics()
+        flash.circle(0, 0, 8 + intensity * 8)
+        flash.fill({ color: 0x2ecc71, alpha: 0.5 })
+        flash.position.set(x, y)
+        this.effectContainer.addChild(flash)
+
+        let flashLife = 1
+        const flashUpdate = () => {
+            flashLife -= 0.15
+            if (flashLife <= 0 || flash.destroyed) {
+                if (!flash.destroyed) {
+                    this.effectContainer.removeChild(flash)
+                    flash.destroy()
+                }
+                return
+            }
+            flash.alpha = flashLife * 0.5
+            flash.scale.set(1 + (1 - flashLife) * 0.5)
+            requestAnimationFrame(flashUpdate)
+        }
+        requestAnimationFrame(flashUpdate)
     }
 
     // ============================================
@@ -1586,12 +1891,17 @@ export class PhysicsSurvivorScene extends AdventureScene {
     /**
      * Wave Pulse (파동 펄스) - periodic expanding wave that damages enemies
      * Based on wave physics: amplitude decreases with distance
+     * Differentiated from Centripetal Pulse: multiple sine-wave rings, multi-hit, faster cooldown
      */
     private updateWavePulse(deltaSeconds: number): void {
         // Check if wave pulse skill is active
         if (this.stats.wavePulseInterval <= 0 || this.stats.waveAmplitude <= 0) return
 
         this.wavePulseTimer += deltaSeconds
+
+        // Calculate charge progress for visual effect
+        const chargeProgress = Math.min(1, this.wavePulseTimer / this.stats.wavePulseInterval)
+        this.updateWaveChargeEffect(chargeProgress, deltaSeconds)
 
         if (this.wavePulseTimer >= this.stats.wavePulseInterval) {
             this.wavePulseTimer = 0
@@ -1603,36 +1913,218 @@ export class PhysicsSurvivorScene extends AdventureScene {
     }
 
     /**
+     * Update wave charge visual effect - concentric ripples building up
+     */
+    private updateWaveChargeEffect(progress: number, deltaSeconds: number): void {
+        if (progress <= 0) {
+            if (this.waveChargeGraphics) {
+                this.effectContainer.removeChild(this.waveChargeGraphics)
+                this.waveChargeGraphics.destroy()
+                this.waveChargeGraphics = null
+            }
+            this.waveRipples = []
+            return
+        }
+
+        if (!this.waveChargeGraphics) {
+            this.waveChargeGraphics = new Graphics()
+            this.effectContainer.addChild(this.waveChargeGraphics)
+        }
+
+        // Spawn ripples that converge to center (opposite of Centripetal which diverges)
+        const rippleSpawnRate = 3 + progress * 5
+        if (Math.random() < rippleSpawnRate * deltaSeconds) {
+            const angle = Math.random() * Math.PI * 2
+            const maxDist = 40 + progress * 30
+            this.waveRipples.push({
+                angle,
+                dist: maxDist,
+                size: 2 + Math.random() * 3,
+            })
+        }
+
+        // Update ripples (move toward center)
+        for (let i = this.waveRipples.length - 1; i >= 0; i--) {
+            const ripple = this.waveRipples[i]
+            ripple.dist -= 60 * deltaSeconds // Move inward
+            if (ripple.dist <= 5) {
+                this.waveRipples.splice(i, 1)
+            }
+        }
+
+        const g = this.waveChargeGraphics
+        g.clear()
+        g.position.set(this.playerX, this.playerY)
+
+        // Draw concentric charging rings (like water ripples converging)
+        const ringCount = Math.floor(progress * 3) + 1
+        for (let i = 0; i < ringCount; i++) {
+            const ringProgress = (i / ringCount + this.gameTime * 0.5) % 1
+            const ringRadius = 50 * (1 - ringProgress) + 5
+            const ringAlpha = ringProgress * 0.3 * progress
+
+            g.circle(0, 0, ringRadius)
+            g.stroke({ color: 0x44ccff, width: 1.5, alpha: ringAlpha })
+        }
+
+        // Central glow builds up
+        if (progress > 0.3) {
+            const glowAlpha = (progress - 0.3) * 0.4
+            const glowRadius = 8 + progress * 12
+            g.circle(0, 0, glowRadius)
+            g.fill({ color: 0x66ddff, alpha: glowAlpha })
+        }
+
+        // Draw converging ripple particles
+        for (const ripple of this.waveRipples) {
+            const rx = Math.cos(ripple.angle) * ripple.dist
+            const ry = Math.sin(ripple.angle) * ripple.dist
+            const alpha = 0.3 + (1 - ripple.dist / 70) * 0.5
+
+            g.circle(rx, ry, ripple.size)
+            g.fill({ color: 0x88eeff, alpha })
+        }
+
+        // Ready flash when fully charged
+        if (progress > 0.9) {
+            const flashAlpha = Math.sin(this.gameTime * 15) * 0.2 + 0.3
+            g.circle(0, 0, 25)
+            g.fill({ color: 0xaaffff, alpha: flashAlpha * (progress - 0.9) * 10 })
+        }
+    }
+
+    /**
      * Trigger a new wave pulse from player position
+     * Spawns multiple staggered sine-wave rings
      */
     private triggerWavePulse(): void {
-        const maxRadius = this.stats.wavelength * 3 // Wave extends to 3 wavelengths
+        const maxRadius = this.stats.wavelength * 4 // Wave extends further
+        const waveCount = this.stats.waveCount || 2
 
-        // Create wave visual
-        const wave = new Graphics()
-        wave.circle(0, 0, 10)
-        wave.stroke({ color: 0x44aaff, width: 3, alpha: 0.8 })
-        wave.position.set(this.playerX, this.playerY)
-        this.effectContainer.addChild(wave)
+        // Clear charge graphics
+        if (this.waveChargeGraphics) {
+            this.waveChargeGraphics.clear()
+        }
+        this.waveRipples = []
 
-        this.activeWaves.push({
-            x: this.playerX,
-            y: this.playerY,
-            radius: 10,
-            maxRadius,
-            graphics: wave,
-        })
+        // Center burst effect
+        this.spawnWaveBurstEffect()
 
-        // Sound/visual feedback
-        this.damageTextSystem.spawnCustom(this.playerX, this.playerY - 30, `WAVE!`, 'combo')
+        // Spawn multiple wave rings with staggered timing
+        for (let i = 0; i < waveCount; i++) {
+            const wave = new Graphics()
+            wave.position.set(this.playerX, this.playerY)
+            this.effectContainer.addChild(wave)
+
+            this.activeWaves.push({
+                x: this.playerX,
+                y: this.playerY,
+                radius: 5, // Start small
+                maxRadius,
+                graphics: wave,
+                hitEnemies: new Set(),
+                ringIndex: i,
+                spawnTime: this.gameTime + i * 0.15, // Stagger spawn
+            })
+        }
+
+        // Visual feedback
+        this.damageTextSystem.spawnCustom(this.playerX, this.playerY - 30, `∿ WAVE`, 'combo')
+    }
+
+    /**
+     * Spawn burst effect at wave origin
+     */
+    private spawnWaveBurstEffect(): void {
+        const burstGraphics = new Graphics()
+        burstGraphics.position.set(this.playerX, this.playerY)
+        this.effectContainer.addChild(burstGraphics)
+
+        // Animate the burst
+        let burstProgress = 0
+        const animateBurst = () => {
+            burstProgress += 0.08
+            if (burstProgress >= 1) {
+                this.effectContainer.removeChild(burstGraphics)
+                burstGraphics.destroy()
+                return
+            }
+
+            burstGraphics.clear()
+
+            // Central flash
+            const flashAlpha = (1 - burstProgress) * 0.8
+            const flashRadius = 15 + burstProgress * 25
+            burstGraphics.circle(0, 0, flashRadius)
+            burstGraphics.fill({ color: 0xaaffff, alpha: flashAlpha })
+
+            // Radiating lines
+            const lineCount = 8
+            for (let i = 0; i < lineCount; i++) {
+                const angle = (i / lineCount) * Math.PI * 2
+                const innerR = 10 + burstProgress * 30
+                const outerR = 20 + burstProgress * 50
+                const x1 = Math.cos(angle) * innerR
+                const y1 = Math.sin(angle) * innerR
+                const x2 = Math.cos(angle) * outerR
+                const y2 = Math.sin(angle) * outerR
+
+                burstGraphics.moveTo(x1, y1)
+                burstGraphics.lineTo(x2, y2)
+                burstGraphics.stroke({ color: 0x66ddff, width: 2, alpha: (1 - burstProgress) * 0.6 })
+            }
+
+            requestAnimationFrame(animateBurst)
+        }
+        requestAnimationFrame(animateBurst)
+    }
+
+    /**
+     * Spawn hit effect when wave damages enemy
+     */
+    private spawnWaveHitEffect(x: number, y: number): void {
+        const hitGraphics = new Graphics()
+        hitGraphics.position.set(x, y)
+        this.effectContainer.addChild(hitGraphics)
+
+        let hitProgress = 0
+        const animateHit = () => {
+            hitProgress += 0.12
+            if (hitProgress >= 1) {
+                this.effectContainer.removeChild(hitGraphics)
+                hitGraphics.destroy()
+                return
+            }
+
+            hitGraphics.clear()
+
+            // Small ripple effect
+            const rippleRadius = 5 + hitProgress * 15
+            const alpha = (1 - hitProgress) * 0.6
+            hitGraphics.circle(0, 0, rippleRadius)
+            hitGraphics.stroke({ color: 0x66eeff, width: 2, alpha })
+
+            // Inner glow
+            hitGraphics.circle(0, 0, rippleRadius * 0.5)
+            hitGraphics.fill({ color: 0xaaffff, alpha: alpha * 0.5 })
+
+            requestAnimationFrame(animateHit)
+        }
+        requestAnimationFrame(animateHit)
     }
 
     /**
      * Update active wave visuals and damage
+     * Features: sine-wave distortion, multi-hit with tracking, flowing visuals
      */
     private updateActiveWaves(deltaSeconds: number): void {
         for (let i = this.activeWaves.length - 1; i >= 0; i--) {
             const wave = this.activeWaves[i]
+
+            // Wait for staggered spawn time
+            if (this.gameTime < wave.spawnTime) {
+                continue
+            }
 
             // Expand wave
             wave.radius += this.stats.waveSpeed * deltaSeconds
@@ -1646,41 +2138,99 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 continue
             }
 
-            // Update visual - wave pattern with decreasing intensity
+            // Draw sine-wave ring (wavy circle)
+            const g = wave.graphics
+            g.clear()
+
+            // Calculate wave properties
             const wavePhase = (wave.radius / this.stats.wavelength) * Math.PI * 2
-            const waveIntensity = Math.abs(Math.sin(wavePhase)) * (1 - progress)
+            const baseAlpha = (1 - progress) * 0.7
 
-            wave.graphics.clear()
-            wave.graphics.circle(0, 0, wave.radius)
-            wave.graphics.stroke({
-                color: 0x44aaff,
-                width: 3 + waveIntensity * 4,
-                alpha: 0.3 + waveIntensity * 0.5,
-            })
+            // Draw wavy ring with sine distortion
+            const segments = 48
+            const points: Array<{ x: number; y: number }> = []
 
-            // Damage enemies at wave front (narrow band)
-            const waveBandWidth = this.stats.wavelength * 0.3
+            for (let s = 0; s <= segments; s++) {
+                const angle = (s / segments) * Math.PI * 2
+                // Sine wave distortion on the radius
+                const sineOffset = Math.sin(angle * 6 + wavePhase + wave.ringIndex * Math.PI / 3) * this.stats.waveAmplitude * 0.15
+                const r = wave.radius + sineOffset
+
+                points.push({
+                    x: Math.cos(angle) * r,
+                    y: Math.sin(angle) * r,
+                })
+            }
+
+            // Draw the wavy ring
+            if (points.length > 0) {
+                g.moveTo(points[0].x, points[0].y)
+                for (let p = 1; p < points.length; p++) {
+                    g.lineTo(points[p].x, points[p].y)
+                }
+                g.closePath()
+
+                // Main wave stroke - cyan/blue gradient based on ring index
+                const hueShift = wave.ringIndex * 0.1
+                const baseColor = 0x44ccff
+                const strokeWidth = 2 + Math.sin(wavePhase) * 1.5
+
+                g.stroke({ color: baseColor, width: strokeWidth, alpha: baseAlpha })
+
+                // Inner glow line
+                g.moveTo(points[0].x * 0.97, points[0].y * 0.97)
+                for (let p = 1; p < points.length; p++) {
+                    g.lineTo(points[p].x * 0.97, points[p].y * 0.97)
+                }
+                g.stroke({ color: 0x88eeff, width: 1, alpha: baseAlpha * 0.5 })
+            }
+
+            // Add flowing particles along the wave
+            if (Math.random() < 0.3) {
+                const particleAngle = Math.random() * Math.PI * 2
+                const sineOffset = Math.sin(particleAngle * 6 + wavePhase) * this.stats.waveAmplitude * 0.15
+                const r = wave.radius + sineOffset
+                const px = Math.cos(particleAngle) * r
+                const py = Math.sin(particleAngle) * r
+
+                g.circle(px, py, 2 + Math.random() * 2)
+                g.fill({ color: 0xaaffff, alpha: baseAlpha * 0.8 })
+            }
+
+            // Damage enemies that the wave passes through
+            const waveDamage = this.stats.waveDamage || this.stats.waveAmplitude * 0.3
+            const waveBandWidth = this.stats.wavelength * 0.4
+
             for (const enemy of this.enemySystem.enemies) {
+                // Skip if already hit by this wave ring
+                if (wave.hitEnemies.has(enemy.id)) continue
+
                 const dx = enemy.x - wave.x
                 const dy = enemy.y - wave.y
                 const dist = Math.sqrt(dx * dx + dy * dy)
 
                 // Check if enemy is in wave band
                 if (dist > wave.radius - waveBandWidth && dist < wave.radius + waveBandWidth) {
-                    // Damage based on wave amplitude and distance
-                    const damage = this.stats.waveAmplitude * (1 - progress) * 0.05
-                    const actualDamage = damage * this.stats.damageMultiplier
+                    // Mark as hit
+                    wave.hitEnemies.add(enemy.id)
+
+                    // Damage scales with progress (stronger at start)
+                    const damageMultiplier = 1 - progress * 0.5
+                    const actualDamage = waveDamage * damageMultiplier * this.stats.damageMultiplier
                     enemy.health -= actualDamage
                     this.trackSkillDamage('wave-pulse', actualDamage)
 
-                    // Small knockback away from wave center
+                    // Gentle push (not knockback - waves flow through)
                     if (dist > 0) {
                         const nx = dx / dist
                         const ny = dy / dist
-                        const knockback = 2 / Math.sqrt(enemy.mass)
-                        enemy.vx += nx * knockback
-                        enemy.vy += ny * knockback
+                        const push = 3 / Math.sqrt(enemy.mass)
+                        enemy.vx += nx * push
+                        enemy.vy += ny * push
                     }
+
+                    // Spawn hit effect
+                    this.spawnWaveHitEffect(enemy.x, enemy.y)
                 }
             }
         }
@@ -1714,7 +2264,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
                     // Only sqrt when confirmed in range
                     const dist = Math.sqrt(distSq)
                     // Radiation damage decreases with distance (inverse square)
-                    const distFactor = 1 - (dist / this.stats.auraRadius)
+                    const distFactor = 1 - dist / this.stats.auraRadius
                     const damage = this.stats.radiationDamage * distFactor * distFactor * 0.5
                     const actualDamage = damage * this.stats.damageMultiplier
                     enemy.health -= actualDamage
@@ -1723,7 +2273,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
                     // Visual feedback - small glow on damaged enemy
                     if (enemy.wobble && distFactor > 0.5) {
-                        this.impactSystem.addScalePunch(enemy.wobble, 0.05, 0.1)
+                        // Scale punch disabled
+                        // this.impactSystem.addScalePunch(enemy.wobble, 0.05, 0.1)
                     }
                 }
             }
@@ -1790,7 +2341,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
             // Main ring
             auraGraphics.circle(0, 0, radius)
-            auraGraphics.stroke({ color: 0xff6644, width: 3, alpha: 0.3 + Math.sin(this.auraAnimPhase * 3) * 0.1 })
+            auraGraphics.stroke({
+                color: 0xff6644,
+                width: 3,
+                alpha: 0.3 + Math.sin(this.auraAnimPhase * 3) * 0.1,
+            })
 
             // Inner pulsing glow
             auraGraphics.circle(0, 0, radius * 0.8)
@@ -1867,18 +2422,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 const innerR = radius * 0.5
                 const outerR = radius * (0.9 + sparkVariation * 0.1)
 
-                repulseGraphics.moveTo(
-                    Math.cos(baseAngle) * innerR,
-                    Math.sin(baseAngle) * innerR
-                )
+                repulseGraphics.moveTo(Math.cos(baseAngle) * innerR, Math.sin(baseAngle) * innerR)
                 repulseGraphics.lineTo(
                     Math.cos(baseAngle + 0.1) * (innerR + outerR) * 0.5,
                     Math.sin(baseAngle + 0.1) * (innerR + outerR) * 0.5
                 )
-                repulseGraphics.lineTo(
-                    Math.cos(baseAngle) * outerR,
-                    Math.sin(baseAngle) * outerR
-                )
+                repulseGraphics.lineTo(Math.cos(baseAngle) * outerR, Math.sin(baseAngle) * outerR)
             }
             repulseGraphics.stroke({ color: 0xf1c40f, width: 2, alpha: 0.4 })
 
@@ -1928,12 +2477,18 @@ export class PhysicsSurvivorScene extends AdventureScene {
             const width = this.stats.streamWidth
 
             // Flow direction based on player movement
-            const flowDirX = this.playerVx !== 0 || this.playerVy !== 0
-                ? this.playerVx / (Math.sqrt(this.playerVx * this.playerVx + this.playerVy * this.playerVy) || 1)
-                : 1
-            const flowDirY = this.playerVx !== 0 || this.playerVy !== 0
-                ? this.playerVy / (Math.sqrt(this.playerVx * this.playerVx + this.playerVy * this.playerVy) || 1)
-                : 0
+            const flowDirX =
+                this.playerVx !== 0 || this.playerVy !== 0
+                    ? this.playerVx /
+                      (Math.sqrt(this.playerVx * this.playerVx + this.playerVy * this.playerVy) ||
+                          1)
+                    : 1
+            const flowDirY =
+                this.playerVx !== 0 || this.playerVy !== 0
+                    ? this.playerVy /
+                      (Math.sqrt(this.playerVx * this.playerVx + this.playerVy * this.playerVy) ||
+                          1)
+                    : 0
 
             // Draw flowing lines
             const lineCount = 5
@@ -2139,7 +2694,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
                 // Small random spin (visual chaos)
                 if (enemy.wobble && Math.random() < 0.02) {
-                    this.impactSystem.addScalePunch(enemy.wobble, 0.08, 0.15)
+                    // Scale punch disabled
+                    // this.impactSystem.addScalePunch(enemy.wobble, 0.08, 0.15)
                 }
             }
         }
@@ -2153,12 +2709,16 @@ export class PhysicsSurvivorScene extends AdventureScene {
         if (this.stats.flowSpeed <= 0 || this.stats.suctionForce <= 0) return
 
         // Flow direction based on player's facing direction or movement
-        const flowDirX = this.playerVx !== 0 || this.playerVy !== 0
-            ? this.playerVx / (Math.sqrt(this.playerVx * this.playerVx + this.playerVy * this.playerVy) || 1)
-            : 1 // Default right
-        const flowDirY = this.playerVx !== 0 || this.playerVy !== 0
-            ? this.playerVy / (Math.sqrt(this.playerVx * this.playerVx + this.playerVy * this.playerVy) || 1)
-            : 0
+        const flowDirX =
+            this.playerVx !== 0 || this.playerVy !== 0
+                ? this.playerVx /
+                  (Math.sqrt(this.playerVx * this.playerVx + this.playerVy * this.playerVy) || 1)
+                : 1 // Default right
+        const flowDirY =
+            this.playerVx !== 0 || this.playerVy !== 0
+                ? this.playerVy /
+                  (Math.sqrt(this.playerVx * this.playerVx + this.playerVy * this.playerVy) || 1)
+                : 0
 
         for (const enemy of this.enemySystem.enemies) {
             const dx = enemy.x - this.playerX
@@ -2174,7 +2734,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 if (perpDist < this.stats.streamWidth) {
                     // Apply suction toward stream center
                     const suctionIntensity = 1 - perpDist / this.stats.streamWidth
-                    const force = this.stats.suctionForce * suctionIntensity * deltaSeconds / Math.sqrt(enemy.mass)
+                    const force =
+                        (this.stats.suctionForce * suctionIntensity * deltaSeconds) /
+                        Math.sqrt(enemy.mass)
 
                     // Pull toward stream line
                     const toStreamX = -flowDirY * (dx * -flowDirY + dy * flowDirX > 0 ? 1 : -1)
@@ -2210,7 +2772,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 // Magnetic force: stronger when closer (1/r²), but capped
                 const normalizedDist = dist / this.stats.magneticPullRadius
                 const forceFactor = 1 / (normalizedDist * normalizedDist + 0.3)
-                const force = this.stats.magneticPullStrength * forceFactor * deltaSeconds / Math.sqrt(enemy.mass)
+                const force =
+                    (this.stats.magneticPullStrength * forceFactor * deltaSeconds) /
+                    Math.sqrt(enemy.mass)
 
                 // Pull toward player
                 const nx = -dx / dist
@@ -2293,7 +2857,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
      * Based on thermal conduction: damage spreads like heat
      * Called when dealing damage to an enemy
      */
-    private handleHeatChain(sourceX: number, sourceY: number, damage: number, depth: number = 0): void {
+    private handleHeatChain(
+        sourceX: number,
+        sourceY: number,
+        damage: number,
+        depth: number = 0
+    ): void {
         if (this.stats.conductRange <= 0 || this.stats.conductRatio <= 0) return
         if (depth >= this.stats.maxChain) return
 
@@ -2408,7 +2977,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
      * Calculate Doppler damage modifier based on enemy approach/recede
      * Based on Doppler effect: frequency shift with relative velocity
      */
-    private getDopplerDamageModifier(enemyX: number, enemyY: number, enemyVx: number, enemyVy: number): number {
+    private getDopplerDamageModifier(
+        enemyX: number,
+        enemyY: number,
+        enemyVx: number,
+        enemyVy: number
+    ): number {
         if (this.stats.approachBonus <= 0 && this.stats.recedeReduction <= 0) return 1
 
         // Direction from player to enemy
@@ -2463,7 +3037,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         // Update orbital rotation (Kepler's third law: T² ∝ a³)
         // Faster rotation for smaller orbits
-        const orbitalSpeed = 2 * Math.PI / Math.max(1, this.stats.orbitRadius / 50)
+        const orbitalSpeed = (2 * Math.PI) / Math.max(1, this.stats.orbitRadius / 50)
         this.orbitAngle += orbitalSpeed * deltaSeconds
         if (this.orbitAngle > Math.PI * 2) {
             this.orbitAngle -= Math.PI * 2
@@ -2509,15 +3083,16 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
                         // Visual feedback
                         if (enemy.wobble) {
-                            this.impactSystem.addScalePunch(enemy.wobble, 0.15, 0.1)
+                            // Scale punch disabled
+                            // this.impactSystem.addScalePunch(enemy.wobble, 0.15, 0.1)
                         }
 
                         // Small knockback
                         if (dist > 0) {
                             const nx = dx / dist
                             const ny = dy / dist
-                            enemy.vx += nx * 3 / Math.sqrt(enemy.mass)
-                            enemy.vy += ny * 3 / Math.sqrt(enemy.mass)
+                            enemy.vx += (nx * 3) / Math.sqrt(enemy.mass)
+                            enemy.vy += (ny * 3) / Math.sqrt(enemy.mass)
                         }
 
                         // Damage number
@@ -2657,7 +3232,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.ghostTrailTimer += deltaSeconds
 
         // Spawn new trail
-        if (this.ghostTrailTimer >= trailInterval && this.ghostTrailPositions.length < this.stats.ghostTrailCount) {
+        if (
+            this.ghostTrailTimer >= trailInterval &&
+            this.ghostTrailPositions.length < this.stats.ghostTrailCount
+        ) {
             this.ghostTrailTimer = 0
             this.spawnGhostTrail()
         }
@@ -2742,7 +3320,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
                 // Visual feedback
                 if (enemy.wobble) {
-                    this.impactSystem.addScalePunch(enemy.wobble, 0.2, 0.15)
+                    // Scale punch disabled
+                    // this.impactSystem.addScalePunch(enemy.wobble, 0.2, 0.15)
                 }
 
                 // Damage number
@@ -2750,9 +3329,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
                 // Hit effect
                 this.showGhostHitEffect(enemy.x, enemy.y)
-
-                // Small screen shake
-                this.triggerShake(2, 0.1)
             }
         }
     }
@@ -2858,7 +3434,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
                 // Small visual feedback
                 if (target.enemy.wobble && Math.random() < 0.1) {
-                    this.impactSystem.addScalePunch(target.enemy.wobble, 0.1, 0.05)
+                    // Scale punch disabled
+                    // this.impactSystem.addScalePunch(target.enemy.wobble, 0.1, 0.05)
                 }
             }
         }
@@ -2981,7 +3558,16 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         for (const target of this.laserChainTargets) {
             // Draw zigzag lightning to this target
-            this.drawLightningSegment(graphics, startX, startY, target.x, target.y, color, width, alpha)
+            this.drawLightningSegment(
+                graphics,
+                startX,
+                startY,
+                target.x,
+                target.y,
+                color,
+                width,
+                alpha
+            )
 
             // Next segment starts from this target
             startX = target.x
@@ -3038,7 +3624,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
             if (i < segments) {
                 // Randomize zigzag each frame for lightning effect
                 const zigzagAmount = 8 + Math.sin(this.laserFlickerPhase * 2 + i * 3) * 6
-                const direction = ((i % 2) * 2 - 1) * (Math.sin(this.laserFlickerPhase + i) > 0 ? 1 : -1)
+                const direction =
+                    ((i % 2) * 2 - 1) * (Math.sin(this.laserFlickerPhase + i) > 0 ? 1 : -1)
                 offsetX = perpX * zigzagAmount * direction * flickerIntensity
                 offsetY = perpY * zigzagAmount * direction * flickerIntensity
             }
@@ -3352,7 +3939,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
                 // Knockback away from explosion
                 const knockDir = dist > 0 ? { x: dx / dist, y: dy / dist } : { x: 0, y: -1 }
-                const knockForce = 8 * falloff / Math.sqrt(enemy.mass)
+                const knockForce = (8 * falloff) / Math.sqrt(enemy.mass)
                 enemy.vx += knockDir.x * knockForce
                 enemy.vy += knockDir.y * knockForce
             }
@@ -3360,7 +3947,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         // Visual explosion effect
         this.impactSystem.trigger(x, y, 'explosion')
-        this.triggerShake(4, 0.1)
     }
 
     private updatePlayer(delta: number): void {
@@ -3497,7 +4083,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         // Slow motion celebration
         this.impactSystem.triggerSlowMotion(0.1, 1.0)
-        this.triggerShake(15, 0.5)
 
         // Show result after celebration delay
         setTimeout(() => {
@@ -3516,7 +4101,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
             'critical'
         )
         this.impactSystem.triggerSlowMotion(0.3, 0.5)
-        this.triggerShake(10, 0.3)
 
         // Spawn boss at random edge after brief delay
         setTimeout(() => {
@@ -3610,10 +4194,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
         const difficulty = this.currentStage.physics.gravity || 5
         this.generatedWorld = await this.worldGenerator.generate(difficulty)
 
-        this.debugLog(`World generated: ${this.generatedWorld.enemySpawns.length} spawns, ${this.generatedWorld.worldEvents.length} events`)
+        this.debugLog(
+            `World generated: ${this.generatedWorld.enemySpawns.length} spawns, ${this.generatedWorld.worldEvents.length} events`
+        )
 
         // Brief delay to show "READY" state
-        await new Promise(resolve => setTimeout(resolve, 500))
+        await new Promise((resolve) => setTimeout(resolve, 500))
 
         // Transition to opening
         this.loadingScreen.hide()
@@ -3675,10 +4261,17 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         this.gameTime = 0
         this.score = 0
-        this.physicsStats = { totalMomentum: 0, elasticBounces: 0, mergedMass: 0, slingshotCount: 0 }
-        this.playerProgress = { xp: 0, level: 1, pendingLevelUps: 0 }
-        this.setGameState('playing', 'startGameAfterOpening')
+        this.physicsStats = {
+            totalMomentum: 0,
+            elasticBounces: 0,
+            mergedMass: 0,
+            slingshotCount: 0,
+        }
+        // Set pendingLevelUps to 1 for initial skill selection before game starts
+        this.playerProgress = { xp: 0, level: 1, pendingLevelUps: 1 }
         this.updateHUD()
+        // Show initial skill selection - player must choose a starting skill
+        this.showSkillSelection()
     }
 
     /**
@@ -3706,7 +4299,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 this.generatedWorld.blackHole
             )
 
-            this.debugLog(`Black hole created at (${this.generatedWorld.blackHole.x.toFixed(0)}, ${this.generatedWorld.blackHole.y.toFixed(0)}) with mass ${this.generatedWorld.blackHole.mass}`)
+            this.debugLog(
+                `Black hole created at (${this.generatedWorld.blackHole.x.toFixed(0)}, ${this.generatedWorld.blackHole.y.toFixed(0)}) with mass ${this.generatedWorld.blackHole.mass}`
+            )
         }
     }
 
@@ -3720,7 +4315,14 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.passiveTrait = config.passive
         this.momentumSpeedBonus = 0
         this.consecutiveHits = 0
+        this.shootTimer = 0
         this.shockwaveTimer = 0
+        if (this.shockwaveChargeGraphics) {
+            this.effectContainer.removeChild(this.shockwaveChargeGraphics)
+            this.shockwaveChargeGraphics.destroy()
+            this.shockwaveChargeGraphics = null
+        }
+        this.shockwaveChargeParticles = []
         this.pendulumPhase = 0
         this.pendulumDamageMultiplier = 1
         this.slashAngle = 0
@@ -3742,6 +4344,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
             wave.graphics.destroy()
         }
         this.activeWaves = []
+        if (this.waveChargeGraphics) {
+            this.effectContainer.removeChild(this.waveChargeGraphics)
+            this.waveChargeGraphics.destroy()
+            this.waveChargeGraphics = null
+        }
+        this.waveRipples = []
 
         // Phase 6 orbital cleanup
         this.cleanupOrbitals()
@@ -3813,7 +4421,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
             // Victory state - keep updating effects while waiting for result screen
             this.damageTextSystem.update(deltaSeconds)
             this.impactSystem.update(deltaSeconds)
-            this.updateShake(delta)
         }
 
         if (this.gameState === 'result') {
@@ -3887,7 +4494,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 this.cameraY
             )
             this.damageTextSystem.update(rawDeltaSeconds)
-            this.updateShake(rawDeltaSeconds * 60)
 
             const breathe = Math.sin(this.animPhase * 3) * 0.02
             this.player?.updateOptions({
@@ -3940,14 +4546,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         // Update XP orbs
         this.xpOrbSystem.update(deltaSeconds, this.playerX, this.playerY)
-
-        // Auto-fire (vampire survivors style - player just moves)
-        this.fireTimer += deltaSeconds
-        const effectiveFireRate = this.fireRate * this.stats.fireRateMultiplier
-        if (this.fireTimer >= effectiveFireRate && this.enemySystem.enemies.length > 0) {
-            this.fireProjectile()
-            this.fireTimer = 0
-        }
 
         this.spawnTimer += deltaSeconds
 
@@ -4006,6 +4604,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         }
 
         this.updatePlayer(delta)
+        this.updateAutoFire(deltaSeconds)
         this.updateProjectiles(delta)
         this.updateEnemiesAndMerges(delta, deltaSeconds)
         this.checkPlayerCollisions()
@@ -4050,7 +4649,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.updateHitEffects(delta)
         this.damageTextSystem.update(deltaSeconds)
         this.comboSystem.update(deltaSeconds)
-        this.updateShake(delta)
 
         this.updateHUD()
 
@@ -4287,15 +4885,17 @@ export class PhysicsSurvivorScene extends AdventureScene {
         }
         this.hitEffects = []
 
-        // Reset camera shake
-        this.shakeIntensity = 0
-        this.shakeDuration = 0
         this.gameContainer.position.set(this.centerX, this.centerY)
 
         // Reset state
         this.gameTime = 0
         this.score = 0
-        this.physicsStats = { totalMomentum: 0, elasticBounces: 0, mergedMass: 0, slingshotCount: 0 }
+        this.physicsStats = {
+            totalMomentum: 0,
+            elasticBounces: 0,
+            mergedMass: 0,
+            slingshotCount: 0,
+        }
         this.playerProgress = { xp: 0, level: 1, pendingLevelUps: 0 }
         this.maxPlayerHealth = this.baseMaxHealth
         this.playerHealth = this.maxPlayerHealth
@@ -4305,7 +4905,14 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.passiveTrait = ''
         this.momentumSpeedBonus = 0
         this.consecutiveHits = 0
+        this.shootTimer = 0
         this.shockwaveTimer = 0
+        if (this.shockwaveChargeGraphics) {
+            this.effectContainer.removeChild(this.shockwaveChargeGraphics)
+            this.shockwaveChargeGraphics.destroy()
+            this.shockwaveChargeGraphics = null
+        }
+        this.shockwaveChargeParticles = []
         this.pendulumPhase = 0
         this.pendulumDamageMultiplier = 1
         this.slashAngle = 0
@@ -4328,6 +4935,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
             wave.graphics.destroy()
         }
         this.activeWaves = []
+        if (this.waveChargeGraphics) {
+            this.effectContainer.removeChild(this.waveChargeGraphics)
+            this.waveChargeGraphics.destroy()
+            this.waveChargeGraphics = null
+        }
+        this.waveRipples = []
 
         // Phase 6 orbital cleanup
         this.cleanupOrbitals()
@@ -4347,7 +4960,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.cleanupLaser()
 
         this.resetStats()
-        this.fireTimer = 0
         this.spawnTimer = 0
         // Infinite map - start at origin
         this.playerX = 0

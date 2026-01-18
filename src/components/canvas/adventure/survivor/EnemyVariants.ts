@@ -6,54 +6,54 @@ import { EnemyTier } from './types'
  */
 
 export type EnemyVariantId =
-    | 'normal'      // 기본 적
-    | 'speedy'      // 빠르지만 약함
-    | 'tank'        // 느리지만 강함
-    | 'charger'     // 돌진형
-    | 'splitter'    // 죽으면 분열
-    | 'explosive'   // 죽으면 폭발
-    | 'ghost'       // 투명해지는 적
-    | 'healer'      // 주변 적 회복
-    | 'magnet'      // 플레이어 끌어당김
-    | 'shooter'     // 원거리 공격 (미래)
+    | 'normal' // 기본 적
+    | 'speedy' // 빠르지만 약함
+    | 'tank' // 느리지만 강함
+    | 'charger' // 돌진형
+    | 'splitter' // 죽으면 분열
+    | 'explosive' // 죽으면 폭발
+    | 'ghost' // 투명해지는 적
+    | 'healer' // 주변 적 회복
+    | 'magnet' // 플레이어 끌어당김
+    | 'shooter' // 원거리 공격 (미래)
 
 /**
  * Behavior type determines how the enemy moves
  */
 export type EnemyBehavior =
-    | 'chase'       // 플레이어 추격 (기본)
-    | 'charge'      // 돌진 후 휴식
-    | 'orbit'       // 플레이어 주변 공전
-    | 'zigzag'      // 지그재그 이동
-    | 'teleport'    // 순간이동
-    | 'flee'        // 도망치다가 공격
+    | 'chase' // 플레이어 추격 (기본)
+    | 'charge' // 돌진 후 휴식
+    | 'orbit' // 플레이어 주변 공전
+    | 'zigzag' // 지그재그 이동
+    | 'teleport' // 순간이동
+    | 'flee' // 도망치다가 공격
 
 export interface EnemyVariantDef {
     id: EnemyVariantId
     name: string
 
     // Visual modifiers
-    colorTint?: number          // 색상 틴트 (기본 색상에 곱함)
-    glowColor?: number          // 글로우 효과 색상
-    glowIntensity?: number      // 글로우 강도 (0-1)
-    scaleModifier?: number      // 크기 배율
-    trailEffect?: boolean       // 잔상 효과
-    pulseEffect?: boolean       // 맥동 효과
+    colorTint?: number // 색상 틴트 (기본 색상에 곱함)
+    glowColor?: number // 글로우 효과 색상
+    glowIntensity?: number // 글로우 강도 (0-1)
+    scaleModifier?: number // 크기 배율
+    trailEffect?: boolean // 잔상 효과
+    pulseEffect?: boolean // 맥동 효과
 
     // Stat modifiers (기본값 1.0)
-    speedMult: number           // 속도 배율
-    healthMult: number          // 체력 배율
-    damageMult: number          // 데미지 배율 (접촉 데미지)
-    massMult: number            // 질량 배율 (넉백 영향)
-    xpMult: number              // 경험치 배율
+    speedMult: number // 속도 배율
+    healthMult: number // 체력 배율
+    damageMult: number // 데미지 배율 (접촉 데미지)
+    massMult: number // 질량 배율 (넉백 영향)
+    xpMult: number // 경험치 배율
 
     // Behavior
     behavior: EnemyBehavior
     behaviorParams?: {
-        chargeSpeed?: number    // 돌진 속도
+        chargeSpeed?: number // 돌진 속도
         chargeCooldown?: number // 돌진 쿨다운
-        orbitRadius?: number    // 공전 반경
-        orbitSpeed?: number     // 공전 속도
+        orbitRadius?: number // 공전 반경
+        orbitSpeed?: number // 공전 속도
         zigzagAmplitude?: number // 지그재그 진폭
         zigzagFrequency?: number // 지그재그 주파수
     }
@@ -61,17 +61,17 @@ export interface EnemyVariantDef {
     // Special abilities
     onDeath?: 'split' | 'explode' | 'heal_allies' | 'spawn_minions'
     onDeathParams?: {
-        splitCount?: number     // 분열 수
+        splitCount?: number // 분열 수
         explosionRadius?: number // 폭발 반경
-        healAmount?: number     // 회복량
-        spawnCount?: number     // 소환 수
+        healAmount?: number // 회복량
+        spawnCount?: number // 소환 수
     }
 
     // Spawn conditions
-    minGameTime?: number        // 최소 게임 시간 (초)
-    maxGameTime?: number        // 최대 게임 시간 (없으면 무제한)
-    minTier?: EnemyTier         // 최소 티어
-    spawnWeight: number         // 스폰 가중치 (높을수록 자주 등장)
+    minGameTime?: number // 최소 게임 시간 (초)
+    maxGameTime?: number // 최대 게임 시간 (없으면 무제한)
+    minTier?: EnemyTier // 최소 티어
+    spawnWeight: number // 스폰 가중치 (높을수록 자주 등장)
 }
 
 /**
@@ -268,7 +268,7 @@ export function getAvailableVariants(gameTime: number, tier: EnemyTier): EnemyVa
     const tierOrder: EnemyTier[] = ['small', 'medium', 'large', 'boss']
     const tierIndex = tierOrder.indexOf(tier)
 
-    return Object.values(ENEMY_VARIANTS).filter(variant => {
+    return Object.values(ENEMY_VARIANTS).filter((variant) => {
         // Check min game time
         if (variant.minGameTime && gameTime < variant.minGameTime) {
             return false

@@ -515,12 +515,7 @@ export class ProjectileSystem {
                         // Critical hit chance (10% base)
                         const isCritical = Math.random() < 0.1
                         const finalDamage = isCritical ? damage * 1.5 : damage
-                        onDamageDealt(
-                            enemy.x,
-                            enemy.y - enemy.size / 2,
-                            finalDamage,
-                            isCritical
-                        )
+                        onDamageDealt(enemy.x, enemy.y - enemy.size / 2, finalDamage, isCritical)
                     }
 
                     // Explosion effect

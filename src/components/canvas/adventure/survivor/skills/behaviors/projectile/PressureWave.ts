@@ -42,6 +42,7 @@ export class PressureWaveBehavior extends BaseSkillBehavior<PressureWaveEffect> 
         activationType: 'passive',
         formulaId: 'ideal-gas',
         physicsVisualType: 'pressure',
+        requires: ['projectile'], // Only appears when player has projectile skill
         getLevelEffect: (level: number) => this.getEffect(level),
     }
 

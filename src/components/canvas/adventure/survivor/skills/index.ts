@@ -16,7 +16,10 @@ export * from './base/BaseSkillBehavior'
 export * from './utils/SkillCombiner'
 
 // Import all behaviors to register them
-// Projectile skills
+// Projectile skills - base
+import './behaviors/projectile/KineticShot'
+
+// Projectile skills - modifiers
 import './behaviors/projectile/ElasticBounce'
 import './behaviors/projectile/MomentumPierce'
 import './behaviors/projectile/PressureWave'
@@ -55,30 +58,12 @@ import './behaviors/trigger/FrequencyShift'
 import './behaviors/trigger/EscapeBurst'
 
 // Re-export behavior types for convenience
-export type {
-    ElasticBounceEffect,
-} from './behaviors/projectile/ElasticBounce'
-export type {
-    MomentumPierceEffect,
-} from './behaviors/projectile/MomentumPierce'
-export type {
-    PressureWaveEffect,
-} from './behaviors/projectile/PressureWave'
-export type {
-    FrequencyBurstEffect,
-} from './behaviors/projectile/FrequencyBurst'
-export type {
-    FmaImpactEffect,
-} from './behaviors/projectile/FmaImpact'
-export type {
-    GravityPullEffect,
-} from './behaviors/projectile/GravityPull'
-export type {
-    RefractionSpreadEffect,
-} from './behaviors/projectile/RefractionSpread'
-export type {
-    CentripetalPulseEffect,
-} from './behaviors/projectile/CentripetalPulse'
-export type {
-    ElasticReturnEffect,
-} from './behaviors/projectile/ElasticReturn'
+export type { ElasticBounceEffect } from './behaviors/projectile/ElasticBounce'
+export type { MomentumPierceEffect } from './behaviors/projectile/MomentumPierce'
+export type { PressureWaveEffect } from './behaviors/projectile/PressureWave'
+export type { FrequencyBurstEffect } from './behaviors/projectile/FrequencyBurst'
+export type { FmaImpactEffect } from './behaviors/projectile/FmaImpact'
+export type { GravityPullEffect } from './behaviors/projectile/GravityPull'
+export type { RefractionSpreadEffect } from './behaviors/projectile/RefractionSpread'
+export type { CentripetalPulseEffect } from './behaviors/projectile/CentripetalPulse'
+export type { ElasticReturnEffect } from './behaviors/projectile/ElasticReturn'

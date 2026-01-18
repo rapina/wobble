@@ -451,12 +451,13 @@ export class ExperienceOrbSystem {
                 // Accelerate towards player
                 // Super magnet uses stronger attraction
                 const magnetStrength = this.superMagnetActive
-                    ? 0.8 + (1 - Math.min(dist / 500, 1)) * 0.2  // Strong even at distance
+                    ? 0.8 + (1 - Math.min(dist / 500, 1)) * 0.2 // Strong even at distance
                     : 1 - dist / this.magnetRadius
                 const maxSpeed = this.superMagnetActive ? 25 : 15
 
                 orb.collectSpeed = Math.min(
-                    orb.collectSpeed + magnetStrength * (this.superMagnetActive ? 40 : 20) * deltaSeconds,
+                    orb.collectSpeed +
+                        magnetStrength * (this.superMagnetActive ? 40 : 20) * deltaSeconds,
                     maxSpeed
                 )
 

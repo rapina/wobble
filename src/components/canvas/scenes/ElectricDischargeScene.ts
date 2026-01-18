@@ -91,7 +91,7 @@ export class ElectricDischargeScene extends BaseScene {
             this.targetArcIntensity = Math.min(1, (E - 3) / 7 + 0.5)
         } else {
             // Below breakdown - weak field lines, no arc
-            this.targetArcIntensity = E / 3 * 0.3
+            this.targetArcIntensity = (E / 3) * 0.3
         }
     }
 
@@ -123,12 +123,12 @@ export class ElectricDischargeScene extends BaseScene {
         const isDischarging = E >= 3
         this.positiveBlob.updateOptions({
             wobblePhase: this.time * 3,
-            expression: isDischarging ? 'excited' : (E > 2 ? 'happy' : 'neutral'),
+            expression: isDischarging ? 'excited' : E > 2 ? 'happy' : 'neutral',
             size: 25 + this.arcIntensity * 10,
         })
         this.negativeBlob.updateOptions({
             wobblePhase: this.time * 3 + Math.PI,
-            expression: isDischarging ? 'excited' : (E > 2 ? 'happy' : 'neutral'),
+            expression: isDischarging ? 'excited' : E > 2 ? 'happy' : 'neutral',
             size: 25 + this.arcIntensity * 10,
         })
 

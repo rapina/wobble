@@ -23,11 +23,41 @@ export class QuantumTunnelBehavior extends BaseSkillBehavior<QuantumTunnelEffect
     readonly category: SkillCategory = 'player'
 
     protected readonly levelEffects: QuantumTunnelEffect[] = [
-        { type: 'quantum-tunnel', ghostCooldown: 8, ghostDuration: 0.5, ghostDamage: 10, ghostTrailCount: 2 },
-        { type: 'quantum-tunnel', ghostCooldown: 7, ghostDuration: 0.7, ghostDamage: 15, ghostTrailCount: 3 },
-        { type: 'quantum-tunnel', ghostCooldown: 6, ghostDuration: 1.0, ghostDamage: 20, ghostTrailCount: 4 },
-        { type: 'quantum-tunnel', ghostCooldown: 5, ghostDuration: 1.2, ghostDamage: 30, ghostTrailCount: 5 },
-        { type: 'quantum-tunnel', ghostCooldown: 4, ghostDuration: 1.5, ghostDamage: 40, ghostTrailCount: 6 },
+        {
+            type: 'quantum-tunnel',
+            ghostCooldown: 8,
+            ghostDuration: 0.5,
+            ghostDamage: 10,
+            ghostTrailCount: 2,
+        },
+        {
+            type: 'quantum-tunnel',
+            ghostCooldown: 7,
+            ghostDuration: 0.7,
+            ghostDamage: 15,
+            ghostTrailCount: 3,
+        },
+        {
+            type: 'quantum-tunnel',
+            ghostCooldown: 6,
+            ghostDuration: 1.0,
+            ghostDamage: 20,
+            ghostTrailCount: 4,
+        },
+        {
+            type: 'quantum-tunnel',
+            ghostCooldown: 5,
+            ghostDuration: 1.2,
+            ghostDamage: 30,
+            ghostTrailCount: 5,
+        },
+        {
+            type: 'quantum-tunnel',
+            ghostCooldown: 4,
+            ghostDuration: 1.5,
+            ghostDamage: 40,
+            ghostTrailCount: 6,
+        },
     ]
 
     readonly definition: SkillDefinition<QuantumTunnelEffect> = {

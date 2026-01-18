@@ -23,7 +23,13 @@ interface EnemySystemContext {
     // Callback to add trail points (from EffectsManager)
     onAddTrailPoint?: (trail: KnockbackTrail, x: number, y: number) => void
     // Callback to show physics formula during merge (momentum conservation)
-    onShowMergeFormula?: (x: number, y: number, mass1: number, mass2: number, totalMass: number) => void
+    onShowMergeFormula?: (
+        x: number,
+        y: number,
+        mass1: number,
+        mass2: number,
+        totalMass: number
+    ) => void
 }
 
 interface PendingMerge {
@@ -80,7 +86,12 @@ export class EnemySystem {
     }
 
     // Spawn enemy at random edge (relative to player position for infinite map)
-    spawnAtEdge(gameTime: number, playerX: number, playerY: number, tier: EnemyTier = 'small'): boolean {
+    spawnAtEdge(
+        gameTime: number,
+        playerX: number,
+        playerY: number,
+        tier: EnemyTier = 'small'
+    ): boolean {
         // Check enemy limit before spawning
         if (!this.canSpawn()) {
             return false
@@ -142,7 +153,10 @@ export class EnemySystem {
         this.formationTimer = 0
 
         // Get available formations
-        const available = this.formationSpawner.getAvailableFormations(gameTime, this.enemies.length)
+        const available = this.formationSpawner.getAvailableFormations(
+            gameTime,
+            this.enemies.length
+        )
         if (available.length === 0) {
             return false
         }
@@ -235,7 +249,8 @@ export class EnemySystem {
 
         // Apply variant modifiers
         const maxHealth =
-            overrides?.maxHealth ?? 3 * difficultyMult * config.healthMultiplier * variant.healthMult
+            overrides?.maxHealth ??
+            3 * difficultyMult * config.healthMultiplier * variant.healthMult
         const health = overrides?.health ?? maxHealth
         const baseSpeed =
             this.context.baseEnemySpeed * (0.8 + Math.random() * 0.4) * config.speedMultiplier
@@ -431,7 +446,8 @@ export class EnemySystem {
             }
 
             // Limit speed (allow more overspeed for chargers)
-            const maxSpeedMult = enemy.behavior === 'charge' && enemy.behaviorState?.charging ? 4 : 2
+            const maxSpeedMult =
+                enemy.behavior === 'charge' && enemy.behaviorState?.charging ? 4 : 2
             const maxSpeed = enemy.speed * maxSpeedMult
             const speedSq = enemy.vx * enemy.vx + enemy.vy * enemy.vy
             const maxSpeedSq = maxSpeed * maxSpeed
@@ -487,7 +503,7 @@ export class EnemySystem {
 
             // Animate Angel graphics
             if (enemy.wobble && 'update' in enemy.wobble) {
-                (enemy.wobble as AngelGraphics).update(delta)
+                ;(enemy.wobble as AngelGraphics).update(delta)
             }
         }
     }

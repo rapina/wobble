@@ -260,8 +260,10 @@ export class BlackHoleSystem {
             // Only draw if in correct half
             if ((isBackHalf && particle.layer === 0) || (!isBackHalf && particle.layer === 1)) {
                 // Color based on radius (temperature)
-                const temp = 1 - (particle.radius - this.config.eventHorizonRadius * 1.3) /
-                    (this.config.accretionDiskRadius - this.config.eventHorizonRadius * 1.3)
+                const temp =
+                    1 -
+                    (particle.radius - this.config.eventHorizonRadius * 1.3) /
+                        (this.config.accretionDiskRadius - this.config.eventHorizonRadius * 1.3)
                 const r = Math.floor(255 * (0.8 + temp * 0.2))
                 const g = Math.floor(200 * (1 - temp * 0.3))
                 const b = Math.floor(100 * (1 - temp) + 255 * temp)

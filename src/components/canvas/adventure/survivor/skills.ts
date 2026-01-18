@@ -32,6 +32,9 @@ export {
     getSkillsByCategory,
     isSkillRegistered,
     getSkillCount,
+    getPlayerTags,
+    arePrerequisitesMet,
+    getAvailableSkills,
 
     // Base class
     BaseSkillBehavior,

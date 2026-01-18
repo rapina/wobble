@@ -135,6 +135,8 @@ export class SkillCombiner {
             'laserChainRange',
             'maxCharge',
             'damagePerCharge',
+            'shockwaveRadius',
+            'shockwaveKnockback',
         ].includes(key)
     }
 

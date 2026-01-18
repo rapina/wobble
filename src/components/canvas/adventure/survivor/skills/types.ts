@@ -41,6 +41,12 @@ export interface SkillEffect {
 // ============================================
 
 /**
+ * Skill tags for dependency system
+ * Base skills provide tags, modifier skills require tags
+ */
+export type SkillTag = 'projectile' | 'wave' | 'orbital' | 'chain'
+
+/**
  * Skill definition with typed effect
  * This replaces the old flat SkillDefinition interface
  */
@@ -57,6 +63,8 @@ export interface SkillDefinition<T extends SkillEffect = SkillEffect> {
     readonly baseCooldown?: number // Base cooldown in seconds (for active skills)
     readonly formulaId?: string
     readonly physicsVisualType?: string
+    readonly tags?: SkillTag[] // Tags this skill provides (for base skills)
+    readonly requires?: SkillTag[] // Tags required for this skill to appear (for modifier skills)
     getLevelEffect(level: number): T
 }
 
@@ -144,6 +152,7 @@ export interface RuntimeSkillStats {
     shockwaveInterval: number
     shockwaveRadius: number
     shockwaveKnockback: number
+    shockwaveDamage: number
 
     // Aura effects
     shieldRadius: number
@@ -181,6 +190,8 @@ export interface RuntimeSkillStats {
     wavelength: number
     waveAmplitude: number
     waveSpeed: number
+    waveDamage: number
+    waveCount: number
     beatFreq1: number
     beatFreq2: number
     beatAmplitude: number
@@ -242,6 +253,7 @@ export const DEFAULT_RUNTIME_STATS: RuntimeSkillStats = {
     shockwaveInterval: 0,
     shockwaveRadius: 0,
     shockwaveKnockback: 0,
+    shockwaveDamage: 0,
 
     shieldRadius: 0,
     deflectionStrength: 0,
@@ -275,6 +287,8 @@ export const DEFAULT_RUNTIME_STATS: RuntimeSkillStats = {
     wavelength: 0,
     waveAmplitude: 0,
     waveSpeed: 0,
+    waveDamage: 0,
+    waveCount: 0,
     beatFreq1: 0,
     beatFreq2: 0,
     beatAmplitude: 0,

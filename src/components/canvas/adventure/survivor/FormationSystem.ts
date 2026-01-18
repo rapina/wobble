@@ -7,23 +7,23 @@ import { EnemyVariantId } from './EnemyVariants'
  */
 
 export type FormationId =
-    | 'random'          // 무작위 스폰 (기본)
-    | 'circle'          // 원형 포위
-    | 'line'            // 직선 행렬
-    | 'v_shape'         // V자 형태
-    | 'pincer'          // 양쪽에서 협공
-    | 'wave'            // 파도처럼 밀려옴
-    | 'spiral'          // 나선형
-    | 'cluster'         // 뭉쳐서 스폰
-    | 'cross'           // 십자 형태
-    | 'diamond'         // 다이아몬드 형태
+    | 'random' // 무작위 스폰 (기본)
+    | 'circle' // 원형 포위
+    | 'line' // 직선 행렬
+    | 'v_shape' // V자 형태
+    | 'pincer' // 양쪽에서 협공
+    | 'wave' // 파도처럼 밀려옴
+    | 'spiral' // 나선형
+    | 'cluster' // 뭉쳐서 스폰
+    | 'cross' // 십자 형태
+    | 'diamond' // 다이아몬드 형태
 
 export interface SpawnPoint {
-    offsetX: number     // 중심점 기준 X 오프셋
-    offsetY: number     // 중심점 기준 Y 오프셋
-    delay?: number      // 스폰 지연 (초)
+    offsetX: number // 중심점 기준 X 오프셋
+    offsetY: number // 중심점 기준 Y 오프셋
+    delay?: number // 스폰 지연 (초)
     variant?: EnemyVariantId // 특정 변종 지정
-    tier?: EnemyTier    // 특정 티어 지정
+    tier?: EnemyTier // 특정 티어 지정
 }
 
 export interface FormationDef {
@@ -31,8 +31,8 @@ export interface FormationDef {
     name: string
 
     // 포메이션 설정
-    enemyCount: { min: number; max: number }  // 적 수 범위
-    spawnRadius: number     // 스폰 반경 (플레이어 기준)
+    enemyCount: { min: number; max: number } // 적 수 범위
+    spawnRadius: number // 스폰 반경 (플레이어 기준)
 
     // 동적 스폰 포인트 생성
     generatePoints: (
@@ -45,14 +45,14 @@ export interface FormationDef {
     ) => SpawnPoint[]
 
     // 특수 설정
-    approach?: 'simultaneous' | 'sequential' | 'wave'  // 접근 방식
-    maintainFormation?: boolean  // 포메이션 유지 여부
+    approach?: 'simultaneous' | 'sequential' | 'wave' // 접근 방식
+    maintainFormation?: boolean // 포메이션 유지 여부
 
     // 스폰 조건
     minGameTime?: number
-    minEnemyCount?: number  // 최소 기존 적 수 (없으면 스폰)
-    cooldown: number        // 재사용 대기시간
-    weight: number          // 선택 가중치
+    minEnemyCount?: number // 최소 기존 적 수 (없으면 스폰)
+    cooldown: number // 재사용 대기시간
+    weight: number // 선택 가중치
 }
 
 /**
@@ -196,8 +196,10 @@ export const FORMATIONS: Record<FormationId, FormationDef> = {
             for (let i = 0; i < halfCount; i++) {
                 const spread = (i - halfCount / 2) * 25
                 points.push({
-                    offsetX: Math.cos(leftAngle) * radius + Math.cos(leftAngle + Math.PI/2) * spread,
-                    offsetY: Math.sin(leftAngle) * radius + Math.sin(leftAngle + Math.PI/2) * spread,
+                    offsetX:
+                        Math.cos(leftAngle) * radius + Math.cos(leftAngle + Math.PI / 2) * spread,
+                    offsetY:
+                        Math.sin(leftAngle) * radius + Math.sin(leftAngle + Math.PI / 2) * spread,
                     delay: i * 0.05,
                 })
             }
@@ -207,8 +209,10 @@ export const FORMATIONS: Record<FormationId, FormationDef> = {
             for (let i = 0; i < count - halfCount; i++) {
                 const spread = (i - (count - halfCount) / 2) * 25
                 points.push({
-                    offsetX: Math.cos(rightAngle) * radius + Math.cos(rightAngle + Math.PI/2) * spread,
-                    offsetY: Math.sin(rightAngle) * radius + Math.sin(rightAngle + Math.PI/2) * spread,
+                    offsetX:
+                        Math.cos(rightAngle) * radius + Math.cos(rightAngle + Math.PI / 2) * spread,
+                    offsetY:
+                        Math.sin(rightAngle) * radius + Math.sin(rightAngle + Math.PI / 2) * spread,
                     delay: i * 0.05,
                 })
             }
@@ -348,10 +352,10 @@ export const FORMATIONS: Record<FormationId, FormationDef> = {
             const points: SpawnPoint[] = []
             const perSide = Math.floor(count / 4)
             const corners = [
-                { x: 0, y: -1 },    // 위
-                { x: 1, y: 0 },     // 오른쪽
-                { x: 0, y: 1 },     // 아래
-                { x: -1, y: 0 },    // 왼쪽
+                { x: 0, y: -1 }, // 위
+                { x: 1, y: 0 }, // 오른쪽
+                { x: 0, y: 1 }, // 아래
+                { x: -1, y: 0 }, // 왼쪽
             ]
 
             for (let side = 0; side < 4; side++) {
@@ -413,8 +417,8 @@ export class FormationSpawner {
         tier: EnemyTier
         formationId: FormationId
     }> {
-        const ready = this.pendingSpawns.filter(s => currentTime >= s.spawnTime)
-        this.pendingSpawns = this.pendingSpawns.filter(s => currentTime < s.spawnTime)
+        const ready = this.pendingSpawns.filter((s) => currentTime >= s.spawnTime)
+        this.pendingSpawns = this.pendingSpawns.filter((s) => currentTime < s.spawnTime)
         return ready
     }
 
@@ -422,7 +426,7 @@ export class FormationSpawner {
      * Get available formations based on game state
      */
     getAvailableFormations(gameTime: number, currentEnemyCount: number): FormationDef[] {
-        return Object.values(FORMATIONS).filter(formation => {
+        return Object.values(FORMATIONS).filter((formation) => {
             // Check min game time
             if (formation.minGameTime && gameTime < formation.minGameTime) {
                 return false
@@ -435,7 +439,10 @@ export class FormationSpawner {
             }
 
             // Check min enemy count (for formations that only trigger when few enemies)
-            if (formation.minEnemyCount !== undefined && currentEnemyCount > formation.minEnemyCount) {
+            if (
+                formation.minEnemyCount !== undefined &&
+                currentEnemyCount > formation.minEnemyCount
+            ) {
                 return false
             }
 
@@ -475,7 +482,8 @@ export class FormationSpawner {
         gameTime: number,
         tier: EnemyTier = 'small'
     ): SpawnPoint[] {
-        const count = formation.enemyCount.min +
+        const count =
+            formation.enemyCount.min +
             Math.floor(Math.random() * (formation.enemyCount.max - formation.enemyCount.min + 1))
 
         // Center point for formation (around player)

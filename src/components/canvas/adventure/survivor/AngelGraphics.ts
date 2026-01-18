@@ -6,20 +6,20 @@ import { Container, Graphics } from 'pixi.js'
  */
 
 export type AngelShape =
-    | 'octahedron'  // Ramiel-style diamond
-    | 'prism'       // Sharp triangular prism
-    | 'cube'        // Blocky, intimidating
-    | 'cross'       // Angel cross symbol
-    | 'hexagon'     // Organic but geometric
-    | 'ring'        // Hollow ring shape
-    | 'spike'       // Spiky star shape
+    | 'octahedron' // Ramiel-style diamond
+    | 'prism' // Sharp triangular prism
+    | 'cube' // Blocky, intimidating
+    | 'cross' // Angel cross symbol
+    | 'hexagon' // Organic but geometric
+    | 'ring' // Hollow ring shape
+    | 'spike' // Spiky star shape
 
 interface AngelConfig {
     size: number
     color: number
     shape?: AngelShape
-    coreColor?: number    // Inner core glow
-    pulseSpeed?: number   // Animation speed
+    coreColor?: number // Inner core glow
+    pulseSpeed?: number // Animation speed
 }
 
 export class AngelGraphics extends Container {
@@ -91,13 +91,13 @@ export class AngelGraphics extends Container {
      * Ramiel-style octahedron (diamond shape)
      */
     private drawOctahedron(size: number, color: number): void {
-        const h = size * 0.6  // Height multiplier for diamond shape
+        const h = size * 0.6 // Height multiplier for diamond shape
 
         // Diamond shape (2D representation of octahedron)
-        this.body.moveTo(0, -h)           // Top
-        this.body.lineTo(size * 0.5, 0)   // Right
-        this.body.lineTo(0, h)            // Bottom
-        this.body.lineTo(-size * 0.5, 0)  // Left
+        this.body.moveTo(0, -h) // Top
+        this.body.lineTo(size * 0.5, 0) // Right
+        this.body.lineTo(0, h) // Bottom
+        this.body.lineTo(-size * 0.5, 0) // Left
         this.body.closePath()
 
         this.body.fill({ color, alpha: 0.85 })
@@ -297,20 +297,20 @@ export class AngelGraphics extends Container {
 export function getAngelShape(tier: string, variant: string): AngelShape {
     // Tier-based default shapes
     const tierShapes: Record<string, AngelShape> = {
-        'normal': 'octahedron',
-        'elite': 'prism',
-        'champion': 'cross',
-        'boss': 'spike',
+        normal: 'octahedron',
+        elite: 'prism',
+        champion: 'cross',
+        boss: 'spike',
     }
 
     // Variant overrides
     const variantShapes: Record<string, AngelShape> = {
-        'tank': 'cube',
-        'swift': 'prism',
-        'ghost': 'ring',
-        'explosive': 'spike',
-        'healer': 'hexagon',
-        'splitter': 'cross',
+        tank: 'cube',
+        swift: 'prism',
+        ghost: 'ring',
+        explosive: 'spike',
+        healer: 'hexagon',
+        splitter: 'cross',
     }
 
     return variantShapes[variant] ?? tierShapes[tier] ?? 'octahedron'
@@ -321,13 +321,13 @@ export function getAngelShape(tier: string, variant: string): AngelShape {
  */
 export function getAngelCoreColor(variant: string): number {
     const coreColors: Record<string, number> = {
-        'normal': 0xff0000,    // Classic red
-        'tank': 0xff4400,      // Orange-red
-        'swift': 0x00ffff,     // Cyan
-        'ghost': 0xaa00ff,     // Purple
-        'explosive': 0xffff00, // Yellow
-        'healer': 0x00ff00,    // Green
-        'splitter': 0xff00ff,  // Magenta
+        normal: 0xff0000, // Classic red
+        tank: 0xff4400, // Orange-red
+        swift: 0x00ffff, // Cyan
+        ghost: 0xaa00ff, // Purple
+        explosive: 0xffff00, // Yellow
+        healer: 0x00ff00, // Green
+        splitter: 0xff00ff, // Magenta
     }
     return coreColors[variant] ?? 0xff0000
 }

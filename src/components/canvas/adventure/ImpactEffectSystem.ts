@@ -11,8 +11,6 @@ interface ImpactConfig {
     particleSpeed: number
     particleSize: number
     particleColor: number
-    shakeIntensity: number
-    shakeDuration: number
 }
 
 const IMPACT_CONFIGS: Record<ImpactType, ImpactConfig> = {
@@ -25,8 +23,6 @@ const IMPACT_CONFIGS: Record<ImpactType, ImpactConfig> = {
         particleSpeed: 8,
         particleSize: 4,
         particleColor: 0xffffff,
-        shakeIntensity: 2,
-        shakeDuration: 0.08,
     },
     critical: {
         hitstopFrames: 4,
@@ -37,8 +33,6 @@ const IMPACT_CONFIGS: Record<ImpactType, ImpactConfig> = {
         particleSpeed: 12,
         particleSize: 6,
         particleColor: 0xffd700,
-        shakeIntensity: 5,
-        shakeDuration: 0.12,
     },
     kill: {
         hitstopFrames: 3,
@@ -49,8 +43,6 @@ const IMPACT_CONFIGS: Record<ImpactType, ImpactConfig> = {
         particleSpeed: 15,
         particleSize: 5,
         particleColor: 0xff6666,
-        shakeIntensity: 6,
-        shakeDuration: 0.15,
     },
     explosion: {
         hitstopFrames: 5,
@@ -61,8 +53,6 @@ const IMPACT_CONFIGS: Record<ImpactType, ImpactConfig> = {
         particleSpeed: 18,
         particleSize: 7,
         particleColor: 0xff8833,
-        shakeIntensity: 10,
-        shakeDuration: 0.2,
     },
     combo: {
         hitstopFrames: 2,
@@ -73,8 +63,6 @@ const IMPACT_CONFIGS: Record<ImpactType, ImpactConfig> = {
         particleSpeed: 10,
         particleSize: 5,
         particleColor: 0xbb79d6,
-        shakeIntensity: 4,
-        shakeDuration: 0.1,
     },
 }
 
@@ -132,9 +120,6 @@ export class ImpactEffectSystem {
     private timeScaleTimer = 0
     private timeScaleTarget = 1
     private timeScaleDuration = 0
-
-    // Callbacks
-    onShake?: (intensity: number, duration: number) => void
 
     constructor(
         container: Container,
@@ -218,11 +203,6 @@ export class ImpactEffectSystem {
 
         // Particles burst
         this.spawnParticleBurst(x, y, config, color)
-
-        // Shake callback
-        if (this.onShake) {
-            this.onShake(config.shakeIntensity, config.shakeDuration)
-        }
     }
 
     /**

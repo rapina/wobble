@@ -1,4 +1,8 @@
-// Projectile skill behaviors - modify projectile behavior
+// Projectile skill behaviors
+// Base skill (provides 'projectile' tag)
+export * from './KineticShot'
+
+// Modifier skills (require 'projectile' tag)
 export * from './ElasticBounce'
 export * from './MomentumPierce'
 export * from './PressureWave'

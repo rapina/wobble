@@ -165,6 +165,8 @@ export interface LegacySkillDefinition {
     levelEffects: SkillLevelEffect[]
     formulaId?: string
     physicsVisualType?: string
+    tags?: string[] // Tags this skill provides (for base skills)
+    requires?: string[] // Tags required for this skill (for modifier skills)
 }
 
 export interface PassiveDefinition {
@@ -323,6 +325,8 @@ function convertToLegacyDefinition(newDef: NewSkillDefinition): LegacySkillDefin
         levelEffects,
         formulaId: newDef.formulaId,
         physicsVisualType: newDef.physicsVisualType,
+        tags: newDef.tags,
+        requires: newDef.requires,
     }
 }
 
@@ -532,13 +536,24 @@ function mergeStats(result: CombinedSkillStats, stats: Partial<RuntimeSkillStats
 
         // Multiplicative stats
         if (
-            ['fireRateMultiplier', 'damageMultiplier', 'knockbackMultiplier', 'moveSpeedMultiplier'].includes(key)
+            [
+                'fireRateMultiplier',
+                'damageMultiplier',
+                'knockbackMultiplier',
+                'moveSpeedMultiplier',
+            ].includes(key)
         ) {
             ;(result[k] as number) = current * (value as number)
         }
         // Min-based (use lowest non-zero)
         else if (
-            ['ghostCooldown', 'rhythmPeriod', 'floatDuration', 'wavePulseInterval', 'shockwaveInterval'].includes(key)
+            [
+                'ghostCooldown',
+                'rhythmPeriod',
+                'floatDuration',
+                'wavePulseInterval',
+                'shockwaveInterval',
+            ].includes(key)
         ) {
             if (current === 0) {
                 ;(result[k] as number) = value as number

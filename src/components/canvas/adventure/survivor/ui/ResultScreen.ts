@@ -270,7 +270,14 @@ export class ResultScreen {
         const badgeW = 160
         const badgeH = 36
         const badge = new Graphics()
-        drawBalatroBadge(badge, this.centerX - badgeW / 2, cardY - 18, badgeW, badgeH, BALATRO_COLORS.gold)
+        drawBalatroBadge(
+            badge,
+            this.centerX - badgeW / 2,
+            cardY - 18,
+            badgeW,
+            badgeH,
+            BALATRO_COLORS.gold
+        )
         this.screenContainer.addChild(badge)
 
         const title = new Text({
@@ -299,13 +306,37 @@ export class ResultScreen {
         const statBoxHeight = 58
 
         // Time stat box
-        this.createStatBox(contentX, statsY, statBoxWidth, statBoxHeight, 'TIME', '00:00', BALATRO_COLORS.blue)
+        this.createStatBox(
+            contentX,
+            statsY,
+            statBoxWidth,
+            statBoxHeight,
+            'TIME',
+            '00:00',
+            BALATRO_COLORS.blue
+        )
 
         // Kills stat box
-        this.createStatBox(contentX + statBoxWidth + 10, statsY, statBoxWidth, statBoxHeight, 'KILLS', '0', BALATRO_COLORS.red)
+        this.createStatBox(
+            contentX + statBoxWidth + 10,
+            statsY,
+            statBoxWidth,
+            statBoxHeight,
+            'KILLS',
+            '0',
+            BALATRO_COLORS.red
+        )
 
         // Level stat box
-        this.createStatBox(contentX + (statBoxWidth + 10) * 2, statsY, statBoxWidth, statBoxHeight, 'LEVEL', this.data.level.toString(), BALATRO_COLORS.gold)
+        this.createStatBox(
+            contentX + (statBoxWidth + 10) * 2,
+            statsY,
+            statBoxWidth,
+            statBoxHeight,
+            'LEVEL',
+            this.data.level.toString(),
+            BALATRO_COLORS.gold
+        )
 
         // Create hidden text elements for animation
         this.resultTimeText = this.screenContainer.children.find(
@@ -366,9 +397,21 @@ export class ResultScreen {
 
                 // Skill pill background with color accent
                 const pill = new Graphics()
-                pill.roundRect(-skillWidths[i] / 2, -pillHeight / 2, skillWidths[i], pillHeight, pillHeight / 2)
+                pill.roundRect(
+                    -skillWidths[i] / 2,
+                    -pillHeight / 2,
+                    skillWidths[i],
+                    pillHeight,
+                    pillHeight / 2
+                )
                 pill.fill(BALATRO_COLORS.bgCardLight)
-                pill.roundRect(-skillWidths[i] / 2, -pillHeight / 2, skillWidths[i], pillHeight, pillHeight / 2)
+                pill.roundRect(
+                    -skillWidths[i] / 2,
+                    -pillHeight / 2,
+                    skillWidths[i],
+                    pillHeight,
+                    pillHeight / 2
+                )
                 pill.stroke({ color: skillDef.color, width: 2 })
                 iconContainer.addChild(pill)
 
@@ -390,7 +433,8 @@ export class ResultScreen {
         }
 
         // Rank card - positioned based on skills
-        const rankY = this.data.skills.length > 0 ? cardY + cardHeight - 70 : statsY + statBoxHeight + 50
+        const rankY =
+            this.data.skills.length > 0 ? cardY + cardHeight - 70 : statsY + statBoxHeight + 50
         this.resultRankCard = new Container()
         this.resultRankCard.position.set(this.centerX, rankY)
         this.resultRankCard.scale.set(0)
@@ -403,12 +447,19 @@ export class ResultScreen {
 
         // Rank badge using Balatro card style
         const rankBg = new Graphics()
-        drawBalatroCard(rankBg, -rankBoxWidth / 2, -rankBoxHeight / 2, rankBoxWidth, rankBoxHeight, {
-            bgColor: BALATRO_COLORS.bgCardLight,
-            borderColor: rankConfig.color,
-            borderWidth: BALATRO_DESIGN.borderWidth,
-            radius: BALATRO_DESIGN.radiusMedium,
-        })
+        drawBalatroCard(
+            rankBg,
+            -rankBoxWidth / 2,
+            -rankBoxHeight / 2,
+            rankBoxWidth,
+            rankBoxHeight,
+            {
+                bgColor: BALATRO_COLORS.bgCardLight,
+                borderColor: rankConfig.color,
+                borderWidth: BALATRO_DESIGN.borderWidth,
+                radius: BALATRO_DESIGN.radiusMedium,
+            }
+        )
         this.resultRankCard.addChild(rankBg)
 
         // Rank letter
@@ -580,5 +631,4 @@ export class ResultScreen {
         valueText.position.set(x + width / 2, y + 38)
         this.screenContainer.addChild(valueText)
     }
-
 }

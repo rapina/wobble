@@ -72,13 +72,7 @@ export class EffectsManager {
      * Show physics formula text effect
      * Used for merge (momentum conservation) and other physics events
      */
-    addFormulaEffect(
-        x: number,
-        y: number,
-        formula: string,
-        color = 0x88ccff,
-        fontSize = 14
-    ): void {
+    addFormulaEffect(x: number, y: number, formula: string, color = 0x88ccff, fontSize = 14): void {
         const textObj = new Text({
             text: formula,
             style: new TextStyle({
@@ -109,13 +103,7 @@ export class EffectsManager {
      * Show merge formula with mass values
      * Displays: "m₁ + m₂ = M" and "p = mv (보존)"
      */
-    showMergeFormula(
-        x: number,
-        y: number,
-        mass1: number,
-        mass2: number,
-        totalMass: number
-    ): void {
+    showMergeFormula(x: number, y: number, mass1: number, mass2: number, totalMass: number): void {
         // Show mass equation
         const massFormula = `${mass1} + ${mass2} = ${totalMass}`
         this.addFormulaEffect(x, y - 20, massFormula, 0x9b59b6, 12)
@@ -167,7 +155,7 @@ export class EffectsManager {
      * p = mv (momentum preserved)
      */
     showMomentumFormula(x: number, y: number): void {
-        this.addFormulaEffect(x, y - 15, 'p₁ + p₂ = p₁\' + p₂\'', 0xaaddff, 10)
+        this.addFormulaEffect(x, y - 15, "p₁ + p₂ = p₁' + p₂'", 0xaaddff, 10)
     }
 
     /**
@@ -227,10 +215,7 @@ export class EffectsManager {
         const arrowY = midY + Math.sin(toWellAngle + 0.5) * arcRadius
         const arrowAngle = toWellAngle + 0.5 + Math.PI / 2
 
-        boostGraphics.moveTo(
-            arrowX + Math.cos(arrowAngle) * 8,
-            arrowY + Math.sin(arrowAngle) * 8
-        )
+        boostGraphics.moveTo(arrowX + Math.cos(arrowAngle) * 8, arrowY + Math.sin(arrowAngle) * 8)
         boostGraphics.lineTo(arrowX, arrowY)
         boostGraphics.lineTo(
             arrowX + Math.cos(arrowAngle + Math.PI * 0.6) * 8,

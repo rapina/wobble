@@ -350,6 +350,7 @@ export interface PlayerStats {
     shockwaveInterval: number // Seconds between pulses, 0 = disabled
     shockwaveRadius: number
     shockwaveKnockback: number
+    shockwaveDamage: number
 
     // === NEW SKILLS ===
 
@@ -396,6 +397,8 @@ export interface PlayerStats {
     wavelength: number
     waveAmplitude: number
     waveSpeed: number
+    waveDamage: number
+    waveCount: number // Number of wave rings per pulse
 
     // Radiant Aura - continuous radiation damage
     auraRadius: number // 0 = disabled
@@ -484,6 +487,7 @@ export const DEFAULT_PLAYER_STATS: PlayerStats = {
     shockwaveInterval: 0,
     shockwaveRadius: 0,
     shockwaveKnockback: 0,
+    shockwaveDamage: 0,
 
     // New skills defaults
     returnDistance: 0,
@@ -512,6 +516,8 @@ export const DEFAULT_PLAYER_STATS: PlayerStats = {
     wavelength: 0,
     waveAmplitude: 0,
     waveSpeed: 0,
+    waveDamage: 0,
+    waveCount: 0,
     auraRadius: 0,
     radiationDamage: 0,
     beatFreq1: 0,

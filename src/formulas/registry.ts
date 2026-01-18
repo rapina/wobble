@@ -60,6 +60,7 @@ import { magneticField } from './magnetic-field'
 import { rotationalEnergy } from './rotational-energy'
 import { inverseSquare } from './inverse-square'
 import { beatFrequency } from './beat-frequency'
+import { beerLambert } from './beer-lambert'
 
 export const formulas: Record<string, Formula> = {
     // Mechanics
@@ -123,6 +124,7 @@ export const formulas: Record<string, Formula> = {
     'rotational-energy': rotationalEnergy,
     'inverse-square': inverseSquare,
     'beat-frequency': beatFrequency,
+    'beer-lambert': beerLambert,
 }
 
 export const formulaList = Object.values(formulas)

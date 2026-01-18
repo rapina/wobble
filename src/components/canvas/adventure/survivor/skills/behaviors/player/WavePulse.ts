@@ -10,6 +10,8 @@ export interface WavePulseEffect extends SkillEffect {
     wavelength: number
     amplitude: number
     waveSpeed: number
+    waveDamage: number
+    waveCount: number // Number of wave rings per pulse
 }
 
 /**
@@ -22,11 +24,11 @@ export class WavePulseBehavior extends BaseSkillBehavior<WavePulseEffect> {
     readonly category: SkillCategory = 'player'
 
     protected readonly levelEffects: WavePulseEffect[] = [
-        { type: 'wave-pulse', wavelength: 50, amplitude: 20, waveSpeed: 100 },
-        { type: 'wave-pulse', wavelength: 60, amplitude: 30, waveSpeed: 120 },
-        { type: 'wave-pulse', wavelength: 70, amplitude: 40, waveSpeed: 140 },
-        { type: 'wave-pulse', wavelength: 80, amplitude: 50, waveSpeed: 160 },
-        { type: 'wave-pulse', wavelength: 100, amplitude: 60, waveSpeed: 200 },
+        { type: 'wave-pulse', wavelength: 60, amplitude: 25, waveSpeed: 150, waveDamage: 12, waveCount: 2 },
+        { type: 'wave-pulse', wavelength: 70, amplitude: 30, waveSpeed: 170, waveDamage: 16, waveCount: 2 },
+        { type: 'wave-pulse', wavelength: 80, amplitude: 35, waveSpeed: 190, waveDamage: 20, waveCount: 3 },
+        { type: 'wave-pulse', wavelength: 90, amplitude: 40, waveSpeed: 210, waveDamage: 25, waveCount: 3 },
+        { type: 'wave-pulse', wavelength: 100, amplitude: 50, waveSpeed: 250, waveDamage: 32, waveCount: 4 },
     ]
 
     readonly definition: SkillDefinition<WavePulseEffect> = {
@@ -54,13 +56,15 @@ export class WavePulseBehavior extends BaseSkillBehavior<WavePulseEffect> {
             wavelength: effect.wavelength,
             waveAmplitude: effect.amplitude,
             waveSpeed: effect.waveSpeed,
-            wavePulseInterval: effect.wavelength > 0 ? 2 : 0, // 2 second interval
+            waveDamage: effect.waveDamage,
+            waveCount: effect.waveCount,
+            wavePulseInterval: 2, // 2 second cooldown (faster than Centripetal's 5s)
         }
     }
 
     getLevelDescription(level: number): string {
         const effect = this.getEffect(level)
-        return `파장 ${effect.wavelength}, 진폭 ${effect.amplitude}, 속도 ${effect.waveSpeed}`
+        return `데미지 ${effect.waveDamage}, 파동 ${effect.waveCount}개, 속도 ${effect.waveSpeed}`
     }
 }
 

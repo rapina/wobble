@@ -4,12 +4,7 @@ import type { PlayerSkill } from '../skills'
 import { getSkillDefinition } from '../skills/registry'
 import type { SkillDefinition } from '../skills/types'
 import { ComboState } from '../ComboSystem'
-import {
-    BALATRO_COLORS,
-    BALATRO_DESIGN,
-    drawBalatroCard,
-    drawBalatroBadge,
-} from './BalatroButton'
+import { BALATRO_COLORS, BALATRO_DESIGN, drawBalatroCard, drawBalatroBadge } from './BalatroButton'
 import { t, DEFAULT_LANGUAGE } from '@/utils/localization'
 
 export interface HudContext {
@@ -365,7 +360,11 @@ export class HudSystem {
         this.levelText.text = `${level}`
     }
 
-    private updateSkillList(skills: PlayerSkill[], cooldowns: SkillCooldown[], skillStats: SkillStats[]): void {
+    private updateSkillList(
+        skills: PlayerSkill[],
+        cooldowns: SkillCooldown[],
+        skillStats: SkillStats[]
+    ): void {
         this.skillListContainer.removeChildren()
 
         // Update flash timers (decay)
@@ -434,7 +433,7 @@ export class HudSystem {
             rowBg.fill({ color: BALATRO_COLORS.bgCard, alpha: 0.92 })
             rowBg.roundRect(0, 0, rowWidth, 28, 5)
             rowBg.stroke({
-                color: isFlashing ? 0xffffff : (isOnCooldown ? BALATRO_COLORS.textMuted : typeColor),
+                color: isFlashing ? 0xffffff : isOnCooldown ? BALATRO_COLORS.textMuted : typeColor,
                 width: isFlashing ? 2 : 1.5,
             })
             rowContainer.addChild(rowBg)
@@ -463,7 +462,9 @@ export class HudSystem {
             // Level badge
             const levelBadge = new Graphics()
             levelBadge.roundRect(rowWidth - 22, 2, 18, 12, 3)
-            levelBadge.fill({ color: isOnCooldown ? BALATRO_COLORS.textMuted : BALATRO_COLORS.gold })
+            levelBadge.fill({
+                color: isOnCooldown ? BALATRO_COLORS.textMuted : BALATRO_COLORS.gold,
+            })
             rowContainer.addChild(levelBadge)
 
             const levelText = new Text({
@@ -496,7 +497,9 @@ export class HudSystem {
                     const gaugeFill = new Graphics()
                     const fillWidth = Math.max(0, gaugeWidth * cooldownRatio)
                     gaugeFill.roundRect(8, gaugeY, fillWidth, gaugeHeight, 1.5)
-                    gaugeFill.fill({ color: cooldownRatio >= 1 ? BALATRO_COLORS.cyan : BALATRO_COLORS.gold })
+                    gaugeFill.fill({
+                        color: cooldownRatio >= 1 ? BALATRO_COLORS.cyan : BALATRO_COLORS.gold,
+                    })
                     rowContainer.addChild(gaugeFill)
                 }
             }
@@ -556,18 +559,32 @@ export class HudSystem {
     /**
      * Get the appropriate stat display for a skill
      */
-    private getSkillStatDisplay(skillId: string, stats: SkillStats | undefined): { text: string; color: number } | null {
+    private getSkillStatDisplay(
+        skillId: string,
+        stats: SkillStats | undefined
+    ): { text: string; color: number } | null {
         if (!stats) return null
 
         // Damage-based skills
         if (stats.totalDamage > 0) {
             const damageSkills = [
-                'radiant-aura', 'wave-pulse', 'torque-slash', 'beat-pulse',
-                'orbital-strike', 'plasma-discharge', 'centripetal-pulse',
-                'quantum-tunnel', 'decay-chain', 'heat-chain', 'buoyant-bomb'
+                'radiant-aura',
+                'wave-pulse',
+                'torque-slash',
+                'beat-pulse',
+                'orbital-strike',
+                'plasma-discharge',
+                'centripetal-pulse',
+                'quantum-tunnel',
+                'decay-chain',
+                'heat-chain',
+                'buoyant-bomb',
             ]
             if (damageSkills.includes(skillId)) {
-                return { text: `${this.formatNumber(stats.totalDamage)} dmg`, color: BALATRO_COLORS.red }
+                return {
+                    text: `${this.formatNumber(stats.totalDamage)} dmg`,
+                    color: BALATRO_COLORS.red,
+                }
             }
         }
 
@@ -577,12 +594,20 @@ export class HudSystem {
         }
 
         // Magnetic Shield - deflections
-        if (skillId === 'magnetic-shield' && stats.deflections !== undefined && stats.deflections > 0) {
+        if (
+            skillId === 'magnetic-shield' &&
+            stats.deflections !== undefined &&
+            stats.deflections > 0
+        ) {
             return { text: `${this.formatNumber(stats.deflections)} deflect`, color: 0x3498db }
         }
 
         // Static Repulsion - push force
-        if (skillId === 'static-repulsion' && stats.pushForce !== undefined && stats.pushForce > 0) {
+        if (
+            skillId === 'static-repulsion' &&
+            stats.pushForce !== undefined &&
+            stats.pushForce > 0
+        ) {
             return { text: `${this.formatNumber(stats.pushForce)} push`, color: 0xf1c40f }
         }
 
@@ -597,7 +622,11 @@ export class HudSystem {
         }
 
         // Chaos Field - chaos applied
-        if (skillId === 'chaos-field' && stats.chaosApplied !== undefined && stats.chaosApplied > 0) {
+        if (
+            skillId === 'chaos-field' &&
+            stats.chaosApplied !== undefined &&
+            stats.chaosApplied > 0
+        ) {
             return { text: `${this.formatNumber(stats.chaosApplied)} chaos`, color: 0x9b59b6 }
         }
 
@@ -613,12 +642,18 @@ export class HudSystem {
 
         // Fallback to damage if available
         if (stats.totalDamage > 0) {
-            return { text: `${this.formatNumber(stats.totalDamage)} dmg`, color: BALATRO_COLORS.red }
+            return {
+                text: `${this.formatNumber(stats.totalDamage)} dmg`,
+                color: BALATRO_COLORS.red,
+            }
         }
 
         // Activations as fallback
         if (stats.activations > 0) {
-            return { text: `${this.formatNumber(stats.activations)}x`, color: BALATRO_COLORS.textSecondary }
+            return {
+                text: `${this.formatNumber(stats.activations)}x`,
+                color: BALATRO_COLORS.textSecondary,
+            }
         }
 
         return null

@@ -54,6 +54,18 @@ PixiJS-based animations. Each scene extends `BaseScene`:
 
 The `Wobble` class (`canvas/Wobble.ts`) provides reusable animated character graphics with expressions, shapes, legs, sweat effects, and speed lines. See `FORMULAS.md` for character shape details and usage.
 
+### Survivor Mode Skill System (`src/components/canvas/adventure/survivor/skills/`)
+
+Physics-based skill system for adventure/survivor mode. Each skill is connected to a physics formula.
+
+- **Skill Categories**: `projectile`, `aura`, `orbital`, `player`, `trigger`
+- **Activation Types**: `passive` (always active), `aura` (persistent effect), `active` (cooldown-based)
+- **BaseSkillBehavior**: Base class for skill implementations
+- **SkillCombiner**: Combines multiple skill stats (multiplicative, max-based, additive)
+- **registry.ts**: Central skill registration via `registerSkill()`
+
+See `SKILLS.md` for the complete list of implemented skills with visual characteristics and effects.
+
 ### State Management
 
 - **Zustand store** (`stores/simulationStore.ts`): Holds current formula and variable values

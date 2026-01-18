@@ -98,7 +98,11 @@ export class PickupSystem {
         })
     }
 
-    private drawPickup(graphics: Graphics, type: PickupType, config: typeof PICKUP_CONFIGS['magnet']): void {
+    private drawPickup(
+        graphics: Graphics,
+        type: PickupType,
+        config: (typeof PICKUP_CONFIGS)['magnet']
+    ): void {
         graphics.clear()
 
         if (type === 'magnet') {

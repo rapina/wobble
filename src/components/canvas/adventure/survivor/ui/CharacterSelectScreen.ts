@@ -1,7 +1,12 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js'
 import { Wobble, WobbleShape, WOBBLE_CHARACTERS } from '../../../Wobble'
 import { PLAYABLE_CHARACTERS, WOBBLE_STATS } from '../types'
-import { SKILL_DEFINITIONS, PASSIVE_DEFINITIONS, getCharacterSkillConfig, LegacySkillDefinition as SkillDefinition } from '../skills'
+import {
+    SKILL_DEFINITIONS,
+    PASSIVE_DEFINITIONS,
+    getCharacterSkillConfig,
+    LegacySkillDefinition as SkillDefinition,
+} from '../skills'
 import { useCollectionStore } from '@/stores/collectionStore'
 import { useProgressStore, isSkillUnlocked } from '@/stores/progressStore'
 import { t } from '@/utils/localization'
@@ -230,7 +235,14 @@ export class CharacterSelectScreen {
         const badgeW = 180
         const badgeH = 32
         const badge = new Graphics()
-        drawBalatroBadge(badge, this.centerX - badgeW / 2, cardY - 16, badgeW, badgeH, BALATRO_COLORS.gold)
+        drawBalatroBadge(
+            badge,
+            this.centerX - badgeW / 2,
+            cardY - 16,
+            badgeW,
+            badgeH,
+            BALATRO_COLORS.gold
+        )
         this.screenContainer.addChild(badge)
 
         const titleText = new Text({
@@ -500,7 +512,10 @@ export class CharacterSelectScreen {
                 hasMoved = true
             }
             if (hasMoved) {
-                this.skillScrollY = Math.max(0, Math.min(this.skillMaxScrollY, this.dragStartScrollY - deltaY))
+                this.skillScrollY = Math.max(
+                    0,
+                    Math.min(this.skillMaxScrollY, this.dragStartScrollY - deltaY)
+                )
                 this.skillContentContainer.position.y = -this.skillScrollY
             }
         })

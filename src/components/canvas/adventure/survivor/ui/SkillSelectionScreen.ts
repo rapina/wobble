@@ -4,6 +4,8 @@ import {
     LegacySkillDefinition as SkillDefinition,
     getSkillDefinition,
     SKILL_DEFINITIONS,
+    getPlayerTags,
+    arePrerequisitesMet,
 } from '../skills'
 import { MAX_SKILLS } from '../types'
 import { easeOutBack } from '../utils'
@@ -116,19 +118,40 @@ export class SkillSelectionScreen {
      * Pick N random skills from the unlocked pool
      * Prioritizes skills that can be upgraded (not at max level)
      * Limits total skills to MAX_SKILLS (10) - won't offer new skills if at limit
+     * At level 1, only base skills are offered (initial skill selection)
+     * Modifier skills only appear when prerequisites are met
      */
     private pickRandomSkills(count: number): Array<{ skillId: string; currentLevel: number }> {
         // Get all unlocked skills, or all skills if none unlocked
-        const pool = this.unlockedSkillIds.length > 0
-            ? this.unlockedSkillIds
-            : Object.keys(SKILL_DEFINITIONS)
+        const pool =
+            this.unlockedSkillIds.length > 0
+                ? this.unlockedSkillIds
+                : Object.keys(SKILL_DEFINITIONS)
 
         // Count current unique skills
         const currentSkillCount = this.currentSkills.size
         const atSkillLimit = currentSkillCount >= MAX_SKILLS
 
+        // At level 1, only offer base skills for initial selection
+        const isInitialSelection = this.currentLevel === 1 && currentSkillCount === 0
+
+        // Starter skills: base skills that provide core functionality
+        // These are active skills that can work independently
+        const STARTER_SKILL_IDS = [
+            'kinetic-shot', // 운동 탄환 - base projectile (enables projectile modifiers)
+            'centripetal-pulse', // 원심력 펄스 - shockwave damage + knockback
+            'wave-pulse', // 파동 펄스 - expanding wave damage
+            'plasma-discharge', // 플라즈마 방전 - lightning laser damage
+        ]
+
+        // Get current player tags for prerequisite checking
+        const currentSkillsArray: PlayerSkill[] = Array.from(this.currentSkills.entries()).map(
+            ([skillId, level]) => ({ skillId, level })
+        )
+        const playerTags = getPlayerTags(currentSkillsArray)
+
         // Filter to skills that can be added or upgraded
-        const available = pool.filter(id => {
+        const available = pool.filter((id) => {
             const def = getSkillDefinition(id)
             if (!def) return false
             const currentLevel = this.currentSkills.get(id) || 0
@@ -139,6 +162,15 @@ export class SkillSelectionScreen {
             // If at skill limit and this is a new skill, don't include it
             if (atSkillLimit && currentLevel === 0) return false
 
+            // At level 1 (initial selection), only allow starter skills
+            if (isInitialSelection) {
+                if (!STARTER_SKILL_IDS.includes(id)) return false
+            } else {
+                // For non-initial selection, check prerequisites
+                // If skill has requirements, check if player has the required tags
+                if (!arePrerequisitesMet(id, playerTags)) return false
+            }
+
             return true
         })
 
@@ -146,9 +178,9 @@ export class SkillSelectionScreen {
         const shuffled = [...available].sort(() => Math.random() - 0.5)
         const picked = shuffled.slice(0, count)
 
-        return picked.map(skillId => ({
+        return picked.map((skillId) => ({
             skillId,
-            currentLevel: this.currentSkills.get(skillId) || 0
+            currentLevel: this.currentSkills.get(skillId) || 0,
         }))
     }
 
@@ -278,7 +310,14 @@ export class SkillSelectionScreen {
         const bannerW = 160
         const bannerH = 36
         const bannerBg = new Graphics()
-        drawBalatroBadge(bannerBg, -bannerW / 2, -bannerH / 2, bannerW, bannerH, BALATRO_COLORS.gold)
+        drawBalatroBadge(
+            bannerBg,
+            -bannerW / 2,
+            -bannerH / 2,
+            bannerW,
+            bannerH,
+            BALATRO_COLORS.gold
+        )
         this.levelUpBanner.addChild(bannerBg)
 
         // Level up text - Black on gold
@@ -329,7 +368,14 @@ export class SkillSelectionScreen {
             cardContainer.alpha = 0
             this.screenContainer.addChild(cardContainer)
 
-            const card = this.createSkillCard(candidate.skillId, candidate.currentLevel, def, cardWidth, cardHeight, index)
+            const card = this.createSkillCard(
+                candidate.skillId,
+                candidate.currentLevel,
+                def,
+                cardWidth,
+                cardHeight,
+                index
+            )
             cardContainer.addChild(card.container)
 
             this.skillCards.push({
@@ -373,23 +419,63 @@ export class SkillSelectionScreen {
         cardWidth: number,
         cardHeight: number,
         _index: number
-    ): { container: Container; cardBg: Graphics; skillId: string; currentLevel: number; def: SkillDefinition; isHovered: boolean } {
+    ): {
+        container: Container
+        cardBg: Graphics
+        skillId: string
+        currentLevel: number
+        def: SkillDefinition
+        isHovered: boolean
+    } {
         const container = new Container()
+
+        // Determine if this is a base skill (has tags) or modifier skill (has requires)
+        const isBaseSkill = def.tags && def.tags.length > 0
+        const isModifierSkill = def.requires && def.requires.length > 0
+
+        // Base skill gets special glow effect
+        if (isBaseSkill) {
+            const glow = new Graphics()
+            glow.roundRect(
+                -cardWidth / 2 - 4,
+                -cardHeight / 2 - 4,
+                cardWidth + 8,
+                cardHeight + 8,
+                BALATRO_DESIGN.radiusMedium + 2
+            )
+            glow.fill({ color: BALATRO_COLORS.gold, alpha: 0.3 })
+            container.addChild(glow)
+        }
 
         // Card background with Balatro style
         const cardBg = new Graphics()
+        const borderColor = isBaseSkill ? BALATRO_COLORS.gold : def.color
         drawBalatroCard(cardBg, -cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, {
-            bgColor: BALATRO_COLORS.bgCard,
-            borderColor: def.color,
-            borderWidth: BALATRO_DESIGN.borderWidth,
+            bgColor: isBaseSkill ? 0x1f1a2e : BALATRO_COLORS.bgCard, // Slightly purple tint for base
+            borderColor: borderColor,
+            borderWidth: isBaseSkill ? 4 : BALATRO_DESIGN.borderWidth,
             radius: BALATRO_DESIGN.radiusMedium,
         })
         container.addChild(cardBg)
 
-        // Top banner with level (NEW or upgrade)
+        // Top banner with skill type indicator
         const isNewSkill = currentLevel === 0
         const nextLevel = currentLevel + 1
-        const bannerColor = isNewSkill ? BALATRO_COLORS.green : BALATRO_COLORS.blue
+
+        // Banner color based on skill type and state
+        let bannerColor: number
+        let bannerText: string
+
+        if (isBaseSkill) {
+            bannerColor = BALATRO_COLORS.gold // Gold for base skills
+            bannerText = isNewSkill ? '⭐ 기본' : `⭐ Lv.${nextLevel}`
+        } else if (isModifierSkill) {
+            bannerColor = BALATRO_COLORS.cyan // Cyan for modifier skills
+            bannerText = isNewSkill ? '🔗 강화' : `🔗 Lv.${nextLevel}`
+        } else {
+            bannerColor = isNewSkill ? BALATRO_COLORS.green : BALATRO_COLORS.blue
+            bannerText = isNewSkill ? 'NEW!' : `Lv.${currentLevel} → ${nextLevel}`
+        }
 
         const topBanner = new Graphics()
         topBanner.roundRect(-cardWidth / 2 + 6, -cardHeight / 2 + 8, cardWidth - 12, 24, 4)
@@ -399,25 +485,38 @@ export class SkillSelectionScreen {
         container.addChild(topBanner)
 
         const levelLabel = new Text({
-            text: isNewSkill ? 'NEW!' : `Lv.${currentLevel} → ${nextLevel}`,
+            text: bannerText,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 11,
                 fontWeight: 'bold',
-                fill: 0xffffff,
+                fill: bannerColor === BALATRO_COLORS.gold ? 0x000000 : 0xffffff,
             }),
         })
         levelLabel.anchor.set(0.5)
         levelLabel.position.set(0, -cardHeight / 2 + 20)
         container.addChild(levelLabel)
 
-        // Skill icon (centered in upper area)
+        // Skill icon (centered in upper area) - style based on skill type
         const iconY = -35
+        const iconColor = isBaseSkill
+            ? BALATRO_COLORS.gold
+            : isModifierSkill
+              ? BALATRO_COLORS.cyan
+              : def.color
         const iconBg = new Graphics()
+
+        // Base skills get a star burst effect behind icon
+        if (isBaseSkill) {
+            // Outer glow ring
+            iconBg.circle(0, iconY, 36)
+            iconBg.fill({ color: BALATRO_COLORS.gold, alpha: 0.15 })
+        }
+
         iconBg.circle(0, iconY, 30)
-        iconBg.fill({ color: def.color, alpha: 0.2 })
+        iconBg.fill({ color: iconColor, alpha: 0.2 })
         iconBg.circle(0, iconY, 30)
-        iconBg.stroke({ color: def.color, width: 2 })
+        iconBg.stroke({ color: iconColor, width: isBaseSkill ? 3 : 2 })
         container.addChild(iconBg)
 
         const iconText = new Text({
@@ -425,7 +524,7 @@ export class SkillSelectionScreen {
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 28,
-                fill: def.color,
+                fill: iconColor,
             }),
         })
         iconText.anchor.set(0.5)
@@ -482,27 +581,27 @@ export class SkillSelectionScreen {
         container.on('pointerdown', () => this.handleCardSelect(skillId, currentLevel))
         container.on('pointerover', () => {
             cardData.isHovered = true
-            // Highlight effect
+            // Highlight effect - brighter version of original style
             cardBg.clear()
             drawBalatroCard(cardBg, -cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, {
-                bgColor: BALATRO_COLORS.bgCardLight,
+                bgColor: isBaseSkill ? 0x2a2540 : BALATRO_COLORS.bgCardLight,
                 borderColor: BALATRO_COLORS.gold,
-                borderWidth: BALATRO_DESIGN.borderWidth,
+                borderWidth: isBaseSkill ? 4 : BALATRO_DESIGN.borderWidth,
                 radius: BALATRO_DESIGN.radiusMedium,
             })
         })
         container.on('pointerout', () => {
             cardData.isHovered = false
-            // Restore original style
+            // Restore original style based on skill type
             cardBg.clear()
             drawBalatroCard(cardBg, -cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, {
-                bgColor: BALATRO_COLORS.bgCard,
-                borderColor: def.color,
-                borderWidth: BALATRO_DESIGN.borderWidth,
+                bgColor: isBaseSkill ? 0x1f1a2e : BALATRO_COLORS.bgCard,
+                borderColor: borderColor,
+                borderWidth: isBaseSkill ? 4 : BALATRO_DESIGN.borderWidth,
                 radius: BALATRO_DESIGN.radiusMedium,
             })
             // Reset scale when not hovered
-            const card = this.skillCards.find(c => c.skillId === skillId)
+            const card = this.skillCards.find((c) => c.skillId === skillId)
             if (card && this.animTime > 0.5) {
                 card.container.scale.set(1)
             }

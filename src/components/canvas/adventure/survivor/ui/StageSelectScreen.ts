@@ -440,7 +440,10 @@ export class StageSelectScreen {
                 points.push(difficultyY + 16 + Math.sin(angle) * radius)
             }
             star.poly(points)
-            star.fill({ color: isFilled ? accentColor : BALATRO_COLORS.textMuted, alpha: isFilled ? 1 : 0.3 })
+            star.fill({
+                color: isFilled ? accentColor : BALATRO_COLORS.textMuted,
+                alpha: isFilled ? 1 : 0.3,
+            })
             this.screenContainer.addChild(star)
         }
 
@@ -567,9 +570,21 @@ export class StageSelectScreen {
                 const crusherWidth = 80
                 const crusherHeight = 30
                 const crusher = new Graphics()
-                crusher.roundRect(centerX - crusherWidth / 2, centerY - crusherHeight / 2, crusherWidth, crusherHeight, 8)
+                crusher.roundRect(
+                    centerX - crusherWidth / 2,
+                    centerY - crusherHeight / 2,
+                    crusherWidth,
+                    crusherHeight,
+                    8
+                )
                 crusher.fill({ color, alpha: 0.9 })
-                crusher.roundRect(centerX - crusherWidth / 2, centerY - crusherHeight / 2, crusherWidth, crusherHeight, 8)
+                crusher.roundRect(
+                    centerX - crusherWidth / 2,
+                    centerY - crusherHeight / 2,
+                    crusherWidth,
+                    crusherHeight,
+                    8
+                )
                 crusher.stroke({ color: 0xffffff, width: 2, alpha: 0.5 })
                 this.stageCardContainer.addChild(crusher)
                 // Motion lines

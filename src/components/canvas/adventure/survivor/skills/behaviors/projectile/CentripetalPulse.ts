@@ -10,6 +10,7 @@ export interface CentripetalPulseEffect extends SkillEffect {
     shockwaveInterval: number
     shockwaveRadius: number
     shockwaveKnockback: number
+    shockwaveDamage: number
 }
 
 /**
@@ -22,11 +23,41 @@ export class CentripetalPulseBehavior extends BaseSkillBehavior<CentripetalPulse
     readonly category: SkillCategory = 'projectile'
 
     protected readonly levelEffects: CentripetalPulseEffect[] = [
-        { type: 'centripetal-pulse', shockwaveInterval: 5, shockwaveRadius: 80, shockwaveKnockback: 100 },
-        { type: 'centripetal-pulse', shockwaveInterval: 4, shockwaveRadius: 100, shockwaveKnockback: 150 },
-        { type: 'centripetal-pulse', shockwaveInterval: 3, shockwaveRadius: 120, shockwaveKnockback: 200 },
-        { type: 'centripetal-pulse', shockwaveInterval: 2.5, shockwaveRadius: 150, shockwaveKnockback: 250 },
-        { type: 'centripetal-pulse', shockwaveInterval: 2, shockwaveRadius: 200, shockwaveKnockback: 300 },
+        {
+            type: 'centripetal-pulse',
+            shockwaveInterval: 5,
+            shockwaveRadius: 80,
+            shockwaveKnockback: 150,
+            shockwaveDamage: 40, // High damage for slow cooldown
+        },
+        {
+            type: 'centripetal-pulse',
+            shockwaveInterval: 4,
+            shockwaveRadius: 100,
+            shockwaveKnockback: 200,
+            shockwaveDamage: 55,
+        },
+        {
+            type: 'centripetal-pulse',
+            shockwaveInterval: 3,
+            shockwaveRadius: 120,
+            shockwaveKnockback: 250,
+            shockwaveDamage: 75,
+        },
+        {
+            type: 'centripetal-pulse',
+            shockwaveInterval: 2.5,
+            shockwaveRadius: 150,
+            shockwaveKnockback: 300,
+            shockwaveDamage: 95,
+        },
+        {
+            type: 'centripetal-pulse',
+            shockwaveInterval: 2,
+            shockwaveRadius: 200,
+            shockwaveKnockback: 400,
+            shockwaveDamage: 120, // Massive damage at max level
+        },
     ]
 
     readonly definition: SkillDefinition<CentripetalPulseEffect> = {
@@ -54,12 +85,13 @@ export class CentripetalPulseBehavior extends BaseSkillBehavior<CentripetalPulse
             shockwaveInterval: effect.shockwaveInterval,
             shockwaveRadius: effect.shockwaveRadius,
             shockwaveKnockback: effect.shockwaveKnockback,
+            shockwaveDamage: effect.shockwaveDamage,
         }
     }
 
     getLevelDescription(level: number): string {
         const effect = this.getEffect(level)
-        return `주기 ${effect.shockwaveInterval}초, 범위 ${effect.shockwaveRadius}`
+        return `데미지 ${effect.shockwaveDamage}, 주기 ${effect.shockwaveInterval}초, 범위 ${effect.shockwaveRadius}`
     }
 }
 

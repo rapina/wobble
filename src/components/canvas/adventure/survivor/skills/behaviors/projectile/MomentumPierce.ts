@@ -43,6 +43,7 @@ export class MomentumPierceBehavior extends BaseSkillBehavior<MomentumPierceEffe
         activationType: 'passive',
         formulaId: 'momentum',
         physicsVisualType: 'momentum',
+        requires: ['projectile'], // Only appears when player has projectile skill
         getLevelEffect: (level: number) => this.getEffect(level),
     }
 

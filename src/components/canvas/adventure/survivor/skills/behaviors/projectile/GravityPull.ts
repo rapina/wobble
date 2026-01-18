@@ -42,6 +42,7 @@ export class GravityPullBehavior extends BaseSkillBehavior<GravityPullEffect> {
         activationType: 'passive',
         formulaId: 'gravity',
         physicsVisualType: 'gravity',
+        requires: ['projectile'], // Only appears when player has projectile skill
         getLevelEffect: (level: number) => this.getEffect(level),
     }
 

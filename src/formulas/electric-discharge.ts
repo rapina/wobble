@@ -148,7 +148,7 @@ export const electricDischarge: Formula = {
             },
             result: {
                 ko: '자동차 스파크 플러그 조건이야! 연료를 점화시키는 불꽃이 여기서 나와.',
-                en: "This is spark plug conditions! The spark that ignites fuel comes from here.",
+                en: 'This is spark plug conditions! The spark that ignites fuel comes from here.',
                 ja: '自動車のスパークプラグの条件だよ！燃料を点火する火花がここから出る。',
             },
             icon: '🚗',

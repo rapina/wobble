@@ -43,6 +43,7 @@ export class FmaImpactBehavior extends BaseSkillBehavior<FmaImpactEffect> {
         activationType: 'passive',
         formulaId: 'newton-second',
         physicsVisualType: 'fma',
+        requires: ['projectile'], // Only appears when player has projectile skill
         getLevelEffect: (level: number) => this.getEffect(level),
     }
 

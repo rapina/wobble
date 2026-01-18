@@ -42,6 +42,7 @@ export class ElasticBounceBehavior extends BaseSkillBehavior<ElasticBounceEffect
         activationType: 'passive',
         formulaId: 'elastic-collision',
         physicsVisualType: 'elastic',
+        requires: ['projectile'], // Only appears when player has projectile skill
         getLevelEffect: (level: number) => this.getEffect(level),
     }
 

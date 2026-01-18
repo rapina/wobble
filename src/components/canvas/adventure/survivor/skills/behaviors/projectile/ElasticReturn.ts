@@ -43,6 +43,7 @@ export class ElasticReturnBehavior extends BaseSkillBehavior<ElasticReturnEffect
         activationType: 'passive',
         formulaId: 'hooke',
         physicsVisualType: 'spring',
+        requires: ['projectile'], // Only appears when player has projectile skill
         getLevelEffect: (level: number) => this.getEffect(level),
     }
 

@@ -1,5 +1,10 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js'
-import { PlayerSkill, SKILL_DEFINITIONS, getCurrentLevelDescription, getNextLevelDescription } from '../skills'
+import {
+    PlayerSkill,
+    SKILL_DEFINITIONS,
+    getCurrentLevelDescription,
+    getNextLevelDescription,
+} from '../skills'
 import { t } from '@/utils/localization'
 import {
     BALATRO_COLORS,
@@ -134,7 +139,14 @@ export class PauseScreen {
         const badgeW = 140
         const badgeH = 36
         const badge = new Graphics()
-        drawBalatroBadge(badge, this.centerX - badgeW / 2, cardY - 18, badgeW, badgeH, BALATRO_COLORS.gold)
+        drawBalatroBadge(
+            badge,
+            this.centerX - badgeW / 2,
+            cardY - 18,
+            badgeW,
+            badgeH,
+            BALATRO_COLORS.gold
+        )
         this.screenContainer.addChild(badge)
 
         const title = new Text({
@@ -162,7 +174,15 @@ export class PauseScreen {
         const statBoxHeight = 48
 
         // Level box
-        this.createStatBox(contentX, statsY, statBoxWidth, statBoxHeight, 'LEVEL', `${data.level}`, BALATRO_COLORS.gold)
+        this.createStatBox(
+            contentX,
+            statsY,
+            statBoxWidth,
+            statBoxHeight,
+            'LEVEL',
+            `${data.level}`,
+            BALATRO_COLORS.gold
+        )
 
         // Time box
         const mins = Math.floor(data.gameTime / 60)
@@ -254,7 +274,14 @@ export class PauseScreen {
                 if (!skillDef) return
 
                 const itemY = skillStartY + i * (skillItemHeight + skillItemGap)
-                this.createSkillCard(contentX, itemY, contentWidth, skillItemHeight, skill, skillDef)
+                this.createSkillCard(
+                    contentX,
+                    itemY,
+                    contentWidth,
+                    skillItemHeight,
+                    skill,
+                    skillDef
+                )
             })
 
             // Show "more skills" indicator if needed
@@ -269,7 +296,10 @@ export class PauseScreen {
                     }),
                 })
                 moreText.anchor.set(0.5)
-                moreText.position.set(this.centerX, skillStartY + maxSkillsShown * (skillItemHeight + skillItemGap))
+                moreText.position.set(
+                    this.centerX,
+                    skillStartY + maxSkillsShown * (skillItemHeight + skillItemGap)
+                )
                 this.screenContainer.addChild(moreText)
             }
         }
@@ -354,7 +384,7 @@ export class PauseScreen {
         width: number,
         height: number,
         skill: PlayerSkill,
-        skillDef: typeof SKILL_DEFINITIONS[string]
+        skillDef: (typeof SKILL_DEFINITIONS)[string]
     ): void {
         // Skill card background
         const cardBg = new Graphics()
