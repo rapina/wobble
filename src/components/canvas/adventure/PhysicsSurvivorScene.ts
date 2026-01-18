@@ -419,7 +419,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.gridFilter.setGravityOffset(-0.68, -0.65)
         this.bgContainer.filters = [this.gridFilter] // Apply grid to background only
 
-        this.container.filters = [this.wobbleFilter]
+        // Apply wobble filter only to game container, not UI
+        this.gameContainer.filters = [this.wobbleFilter]
 
         // Initialize core systems
         this.backgroundSystem = new BackgroundSystem({
@@ -770,12 +771,6 @@ export class PhysicsSurvivorScene extends AdventureScene {
         } else {
             // Add new skill
             this.playerSkills.push({ skillId, level: 1 })
-            this.damageTextSystem.spawnCustom(
-                this.width / 2,
-                this.height / 2 - 50,
-                `NEW! ${t(def.name, 'ko')}`,
-                'combo'
-            )
         }
 
         this.recalculateStats()

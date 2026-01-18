@@ -76,6 +76,7 @@ export class PlasmaDischargeBehavior extends BaseSkillBehavior<PlasmaDischargeEf
         baseCooldown: 3,
         formulaId: 'electric-discharge',
         physicsVisualType: 'plasma',
+        tags: ['chain'], // Base skill - provides chain capability
         getLevelEffect: (level: number) => this.getEffect(level),
     }
 

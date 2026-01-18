@@ -24,6 +24,71 @@ export type SkillCategory =
     | 'player' // Player state modifiers (ghost mode, rhythm, time warp)
     | 'trigger' // Event-triggered (decay chain, catalyst, heat chain)
 
+/**
+ * Physics formula categories for visual theming
+ * Each category has a distinct holographic color scheme
+ */
+export type PhysicsCategory =
+    | 'mechanics' // 역학: kinetic, momentum, gravity, etc. - Blue/Silver
+    | 'electromagnetism' // 전자기학: electric, magnetic, plasma - Cyan/Electric
+    | 'wave' // 파동학: wave, sound, light - Purple/Magenta
+    | 'thermodynamics' // 열역학: heat, entropy, gas - Orange/Red
+    | 'quantum' // 양자역학: tunneling, photoelectric - Green/Teal
+    | 'fluid' // 유체역학: bernoulli, buoyancy - Aqua
+
+/**
+ * Mapping from formulaId to physics category
+ */
+export const FORMULA_CATEGORY_MAP: Record<string, PhysicsCategory> = {
+    // Mechanics (역학)
+    'kinetic-energy': 'mechanics',
+    'momentum': 'mechanics',
+    'centripetal': 'mechanics',
+    'gravity': 'mechanics',
+    'hooke': 'mechanics',
+    'elastic-collision': 'mechanics',
+    'newton-second': 'mechanics',
+    'torque': 'mechanics',
+    'kepler-third': 'mechanics',
+    'escape-velocity': 'mechanics',
+    'pendulum': 'mechanics',
+
+    // Electromagnetism (전자기학)
+    'lorentz': 'electromagnetism',
+    'coulomb': 'electromagnetism',
+    'electric-discharge': 'electromagnetism',
+    'magnetic-field': 'electromagnetism',
+
+    // Wave Physics (파동학)
+    'wave': 'wave',
+    'beat-frequency': 'wave',
+    'snell': 'wave',
+    'doppler': 'wave',
+    'photoelectric': 'wave', // Light-related
+
+    // Thermodynamics (열역학)
+    'ideal-gas': 'thermodynamics',
+    'stefan-boltzmann': 'thermodynamics',
+    'entropy': 'thermodynamics',
+    'thermal-conduction': 'thermodynamics',
+
+    // Quantum Mechanics (양자역학)
+    'tunneling': 'quantum',
+    'radioactive-decay': 'quantum',
+
+    // Fluid Dynamics (유체역학)
+    'bernoulli': 'fluid',
+    'buoyancy': 'fluid',
+}
+
+/**
+ * Get physics category from formulaId
+ */
+export function getPhysicsCategory(formulaId?: string): PhysicsCategory {
+    if (!formulaId) return 'mechanics'
+    return FORMULA_CATEGORY_MAP[formulaId] || 'mechanics'
+}
+
 // ============================================
 // SKILL EFFECT BASE TYPE
 // ============================================

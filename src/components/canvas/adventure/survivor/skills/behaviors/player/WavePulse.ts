@@ -47,6 +47,7 @@ export class WavePulseBehavior extends BaseSkillBehavior<WavePulseEffect> {
         baseCooldown: 2,
         formulaId: 'wave',
         physicsVisualType: 'wave',
+        tags: ['wave'], // Base skill - provides wave capability
         getLevelEffect: (level: number) => this.getEffect(level),
     }
 

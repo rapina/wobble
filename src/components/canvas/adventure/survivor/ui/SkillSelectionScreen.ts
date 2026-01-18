@@ -16,8 +16,9 @@ import {
     BALATRO_DESIGN,
     drawBalatroCard,
     drawBalatroBadge,
-    drawCornerDots,
 } from './BalatroButton'
+import { HolographicFilter } from '@/components/canvas/filters/HolographicFilter'
+import { getPhysicsCategory } from '../skills/types'
 
 export interface SkillSelectionContext {
     container: Container
@@ -33,6 +34,9 @@ interface SkillCard {
     cardBg: Graphics
     isHovered: boolean
     targetY: number // Animation target Y position
+    isBaseSkill: boolean // Has tags (primary skill)
+    sparkles?: Graphics // Sparkle effect container for base skills
+    holoFilter?: HolographicFilter // Holographic filter for base skills
 }
 
 export class SkillSelectionScreen {
@@ -46,7 +50,6 @@ export class SkillSelectionScreen {
     private levelUpBanner: Container | null = null
     private levelUpWaveText: WaveText | null = null
     private skillCards: SkillCard[] = []
-    private decorDots: Graphics | null = null
 
     // Animation state
     private animTime = 0
@@ -244,12 +247,18 @@ export class SkillSelectionScreen {
                 const wobble = Math.sin(this.animTime * 8) * 0.02
                 card.container.scale.set(1.05 + wobble)
             }
+
+            // Update holographic filter for all cards
+            if (card.holoFilter && progress >= 1) {
+                card.holoFilter.time = this.animTime
+            }
+
+            // Sparkle animation only for base skills
+            if (card.isBaseSkill && card.sparkles && progress >= 1) {
+                this.drawSparkles(card.sparkles, this.animTime, 70, 100)
+            }
         })
 
-        // Animate decorative dots
-        if (this.decorDots) {
-            this.decorDots.alpha = 0.3 + Math.sin(this.animTime * 2) * 0.2
-        }
     }
 
     /**
@@ -279,30 +288,17 @@ export class SkillSelectionScreen {
         }
         this.screenContainer.addChild(dots)
 
-        // Main card container for the selection area
-        const mainCardWidth = Math.min(360, this.width - 30)
-        const mainCardHeight = 300
-        const mainCardX = this.centerX - mainCardWidth / 2
-        const mainCardY = this.centerY - mainCardHeight / 2
+        // Card layout dimensions
+        const cardWidth = 100
+        const cardHeight = 220
+        const cardGap = 15
+        const totalWidth = candidates.length * cardWidth + (candidates.length - 1) * cardGap
+        const startX = this.centerX - totalWidth / 2 + cardWidth / 2
+        const cardCenterY = this.centerY + 20 // Center cards vertically
 
-        // Main card background
-        const mainCard = new Graphics()
-        drawBalatroCard(mainCard, mainCardX, mainCardY, mainCardWidth, mainCardHeight, {
-            bgColor: BALATRO_COLORS.bgCard,
-            borderColor: BALATRO_COLORS.gold,
-            borderWidth: BALATRO_DESIGN.borderWidth,
-            radius: BALATRO_DESIGN.radiusLarge,
-        })
-        this.screenContainer.addChild(mainCard)
-
-        // Decorative corner dots
-        this.decorDots = new Graphics()
-        drawCornerDots(this.decorDots, mainCardX, mainCardY, mainCardWidth, mainCardHeight)
-        this.screenContainer.addChild(this.decorDots)
-
-        // Level up banner - positioned above main card
+        // Level up banner - positioned above cards
         this.levelUpBanner = new Container()
-        this.levelUpBanner.position.set(this.centerX, mainCardY - 8)
+        this.levelUpBanner.position.set(this.centerX, cardCenterY - cardHeight / 2 - 50)
         this.levelUpBanner.scale.set(0)
         this.screenContainer.addChild(this.levelUpBanner)
 
@@ -337,7 +333,7 @@ export class SkillSelectionScreen {
         })
         this.levelUpBanner.addChild(this.levelUpWaveText)
 
-        // Subtitle - inside main card
+        // Subtitle - below banner
         const subtitleText = new Text({
             text: 'Choose a skill to upgrade',
             style: new TextStyle({
@@ -348,16 +344,8 @@ export class SkillSelectionScreen {
             }),
         })
         subtitleText.anchor.set(0.5)
-        subtitleText.position.set(this.centerX, mainCardY + 35)
+        subtitleText.position.set(this.centerX, cardCenterY - cardHeight / 2 - 15)
         this.screenContainer.addChild(subtitleText)
-
-        // Card layout - 3 cards horizontal
-        const cardWidth = 100
-        const cardHeight = 220
-        const cardGap = 10
-        const totalWidth = candidates.length * cardWidth + (candidates.length - 1) * cardGap
-        const startX = this.centerX - totalWidth / 2 + cardWidth / 2
-        const cardCenterY = mainCardY + 50 + cardHeight / 2 // Position cards inside main card
 
         candidates.forEach((candidate, index) => {
             const def = getSkillDefinition(candidate.skillId)
@@ -426,78 +414,165 @@ export class SkillSelectionScreen {
         currentLevel: number
         def: SkillDefinition
         isHovered: boolean
+        isBaseSkill: boolean
+        sparkles?: Graphics
+        holoFilter?: HolographicFilter
     } {
         const container = new Container()
 
         // Determine if this is a base skill (has tags) or modifier skill (has requires)
-        const isBaseSkill = def.tags && def.tags.length > 0
-        const isModifierSkill = def.requires && def.requires.length > 0
+        const isBaseSkill = !!(def.tags && def.tags.length > 0)
+        const isModifierSkill = !!(def.requires && def.requires.length > 0)
+        const isNewSkill = currentLevel === 0
+        const nextLevel = currentLevel + 1
 
-        // Base skill gets special glow effect
+        // Get physics category for themed holographic effect
+        const physicsCategory = getPhysicsCategory(def.formulaId)
+
+        // Holographic filter and sparkle effect
+        let sparkles: Graphics | undefined
+        let holoFilter: HolographicFilter | undefined
+
+        // Both base skills and modifier skills get holographic effects
+        // Base skills: more vibrant, with sparkles and glow
+        // Modifier skills: subtler holographic effect
         if (isBaseSkill) {
+            sparkles = new Graphics()
+            container.addChild(sparkles)
+
+            // Outer glow for base skills
             const glow = new Graphics()
             glow.roundRect(
-                -cardWidth / 2 - 4,
-                -cardHeight / 2 - 4,
-                cardWidth + 8,
-                cardHeight + 8,
-                BALATRO_DESIGN.radiusMedium + 2
+                -cardWidth / 2 - 6,
+                -cardHeight / 2 - 6,
+                cardWidth + 12,
+                cardHeight + 12,
+                BALATRO_DESIGN.radiusMedium + 4
             )
-            glow.fill({ color: BALATRO_COLORS.gold, alpha: 0.3 })
+            glow.fill({ color: BALATRO_COLORS.gold, alpha: 0.25 })
             container.addChild(glow)
         }
 
-        // Card background with Balatro style
+        // Create holographic filter - Subtle Balatro style
+        holoFilter = new HolographicFilter({
+            theme: physicsCategory,
+            isPrimary: isBaseSkill,
+            rainbowIntensity: isBaseSkill ? 0.8 : 0.5,
+            sparkleIntensity: isBaseSkill ? 0.4 : 0.2,
+            sparkleSpeed: 1.5,
+            shimmerSpeed: isBaseSkill ? 0.6 : 0.4,
+            foilStrength: isBaseSkill ? 0.35 : 0.2,
+        })
+        holoFilter.setDimensions(cardWidth, cardHeight)
+
+        // Card background - Balatro style dark purple/navy
         const cardBg = new Graphics()
-        const borderColor = isBaseSkill ? BALATRO_COLORS.gold : def.color
+        const borderColor = isBaseSkill ? BALATRO_COLORS.gold : isModifierSkill ? BALATRO_COLORS.cyan : def.color
+        // Balatro-style dark backgrounds with slight color tint
+        const bgColor = isBaseSkill ? 0x1e1a2e : isModifierSkill ? 0x1a2028 : BALATRO_COLORS.bgCard
         drawBalatroCard(cardBg, -cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, {
-            bgColor: isBaseSkill ? 0x1f1a2e : BALATRO_COLORS.bgCard, // Slightly purple tint for base
+            bgColor: bgColor,
             borderColor: borderColor,
-            borderWidth: isBaseSkill ? 4 : BALATRO_DESIGN.borderWidth,
+            borderWidth: isBaseSkill ? 4 : isModifierSkill ? 3 : BALATRO_DESIGN.borderWidth,
             radius: BALATRO_DESIGN.radiusMedium,
         })
         container.addChild(cardBg)
 
-        // Top banner with skill type indicator
-        const isNewSkill = currentLevel === 0
-        const nextLevel = currentLevel + 1
-
-        // Banner color based on skill type and state
-        let bannerColor: number
-        let bannerText: string
-
-        if (isBaseSkill) {
-            bannerColor = BALATRO_COLORS.gold // Gold for base skills
-            bannerText = isNewSkill ? '⭐ 기본' : `⭐ Lv.${nextLevel}`
-        } else if (isModifierSkill) {
-            bannerColor = BALATRO_COLORS.cyan // Cyan for modifier skills
-            bannerText = isNewSkill ? '🔗 강화' : `🔗 Lv.${nextLevel}`
-        } else {
-            bannerColor = isNewSkill ? BALATRO_COLORS.green : BALATRO_COLORS.blue
-            bannerText = isNewSkill ? 'NEW!' : `Lv.${currentLevel} → ${nextLevel}`
+        // Apply holographic filter to card background
+        // All cards get holographic effect, but base skills are more vibrant
+        if (holoFilter) {
+            cardBg.filters = [holoFilter]
         }
 
-        const topBanner = new Graphics()
-        topBanner.roundRect(-cardWidth / 2 + 6, -cardHeight / 2 + 8, cardWidth - 12, 24, 4)
-        topBanner.fill(bannerColor)
-        topBanner.roundRect(-cardWidth / 2 + 6, -cardHeight / 2 + 8, cardWidth - 12, 24, 4)
-        topBanner.stroke({ color: BALATRO_COLORS.border, width: 2 })
-        container.addChild(topBanner)
+        // NEW badge in top-left corner (for new skills only)
+        if (isNewSkill) {
+            const badgeWidth = 36
+            const badgeHeight = 18
+            const badgeX = -cardWidth / 2 + 8
+            const badgeY = -cardHeight / 2 + 8
 
-        const levelLabel = new Text({
-            text: bannerText,
-            style: new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 11,
-                fontWeight: 'bold',
-                fill: bannerColor === BALATRO_COLORS.gold ? 0x000000 : 0xffffff,
-            }),
-        })
-        levelLabel.anchor.set(0.5)
-        levelLabel.position.set(0, -cardHeight / 2 + 20)
-        container.addChild(levelLabel)
+            const newBadge = new Graphics()
+            // Badge shadow
+            newBadge.roundRect(badgeX + 1, badgeY + 2, badgeWidth, badgeHeight, 4)
+            newBadge.fill({ color: 0x000000, alpha: 0.3 })
+            // Badge background
+            newBadge.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 4)
+            newBadge.fill(BALATRO_COLORS.green)
+            newBadge.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 4)
+            newBadge.stroke({ color: 0x1a5c2e, width: 2 })
+            container.addChild(newBadge)
 
-        // Skill icon (centered in upper area) - style based on skill type
+            const newText = new Text({
+                text: 'NEW',
+                style: new TextStyle({
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 10,
+                    fontWeight: 'bold',
+                    fill: 0xffffff,
+                }),
+            })
+            newText.anchor.set(0.5)
+            newText.position.set(badgeX + badgeWidth / 2, badgeY + badgeHeight / 2)
+            container.addChild(newText)
+        }
+
+        // Skill type badge in top-right corner
+        const typeText = isBaseSkill ? '기본' : isModifierSkill ? '강화' : ''
+        const typeColor = isBaseSkill ? BALATRO_COLORS.gold : BALATRO_COLORS.cyan
+        const typeBgColor = isBaseSkill ? 0x3d2f00 : 0x0a3d4d
+
+        if (typeText) {
+            const typeBadgeWidth = 32
+            const typeBadgeHeight = 16
+            const typeBadgeX = cardWidth / 2 - typeBadgeWidth - 8
+            const typeBadgeY = -cardHeight / 2 + 8
+
+            const typeBadge = new Graphics()
+            typeBadge.roundRect(typeBadgeX, typeBadgeY, typeBadgeWidth, typeBadgeHeight, 3)
+            typeBadge.fill(typeBgColor)
+            typeBadge.roundRect(typeBadgeX, typeBadgeY, typeBadgeWidth, typeBadgeHeight, 3)
+            typeBadge.stroke({ color: typeColor, width: 1.5 })
+            container.addChild(typeBadge)
+
+            const typeLabel = new Text({
+                text: typeText,
+                style: new TextStyle({
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 9,
+                    fontWeight: 'bold',
+                    fill: typeColor,
+                }),
+            })
+            typeLabel.anchor.set(0.5)
+            typeLabel.position.set(typeBadgeX + typeBadgeWidth / 2, typeBadgeY + typeBadgeHeight / 2)
+            container.addChild(typeLabel)
+        }
+
+        // Level indicator in center-top (only for upgrades)
+        if (!isNewSkill) {
+            const levelBadge = new Graphics()
+            const lvBadgeWidth = 60
+            const lvBadgeHeight = 18
+            levelBadge.roundRect(-lvBadgeWidth / 2, -cardHeight / 2 + 6, lvBadgeWidth, lvBadgeHeight, 4)
+            levelBadge.fill(BALATRO_COLORS.blue)
+            levelBadge.stroke({ color: BALATRO_COLORS.border, width: 1.5 })
+            container.addChild(levelBadge)
+
+            const levelText = new Text({
+                text: `Lv.${currentLevel} → ${nextLevel}`,
+                style: new TextStyle({
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 10,
+                    fontWeight: 'bold',
+                    fill: 0xffffff,
+                }),
+            })
+            levelText.anchor.set(0.5)
+            levelText.position.set(0, -cardHeight / 2 + 15)
+            container.addChild(levelText)
+        }
+
+        // Skill icon (centered in upper area)
         const iconY = -35
         const iconColor = isBaseSkill
             ? BALATRO_COLORS.gold
@@ -506,63 +581,81 @@ export class SkillSelectionScreen {
               : def.color
         const iconBg = new Graphics()
 
-        // Base skills get a star burst effect behind icon
+        // Base skills get a larger glowing ring behind icon
         if (isBaseSkill) {
-            // Outer glow ring
-            iconBg.circle(0, iconY, 36)
+            iconBg.circle(0, iconY, 40)
             iconBg.fill({ color: BALATRO_COLORS.gold, alpha: 0.15 })
         }
 
+        // Icon background circle with stronger fill
         iconBg.circle(0, iconY, 30)
-        iconBg.fill({ color: iconColor, alpha: 0.2 })
+        iconBg.fill({ color: iconColor, alpha: 0.25 })
         iconBg.circle(0, iconY, 30)
-        iconBg.stroke({ color: iconColor, width: isBaseSkill ? 3 : 2 })
+        iconBg.stroke({ color: iconColor, width: isBaseSkill ? 3 : 2.5 })
         container.addChild(iconBg)
 
         const iconText = new Text({
             text: def.icon,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 28,
+                fontSize: 30,
                 fill: iconColor,
+                dropShadow: {
+                    color: 0x000000,
+                    blur: 3,
+                    distance: 1,
+                    alpha: 0.5,
+                },
             }),
         })
         iconText.anchor.set(0.5)
         iconText.position.set(0, iconY)
         container.addChild(iconText)
 
-        // Skill name (centered)
+        // Skill name (centered) with shadow for readability
         const nameText = new Text({
             text: t(def.name, 'ko'),
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: 'bold',
-                fill: BALATRO_COLORS.textPrimary,
+                fill: 0xffffff,
                 wordWrap: true,
                 wordWrapWidth: cardWidth - 14,
                 align: 'center',
+                dropShadow: {
+                    color: 0x000000,
+                    blur: 2,
+                    distance: 1,
+                    alpha: 0.8,
+                },
             }),
         })
         nameText.anchor.set(0.5)
-        nameText.position.set(0, 15)
+        nameText.position.set(0, 18)
         container.addChild(nameText)
 
-        // Short description
+        // Short description with shadow
         const descText = new Text({
             text: t(def.description, 'ko'),
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 10,
-                fill: BALATRO_COLORS.textSecondary,
+                fontSize: 11,
+                fill: 0xcccccc,
                 wordWrap: true,
-                wordWrapWidth: cardWidth - 16,
+                wordWrapWidth: cardWidth - 14,
                 align: 'center',
-                lineHeight: 14,
+                lineHeight: 15,
+                dropShadow: {
+                    color: 0x000000,
+                    blur: 2,
+                    distance: 1,
+                    alpha: 0.6,
+                },
             }),
         })
         descText.anchor.set(0.5, 0)
-        descText.position.set(0, 38)
+        descText.position.set(0, 42)
         container.addChild(descText)
 
         // Make interactive
@@ -576,28 +669,32 @@ export class SkillSelectionScreen {
             currentLevel,
             def,
             isHovered: false,
+            isBaseSkill,
+            sparkles,
+            holoFilter,
         }
 
         container.on('pointerdown', () => this.handleCardSelect(skillId, currentLevel))
         container.on('pointerover', () => {
             cardData.isHovered = true
-            // Highlight effect - brighter version of original style
+            // Highlight effect - brighter Balatro style
             cardBg.clear()
+            const hoverBgColor = isBaseSkill ? 0x2a2540 : isModifierSkill ? 0x252a35 : BALATRO_COLORS.bgCardLight
             drawBalatroCard(cardBg, -cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, {
-                bgColor: isBaseSkill ? 0x2a2540 : BALATRO_COLORS.bgCardLight,
+                bgColor: hoverBgColor,
                 borderColor: BALATRO_COLORS.gold,
-                borderWidth: isBaseSkill ? 4 : BALATRO_DESIGN.borderWidth,
+                borderWidth: isBaseSkill ? 5 : isModifierSkill ? 4 : 3,
                 radius: BALATRO_DESIGN.radiusMedium,
             })
         })
         container.on('pointerout', () => {
             cardData.isHovered = false
-            // Restore original style based on skill type
+            // Restore original style
             cardBg.clear()
             drawBalatroCard(cardBg, -cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, {
-                bgColor: isBaseSkill ? 0x1f1a2e : BALATRO_COLORS.bgCard,
+                bgColor: bgColor,
                 borderColor: borderColor,
-                borderWidth: isBaseSkill ? 4 : BALATRO_DESIGN.borderWidth,
+                borderWidth: isBaseSkill ? 4 : isModifierSkill ? 3 : BALATRO_DESIGN.borderWidth,
                 radius: BALATRO_DESIGN.radiusMedium,
             })
             // Reset scale when not hovered
@@ -619,5 +716,51 @@ export class SkillSelectionScreen {
 
         this.onSkillSelected?.(skillId, newLevel)
         this.onSelectionComplete?.()
+    }
+
+    /**
+     * Draw sparkle effects for base skill cards
+     */
+    private drawSparkles(graphics: Graphics, time: number, width: number, height: number): void {
+        graphics.clear()
+
+        // Sparkle particles around the card
+        const sparkleCount = 8
+        for (let i = 0; i < sparkleCount; i++) {
+            // Each sparkle has its own phase
+            const phase = time * 2 + (i / sparkleCount) * Math.PI * 2
+            const lifePhase = (Math.sin(phase) + 1) / 2 // 0 to 1
+
+            // Position around the card edge
+            const angle = (i / sparkleCount) * Math.PI * 2 + time * 0.5
+            const radiusX = width + 5 + Math.sin(phase * 2) * 8
+            const radiusY = height + 5 + Math.cos(phase * 2) * 8
+            const x = Math.cos(angle) * radiusX
+            const y = Math.sin(angle) * radiusY
+
+            // Sparkle size pulsates
+            const size = 2 + lifePhase * 3
+            const alpha = lifePhase * 0.8
+
+            // Draw diamond-shaped sparkle
+            graphics.moveTo(x, y - size)
+            graphics.lineTo(x + size * 0.5, y)
+            graphics.lineTo(x, y + size)
+            graphics.lineTo(x - size * 0.5, y)
+            graphics.closePath()
+            graphics.fill({ color: BALATRO_COLORS.gold, alpha })
+
+            // Inner bright core
+            if (lifePhase > 0.5) {
+                const coreSize = size * 0.4
+                graphics.circle(x, y, coreSize)
+                graphics.fill({ color: 0xffffff, alpha: (lifePhase - 0.5) * 1.5 })
+            }
+        }
+
+        // Central glow pulse
+        const pulseAlpha = (Math.sin(time * 3) + 1) / 2 * 0.15
+        graphics.circle(0, -30, 45)
+        graphics.fill({ color: BALATRO_COLORS.gold, alpha: pulseAlpha })
     }
 }

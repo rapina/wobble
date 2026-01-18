@@ -76,6 +76,7 @@ export class CentripetalPulseBehavior extends BaseSkillBehavior<CentripetalPulse
         baseCooldown: 5, // Base 5 second cooldown, reduced by level
         formulaId: 'centripetal',
         physicsVisualType: 'centripetal',
+        tags: ['orbital'], // Base skill - provides orbital/pulse capability
         getLevelEffect: (level: number) => this.getEffect(level),
     }
 
