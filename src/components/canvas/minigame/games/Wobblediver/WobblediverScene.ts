@@ -104,6 +104,30 @@ interface SurfaceRipple {
     alpha: number
 }
 
+// Result screen eye (watching the player's escape)
+interface ResultEye {
+    x: number
+    y: number
+    size: number
+    openness: number
+    targetOpenness: number
+    lookAngle: number
+    targetLookAngle: number
+    blinkTimer: number
+    intensity: number  // Glow intensity
+}
+
+// Result screen tentacle (framing the result card)
+interface ResultTentacle {
+    startX: number
+    startY: number
+    angle: number
+    length: number
+    phase: number
+    targetLength: number
+    waveSpeed: number
+}
+
 export class WobblediverScene extends BaseMiniGameScene {
     // Game objects
     private declare wobble: SwingingWobble | null
@@ -174,6 +198,14 @@ export class WobblediverScene extends BaseMiniGameScene {
     private resultCountTarget = { hp: 0, time: 0, total: 0 }
     private resultCountCurrent = { hp: 0, time: 0, total: 0 }
     private resultGrade = { letter: 'D', color: 0xe85d4c }
+
+    // Result screen abyss effects
+    private declare resultEffectContainer: Container
+    private declare resultEffectGraphics: Graphics
+    private resultEyes: ResultEye[] = []
+    private resultTentacles: ResultTentacle[] = []
+    private resultEffectTime = 0
+    private resultVignetteAlpha = 0
 
     // Difficulty parameters
     private declare goalMoves: boolean
@@ -258,6 +290,9 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         // Use score display (scoring based on time + HP)
         this.hud.setDisplayMode('score')
+
+        // Apply abyss theme to game over screen
+        this.resultScreen.setTheme('abyss')
     }
 
     private setupIntro(): void {
@@ -1343,6 +1378,14 @@ export class WobblediverScene extends BaseMiniGameScene {
             glow: 0x5a2d70,        // Purple glow
         }
 
+        // Result effect container (behind result card - for eyes, tentacles, vignette)
+        this.resultEffectContainer = new Container()
+        this.resultEffectContainer.visible = false
+        this.uiContainer.addChild(this.resultEffectContainer)
+
+        this.resultEffectGraphics = new Graphics()
+        this.resultEffectContainer.addChild(this.resultEffectGraphics)
+
         this.stageResultContainer = new Container()
         this.stageResultContainer.position.set(this.width / 2, this.height / 2 - 20)
         this.stageResultContainer.alpha = 0
@@ -1507,6 +1550,278 @@ export class WobblediverScene extends BaseMiniGameScene {
         g.moveTo(-w / 2 + 20, 35)
         g.lineTo(w / 2 - 20, 35)
         g.stroke({ color: dividerColor, width: 1, alpha: 0.6 })
+    }
+
+    /**
+     * Initialize result screen abyss effects
+     */
+    private initResultEffects(isPerfect: boolean): void {
+        this.resultEffectTime = 0
+        this.resultVignetteAlpha = 0
+        this.resultEyes = []
+        this.resultTentacles = []
+
+        // Create watching eyes in the darkness
+        const eyeCount = isPerfect ? 8 : 5
+        for (let i = 0; i < eyeCount; i++) {
+            // Position eyes around the edges, watching the result
+            const angle = (i / eyeCount) * Math.PI * 2 + Math.random() * 0.5
+            const distance = 180 + Math.random() * 80
+            this.resultEyes.push({
+                x: this.width / 2 + Math.cos(angle) * distance,
+                y: this.height / 2 - 20 + Math.sin(angle) * distance * 0.6,
+                size: 12 + Math.random() * 10,
+                openness: 0,
+                targetOpenness: 1,
+                lookAngle: Math.atan2(
+                    this.height / 2 - 20 - (this.height / 2 - 20 + Math.sin(angle) * distance * 0.6),
+                    this.width / 2 - (this.width / 2 + Math.cos(angle) * distance)
+                ),
+                targetLookAngle: Math.atan2(-Math.sin(angle), -Math.cos(angle)),
+                blinkTimer: 0,
+                intensity: 0.5 + Math.random() * 0.5,
+            })
+        }
+
+        // Create tentacles reaching toward the result card
+        const tentacleCount = isPerfect ? 12 : 8
+        for (let i = 0; i < tentacleCount; i++) {
+            const side = i % 4
+            let x, y, angle
+            switch (side) {
+                case 0:  // Top
+                    x = this.width * 0.2 + Math.random() * this.width * 0.6
+                    y = 0
+                    angle = Math.PI / 2 + (Math.random() - 0.5) * 0.4
+                    break
+                case 1:  // Right
+                    x = this.width
+                    y = this.height * 0.2 + Math.random() * this.height * 0.6
+                    angle = Math.PI + (Math.random() - 0.5) * 0.4
+                    break
+                case 2:  // Bottom
+                    x = this.width * 0.2 + Math.random() * this.width * 0.6
+                    y = this.height
+                    angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.4
+                    break
+                default:  // Left
+                    x = 0
+                    y = this.height * 0.2 + Math.random() * this.height * 0.6
+                    angle = (Math.random() - 0.5) * 0.4
+                    break
+            }
+            this.resultTentacles.push({
+                startX: x,
+                startY: y,
+                angle,
+                length: 0,
+                targetLength: 80 + Math.random() * 60,
+                phase: Math.random() * Math.PI * 2,
+                waveSpeed: 2 + Math.random() * 2,
+            })
+        }
+
+        this.resultEffectContainer.visible = true
+    }
+
+    /**
+     * Update result screen effects
+     */
+    private updateResultEffects(deltaSeconds: number): void {
+        if (!this.isShowingResult) return
+
+        this.resultEffectTime += deltaSeconds
+
+        // Fade in vignette
+        this.resultVignetteAlpha = Math.min(0.7, this.resultVignetteAlpha + deltaSeconds * 2)
+
+        // Update eyes
+        for (const eye of this.resultEyes) {
+            // Open eyes gradually
+            eye.openness += (eye.targetOpenness - eye.openness) * deltaSeconds * 3
+
+            // Look toward center (result card)
+            const angleDiff = eye.targetLookAngle - eye.lookAngle
+            eye.lookAngle += angleDiff * deltaSeconds * 2
+
+            // Intensity pulse
+            eye.intensity = 0.5 + Math.sin(this.resultEffectTime * 3 + eye.x * 0.01) * 0.3
+        }
+
+        // Update tentacles
+        for (const tentacle of this.resultTentacles) {
+            // Grow tentacles
+            tentacle.length += (tentacle.targetLength - tentacle.length) * deltaSeconds * 2
+        }
+
+        this.drawResultEffects()
+    }
+
+    /**
+     * Draw result screen abyss effects
+     */
+    private drawResultEffects(): void {
+        const g = this.resultEffectGraphics
+        g.clear()
+
+        const time = this.resultEffectTime
+
+        // Dark vignette background
+        g.rect(0, 0, this.width, this.height)
+        g.fill({ color: 0x0a0510, alpha: this.resultVignetteAlpha })
+
+        // Radial gradient (darker at edges)
+        const cx = this.width / 2
+        const cy = this.height / 2 - 20
+        for (let r = 0; r < 6; r++) {
+            const radius = this.width * 0.15 + r * this.width * 0.12
+            const alpha = (r / 6) * 0.4 * this.resultVignetteAlpha
+            g.ellipse(cx, cy, radius, radius * 0.7)
+            g.fill({ color: 0x0a0510, alpha })
+        }
+
+        // Draw tentacles
+        for (const tentacle of this.resultTentacles) {
+            this.drawResultTentacle(g, tentacle, time)
+        }
+
+        // Draw eyes
+        for (const eye of this.resultEyes) {
+            this.drawResultEye(g, eye, time)
+        }
+    }
+
+    /**
+     * Draw a single result screen tentacle
+     */
+    private drawResultTentacle(g: Graphics, tentacle: ResultTentacle, time: number): void {
+        if (tentacle.length < 5) return
+
+        const segments = 10
+        const segmentLength = tentacle.length / segments
+        const baseWidth = 15
+
+        let x = tentacle.startX
+        let y = tentacle.startY
+        let angle = tentacle.angle
+
+        for (let i = 0; i < segments; i++) {
+            const t = i / segments
+            const width = baseWidth * (1 - t * 0.7)
+            const wave = Math.sin(time * tentacle.waveSpeed + tentacle.phase + i * 0.4) * 10 * t
+
+            // Curve toward center
+            const toCenterX = this.width / 2 - x
+            const toCenterY = this.height / 2 - 20 - y
+            const toCenterAngle = Math.atan2(toCenterY, toCenterX)
+            angle += (toCenterAngle - angle) * 0.1
+
+            const nextX = x + Math.cos(angle) * segmentLength + Math.cos(angle + Math.PI / 2) * wave
+            const nextY = y + Math.sin(angle) * segmentLength + Math.sin(angle + Math.PI / 2) * wave
+
+            // Draw segment
+            const perpX = Math.cos(angle + Math.PI / 2) * width / 2
+            const perpY = Math.sin(angle + Math.PI / 2) * width / 2
+
+            g.moveTo(x + perpX, y + perpY)
+            g.lineTo(nextX + perpX * 0.8, nextY + perpY * 0.8)
+            g.lineTo(nextX - perpX * 0.8, nextY - perpY * 0.8)
+            g.lineTo(x - perpX, y - perpY)
+            g.closePath()
+
+            const tentacleColor = this.lerpColor(0x4a2060, 0x1a0a20, t)
+            g.fill({ color: tentacleColor, alpha: 0.8 })
+
+            // Suckers
+            if (i > 1 && i % 2 === 0 && tentacle.length > 30) {
+                g.circle(x, y, width * 0.25)
+                g.fill({ color: 0x6a3080, alpha: 0.5 })
+                g.circle(x, y, width * 0.12)
+                g.fill({ color: 0x1a0a20, alpha: 0.7 })
+            }
+
+            x = nextX
+            y = nextY
+        }
+    }
+
+    /**
+     * Draw a single result screen eye
+     */
+    private drawResultEye(g: Graphics, eye: ResultEye, time: number): void {
+        if (eye.openness < 0.1) return
+
+        const size = eye.size
+
+        // Outer glow
+        const glowColor = this.lerpColor(0x6a3080, 0x8b2040, eye.intensity)
+        g.ellipse(eye.x, eye.y, size + 15, (size + 15) * 0.5 * eye.openness)
+        g.fill({ color: glowColor, alpha: 0.2 * eye.intensity })
+
+        g.ellipse(eye.x, eye.y, size + 8, (size + 8) * 0.5 * eye.openness)
+        g.fill({ color: glowColor, alpha: 0.35 * eye.intensity })
+
+        // Eye white
+        g.ellipse(eye.x, eye.y, size, size * 0.5 * eye.openness)
+        g.fill({ color: 0xeeeedd, alpha: 0.85 })
+
+        // Iris
+        const irisSize = size * 0.65
+        const lookDist = size * 0.15
+        const pupilX = eye.x + Math.cos(eye.lookAngle) * lookDist
+        const pupilY = eye.y + Math.sin(eye.lookAngle) * lookDist * eye.openness
+
+        g.ellipse(pupilX, pupilY, irisSize, irisSize * 0.5 * eye.openness)
+        g.fill({ color: 0xaa1133, alpha: 0.95 })
+
+        // Pupil
+        const pupilSize = irisSize * 0.4
+        g.ellipse(pupilX, pupilY, pupilSize, pupilSize * 0.5 * eye.openness)
+        g.fill({ color: 0x000000, alpha: 0.98 })
+
+        // Highlight
+        g.circle(pupilX - pupilSize * 0.4, pupilY - pupilSize * 0.2 * eye.openness, pupilSize * 0.25)
+        g.fill({ color: 0xffffff, alpha: 0.8 })
+    }
+
+    /**
+     * Make eyes react to grade reveal (widen in surprise/respect)
+     */
+    private triggerEyeReaction(grade: string): void {
+        const isGoodGrade = grade === 'S' || grade === 'A'
+
+        for (const eye of this.resultEyes) {
+            if (isGoodGrade) {
+                // Eyes widen in respect/fear
+                eye.targetOpenness = 1.3
+                eye.intensity = 1
+            } else {
+                // Eyes narrow (disappointed/hungry)
+                eye.targetOpenness = 0.7
+            }
+        }
+
+        // Tentacles react too
+        for (const tentacle of this.resultTentacles) {
+            if (isGoodGrade) {
+                // Tentacles recoil slightly
+                tentacle.targetLength *= 0.8
+            } else {
+                // Tentacles reach closer
+                tentacle.targetLength *= 1.2
+            }
+        }
+    }
+
+    /**
+     * Clean up result effects
+     */
+    private cleanupResultEffects(): void {
+        this.resultEffectContainer.visible = false
+        this.resultEyes = []
+        this.resultTentacles = []
+        this.resultVignetteAlpha = 0
+        this.resultEffectGraphics.clear()
     }
 
     private setupTransition(): void {
@@ -1812,6 +2127,9 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.resultDisplayTime = 0
         this.resultPhase = 'hp'
 
+        // Initialize abyss effects (eyes and tentacles watching)
+        this.initResultEffects(perfect)
+
         // Calculate individual score components
         const basePoints = 100
         const stageMultiplier = 1 + (this.roundNumber - 1) * 0.1
@@ -1942,6 +2260,9 @@ export class WobblediverScene extends BaseMiniGameScene {
      * Animate grade reveal
      */
     private revealGrade(): void {
+        // Trigger eye/tentacle reaction to the grade
+        this.triggerEyeReaction(this.resultGrade.letter)
+
         let elapsed = 0
         const animate = () => {
             elapsed += 1 / 60
@@ -1979,10 +2300,15 @@ export class WobblediverScene extends BaseMiniGameScene {
             this.stageResultContainer.alpha = 1 - progress
             this.stageResultContainer.scale.set(1 - progress * 0.3)
 
+            // Fade out effects too
+            this.resultVignetteAlpha = 0.7 * (1 - progress)
+            this.drawResultEffects()
+
             if (progress < 1) {
                 requestAnimationFrame(animateOut)
             } else {
                 this.stageResultContainer.visible = false
+                this.cleanupResultEffects()
             }
         }
         requestAnimationFrame(animateOut)
@@ -2321,12 +2647,13 @@ export class WobblediverScene extends BaseMiniGameScene {
 
             // Update result display and counting animation
             if (this.isShowingResult) {
-                const deltaSeconds = 1 / 60
-                this.updateResultCounting(deltaSeconds)
+                const resultDelta = 1 / 60
+                this.updateResultCounting(resultDelta)
+                this.updateResultEffects(resultDelta)
 
                 // Only start timing after counting is done
                 if (this.resultPhase === 'done') {
-                    this.resultDisplayTime += deltaSeconds
+                    this.resultDisplayTime += resultDelta
                     // Wait 1 second after grade reveal, then proceed
                     if (this.resultDisplayTime >= 1.0) {
                         this.hideStageResult()

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Settings, Trophy } from 'lucide-react'
 import Balatro from '@/components/Balatro'
@@ -36,7 +36,6 @@ interface HomeScreenProps {
 
 export function HomeScreen({ onSelectMode }: HomeScreenProps) {
     const { t } = useTranslation()
-    const [mounted, setMounted] = useState(false)
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
     const { getProgress } = useCollectionStore()
     const { studiedFormulas } = useProgressStore()
@@ -45,11 +44,6 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
     const achievementProgress = getAchievementProgress()
     const unseenFormulaCount = formulaList.length - studiedFormulas.size
     const remainingAchievements = achievementProgress.total - achievementProgress.unlocked
-
-    useEffect(() => {
-        const timer = setTimeout(() => setMounted(true), 100)
-        return () => clearTimeout(timer)
-    }, [])
 
     return (
         <div className="relative w-full h-full overflow-hidden" style={{ background: theme.felt }}>
@@ -145,13 +139,7 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                 }}
             >
                 {/* Logo */}
-                <div
-                    className={cn(
-                        'text-center',
-                        'transition-all duration-1000 ease-out',
-                        mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-12'
-                    )}
-                >
+                <div className="text-center">
                     <div
                         className="inline-block px-8 py-3 rounded-xl"
                         style={{
@@ -193,23 +181,13 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                 </div>
 
                 {/* Center Blob */}
-                <div
-                    className={cn(
-                        'flex-1 flex items-center justify-center min-h-[120px]',
-                        'transition-all duration-1000 delay-200 ease-out',
-                        mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
-                    )}
-                >
+                <div className="flex-1 flex items-center justify-center min-h-[120px]">
                     <BlobDisplay size={80} color="#F5B041" expression="happy" />
                 </div>
 
                 {/* Menu Cards */}
                 <div
-                    className={cn(
-                        'space-y-4 mx-auto w-full',
-                        'transition-all duration-1000 delay-300 ease-out',
-                        mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
-                    )}
+                    className="space-y-4 mx-auto w-full"
                     style={{ maxWidth: 320 }}
                 >
                     {/* Sandbox - Main Card */}
