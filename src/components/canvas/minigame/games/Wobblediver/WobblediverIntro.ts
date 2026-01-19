@@ -116,7 +116,7 @@ class MiniPendulumDisplay extends Container {
     private rope: Graphics
     private pivotY = 30
     private ropeLength = 80
-    private angle = 0
+    private swingAngle = 0
     private angularVelocity = 0
     private time = 0
 
@@ -151,7 +151,7 @@ class MiniPendulumDisplay extends Container {
         this.addChild(this.wobble)
 
         // Initial angle
-        this.angle = Math.PI / 4
+        this.swingAngle = Math.PI / 4
     }
 
     update(delta: number, centerX: number): void {
@@ -159,14 +159,14 @@ class MiniPendulumDisplay extends Container {
 
         // Pendulum physics
         const gravity = 9.8
-        const angularAccel = (-gravity / this.ropeLength) * Math.sin(this.angle)
+        const angularAccel = (-gravity / this.ropeLength) * Math.sin(this.swingAngle)
         this.angularVelocity += angularAccel * delta * 20
         this.angularVelocity *= 0.995 // Damping
-        this.angle += this.angularVelocity * delta
+        this.swingAngle += this.angularVelocity * delta
 
         // Update wobble position
-        const wobbleX = centerX + Math.sin(this.angle) * this.ropeLength
-        const wobbleY = this.pivotY + Math.cos(this.angle) * this.ropeLength
+        const wobbleX = centerX + Math.sin(this.swingAngle) * this.ropeLength
+        const wobbleY = this.pivotY + Math.cos(this.swingAngle) * this.ropeLength
         this.wobble.position.set(wobbleX, wobbleY)
 
         // Draw rope

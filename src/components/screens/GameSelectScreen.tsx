@@ -27,22 +27,23 @@ interface Adventure {
     available: boolean
     color: string
     type: 'adventure' | 'minigame'
-    icon?: 'wobble' | 'pendulum'
+    icon?: 'wobble' | 'pendulum' | 'dive'
     badge?: string
 }
 
 const ADVENTURES: Adventure[] = [
-    {
-        id: 'wobble-survivor',
-        titleKey: 'game.wobbleAdventure',
-        episodeKey: 'game.wobbleAdventureEpisode',
-        descKey: 'game.wobbleAdventureDesc',
-        available: true,
-        color: '#FF6B9D',
-        type: 'adventure',
-        icon: 'wobble',
-        badge: 'BETA',
-    },
+    // Wobble Survivor hidden for now
+    // {
+    //     id: 'wobble-survivor',
+    //     titleKey: 'game.wobbleAdventure',
+    //     episodeKey: 'game.wobbleAdventureEpisode',
+    //     descKey: 'game.wobbleAdventureDesc',
+    //     available: true,
+    //     color: '#FF6B9D',
+    //     type: 'adventure',
+    //     icon: 'wobble',
+    //     badge: 'BETA',
+    // },
     {
         id: 'wobblediver',
         titleKey: 'game.wobblediver',
@@ -242,6 +243,22 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: AdventureSelectS
                                                     >
                                                         <Scissors className="w-5 h-5 text-white" />
                                                     </div>
+                                                </div>
+                                            ) : adventure.icon === 'dive' ? (
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <WobbleDisplay
+                                                        size={48}
+                                                        shape="circle"
+                                                        color={0xf5b041}
+                                                        expression="excited"
+                                                    />
+                                                    {/* Water waves */}
+                                                    <div
+                                                        className="w-20 h-3 rounded-full"
+                                                        style={{
+                                                            background: `linear-gradient(180deg, ${adventure.color}80 0%, ${adventure.color} 100%)`,
+                                                        }}
+                                                    />
                                                 </div>
                                             ) : null}
 
