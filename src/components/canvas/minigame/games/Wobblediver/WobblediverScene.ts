@@ -237,6 +237,15 @@ export class WobblediverScene extends BaseMiniGameScene {
     private transitionTentacles: { x: number; y: number; angle: number; length: number; phase: number }[] = []
     private transitionEyes: { x: number; y: number; size: number; openness: number; targetOpenness: number }[] = []
 
+    // Custom in-game HUD (replaces default HUD)
+    private declare customHudContainer: Container
+    private declare playerHeartsGraphics: Graphics  // Hearts above player
+    private declare cornerHudGraphics: Graphics     // Stage/time/score in corner
+    private declare stageText: Text
+    private declare timeText: Text
+    private declare cornerScoreText: Text
+    private customHudLives = 3  // Track lives for heart display
+
     constructor(app: Application, callbacks?: MiniGameCallbacks) {
         super(app, callbacks)
     }
@@ -253,12 +262,12 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.roundTransitionTime = 0
         this.roundStartTime = 0
 
-        // Define game boundary
-        this.boundaryPadding = 20
-        this.boundaryLeft = this.boundaryPadding
-        this.boundaryRight = this.width - this.boundaryPadding
-        this.boundaryTop = 60
-        this.boundaryBottom = this.height - 120
+        // Define game boundary - use full screen, leave space for banner ad at bottom
+        this.boundaryPadding = 0  // No side padding - use full width
+        this.boundaryLeft = 0
+        this.boundaryRight = this.width
+        this.boundaryTop = 0  // Start from top
+        this.boundaryBottom = this.height - 60  // Leave 60px for banner ad
 
         // Difficulty defaults
         this.goalMoves = false
@@ -288,8 +297,9 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.setupInteraction()
         this.setupIntro()
 
-        // Use score display (scoring based on time + HP)
-        this.hud.setDisplayMode('score')
+        // Hide default HUD - we use custom in-game HUD
+        this.hud.setVisible(false)
+        this.setupCustomHUD()
 
         // Apply abyss theme to game over screen
         this.resultScreen.setTheme('abyss')
@@ -322,9 +332,141 @@ export class WobblediverScene extends BaseMiniGameScene {
         )
     }
 
+    private setupCustomHUD(): void {
+        // Abyss theme colors
+        const ABYSS = {
+            purple: 0x6a3d7a,
+            darkPurple: 0x2a1a30,
+            red: 0x8b2020,
+            gold: 0xc9a227,
+            text: 0xccbbdd,
+        }
+
+        // Custom HUD container (on top of game, but below intro/transition)
+        this.customHudContainer = new Container()
+        this.uiContainer.addChild(this.customHudContainer)
+
+        // Hearts graphics (will be positioned above player in updateCustomHUD)
+        this.playerHeartsGraphics = new Graphics()
+        this.customHudContainer.addChild(this.playerHeartsGraphics)
+
+        // Corner HUD (top-left corner inside game area)
+        this.cornerHudGraphics = new Graphics()
+        this.cornerHudGraphics.position.set(20, 20)
+        this.customHudContainer.addChild(this.cornerHudGraphics)
+
+        // Stage text (DEPTH indicator)
+        this.stageText = new Text({
+            text: 'DEPTH 1',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 11,
+                fontWeight: 'bold',
+                fill: ABYSS.purple,
+                letterSpacing: 2,
+            }),
+        })
+        this.stageText.position.set(24, 20)
+        this.customHudContainer.addChild(this.stageText)
+
+        // Time text
+        this.timeText = new Text({
+            text: '00:00',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 10,
+                fill: ABYSS.text,
+            }),
+        })
+        this.timeText.position.set(24, 36)
+        this.customHudContainer.addChild(this.timeText)
+
+        // Score text (top-right corner)
+        this.cornerScoreText = new Text({
+            text: '0',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 14,
+                fontWeight: 'bold',
+                fill: ABYSS.gold,
+            }),
+        })
+        this.cornerScoreText.anchor.set(1, 0)  // Right-aligned
+        this.cornerScoreText.position.set(this.width - 24, 20)
+        this.customHudContainer.addChild(this.cornerScoreText)
+
+        // Initialize lives tracking
+        this.customHudLives = this.lifeSystem.lives
+    }
+
+    private updateCustomHUD(): void {
+        // Update corner HUD text
+        this.stageText.text = `DEPTH ${this.roundNumber}`
+        const minutes = Math.floor(this.gameTime / 60)
+        const seconds = Math.floor(this.gameTime % 60)
+        this.timeText.text = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+        this.cornerScoreText.text = this.scoreSystem.score.toLocaleString()
+
+        // Track lives from life system
+        this.customHudLives = this.lifeSystem.lives
+
+        // Draw hearts above player
+        this.drawPlayerHearts()
+    }
+
+    private drawPlayerHearts(): void {
+        const g = this.playerHeartsGraphics
+        g.clear()
+
+        // Don't draw if no wobble or wobble is in certain states
+        if (!this.wobble) return
+        if (this.wobble.state === 'drowning' && this.wobble.getDrowningProgress() > 0.5) return
+
+        const pos = this.wobble.getPosition()
+        const heartSize = 10
+        const heartGap = 4
+        const totalWidth = this.customHudLives * (heartSize + heartGap) - heartGap
+        const startX = pos.x - totalWidth / 2
+        const heartY = pos.y - 45  // Above the wobble
+
+        // Draw each heart
+        for (let i = 0; i < 3; i++) {
+            const x = startX + i * (heartSize + heartGap)
+            const filled = i < this.customHudLives
+
+            this.drawMiniHeart(g, x, heartY, heartSize, filled)
+        }
+    }
+
+    private drawMiniHeart(g: Graphics, x: number, y: number, size: number, filled: boolean): void {
+        const s = size / 18
+
+        // Heart shape using bezier curves
+        g.moveTo(x + 9 * s, y + 16 * s)
+        g.bezierCurveTo(x + 9 * s, y + 15 * s, x + 9 * s, y + 12 * s, x + 9 * s, y + 12 * s)
+        g.bezierCurveTo(x + 9 * s, y + 8 * s, x + 5 * s, y + 4 * s, x + 1 * s, y + 4 * s)
+        g.bezierCurveTo(x - 3 * s, y + 4 * s, x - 3 * s, y + 9 * s, x - 3 * s, y + 9 * s)
+        g.bezierCurveTo(x - 3 * s, y + 11 * s, x - 2 * s, y + 13 * s, x + 9 * s, y + 18 * s)
+        g.bezierCurveTo(x + 20 * s, y + 13 * s, x + 21 * s, y + 11 * s, x + 21 * s, y + 9 * s)
+        g.bezierCurveTo(x + 21 * s, y + 9 * s, x + 21 * s, y + 4 * s, x + 17 * s, y + 4 * s)
+        g.bezierCurveTo(x + 13 * s, y + 4 * s, x + 9 * s, y + 8 * s, x + 9 * s, y + 12 * s)
+
+        if (filled) {
+            // Filled heart - red with slight glow effect
+            g.fill({ color: 0xe85d4c })
+            // Add small highlight
+            g.circle(x + 4 * s, y + 8 * s, 2 * s)
+            g.fill({ color: 0xff8888, alpha: 0.5 })
+        } else {
+            // Empty heart - dark outline
+            g.fill({ color: 0x2a1a30, alpha: 0.6 })
+            g.stroke({ color: 0x4a3a50, width: 1 })
+        }
+    }
+
     private setupAnchorWobble(): void {
         const anchorX = this.width / 2
-        const anchorY = this.boundaryTop + 60  // Lower position to show switch better
+        const anchorY = 70  // Fixed position from top (clear of HUD)
 
         this.anchorWobble = new AnchorWobble(anchorX, anchorY)
         this.gameContainer.addChild(this.anchorWobble.container)
@@ -1113,32 +1255,22 @@ export class WobblediverScene extends BaseMiniGameScene {
         const top = this.boundaryTop
         const width = this.boundaryRight - this.boundaryLeft
         const waterTop = this.boundaryBottom - 80  // Where water starts
-        const height = waterTop - top
 
-        // Outer glow effect (Balatro style) - U-shaped, open at bottom
-        g.moveTo(left - 4, waterTop)
-        g.lineTo(left - 4, top + 16)
-        g.quadraticCurveTo(left - 4, top - 4, left + 16, top - 4)
-        g.lineTo(left + width - 16, top - 4)
-        g.quadraticCurveTo(left + width + 4, top - 4, left + width + 4, top + 16)
-        g.lineTo(left + width + 4, waterTop)
-        g.stroke({ color: BALATRO.purple, width: 8, alpha: 0.1 })
-
-        // Main card background - extends to screen bottom (water will cover lower part)
-        g.roundRect(left, top, width, this.height - top, 16)
-        g.fill({ color: BALATRO.bgCard, alpha: 0.9 })
+        // Main card background - full screen, no rounded corners
+        g.rect(left, top, width, this.boundaryBottom - top)
+        g.fill({ color: BALATRO.bgCard })
 
         // Decorative pattern (subtle grid) - only above water
         const gridSize = 40
         for (let x = left + gridSize; x < this.boundaryRight; x += gridSize) {
-            g.moveTo(x, top + 10)
+            g.moveTo(x, top)
             g.lineTo(x, waterTop)
-            g.stroke({ color: BALATRO.border, width: 1, alpha: 0.08 })
+            g.stroke({ color: BALATRO.border, width: 1, alpha: 0.06 })
         }
         for (let y = top + gridSize; y < waterTop; y += gridSize) {
-            g.moveTo(left + 10, y)
-            g.lineTo(this.boundaryRight - 10, y)
-            g.stroke({ color: BALATRO.border, width: 1, alpha: 0.08 })
+            g.moveTo(left, y)
+            g.lineTo(this.boundaryRight, y)
+            g.stroke({ color: BALATRO.border, width: 1, alpha: 0.06 })
         }
     }
 
@@ -1157,112 +1289,90 @@ export class WobblediverScene extends BaseMiniGameScene {
         const right = this.boundaryRight
         const bottom = this.boundaryBottom - 80  // Stop above water
         const wallHeight = bottom - top
-        const dangerWidth = 12
+        const dangerWidth = 10
 
         // === LEFT WALL - Dangerous gradient zone ===
         // Dark inner gradient
         for (let i = 0; i < dangerWidth; i++) {
-            const alpha = 0.3 * (1 - i / dangerWidth)
+            const alpha = 0.25 * (1 - i / dangerWidth)
             g.rect(left + i, top, 1, wallHeight)
             g.fill({ color: 0x1a0a0a, alpha })
         }
         // Red glow
-        for (let i = 0; i < 8; i++) {
-            const alpha = 0.15 * (1 - i / 8)
+        for (let i = 0; i < 6; i++) {
+            const alpha = 0.12 * (1 - i / 6)
             g.rect(left + i, top, 1, wallHeight)
             g.fill({ color: BALATRO.red, alpha })
         }
-        // Sharp danger edge line
-        g.rect(left, top, 2, wallHeight)
-        g.fill({ color: BALATRO.red, alpha: 0.6 })
 
-        // Left wall spikes/thorns
-        const spikeCount = Math.floor(wallHeight / 40)
+        // Left wall horizontal spikes/thorns (pointing right)
+        const spikeSpacing = 30
+        const spikeCount = Math.floor(wallHeight / spikeSpacing)
         for (let i = 0; i < spikeCount; i++) {
-            const spikeY = top + 30 + i * 40
-            const spikeSize = 8 + (i % 2) * 4
-            // Spike shape
-            g.moveTo(left, spikeY - spikeSize / 2)
-            g.lineTo(left + spikeSize, spikeY)
-            g.lineTo(left, spikeY + spikeSize / 2)
+            const spikeY = top + 20 + i * spikeSpacing
+            const spikeWidth = 14 + (i % 3) * 3  // Horizontal length (pointing inward)
+            const spikeHeight = 8 + (i % 2) * 2   // Vertical thickness
+
+            // Main spike shape (horizontal triangle pointing right)
+            g.moveTo(left, spikeY - spikeHeight / 2)
+            g.lineTo(left + spikeWidth, spikeY)
+            g.lineTo(left, spikeY + spikeHeight / 2)
             g.closePath()
-            g.fill({ color: BALATRO.red, alpha: 0.5 })
-            // Spike glow
-            g.moveTo(left, spikeY - spikeSize / 2 - 2)
-            g.lineTo(left + spikeSize + 4, spikeY)
-            g.lineTo(left, spikeY + spikeSize / 2 + 2)
+            g.fill({ color: BALATRO.red, alpha: 0.55 })
+
+            // Spike glow/shadow
+            g.moveTo(left, spikeY - spikeHeight / 2 - 1)
+            g.lineTo(left + spikeWidth + 3, spikeY)
+            g.lineTo(left, spikeY + spikeHeight / 2 + 1)
             g.closePath()
-            g.fill({ color: BALATRO.red, alpha: 0.15 })
+            g.fill({ color: BALATRO.red, alpha: 0.12 })
         }
 
         // === RIGHT WALL - Dangerous gradient zone ===
         // Dark inner gradient
         for (let i = 0; i < dangerWidth; i++) {
-            const alpha = 0.3 * (1 - i / dangerWidth)
+            const alpha = 0.25 * (1 - i / dangerWidth)
             g.rect(right - i - 1, top, 1, wallHeight)
             g.fill({ color: 0x1a0a0a, alpha })
         }
         // Red glow
-        for (let i = 0; i < 8; i++) {
-            const alpha = 0.15 * (1 - i / 8)
+        for (let i = 0; i < 6; i++) {
+            const alpha = 0.12 * (1 - i / 6)
             g.rect(right - i - 1, top, 1, wallHeight)
             g.fill({ color: BALATRO.red, alpha })
         }
-        // Sharp danger edge line
-        g.rect(right - 2, top, 2, wallHeight)
-        g.fill({ color: BALATRO.red, alpha: 0.6 })
 
-        // Right wall spikes/thorns
+        // Right wall horizontal spikes/thorns (pointing left)
         for (let i = 0; i < spikeCount; i++) {
-            const spikeY = top + 50 + i * 40  // Offset from left wall
-            const spikeSize = 8 + ((i + 1) % 2) * 4
-            // Spike shape
-            g.moveTo(right, spikeY - spikeSize / 2)
-            g.lineTo(right - spikeSize, spikeY)
-            g.lineTo(right, spikeY + spikeSize / 2)
+            const spikeY = top + 35 + i * spikeSpacing  // Offset from left wall
+            const spikeWidth = 14 + ((i + 1) % 3) * 3
+            const spikeHeight = 8 + ((i + 1) % 2) * 2
+
+            // Main spike shape (horizontal triangle pointing left)
+            g.moveTo(right, spikeY - spikeHeight / 2)
+            g.lineTo(right - spikeWidth, spikeY)
+            g.lineTo(right, spikeY + spikeHeight / 2)
             g.closePath()
-            g.fill({ color: BALATRO.red, alpha: 0.5 })
-            // Spike glow
-            g.moveTo(right, spikeY - spikeSize / 2 - 2)
-            g.lineTo(right - spikeSize - 4, spikeY)
-            g.lineTo(right, spikeY + spikeSize / 2 + 2)
+            g.fill({ color: BALATRO.red, alpha: 0.55 })
+
+            // Spike glow/shadow
+            g.moveTo(right, spikeY - spikeHeight / 2 - 1)
+            g.lineTo(right - spikeWidth - 3, spikeY)
+            g.lineTo(right, spikeY + spikeHeight / 2 + 1)
             g.closePath()
-            g.fill({ color: BALATRO.red, alpha: 0.15 })
+            g.fill({ color: BALATRO.red, alpha: 0.12 })
         }
 
         // === TOP BOUNDARY ===
         // Dark gradient
-        for (let i = 0; i < 8; i++) {
-            const alpha = 0.25 * (1 - i / 8)
+        for (let i = 0; i < 6; i++) {
+            const alpha = 0.2 * (1 - i / 6)
             g.rect(left, top + i, right - left, 1)
             g.fill({ color: 0x1a0a0a, alpha })
         }
-        // Red glow line
-        g.rect(left, top, right - left, 2)
-        g.fill({ color: BALATRO.red, alpha: 0.5 })
-
-        // === CORNER DANGER INDICATORS ===
-        const cornerSize = 20
-        // Top-left corner
-        g.moveTo(left, top)
-        g.lineTo(left + cornerSize, top)
-        g.lineTo(left, top + cornerSize)
-        g.closePath()
-        g.fill({ color: BALATRO.red, alpha: 0.3 })
-
-        // Top-right corner
-        g.moveTo(right, top)
-        g.lineTo(right - cornerSize, top)
-        g.lineTo(right, top + cornerSize)
-        g.closePath()
-        g.fill({ color: BALATRO.red, alpha: 0.3 })
-
-        // U-shaped outer border glow
-        g.moveTo(left - 2, bottom)
-        g.lineTo(left - 2, top)
-        g.lineTo(right + 2, top)
-        g.lineTo(right + 2, bottom)
-        g.stroke({ color: BALATRO.red, width: 1, alpha: 0.2 })
+        // Subtle red glow line
+        g.rect(left, top, right - left, 1)
+        g.fill({ color: BALATRO.red, alpha: 0.4 })
     }
 
     private setupOutText(): void {
@@ -2685,6 +2795,9 @@ export class WobblediverScene extends BaseMiniGameScene {
             const pulse = 0.6 + Math.sin(Date.now() / 150) * 0.4
             this.instructionText.alpha = pulse
         }
+
+        // Update custom HUD (hearts above player, corner info)
+        this.updateCustomHUD()
 
         // Round transition
         if (this.roundTransitionTime > 0) {

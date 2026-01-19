@@ -394,4 +394,15 @@ export class MiniGameHUD {
         }
         animate()
     }
+
+    /**
+     * Show or hide all HUD elements
+     * Useful for games with custom HUD implementations
+     */
+    setVisible(visible: boolean): void {
+        this.scoreContainer.visible = visible
+        this.timerContainer.visible = visible
+        this.livesContainer.visible = visible
+        // Keep feedbackText separate - it shows important feedback like "PERFECT!"
+    }
 }
