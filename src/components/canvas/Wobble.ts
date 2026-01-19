@@ -15,6 +15,7 @@ export type WobbleExpression =
     | 'excited'
     | 'sleepy'
     | 'angry'
+    | 'eating'
     | 'none'
 
 /**
@@ -249,6 +250,12 @@ export class Wobble extends Container {
 
     private options: Required<WobbleOptions>
 
+    // Gulp animation state
+    private gulpPhase = 0 // 0 = not gulping, > 0 = animation progress
+    private gulpScale = 1 // Body scale during gulp
+    private preGulpExpression: WobbleExpression = 'happy'
+    private gulpAnimationId: number | null = null
+
     constructor(options: WobbleOptions) {
         super()
         this.options = { ...defaultOptions, ...options }
@@ -395,6 +402,10 @@ export class Wobble extends Container {
 
         const bodyColor = this.getColor(color)
 
+        // Apply gulp scale effect
+        const gulpScaleX = scaleX * this.gulpScale
+        const gulpScaleY = scaleY * (2 - this.gulpScale) // Inverse scale for Y to create bulge effect
+
         // Scale up certain shapes to make room for face
         const shapeScale: Record<WobbleShape, number> = {
             circle: 1,
@@ -410,26 +421,26 @@ export class Wobble extends Container {
         // Draw body based on shape type
         switch (shape) {
             case 'square':
-                this.drawSquareBody(g, scaledSize, scaleX, scaleY, wobblePhase)
+                this.drawSquareBody(g, scaledSize, gulpScaleX, gulpScaleY, wobblePhase)
                 break
             case 'triangle':
-                this.drawTriangleBody(g, scaledSize, scaleX, scaleY, wobblePhase)
+                this.drawTriangleBody(g, scaledSize, gulpScaleX, gulpScaleY, wobblePhase)
                 break
             case 'star':
-                this.drawStarBody(g, scaledSize, scaleX, scaleY, wobblePhase)
+                this.drawStarBody(g, scaledSize, gulpScaleX, gulpScaleY, wobblePhase)
                 break
             case 'diamond':
-                this.drawDiamondBody(g, scaledSize, scaleX, scaleY, wobblePhase)
+                this.drawDiamondBody(g, scaledSize, gulpScaleX, gulpScaleY, wobblePhase)
                 break
             case 'pentagon':
-                this.drawPentagonBody(g, scaledSize, scaleX, scaleY, wobblePhase)
+                this.drawPentagonBody(g, scaledSize, gulpScaleX, gulpScaleY, wobblePhase)
                 break
             case 'shadow':
-                this.drawShadowBody(g, scaledSize, scaleX, scaleY, wobblePhase)
+                this.drawShadowBody(g, scaledSize, gulpScaleX, gulpScaleY, wobblePhase)
                 break
             default:
                 // 원형 워블 (기본)
-                this.drawLocoRocoBody(g, size, scaleX, scaleY, wobblePhase)
+                this.drawLocoRocoBody(g, size, gulpScaleX, gulpScaleY, wobblePhase)
         }
         g.fill(bodyColor)
         g.stroke({ color: LOCOROCO_OUTLINE, width: 3 })
@@ -886,6 +897,21 @@ export class Wobble extends Container {
                 g.lineTo(cx + side * bigEyeSize * 0.3, browY + side * bigEyeSize * 0.2)
                 g.stroke({ color: LOCOROCO_OUTLINE, width: 3, cap: 'round' })
             })
+        } else if (expression === 'eating') {
+            // Squinted happy eyes while eating (like >ω<)
+            ;[-1, 1].forEach((side) => {
+                const cx = side * eyeSpacing
+                // Draw as thick arcs - very squinted
+                g.moveTo(cx - bigEyeSize * 0.8, eyeY)
+                g.quadraticCurveTo(cx, eyeY - bigEyeSize * 0.6, cx + bigEyeSize * 0.8, eyeY)
+                g.stroke({ color: LOCOROCO_OUTLINE, width: 3.5, cap: 'round' })
+            })
+            // Add blush marks
+            ;[-1, 1].forEach((side) => {
+                const cx = side * (eyeSpacing + bigEyeSize * 0.5)
+                g.ellipse(cx, eyeY + bigEyeSize * 0.8, bigEyeSize * 0.5, bigEyeSize * 0.3)
+                g.fill({ color: 0xff6b6b, alpha: 0.5 })
+            })
         } else {
             ;[-1, 1].forEach((side) => {
                 const cx = side * eyeSpacing + lookX * 0.5
@@ -974,6 +1000,26 @@ export class Wobble extends Container {
             // Small frowning mouth
             g.ellipse(0, mouthY, mouthSize * 0.5, mouthSize * 0.35)
             g.fill(LOCOROCO_OUTLINE)
+        } else if (expression === 'eating') {
+            // HUGE open mouth like Kirby inhaling - very dramatic!
+            const baseSize = mouthSize * 2.5
+            const openSize = baseSize * (0.8 + this.gulpPhase * 0.5)
+
+            // Outer mouth (black outline)
+            g.circle(0, mouthY + openSize * 0.2, openSize)
+            g.fill(LOCOROCO_OUTLINE)
+
+            // Inner mouth (dark red/pink)
+            g.circle(0, mouthY + openSize * 0.2, openSize * 0.85)
+            g.fill(0x2a0a0a)
+
+            // Tongue at bottom
+            g.ellipse(0, mouthY + openSize * 0.5, openSize * 0.6, openSize * 0.35)
+            g.fill(0xe87e4d)
+
+            // Highlight on tongue
+            g.ellipse(-openSize * 0.15, mouthY + openSize * 0.4, openSize * 0.15, openSize * 0.1)
+            g.fill({ color: 0xffaa88, alpha: 0.5 })
         } else {
             g.moveTo(-mouthWidth * 0.6, mouthY - mouthSize * 0.15)
             g.quadraticCurveTo(
@@ -1025,6 +1071,70 @@ export class Wobble extends Container {
      */
     public getOptions(): Required<WobbleOptions> {
         return { ...this.options }
+    }
+
+    /**
+     * Trigger gulp/eating animation (like Kirby eating)
+     * Uses internal timer that persists across draw() calls
+     * @param duration Animation duration in milliseconds (default 350ms)
+     */
+    public gulp(duration: number = 350): void {
+        // Store the current expression to restore after
+        if (!this.isGulping()) {
+            this.preGulpExpression = this.options.expression
+        }
+
+        // Start gulp animation timer - very dramatic!
+        this.gulpPhase = 1 // Start at peak
+        this.gulpScale = 1.5 // Start very expanded (50% bigger)
+
+        // Set eating expression
+        this.options.expression = 'eating'
+
+        // Clear any existing timeout
+        if (this.gulpAnimationId !== null) {
+            clearTimeout(this.gulpAnimationId as unknown as number)
+        }
+
+        // Schedule end of animation
+        this.gulpAnimationId = setTimeout(() => {
+            this.gulpScale = 1
+            this.gulpPhase = 0
+            this.options.expression = this.preGulpExpression
+            this.gulpAnimationId = null
+        }, duration) as unknown as number
+    }
+
+    /**
+     * Update gulp animation state - call this every frame
+     * @param deltaTime Time since last frame in seconds
+     */
+    public updateGulp(deltaTime: number): void {
+        if (this.gulpPhase > 0) {
+            // Decay gulp phase over time (slower for more visible effect)
+            this.gulpPhase = Math.max(0, this.gulpPhase - deltaTime * 3)
+            // Scale follows phase with dramatic effect (up to 50% bigger)
+            this.gulpScale = 1 + this.gulpPhase * 0.5
+
+            if (this.gulpPhase <= 0) {
+                this.gulpScale = 1
+                this.options.expression = this.preGulpExpression
+            }
+        }
+    }
+
+    /**
+     * Check if currently in gulp animation
+     */
+    public isGulping(): boolean {
+        return this.gulpPhase > 0
+    }
+
+    /**
+     * Get current gulp phase (0-1) for external animation sync
+     */
+    public getGulpPhase(): number {
+        return this.gulpPhase
     }
 }
 

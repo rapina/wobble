@@ -186,6 +186,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private auraRingsContainer: Container | null = null
     private auraAnimPhase = 0 // For animated aura effects
 
+    // Beat Pulse visual
+    private beatPulseGraphics: Graphics | null = null
+
     // Passive state tracking
     private momentumSpeedBonus = 0
     private consecutiveHits = 0
@@ -736,6 +739,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
         const oldLevel = this.playerProgress.level
         this.playerProgress.xp += xp
 
+        // Trigger gulp animation when eating XP orbs (Kirby-style)
+        if (this.player) {
+            this.player.gulp(200)
+        }
+
         const newLevel = getLevelFromXp(this.playerProgress.xp)
         if (newLevel > oldLevel) {
             const levelsGained = newLevel - oldLevel
@@ -1091,10 +1099,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
     /**
      * Auto-fire projectiles based on fire rate
-     * Only fires if player has a projectile-based skill active
+     * Only fires if player has a projectile-based skill active (kinetic-shot)
      */
     private updateAutoFire(deltaSeconds: number): void {
-        // Check if player has projectile capability (Kinetic Shot or similar)
+        // Only fire if player has kinetic-shot skill (projectile base skill)
+        const hasProjectileSkill = this.playerSkills.some((s) => s.skillId === 'kinetic-shot')
+        if (!hasProjectileSkill) return
+
         // Fire rate is controlled by fireRateMultiplier (lower = faster)
         const fireInterval = this.baseFireInterval * this.stats.fireRateMultiplier
 
@@ -2402,49 +2413,138 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Track which auras to render
         let yOffset = 0 // For stacking multiple aura rings
 
-        // Radiant Aura - warm radiation ring
+        // Radiant Aura - Stefan-Boltzmann radiation (P = σAT⁴)
         if (this.stats.auraRadius > 0 && this.stats.radiationDamage > 0) {
             const auraGraphics = new Graphics()
-            const pulseScale = 1 + Math.sin(this.auraAnimPhase * 2) * 0.05
-            const radius = this.stats.auraRadius * pulseScale
+            const radius = this.stats.auraRadius
+            const intensity = Math.min(1, this.stats.radiationDamage / 20)
 
-            // Outer glow
-            auraGraphics.circle(0, 0, radius + 10)
-            auraGraphics.fill({ color: 0xff6644, alpha: 0.05 })
-
-            // Main ring
+            // Outer boundary - effect range
             auraGraphics.circle(0, 0, radius)
-            auraGraphics.stroke({
-                color: 0xff6644,
-                width: 3,
-                alpha: 0.3 + Math.sin(this.auraAnimPhase * 3) * 0.1,
-            })
+            auraGraphics.stroke({ color: 0xff6644, width: 2, alpha: 0.25 })
 
-            // Inner pulsing glow
-            auraGraphics.circle(0, 0, radius * 0.8)
-            auraGraphics.stroke({ color: 0xff8866, width: 2, alpha: 0.2 })
+            // Inner hot zone - gradient fill
+            auraGraphics.circle(0, 0, radius * 0.5)
+            auraGraphics.fill({ color: 0xff4422, alpha: 0.1 * intensity })
+            auraGraphics.circle(0, 0, radius * 0.25)
+            auraGraphics.fill({ color: 0xff6644, alpha: 0.15 * intensity })
+
+            // Radiating heat waves (expanding rings)
+            const waveCount = 3
+            for (let i = 0; i < waveCount; i++) {
+                const phase = (this.auraAnimPhase * 0.8 + i / waveCount) % 1
+                const waveRadius = radius * (0.2 + phase * 0.8)
+                const waveAlpha = (1 - phase) * 0.25 * intensity
+
+                if (waveAlpha > 0.05) {
+                    auraGraphics.circle(0, 0, waveRadius)
+                    auraGraphics.stroke({ color: 0xff7755, width: 2, alpha: waveAlpha })
+                }
+            }
+
+            // Wavy radial heat lines (like heat distortion)
+            const lineCount = 12
+            for (let i = 0; i < lineCount; i++) {
+                const angle = (i / lineCount) * Math.PI * 2
+                const waveOffset = Math.sin(this.auraAnimPhase * 3 + i * 0.5) * 0.1
+
+                const innerR = radius * 0.3
+                const outerR = radius * 0.9
+                const midR = (innerR + outerR) / 2
+
+                auraGraphics.moveTo(
+                    Math.cos(angle) * innerR,
+                    Math.sin(angle) * innerR
+                )
+                auraGraphics.quadraticCurveTo(
+                    Math.cos(angle + waveOffset) * midR,
+                    Math.sin(angle + waveOffset) * midR,
+                    Math.cos(angle) * outerR,
+                    Math.sin(angle) * outerR
+                )
+                auraGraphics.stroke({ color: 0xff8866, width: 1, alpha: 0.15 })
+            }
+
+            // Heat particles rising outward
+            const particleCount = 10
+            for (let i = 0; i < particleCount; i++) {
+                const phase = (this.auraAnimPhase + i * 0.1) % 1
+                const pAngle = (i / particleCount) * Math.PI * 2 + Math.sin(phase * Math.PI * 2) * 0.2
+                const pDist = radius * (0.2 + phase * 0.7)
+                const px = Math.cos(pAngle) * pDist
+                const py = Math.sin(pAngle) * pDist
+                const pAlpha = Math.sin(phase * Math.PI) * 0.4 * intensity
+
+                if (pAlpha > 0.1) {
+                    auraGraphics.circle(px, py, 2 + intensity * 2)
+                    auraGraphics.fill({ color: 0xffaa77, alpha: pAlpha })
+                }
+            }
 
             auraGraphics.position.set(this.playerX, this.playerY)
             this.auraRingsContainer.addChild(auraGraphics)
             yOffset += 5
         }
 
-        // Chaos Field - chaotic swirling ring
+        // Chaos Field - entropy visualization (ΔS > 0)
         if (this.stats.chaosFieldRadius > 0 && this.stats.chaosStrength > 0) {
             const chaosGraphics = new Graphics()
             const radius = this.stats.chaosFieldRadius
+            const strength = this.stats.chaosStrength
 
-            // Draw multiple offset circles for chaotic effect
-            for (let i = 0; i < 3; i++) {
-                const offsetAngle = this.auraAnimPhase * (1 + i * 0.3) + (i * Math.PI * 2) / 3
-                const offsetX = Math.cos(offsetAngle) * 5
-                const offsetY = Math.sin(offsetAngle) * 5
-                chaosGraphics.circle(offsetX, offsetY, radius - i * 5)
-                chaosGraphics.stroke({
-                    color: 0x9b59b6,
-                    width: 2 - i * 0.5,
-                    alpha: 0.25 - i * 0.05,
-                })
+            // Outer boundary - wobbling/distorted circle showing effect range
+            const boundarySegments = 24
+            chaosGraphics.moveTo(radius, 0)
+            for (let i = 1; i <= boundarySegments; i++) {
+                const angle = (i / boundarySegments) * Math.PI * 2
+                const wobble = Math.sin(angle * 5 + this.auraAnimPhase * 3) * strength * 0.08
+                const r = radius * (1 + wobble)
+                chaosGraphics.lineTo(Math.cos(angle) * r, Math.sin(angle) * r)
+            }
+            chaosGraphics.closePath()
+            chaosGraphics.stroke({ color: 0x9b59b6, width: 2, alpha: 0.35 })
+
+            // Inner chaotic zone fill
+            chaosGraphics.circle(0, 0, radius * 0.9)
+            chaosGraphics.fill({ color: 0x9b59b6, alpha: 0.06 })
+
+            // Random entropy particles floating inside the field
+            const particleCount = 16
+            for (let i = 0; i < particleCount; i++) {
+                // Use deterministic pseudo-random based on index and phase
+                const seed = i * 137.5 + this.auraAnimPhase * 0.5
+                const randAngle = (seed % 6.28)
+                const randDist = ((seed * 0.618) % 1) * radius * 0.85
+                const px = Math.cos(randAngle) * randDist
+                const py = Math.sin(randAngle) * randDist
+
+                // Varying sizes and alpha for chaos effect
+                const size = 2 + (i % 3)
+                const alpha = 0.2 + Math.sin(seed * 2) * 0.15
+
+                chaosGraphics.circle(px, py, size)
+                chaosGraphics.fill({ color: 0xbb6bd9, alpha })
+            }
+
+            // Chaotic motion arrows showing random perturbation directions
+            const arrowCount = 6
+            for (let i = 0; i < arrowCount; i++) {
+                const angle = (i / arrowCount) * Math.PI * 2 + this.auraAnimPhase * 0.5
+                const dist = radius * 0.6
+                const ax = Math.cos(angle) * dist
+                const ay = Math.sin(angle) * dist
+
+                // Arrow points in random-looking direction (changes with phase)
+                const randomDir = angle + Math.sin(this.auraAnimPhase * 3 + i * 2) * Math.PI * 0.5
+                const arrowLen = 12 * strength
+                const arrowAlpha = 0.25 + Math.sin(this.auraAnimPhase * 2 + i) * 0.1
+
+                chaosGraphics.moveTo(ax, ay)
+                chaosGraphics.lineTo(
+                    ax + Math.cos(randomDir) * arrowLen,
+                    ay + Math.sin(randomDir) * arrowLen
+                )
+                chaosGraphics.stroke({ color: 0xd68fff, width: 1.5, alpha: arrowAlpha })
             }
 
             chaosGraphics.position.set(this.playerX, this.playerY)
@@ -2452,83 +2552,276 @@ export class PhysicsSurvivorScene extends AdventureScene {
             yOffset += 5
         }
 
-        // Magnetic Shield - magnetic field lines
+        // Magnetic Shield - magnetic field lines (Lorentz force visualization)
         if (this.stats.shieldRadius > 0 && this.stats.deflectionStrength > 0) {
             const shieldGraphics = new Graphics()
             const radius = this.stats.shieldRadius
+            const strength = this.stats.deflectionStrength
 
-            // Draw magnetic field line pattern
-            const lineCount = 8
-            for (let i = 0; i < lineCount; i++) {
-                const angle = (i / lineCount) * Math.PI * 2 + this.auraAnimPhase * 0.5
-                const x1 = Math.cos(angle) * radius * 0.6
-                const y1 = Math.sin(angle) * radius * 0.6
-                const x2 = Math.cos(angle) * radius
-                const y2 = Math.sin(angle) * radius
+            // Shield boundary - pulsing circle showing effect radius
+            const pulseScale = 1 + Math.sin(this.auraAnimPhase * Math.PI * 2) * 0.03
+            const boundaryAlpha = 0.2 + strength * 0.1
+            shieldGraphics.circle(0, 0, radius * pulseScale)
+            shieldGraphics.stroke({ color: 0x3498db, width: 2, alpha: boundaryAlpha })
 
-                shieldGraphics.moveTo(x1, y1)
-                shieldGraphics.lineTo(x2, y2)
+            // Inner activation zone
+            shieldGraphics.circle(0, 0, radius * 0.3)
+            shieldGraphics.fill({ color: 0x3498db, alpha: 0.08 })
+
+            // Curved magnetic field lines (showing deflection paths)
+            const fieldLineCount = 12
+            for (let i = 0; i < fieldLineCount; i++) {
+                const baseAngle = (i / fieldLineCount) * Math.PI * 2
+                const rotationOffset = this.auraAnimPhase * 0.3
+
+                // Draw curved field line (like B-field around a magnet)
+                const segments = 12
+                const curveStrength = strength * 0.4
+
+                shieldGraphics.moveTo(
+                    Math.cos(baseAngle + rotationOffset) * radius * 0.35,
+                    Math.sin(baseAngle + rotationOffset) * radius * 0.35
+                )
+
+                for (let s = 1; s <= segments; s++) {
+                    const t = s / segments
+                    const r = radius * (0.35 + t * 0.65)
+                    const curveOffset = Math.sin(t * Math.PI) * curveStrength * (i % 2 === 0 ? 1 : -1)
+                    const angle = baseAngle + rotationOffset + curveOffset
+                    shieldGraphics.lineTo(Math.cos(angle) * r, Math.sin(angle) * r)
+                }
+
+                const lineAlpha = 0.15 + Math.sin(this.auraAnimPhase * Math.PI * 4 + i * 0.5) * 0.1
+                shieldGraphics.stroke({ color: 0x5dade2, width: 1.5, alpha: lineAlpha })
             }
-            shieldGraphics.stroke({ color: 0x3498db, width: 2, alpha: 0.35 })
 
-            // Outer ring
-            shieldGraphics.circle(0, 0, radius)
-            shieldGraphics.stroke({ color: 0x3498db, width: 2, alpha: 0.25 })
+            // Rotating deflection arrows showing the Lorentz force direction
+            const arrowCount = 6
+            for (let i = 0; i < arrowCount; i++) {
+                const angle = (i / arrowCount) * Math.PI * 2 + this.auraAnimPhase
+                const arrowDist = radius * 0.7
+                const ax = Math.cos(angle) * arrowDist
+                const ay = Math.sin(angle) * arrowDist
+                const tangentAngle = angle + Math.PI / 2
+                const arrowLen = 12 * strength
+                const arrowAlpha = 0.4 + Math.sin(this.auraAnimPhase * Math.PI * 2 + i) * 0.2
+
+                // Arrow body
+                shieldGraphics.moveTo(
+                    ax - Math.cos(tangentAngle) * arrowLen * 0.5,
+                    ay - Math.sin(tangentAngle) * arrowLen * 0.5
+                )
+                shieldGraphics.lineTo(
+                    ax + Math.cos(tangentAngle) * arrowLen * 0.5,
+                    ay + Math.sin(tangentAngle) * arrowLen * 0.5
+                )
+                shieldGraphics.stroke({ color: 0x85c1e9, width: 2, alpha: arrowAlpha })
+
+                // Arrow head
+                const headX = ax + Math.cos(tangentAngle) * arrowLen * 0.5
+                const headY = ay + Math.sin(tangentAngle) * arrowLen * 0.5
+                shieldGraphics.moveTo(headX, headY)
+                shieldGraphics.lineTo(headX - Math.cos(tangentAngle - 0.5) * 5, headY - Math.sin(tangentAngle - 0.5) * 5)
+                shieldGraphics.moveTo(headX, headY)
+                shieldGraphics.lineTo(headX - Math.cos(tangentAngle + 0.5) * 5, headY - Math.sin(tangentAngle + 0.5) * 5)
+                shieldGraphics.stroke({ color: 0x85c1e9, width: 2, alpha: arrowAlpha })
+            }
+
+            // Animated particles spiraling (charged particles being deflected)
+            const particleCount = 8
+            for (let i = 0; i < particleCount; i++) {
+                const particlePhase = (this.auraAnimPhase * 1.5 + i / particleCount) % 1
+                const spiralAngle = particlePhase * Math.PI * 4 + i * (Math.PI / 4)
+                const spiralDist = radius * (0.4 + particlePhase * 0.5)
+                const px = Math.cos(spiralAngle) * spiralDist
+                const py = Math.sin(spiralAngle) * spiralDist
+                const particleAlpha = Math.sin(particlePhase * Math.PI) * 0.7
+
+                if (particleAlpha > 0.1) {
+                    shieldGraphics.circle(px, py, 3 + strength * 2)
+                    shieldGraphics.fill({ color: 0xaed6f1, alpha: particleAlpha })
+                }
+            }
+
+            // Center magnetic pole indicator
+            const bAlpha = 0.3 + Math.sin(this.auraAnimPhase * Math.PI * 2) * 0.1
+            shieldGraphics.circle(0, 0, 8)
+            shieldGraphics.stroke({ color: 0x3498db, width: 2, alpha: bAlpha })
+            shieldGraphics.moveTo(-5, 0)
+            shieldGraphics.lineTo(5, 0)
+            shieldGraphics.moveTo(0, -5)
+            shieldGraphics.lineTo(0, 5)
+            shieldGraphics.stroke({ color: 0x3498db, width: 1.5, alpha: bAlpha })
 
             shieldGraphics.position.set(this.playerX, this.playerY)
             this.auraRingsContainer.addChild(shieldGraphics)
             yOffset += 5
         }
 
-        // Static Repulsion - electric sparks
+        // Static Repulsion - Coulomb force visualization (F = kq₁q₂/r²)
         if (this.stats.repulsionRadius > 0 && this.stats.repulsionForce > 0) {
             const repulseGraphics = new Graphics()
             const radius = this.stats.repulsionRadius
+            const force = Math.min(1, this.stats.repulsionForce / 200)
 
-            // Electric arc pattern
-            const arcCount = 6
-            for (let i = 0; i < arcCount; i++) {
-                const baseAngle = (i / arcCount) * Math.PI * 2 + this.auraAnimPhase
-                const sparkVariation = Math.sin(this.auraAnimPhase * 5 + i) * 0.3
+            // Outer boundary - pulsing ring showing effect range
+            const pulseScale = 1 + Math.sin(this.auraAnimPhase * 3) * 0.03
+            repulseGraphics.circle(0, 0, radius * pulseScale)
+            repulseGraphics.stroke({ color: 0xf1c40f, width: 2, alpha: 0.25 })
 
-                // Draw jagged lightning-style line
-                const innerR = radius * 0.5
-                const outerR = radius * (0.9 + sparkVariation * 0.1)
+            // Inner charged zone
+            repulseGraphics.circle(0, 0, radius * 0.2)
+            repulseGraphics.fill({ color: 0xf1c40f, alpha: 0.15 })
+            repulseGraphics.circle(0, 0, radius * 0.1)
+            repulseGraphics.fill({ color: 0xffffff, alpha: 0.3 })
 
-                repulseGraphics.moveTo(Math.cos(baseAngle) * innerR, Math.sin(baseAngle) * innerR)
-                repulseGraphics.lineTo(
-                    Math.cos(baseAngle + 0.1) * (innerR + outerR) * 0.5,
-                    Math.sin(baseAngle + 0.1) * (innerR + outerR) * 0.5
+            // Outward repulsion arrows showing force direction
+            const arrowCount = 8
+            for (let i = 0; i < arrowCount; i++) {
+                const angle = (i / arrowCount) * Math.PI * 2
+                const innerDist = radius * 0.25
+                const outerDist = radius * (0.6 + force * 0.2)
+                const arrowAlpha = 0.3 + Math.sin(this.auraAnimPhase * 4 + i) * 0.15
+
+                // Arrow shaft
+                repulseGraphics.moveTo(
+                    Math.cos(angle) * innerDist,
+                    Math.sin(angle) * innerDist
                 )
-                repulseGraphics.lineTo(Math.cos(baseAngle) * outerR, Math.sin(baseAngle) * outerR)
-            }
-            repulseGraphics.stroke({ color: 0xf1c40f, width: 2, alpha: 0.4 })
+                repulseGraphics.lineTo(
+                    Math.cos(angle) * outerDist,
+                    Math.sin(angle) * outerDist
+                )
+                repulseGraphics.stroke({ color: 0xf39c12, width: 2, alpha: arrowAlpha })
 
-            // Outer ring
-            repulseGraphics.circle(0, 0, radius)
-            repulseGraphics.stroke({ color: 0xf1c40f, width: 1.5, alpha: 0.2 })
+                // Arrow head
+                const headDist = outerDist
+                const headSize = 6
+                repulseGraphics.moveTo(
+                    Math.cos(angle) * headDist,
+                    Math.sin(angle) * headDist
+                )
+                repulseGraphics.lineTo(
+                    Math.cos(angle - 0.3) * (headDist - headSize),
+                    Math.sin(angle - 0.3) * (headDist - headSize)
+                )
+                repulseGraphics.moveTo(
+                    Math.cos(angle) * headDist,
+                    Math.sin(angle) * headDist
+                )
+                repulseGraphics.lineTo(
+                    Math.cos(angle + 0.3) * (headDist - headSize),
+                    Math.sin(angle + 0.3) * (headDist - headSize)
+                )
+                repulseGraphics.stroke({ color: 0xf39c12, width: 2, alpha: arrowAlpha })
+            }
+
+            // Electric spark particles moving outward
+            const sparkCount = 10
+            for (let i = 0; i < sparkCount; i++) {
+                const phase = (this.auraAnimPhase * 2 + i * (1 / sparkCount)) % 1
+                const sparkAngle = (i / sparkCount) * Math.PI * 2 + this.auraAnimPhase * 0.3
+                const sparkDist = radius * (0.2 + phase * 0.7)
+                const sx = Math.cos(sparkAngle) * sparkDist
+                const sy = Math.sin(sparkAngle) * sparkDist
+                const sparkAlpha = Math.sin(phase * Math.PI) * 0.5
+
+                if (sparkAlpha > 0.1) {
+                    repulseGraphics.circle(sx, sy, 2 + force * 2)
+                    repulseGraphics.fill({ color: 0xf7dc6f, alpha: sparkAlpha })
+                }
+            }
+
+            // Jagged lightning arcs (occasional)
+            const arcCount = 4
+            for (let i = 0; i < arcCount; i++) {
+                const arcPhase = (this.auraAnimPhase * 3 + i * 0.7) % 1
+                if (arcPhase < 0.3) {
+                    const angle = (i / arcCount) * Math.PI * 2 + this.auraAnimPhase
+                    const startR = radius * 0.3
+                    const endR = radius * 0.85
+
+                    // Jagged lightning path
+                    repulseGraphics.moveTo(Math.cos(angle) * startR, Math.sin(angle) * startR)
+                    const midR = (startR + endR) / 2
+                    const jag = (Math.random() - 0.5) * 0.3
+                    repulseGraphics.lineTo(
+                        Math.cos(angle + jag) * midR,
+                        Math.sin(angle + jag) * midR
+                    )
+                    repulseGraphics.lineTo(Math.cos(angle) * endR, Math.sin(angle) * endR)
+                    repulseGraphics.stroke({ color: 0xffffff, width: 1.5, alpha: 0.6 * (0.3 - arcPhase) / 0.3 })
+                }
+            }
 
             repulseGraphics.position.set(this.playerX, this.playerY)
             this.auraRingsContainer.addChild(repulseGraphics)
             yOffset += 5
         }
 
-        // Time Warp - time distortion rings
+        // Time Warp - time dilation visualization (t = t₀/√(1-v²/c²))
         if (this.stats.warpRadius > 0 && this.stats.slowFactor > 0) {
             const timeGraphics = new Graphics()
             const radius = this.stats.warpRadius
+            const slowness = Math.min(1, this.stats.slowFactor)
 
-            // Concentric rings with varying speeds (time dilation effect)
+            // Outer boundary - clear effect range
+            timeGraphics.circle(0, 0, radius)
+            timeGraphics.stroke({ color: 0x5d6d7e, width: 2, alpha: 0.3 })
+
+            // Inner distortion zone - darker fill
+            timeGraphics.circle(0, 0, radius * 0.9)
+            timeGraphics.fill({ color: 0x1a252f, alpha: 0.12 * slowness })
+
+            // Warped space-time grid lines (bent inward)
+            const gridLines = 8
+            for (let i = 0; i < gridLines; i++) {
+                const angle = (i / gridLines) * Math.PI * 2
+
+                // Lines curve inward showing space-time warping
+                const startR = radius
+                const midR = radius * (0.5 - slowness * 0.1)
+
+                timeGraphics.moveTo(Math.cos(angle) * startR, Math.sin(angle) * startR)
+                timeGraphics.quadraticCurveTo(
+                    Math.cos(angle) * midR * 0.7,
+                    Math.sin(angle) * midR * 0.7,
+                    0, 0
+                )
+                timeGraphics.stroke({ color: 0x5d6d7e, width: 1, alpha: 0.15 })
+            }
+
+            // Clock hands showing slowed time (move slowly)
+            const slowPhase = this.auraAnimPhase * (1 - slowness * 0.7) // Slower with more slowness
+            const handLen = radius * 0.3
+
+            // Hour hand (slowest)
+            const hourAngle = slowPhase * 0.1 - Math.PI / 2
+            timeGraphics.moveTo(0, 0)
+            timeGraphics.lineTo(Math.cos(hourAngle) * handLen * 0.6, Math.sin(hourAngle) * handLen * 0.6)
+            timeGraphics.stroke({ color: 0x85929e, width: 2, alpha: 0.4 })
+
+            // Minute hand
+            const minAngle = slowPhase * 0.5 - Math.PI / 2
+            timeGraphics.moveTo(0, 0)
+            timeGraphics.lineTo(Math.cos(minAngle) * handLen, Math.sin(minAngle) * handLen)
+            timeGraphics.stroke({ color: 0x85929e, width: 1.5, alpha: 0.35 })
+
+            // Center pivot
+            timeGraphics.circle(0, 0, 4)
+            timeGraphics.fill({ color: 0x5d6d7e, alpha: 0.5 })
+
+            // Concentric time ripples (inner moves slower)
             for (let i = 0; i < 3; i++) {
-                const ringRadius = radius * (0.6 + i * 0.2)
-                const rotationSpeed = 1 - i * 0.3
-                const dashAngle = this.auraAnimPhase * rotationSpeed
+                const ringRadius = radius * (0.4 + i * 0.25)
+                const speed = 1 - i * 0.25 * slowness // Inner rings rotate slower
+                const dashAngle = this.auraAnimPhase * speed
 
-                // Draw dashed ring
-                const segments = 12
+                // Dashed ring
+                const segments = 8
                 for (let j = 0; j < segments; j += 2) {
                     const startAngle = dashAngle + (j / segments) * Math.PI * 2
-                    const endAngle = dashAngle + ((j + 1) / segments) * Math.PI * 2
+                    const endAngle = dashAngle + ((j + 0.8) / segments) * Math.PI * 2
 
                     timeGraphics.moveTo(
                         Math.cos(startAngle) * ringRadius,
@@ -2536,113 +2829,296 @@ export class PhysicsSurvivorScene extends AdventureScene {
                     )
                     timeGraphics.arc(0, 0, ringRadius, startAngle, endAngle)
                 }
+                timeGraphics.stroke({ color: 0x7f8c8d, width: 1.5, alpha: 0.2 - i * 0.04 })
             }
-            timeGraphics.stroke({ color: 0x2c3e50, width: 2, alpha: 0.3 })
+
+            // Slow particles drifting inside
+            const particleCount = 8
+            for (let i = 0; i < particleCount; i++) {
+                // Move very slowly to show time dilation
+                const phase = (this.auraAnimPhase * 0.3 * (1 - slowness * 0.5) + i * 0.125) % 1
+                const pAngle = (i / particleCount) * Math.PI * 2 + this.auraAnimPhase * 0.1
+                const pDist = radius * (0.3 + phase * 0.5)
+                const px = Math.cos(pAngle) * pDist
+                const py = Math.sin(pAngle) * pDist
+                const pAlpha = Math.sin(phase * Math.PI) * 0.4
+
+                if (pAlpha > 0.1) {
+                    timeGraphics.circle(px, py, 3)
+                    timeGraphics.fill({ color: 0xaab7b8, alpha: pAlpha })
+                }
+            }
 
             timeGraphics.position.set(this.playerX, this.playerY)
             this.auraRingsContainer.addChild(timeGraphics)
             yOffset += 5
         }
 
-        // Flow Stream - fluid flow visualization
+        // Flow Stream - fluid flow visualization (Bernoulli's principle)
         if (this.stats.flowSpeed > 0 && this.stats.suctionForce > 0) {
             const flowGraphics = new Graphics()
-            const width = this.stats.streamWidth
+            const streamWidth = this.stats.streamWidth
+            const streamRange = this.stats.flowSpeed * 3 // Match actual effect range
 
             // Flow direction based on player movement
-            const flowDirX =
-                this.playerVx !== 0 || this.playerVy !== 0
-                    ? this.playerVx /
-                      (Math.sqrt(this.playerVx * this.playerVx + this.playerVy * this.playerVy) ||
-                          1)
-                    : 1
-            const flowDirY =
-                this.playerVx !== 0 || this.playerVy !== 0
-                    ? this.playerVy /
-                      (Math.sqrt(this.playerVx * this.playerVx + this.playerVy * this.playerVy) ||
-                          1)
-                    : 0
+            const speed = Math.sqrt(this.playerVx * this.playerVx + this.playerVy * this.playerVy)
+            const flowDirX = speed > 0.1 ? this.playerVx / speed : 1
+            const flowDirY = speed > 0.1 ? this.playerVy / speed : 0
+            const perpX = -flowDirY
+            const perpY = flowDirX
 
-            // Draw flowing lines
-            const lineCount = 5
+            // Draw stream boundary (the actual effect area)
+            const boundaryAlpha = 0.15 + Math.sin(this.auraAnimPhase * Math.PI * 2) * 0.05
+            flowGraphics.moveTo(perpX * streamWidth, perpY * streamWidth)
+            flowGraphics.lineTo(
+                flowDirX * streamRange + perpX * streamWidth,
+                flowDirY * streamRange + perpY * streamWidth
+            )
+            flowGraphics.lineTo(
+                flowDirX * streamRange - perpX * streamWidth,
+                flowDirY * streamRange - perpY * streamWidth
+            )
+            flowGraphics.lineTo(-perpX * streamWidth, -perpY * streamWidth)
+            flowGraphics.closePath()
+            flowGraphics.fill({ color: 0x1abc9c, alpha: boundaryAlpha })
+            flowGraphics.stroke({ color: 0x1abc9c, width: 1, alpha: 0.3 })
+
+            // Draw flowing stream lines (water/fluid effect)
+            const lineCount = 7
             for (let i = 0; i < lineCount; i++) {
-                const offset = ((i - 2) / 2) * width * 0.8
-                const perpX = -flowDirY * offset
-                const perpY = flowDirX * offset
-                const flowPhase = (this.auraAnimPhase * 3 + i * 0.5) % 1
+                const lateralOffset = ((i - (lineCount - 1) / 2) / ((lineCount - 1) / 2)) * streamWidth * 0.8
+                const lineStartX = perpX * lateralOffset
+                const lineStartY = perpY * lateralOffset
 
-                const startX = perpX - flowDirX * 80 * flowPhase
-                const startY = perpY - flowDirY * 80 * flowPhase
-                const endX = perpX + flowDirX * 80 * (1 - flowPhase)
-                const endY = perpY + flowDirY * 80 * (1 - flowPhase)
+                // Multiple animated segments per line
+                const segmentCount = 4
+                for (let s = 0; s < segmentCount; s++) {
+                    const phase = (this.auraAnimPhase * 2 + i * 0.15 + s * 0.25) % 1
+                    const segmentStart = phase * streamRange
+                    const segmentLength = streamRange * 0.2
 
-                flowGraphics.moveTo(startX, startY)
-                flowGraphics.lineTo(endX, endY)
+                    // Fade in/out at edges
+                    const fadeIn = Math.min(1, segmentStart / (streamRange * 0.1))
+                    const fadeOut = Math.min(1, (streamRange - segmentStart) / (streamRange * 0.2))
+                    const alpha = 0.4 * fadeIn * fadeOut
+
+                    if (alpha > 0.05) {
+                        const sx = lineStartX + flowDirX * segmentStart
+                        const sy = lineStartY + flowDirY * segmentStart
+                        const ex = lineStartX + flowDirX * Math.min(segmentStart + segmentLength, streamRange)
+                        const ey = lineStartY + flowDirY * Math.min(segmentStart + segmentLength, streamRange)
+
+                        flowGraphics.moveTo(sx, sy)
+                        flowGraphics.lineTo(ex, ey)
+                        flowGraphics.stroke({ color: 0x2eecbc, width: 2, alpha })
+                    }
+                }
             }
-            flowGraphics.stroke({ color: 0x1abc9c, width: 2, alpha: 0.3 })
+
+            // Draw flow particles/droplets
+            const particleCount = 12
+            for (let i = 0; i < particleCount; i++) {
+                const phase = (this.auraAnimPhase * 1.5 + i * (1 / particleCount)) % 1
+                const dist = phase * streamRange
+                const lateralWave = Math.sin(phase * Math.PI * 4 + i) * streamWidth * 0.3
+                const px = flowDirX * dist + perpX * lateralWave
+                const py = flowDirY * dist + perpY * lateralWave
+
+                // Fade at start and end
+                const particleAlpha = Math.sin(phase * Math.PI) * 0.6
+                const particleSize = 3 + Math.sin(phase * Math.PI) * 2
+
+                if (particleAlpha > 0.1) {
+                    flowGraphics.circle(px, py, particleSize)
+                    flowGraphics.fill({ color: 0x5dffce, alpha: particleAlpha })
+                }
+            }
+
+            // Arrow indicators showing suction direction
+            const arrowCount = 3
+            for (let i = 0; i < arrowCount; i++) {
+                const arrowDist = (i + 1) * (streamRange / (arrowCount + 1))
+                const arrowPhase = (this.auraAnimPhase + i * 0.33) % 1
+                const arrowAlpha = 0.3 + Math.sin(arrowPhase * Math.PI * 2) * 0.15
+
+                // Draw small arrow pointing inward (suction)
+                const arrowX = flowDirX * arrowDist
+                const arrowY = flowDirY * arrowDist
+                const arrowSize = 8
+
+                flowGraphics.moveTo(arrowX - perpX * arrowSize, arrowY - perpY * arrowSize)
+                flowGraphics.lineTo(arrowX, arrowY)
+                flowGraphics.lineTo(arrowX + perpX * arrowSize, arrowY + perpY * arrowSize)
+                flowGraphics.stroke({ color: 0x1abc9c, width: 2, alpha: arrowAlpha })
+            }
 
             flowGraphics.position.set(this.playerX, this.playerY)
             this.auraRingsContainer.addChild(flowGraphics)
             yOffset += 5
         }
 
-        // Magnetic Pull - inward spiraling lines
+        // Magnetic Pull - magnetic field attraction (B = μ₀I/2πr)
         if (this.stats.magneticPullRadius > 0 && this.stats.magneticPullStrength > 0) {
             const pullGraphics = new Graphics()
             const radius = this.stats.magneticPullRadius
+            const strength = Math.min(1, this.stats.magneticPullStrength / 150)
 
-            // Draw spiraling inward lines
-            const spiralCount = 4
-            for (let i = 0; i < spiralCount; i++) {
-                const baseAngle = (i / spiralCount) * Math.PI * 2 + this.auraAnimPhase
-
-                // Spiral from outer to inner
-                const outerX = Math.cos(baseAngle) * radius
-                const outerY = Math.sin(baseAngle) * radius
-                const innerAngle = baseAngle + Math.PI * 0.5
-                const innerX = Math.cos(innerAngle) * radius * 0.3
-                const innerY = Math.sin(innerAngle) * radius * 0.3
-
-                pullGraphics.moveTo(outerX, outerY)
-                pullGraphics.quadraticCurveTo(
-                    Math.cos(baseAngle + 0.3) * radius * 0.6,
-                    Math.sin(baseAngle + 0.3) * radius * 0.6,
-                    innerX,
-                    innerY
-                )
-            }
-            pullGraphics.stroke({ color: 0x34495e, width: 2, alpha: 0.35 })
-
-            // Outer ring
+            // Outer boundary - effect range
             pullGraphics.circle(0, 0, radius)
-            pullGraphics.stroke({ color: 0x34495e, width: 1.5, alpha: 0.2 })
+            pullGraphics.stroke({ color: 0x5d6d7e, width: 2, alpha: 0.25 })
+
+            // Inner magnetic core
+            pullGraphics.circle(0, 0, radius * 0.15)
+            pullGraphics.fill({ color: 0x34495e, alpha: 0.4 })
+
+            // Magnetic field lines (curved, pointing inward)
+            const lineCount = 8
+            for (let i = 0; i < lineCount; i++) {
+                const angle = (i / lineCount) * Math.PI * 2
+
+                // Draw curved field line from outer to center
+                const segments = 8
+                pullGraphics.moveTo(Math.cos(angle) * radius, Math.sin(angle) * radius)
+
+                for (let s = 1; s <= segments; s++) {
+                    const t = s / segments
+                    const r = radius * (1 - t * 0.85)
+                    // Curve slightly as it approaches center
+                    const curveAngle = angle + t * 0.3 * (i % 2 === 0 ? 1 : -1)
+                    pullGraphics.lineTo(Math.cos(curveAngle) * r, Math.sin(curveAngle) * r)
+                }
+
+                pullGraphics.stroke({ color: 0x5d6d7e, width: 1.5, alpha: 0.2 })
+            }
+
+            // Inward pointing arrows showing attraction
+            const arrowCount = 6
+            for (let i = 0; i < arrowCount; i++) {
+                const angle = (i / arrowCount) * Math.PI * 2 + this.auraAnimPhase * 0.5
+                const dist = radius * 0.65
+                const ax = Math.cos(angle) * dist
+                const ay = Math.sin(angle) * dist
+                const arrowAlpha = 0.3 + Math.sin(this.auraAnimPhase * 3 + i) * 0.1
+
+                // Arrow pointing inward (toward center)
+                const inwardAngle = angle + Math.PI
+                const arrowLen = 10 + strength * 5
+
+                pullGraphics.moveTo(ax, ay)
+                pullGraphics.lineTo(
+                    ax + Math.cos(inwardAngle) * arrowLen,
+                    ay + Math.sin(inwardAngle) * arrowLen
+                )
+                pullGraphics.stroke({ color: 0x7f8c8d, width: 2, alpha: arrowAlpha })
+
+                // Arrow head
+                const headX = ax + Math.cos(inwardAngle) * arrowLen
+                const headY = ay + Math.sin(inwardAngle) * arrowLen
+                pullGraphics.moveTo(headX, headY)
+                pullGraphics.lineTo(
+                    headX - Math.cos(inwardAngle - 0.4) * 5,
+                    headY - Math.sin(inwardAngle - 0.4) * 5
+                )
+                pullGraphics.moveTo(headX, headY)
+                pullGraphics.lineTo(
+                    headX - Math.cos(inwardAngle + 0.4) * 5,
+                    headY - Math.sin(inwardAngle + 0.4) * 5
+                )
+                pullGraphics.stroke({ color: 0x7f8c8d, width: 2, alpha: arrowAlpha })
+            }
+
+            // Particles being pulled inward
+            const particleCount = 12
+            for (let i = 0; i < particleCount; i++) {
+                const phase = (this.auraAnimPhase * 1.5 + i * (1 / particleCount)) % 1
+                const pAngle = (i / particleCount) * Math.PI * 2 + i * 0.3
+                // Move from outer to inner (reverse direction shows attraction)
+                const pDist = radius * (1 - phase * 0.8)
+                const px = Math.cos(pAngle) * pDist
+                const py = Math.sin(pAngle) * pDist
+                const pAlpha = Math.sin(phase * Math.PI) * 0.5
+
+                if (pAlpha > 0.1) {
+                    pullGraphics.circle(px, py, 2 + strength * 2)
+                    pullGraphics.fill({ color: 0x85929e, alpha: pAlpha })
+                }
+            }
 
             pullGraphics.position.set(this.playerX, this.playerY)
             this.auraRingsContainer.addChild(pullGraphics)
         }
 
-        // Orbital Strike (aura type) - show orbit path
+        // Orbital Strike (aura type) - Kepler's law visualization (T² ∝ a³)
         if (this.stats.orbitCount > 0 && this.stats.orbitRadius > 0) {
             const orbitGraphics = new Graphics()
             const radius = this.stats.orbitRadius
+            const count = this.stats.orbitCount
 
-            // Orbit path ring
-            orbitGraphics.circle(0, 0, radius)
-            orbitGraphics.stroke({ color: 0x8e44ad, width: 1.5, alpha: 0.2 })
+            // Orbit path ring - dashed for effect range visibility
+            const dashCount = 16
+            for (let i = 0; i < dashCount; i += 2) {
+                const startAngle = (i / dashCount) * Math.PI * 2
+                const endAngle = ((i + 1) / dashCount) * Math.PI * 2
+                orbitGraphics.arc(0, 0, radius, startAngle, endAngle)
+            }
+            orbitGraphics.stroke({ color: 0x8e44ad, width: 1.5, alpha: 0.25 })
+
+            // Satellite positions (actual orbiters shown as glowing points)
+            for (let i = 0; i < count; i++) {
+                const angle = (i / count) * Math.PI * 2 + this.auraAnimPhase * 2
+                const sx = Math.cos(angle) * radius
+                const sy = Math.sin(angle) * radius
+
+                // Satellite glow
+                orbitGraphics.circle(sx, sy, 8)
+                orbitGraphics.fill({ color: 0x8e44ad, alpha: 0.2 })
+                orbitGraphics.circle(sx, sy, 5)
+                orbitGraphics.fill({ color: 0xbb6bd9, alpha: 0.5 })
+                orbitGraphics.circle(sx, sy, 3)
+                orbitGraphics.fill({ color: 0xffffff, alpha: 0.7 })
+
+                // Orbit trail behind each satellite
+                const trailAngle = angle - 0.5
+                orbitGraphics.arc(0, 0, radius, trailAngle, angle)
+                orbitGraphics.stroke({ color: 0x9b59b6, width: 2, alpha: 0.3 })
+            }
 
             orbitGraphics.position.set(this.playerX, this.playerY)
             this.auraRingsContainer.addChild(orbitGraphics)
         }
 
-        // Torque Slash (aura type) - show slash arc
+        // Torque Slash (aura type) - rotating blade visualization (τ = rF sin θ)
         if (this.stats.slashRadius > 0 && this.stats.slashDamage > 0) {
             const slashGraphics = new Graphics()
             const radius = this.stats.slashRadius
 
-            // Slash trail arc
-            const trailLength = Math.PI * 0.5
-            slashGraphics.arc(0, 0, radius, this.slashAngle - trailLength, this.slashAngle)
-            slashGraphics.stroke({ color: 0xc0392b, width: 3, alpha: 0.25 })
+            // Blade effect range boundary
+            slashGraphics.circle(0, 0, radius)
+            slashGraphics.stroke({ color: 0xc0392b, width: 1.5, alpha: 0.15 })
+
+            // Rotating blade arc with motion blur effect
+            const bladeWidth = Math.PI * 0.3
+            const trailLength = Math.PI * 0.6
+
+            // Motion blur trail (fading behind blade)
+            for (let i = 0; i < 5; i++) {
+                const trailAngle = this.slashAngle - (i * 0.15)
+                const trailAlpha = 0.2 * (1 - i / 5)
+                slashGraphics.arc(0, 0, radius, trailAngle - bladeWidth / 2, trailAngle + bladeWidth / 2)
+                slashGraphics.stroke({ color: 0xc0392b, width: 3 - i * 0.4, alpha: trailAlpha })
+            }
+
+            // Main blade arc (current position)
+            slashGraphics.arc(0, 0, radius, this.slashAngle - bladeWidth / 2, this.slashAngle + bladeWidth / 2)
+            slashGraphics.stroke({ color: 0xe74c3c, width: 4, alpha: 0.5 })
+
+            // Blade tip glow
+            const tipX = Math.cos(this.slashAngle) * radius
+            const tipY = Math.sin(this.slashAngle) * radius
+            slashGraphics.circle(tipX, tipY, 6)
+            slashGraphics.fill({ color: 0xe74c3c, alpha: 0.3 })
+            slashGraphics.circle(tipX, tipY, 3)
+            slashGraphics.fill({ color: 0xffffff, alpha: 0.5 })
 
             slashGraphics.position.set(this.playerX, this.playerY)
             this.auraRingsContainer.addChild(slashGraphics)
@@ -2652,31 +3128,78 @@ export class PhysicsSurvivorScene extends AdventureScene {
     /**
      * Beat Pulse (맥놀이 펄스) - periodic damage based on beat frequency
      * Based on beat phenomenon: f_beat = |f1 - f2|
+     * Visual: Two overlapping wave patterns showing interference
      */
     private updateBeatPulse(deltaSeconds: number): void {
-        if (this.stats.beatFreq1 <= 0 || this.stats.beatFreq2 <= 0) return
+        const hasBeatPulse = this.stats.beatFreq1 > 0 && this.stats.beatFreq2 > 0
+
+        // Clean up if skill not active
+        if (!hasBeatPulse) {
+            if (this.beatPulseGraphics) {
+                this.effectContainer.removeChild(this.beatPulseGraphics)
+                this.beatPulseGraphics.destroy()
+                this.beatPulseGraphics = null
+            }
+            return
+        }
+
+        // Create graphics if needed
+        if (!this.beatPulseGraphics) {
+            this.beatPulseGraphics = new Graphics()
+            this.effectContainer.addChild(this.beatPulseGraphics)
+        }
 
         // Calculate beat frequency
         const beatFrequency = Math.abs(this.stats.beatFreq1 - this.stats.beatFreq2)
         if (beatFrequency <= 0) return
 
-        // Update beat phase
+        // Update beat phase (continuous)
         this.beatPhase += deltaSeconds * Math.PI * 2 * beatFrequency
         if (this.beatPhase > Math.PI * 2) {
             this.beatPhase -= Math.PI * 2
         }
 
-        // Beat intensity (0 at node, 1 at antinode)
-        const beatIntensity = Math.abs(Math.cos(this.beatPhase))
+        // Beat envelope: amplitude modulation from interference
+        const beatEnvelope = Math.abs(Math.cos(this.beatPhase))
+        const radius = 80 + this.stats.beatAmplitude * 50
+
+        // Draw beat visualization
+        this.beatPulseGraphics.clear()
+        this.beatPulseGraphics.position.set(this.playerX, this.playerY)
+
+        // Outer ring - shows beat envelope (pulses with beat frequency)
+        const outerAlpha = 0.15 + beatEnvelope * 0.35
+        this.beatPulseGraphics.circle(0, 0, radius)
+        this.beatPulseGraphics.stroke({ color: 0x9966ff, width: 2 + beatEnvelope * 3, alpha: outerAlpha })
+
+        // Inner ring - inverse phase for interference pattern
+        const innerRadius = radius * 0.6
+        const innerAlpha = 0.15 + (1 - beatEnvelope) * 0.2
+        this.beatPulseGraphics.circle(0, 0, innerRadius)
+        this.beatPulseGraphics.stroke({ color: 0x66ffff, width: 1.5, alpha: innerAlpha })
+
+        // Radial lines showing wave nodes (where amplitude is zero)
+        const nodeCount = 8
+        for (let i = 0; i < nodeCount; i++) {
+            const angle = (i / nodeCount) * Math.PI * 2
+            const lineAlpha = 0.1 + beatEnvelope * 0.15
+            const x1 = Math.cos(angle) * innerRadius
+            const y1 = Math.sin(angle) * innerRadius
+            const x2 = Math.cos(angle) * radius
+            const y2 = Math.sin(angle) * radius
+            this.beatPulseGraphics.moveTo(x1, y1)
+            this.beatPulseGraphics.lineTo(x2, y2)
+            this.beatPulseGraphics.stroke({ color: 0xaa88ff, width: 1, alpha: lineAlpha })
+        }
 
         // Apply damage when beat intensity is high (near antinode)
-        if (beatIntensity > 0.9) {
+        if (beatEnvelope > 0.9) {
             this.beatPulseTimer += deltaSeconds
 
             // Trigger damage at beat peaks (once per beat cycle)
             if (this.beatPulseTimer >= 0.1) {
                 this.beatPulseTimer = 0
-                this.triggerBeatDamage(beatIntensity)
+                this.triggerBeatDamage(beatEnvelope, radius)
             }
         }
     }
@@ -2684,12 +3207,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
     /**
      * Trigger damage from beat pulse
      */
-    private triggerBeatDamage(intensity: number): void {
-        const radius = 100 + this.stats.beatAmplitude // Base radius + amplitude
+    private triggerBeatDamage(intensity: number, radius: number): void {
         const damage = this.stats.beatAmplitude * intensity * 0.3
 
         // Damage enemies in radius
-        let hitCount = 0
         for (const enemy of this.enemySystem.enemies) {
             const dx = enemy.x - this.playerX
             const dy = enemy.y - this.playerY
@@ -2699,34 +3220,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 const actualDamage = damage * this.stats.damageMultiplier
                 enemy.health -= actualDamage
                 this.trackSkillDamage('beat-pulse', actualDamage)
-                hitCount++
             }
-        }
-
-        // Visual effect - pulsing ring
-        if (hitCount > 0) {
-            const ring = new Graphics()
-            ring.circle(0, 0, radius)
-            ring.stroke({ color: 0xaa44ff, width: 2 + intensity * 4, alpha: 0.5 * intensity })
-            ring.position.set(this.playerX, this.playerY)
-            this.effectContainer.addChild(ring)
-
-            // Quick fade
-            let alpha = 0.5 * intensity
-            const fade = () => {
-                alpha -= 0.05
-                if (alpha <= 0) {
-                    this.effectContainer.removeChild(ring)
-                    ring.destroy()
-                    return
-                }
-                ring.alpha = alpha
-                requestAnimationFrame(fade)
-            }
-            requestAnimationFrame(fade)
-
-            // Small text
-            this.damageTextSystem.spawnCustom(this.playerX, this.playerY - 20, `BEAT!`, 'combo')
         }
     }
 
@@ -3080,6 +3574,69 @@ export class PhysicsSurvivorScene extends AdventureScene {
         }
 
         return 1
+    }
+
+    /**
+     * Apply Doppler visual effect to enemies
+     * Approaching enemies appear redder, receding enemies appear bluer
+     * Based on Doppler effect: red shift (receding) and blue shift (approaching)
+     * Note: In astronomy, approaching = blue shift, receding = red shift
+     * Here we reverse it for intuitive "danger" visualization: approaching = red (danger)
+     */
+    private updateDopplerVisuals(): void {
+        // Only apply if frequency shift skill is active
+        if (this.stats.approachBonus <= 0 && this.stats.recedeReduction <= 0) {
+            // Reset any tints if skill was removed
+            for (const enemy of this.enemySystem.enemies) {
+                if (enemy.graphics.tint !== 0xffffff) {
+                    enemy.graphics.tint = 0xffffff
+                }
+            }
+            return
+        }
+
+        for (const enemy of this.enemySystem.enemies) {
+            // Direction from player to enemy
+            const dx = enemy.x - this.playerX
+            const dy = enemy.y - this.playerY
+            const dist = Math.sqrt(dx * dx + dy * dy)
+
+            if (dist < 20) {
+                enemy.graphics.tint = 0xffffff
+                continue
+            }
+
+            const nx = dx / dist
+            const ny = dy / dist
+
+            // Relative velocity along the line between player and enemy
+            // Negative = approaching, Positive = receding
+            const relVelToPlayer = (enemy.vx - this.playerVx) * nx + (enemy.vy - this.playerVy) * ny
+
+            // Normalize velocity for color intensity (-100 to +100 range)
+            const normalizedVel = Math.max(-1, Math.min(1, relVelToPlayer / 80))
+
+            if (normalizedVel < -0.1) {
+                // Approaching - red tint (danger!)
+                const intensity = Math.abs(normalizedVel)
+                // Lerp from white (0xffffff) to red (0xff6666)
+                const r = 255
+                const g = Math.round(255 - intensity * 153) // 255 -> 102
+                const b = Math.round(255 - intensity * 153)
+                enemy.graphics.tint = (r << 16) | (g << 8) | b
+            } else if (normalizedVel > 0.1) {
+                // Receding - blue tint (safer)
+                const intensity = normalizedVel
+                // Lerp from white (0xffffff) to blue (0x6699ff)
+                const r = Math.round(255 - intensity * 153) // 255 -> 102
+                const g = Math.round(255 - intensity * 102) // 255 -> 153
+                const b = 255
+                enemy.graphics.tint = (r << 16) | (g << 8) | b
+            } else {
+                // Nearly stationary - no tint
+                enemy.graphics.tint = 0xffffff
+            }
+        }
     }
 
     // ============================================
@@ -4059,6 +4616,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Update player position in world space
         this.player.position.set(this.playerX, this.playerY)
 
+        // Update gulp animation (Kirby eating effect)
+        this.player.updateGulp(delta / 60) // Convert frame delta to seconds
+
         // Update player HP gauge
         this.updatePlayerHealthBar()
 
@@ -4415,6 +4975,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.auraTimer = 0
         this.beatPulseTimer = 0
         this.beatPhase = 0
+        if (this.beatPulseGraphics) {
+            this.effectContainer.removeChild(this.beatPulseGraphics)
+            this.beatPulseGraphics.destroy()
+            this.beatPulseGraphics = null
+        }
         for (const wave of this.activeWaves) {
             this.effectContainer.removeChild(wave.graphics)
             wave.graphics.destroy()
@@ -4706,6 +5271,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
         // Phase 5 conditional trigger skills
         this.updateEscapeBurst(deltaSeconds)
+        this.updateDopplerVisuals()
 
         // Phase 6 orbital skills
         this.updateOrbitalStrike(deltaSeconds)
@@ -5006,6 +5572,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.auraTimer = 0
         this.beatPulseTimer = 0
         this.beatPhase = 0
+        if (this.beatPulseGraphics) {
+            this.effectContainer.removeChild(this.beatPulseGraphics)
+            this.beatPulseGraphics.destroy()
+            this.beatPulseGraphics = null
+        }
         for (const wave of this.activeWaves) {
             this.effectContainer.removeChild(wave.graphics)
             wave.graphics.destroy()

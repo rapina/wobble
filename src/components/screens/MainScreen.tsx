@@ -6,6 +6,7 @@ import { SandboxScreen } from './SandboxScreen.tsx'
 import { CollectionScreen } from './CollectionScreen'
 import { GameScreen } from './GameScreen.tsx'
 import { GameSelectScreen } from './GameSelectScreen.tsx'
+import { MiniGameScreen } from './MiniGameScreen.tsx'
 import { AchievementsScreen } from './AchievementsScreen'
 import { IntroScreen, IntroScene } from './IntroScreen'
 import { formulaList } from '../../formulas/registry'
@@ -13,6 +14,7 @@ import { Formula } from '../../formulas/types'
 import { useMusic } from '../../hooks/useMusic'
 import { useInAppPurchase } from '../../hooks/useInAppPurchase'
 import { cn } from '@/lib/utils'
+import type { MiniGameId } from '@/components/canvas/MiniGameCanvas'
 
 type ScreenState =
     | 'intro'
@@ -21,6 +23,7 @@ type ScreenState =
     | 'collection'
     | 'adventure-select'
     | 'game'
+    | 'minigame'
     | 'learning'
     | 'achievements'
 
@@ -30,6 +33,7 @@ export function MainScreen() {
         IntroScene.hasSeenIntro() ? 'home' : 'intro'
     )
     const [selectedFormula, setSelectedFormula] = useState<Formula | null>(null)
+    const [selectedMiniGame, setSelectedMiniGame] = useState<MiniGameId | null>(null)
     const [isTransitioning, setIsTransitioning] = useState(false)
     const audioRef = useRef<HTMLAudioElement | null>(null)
     const { isMusicEnabled } = useMusic()
@@ -131,6 +135,13 @@ export function MainScreen() {
                 setScreenState('game')
                 setIsTransitioning(false)
             }, 150)
+        } else if (adventureId === 'wobblediver') {
+            setIsTransitioning(true)
+            setTimeout(() => {
+                setSelectedMiniGame('wobblediver')
+                setScreenState('minigame')
+                setIsTransitioning(false)
+            }, 150)
         }
     }
 
@@ -183,6 +194,11 @@ export function MainScreen() {
                     />
                 ) : screenState === 'game' ? (
                     <GameScreen onBack={handleBackToAdventureSelect} />
+                ) : screenState === 'minigame' && selectedMiniGame ? (
+                    <MiniGameScreen
+                        gameId={selectedMiniGame}
+                        onBack={handleBackToAdventureSelect}
+                    />
                 ) : screenState === 'achievements' ? (
                     <AchievementsScreen onBack={handleBackToHome} />
                 ) : null}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Play, Lock, Gamepad2 } from 'lucide-react'
+import { ArrowLeft, Play, Lock, Gamepad2, Scissors } from 'lucide-react'
 import Balatro from '@/components/Balatro'
 import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
 import { cn } from '@/lib/utils'
@@ -16,6 +16,7 @@ const theme = {
     red: '#e85d4c',
     blue: '#4a9eff',
     pink: '#FF6B9D',
+    orange: '#FF8C42',
 }
 
 interface Adventure {
@@ -25,6 +26,9 @@ interface Adventure {
     descKey: string
     available: boolean
     color: string
+    type: 'adventure' | 'minigame'
+    icon?: 'wobble' | 'pendulum'
+    badge?: string
 }
 
 const ADVENTURES: Adventure[] = [
@@ -35,6 +39,19 @@ const ADVENTURES: Adventure[] = [
         descKey: 'game.wobbleAdventureDesc',
         available: true,
         color: '#FF6B9D',
+        type: 'adventure',
+        icon: 'wobble',
+        badge: 'BETA',
+    },
+    {
+        id: 'wobblediver',
+        titleKey: 'game.wobblediver',
+        episodeKey: 'game.minigame',
+        descKey: 'game.wobblediverDesc',
+        available: true,
+        color: '#5DADE2',
+        type: 'minigame',
+        icon: 'dive',
     },
     {
         id: 'coming-soon',
@@ -42,6 +59,7 @@ const ADVENTURES: Adventure[] = [
         descKey: '',
         available: false,
         color: '#666666',
+        type: 'adventure',
     },
 ]
 
@@ -184,21 +202,62 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: AdventureSelectS
                                 >
                                     {adventure.available ? (
                                         <>
-                                            {/* Wobble characters */}
-                                            <div className="flex items-center gap-3">
-                                                <WobbleDisplay
-                                                    size={60}
-                                                    shape="circle"
-                                                    color={0xf5b041}
-                                                    expression="worried"
-                                                />
-                                                <WobbleDisplay
-                                                    size={44}
-                                                    shape="shadow"
-                                                    color={0x1a1a1a}
-                                                    expression="angry"
-                                                />
-                                            </div>
+                                            {/* Icon based on type */}
+                                            {adventure.icon === 'wobble' ? (
+                                                <div className="flex items-center gap-3">
+                                                    <WobbleDisplay
+                                                        size={60}
+                                                        shape="circle"
+                                                        color={0xf5b041}
+                                                        expression="worried"
+                                                    />
+                                                    <WobbleDisplay
+                                                        size={44}
+                                                        shape="shadow"
+                                                        color={0x1a1a1a}
+                                                        expression="angry"
+                                                    />
+                                                </div>
+                                            ) : adventure.icon === 'pendulum' ? (
+                                                <div className="flex items-center gap-2">
+                                                    {/* Rope */}
+                                                    <div className="relative">
+                                                        <div
+                                                            className="absolute w-0.5 h-12 left-1/2 -translate-x-1/2 -top-2"
+                                                            style={{ background: '#8B4513' }}
+                                                        />
+                                                        <WobbleDisplay
+                                                            size={48}
+                                                            shape="circle"
+                                                            color={0xf5b041}
+                                                            expression="excited"
+                                                        />
+                                                    </div>
+                                                    <div
+                                                        className="w-10 h-10 rounded-lg flex items-center justify-center"
+                                                        style={{
+                                                            background: adventure.color,
+                                                            border: `2px solid ${theme.border}`,
+                                                        }}
+                                                    >
+                                                        <Scissors className="w-5 h-5 text-white" />
+                                                    </div>
+                                                </div>
+                                            ) : null}
+
+                                            {/* BETA Badge */}
+                                            {adventure.badge && (
+                                                <div
+                                                    className="absolute top-3 right-3 px-2 py-0.5 rounded text-[10px] font-black"
+                                                    style={{
+                                                        background: '#e74c3c',
+                                                        color: '#fff',
+                                                        border: `2px solid ${theme.border}`,
+                                                    }}
+                                                >
+                                                    {adventure.badge}
+                                                </div>
+                                            )}
 
                                             {/* Episode Badge */}
                                             {adventure.episodeKey && (
