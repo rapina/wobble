@@ -1,6 +1,6 @@
 /**
- * WormholeFilter.ts - Swirling vortex effect for wormhole portals
- * Creates a dimensional distortion effect with chromatic aberration
+ * WormholeFilter.ts - Procedural swirling vortex effect for wormhole portals
+ * Creates a dimensional distortion effect entirely in the shader (no texture sampling needed)
  */
 
 import { Filter, GlProgram, GpuProgram } from 'pixi.js'
@@ -41,14 +41,12 @@ precision highp float;
 in vec2 vTextureCoord;
 out vec4 finalColor;
 
-uniform sampler2D uTexture;
 uniform float uTime;
 uniform vec2 uCenter;         // Center of vortex (0-1 normalized)
-uniform float uIntensity;     // Distortion intensity
+uniform float uIntensity;     // Effect intensity
 uniform float uRotation;      // Rotation speed
 uniform vec4 uColorInner;     // Inner vortex color
 uniform vec4 uColorOuter;     // Outer vortex color
-uniform float uChromaticAberration;  // RGB separation amount
 
 // Simplex noise for organic distortion
 vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -88,51 +86,58 @@ void main() {
     float distToCenter = length(toCenter);
     float angle = atan(toCenter.y, toCenter.x);
 
-    // Vortex distortion (stronger closer to center)
-    float vortexStrength = 1.0 - smoothstep(0.0, 0.5, distToCenter);
-    vortexStrength = pow(vortexStrength, 2.0);
+    // Circular mask - fade out at edges
+    float circleMask = 1.0 - smoothstep(0.3, 0.5, distToCenter);
+
+    // Early discard for fully transparent pixels (optimization)
+    if (circleMask < 0.01) {
+        finalColor = vec4(0.0);
+        return;
+    }
+
+    // Vortex strength (stronger closer to center)
+    float vortexStrength = 1.0 - smoothstep(0.0, 0.4, distToCenter);
+    vortexStrength = pow(vortexStrength, 1.5);
 
     // Add noise for organic movement
-    float noise = snoise(uv * 8.0 + vec2(uTime * 0.5, uTime * 0.3));
+    float noise = snoise(uv * 6.0 + vec2(uTime * 0.3, uTime * 0.2)) * 0.5;
+    float noise2 = snoise(uv * 12.0 - vec2(uTime * 0.4, uTime * 0.5)) * 0.3;
 
-    // Spiral distortion
-    float spiralRotation = uTime * uRotation + vortexStrength * 3.0 + noise * 0.5;
-    angle += spiralRotation * vortexStrength * uIntensity;
+    // Spiral pattern
+    float spiralAngle = angle + uTime * uRotation + distToCenter * 8.0 * uIntensity;
+    float spiral = sin(spiralAngle * 4.0 + noise * 2.0) * 0.5 + 0.5;
+    spiral = pow(spiral, 2.0);
 
-    // Pull towards center (sucking effect)
-    float pull = vortexStrength * uIntensity * 0.15;
-    distToCenter -= pull;
-    distToCenter = max(0.0, distToCenter);
+    // Animated rings
+    float ringPattern = sin(distToCenter * 25.0 - uTime * 3.0 + noise2);
+    ringPattern = smoothstep(0.6, 1.0, ringPattern) * 0.5;
 
-    // Reconstruct UV with distortion
-    vec2 distortedUV = uCenter - vec2(cos(angle), sin(angle)) * distToCenter;
+    // Color mixing
+    vec4 baseColor = mix(uColorOuter, uColorInner, vortexStrength);
 
-    // Chromatic aberration (RGB split)
-    float aberration = uChromaticAberration * vortexStrength;
-    vec2 rOffset = distortedUV + toCenter * aberration * 0.02;
-    vec2 gOffset = distortedUV;
-    vec2 bOffset = distortedUV - toCenter * aberration * 0.02;
+    // Add spiral brightness variation
+    baseColor.rgb *= 0.7 + spiral * 0.5 * vortexStrength;
 
-    float r = texture(uTexture, rOffset).r;
-    float g = texture(uTexture, gOffset).g;
-    float b = texture(uTexture, bOffset).b;
-    vec4 color = vec4(r, g, b, 1.0);
+    // Add ring highlights
+    baseColor.rgb += ringPattern * uColorInner.rgb * vortexStrength * 0.4;
 
-    // Add vortex glow color
-    float glowStrength = vortexStrength * (0.5 + 0.5 * sin(uTime * 2.0 + distToCenter * 10.0));
-    vec4 glowColor = mix(uColorOuter, uColorInner, vortexStrength);
-    color = mix(color, glowColor, glowStrength * 0.4);
+    // Soft glow in center
+    float centerGlow = exp(-distToCenter * 6.0) * 0.6;
+    baseColor.rgb += uColorInner.rgb * centerGlow;
 
-    // Darken edges
-    float edgeDarken = smoothstep(0.5, 0.0, distToCenter);
-    color.rgb *= 1.0 - edgeDarken * 0.5;
+    // Edge glow effect
+    float edgeGlow = smoothstep(0.5, 0.35, distToCenter) * smoothstep(0.15, 0.3, distToCenter);
+    baseColor.rgb += uColorOuter.rgb * edgeGlow * 0.3;
 
-    // Animated rings (dimensional rifts)
-    float ringPattern = sin(distToCenter * 30.0 - uTime * 4.0);
-    ringPattern = smoothstep(0.7, 1.0, ringPattern);
-    color.rgb += ringPattern * glowColor.rgb * 0.3 * vortexStrength;
+    // Pulsing effect
+    float pulse = 0.9 + sin(uTime * 2.0) * 0.1;
+    baseColor.rgb *= pulse;
 
-    finalColor = color;
+    // Calculate final alpha with smooth circular falloff
+    float alpha = circleMask;
+    alpha *= 0.85 + vortexStrength * 0.15;
+
+    finalColor = vec4(baseColor.rgb, alpha);
 }
 `
 
@@ -145,7 +150,6 @@ struct WormholeUniforms {
     uRotation: f32,
     uColorInner: vec4<f32>,
     uColorOuter: vec4<f32>,
-    uChromaticAberration: f32,
 };
 
 @group(0) @binding(1) var uTexture: texture_2d<f32>;
@@ -186,42 +190,52 @@ fn main(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
     let distToCenter = length(toCenter);
     var angle = atan2(toCenter.y, toCenter.x);
 
-    var vortexStrength = 1.0 - smoothstep(0.0, 0.5, distToCenter);
-    vortexStrength = pow(vortexStrength, 2.0);
+    // Circular mask - fade out at edges
+    let circleMask = 1.0 - smoothstep(0.3, 0.5, distToCenter);
 
-    let noise = snoise(uv * 8.0 + vec2<f32>(uniforms.uTime * 0.5, uniforms.uTime * 0.3));
+    if (circleMask < 0.01) {
+        return vec4<f32>(0.0);
+    }
 
-    let spiralRotation = uniforms.uTime * uniforms.uRotation + vortexStrength * 3.0 + noise * 0.5;
-    angle += spiralRotation * vortexStrength * uniforms.uIntensity;
+    // Vortex strength
+    var vortexStrength = 1.0 - smoothstep(0.0, 0.4, distToCenter);
+    vortexStrength = pow(vortexStrength, 1.5);
 
-    let pull = vortexStrength * uniforms.uIntensity * 0.15;
-    var distToCenterAdjusted = distToCenter - pull;
-    distToCenterAdjusted = max(0.0, distToCenterAdjusted);
+    // Noise
+    let noise = snoise(uv * 6.0 + vec2<f32>(uniforms.uTime * 0.3, uniforms.uTime * 0.2)) * 0.5;
+    let noise2 = snoise(uv * 12.0 - vec2<f32>(uniforms.uTime * 0.4, uniforms.uTime * 0.5)) * 0.3;
 
-    let distortedUV = uniforms.uCenter - vec2<f32>(cos(angle), sin(angle)) * distToCenterAdjusted;
+    // Spiral pattern
+    let spiralAngle = angle + uniforms.uTime * uniforms.uRotation + distToCenter * 8.0 * uniforms.uIntensity;
+    var spiral = sin(spiralAngle * 4.0 + noise * 2.0) * 0.5 + 0.5;
+    spiral = pow(spiral, 2.0);
 
-    let aberration = uniforms.uChromaticAberration * vortexStrength;
-    let rOffset = distortedUV + toCenter * aberration * 0.02;
-    let gOffset = distortedUV;
-    let bOffset = distortedUV - toCenter * aberration * 0.02;
+    // Rings
+    let ringPattern = sin(distToCenter * 25.0 - uniforms.uTime * 3.0 + noise2);
+    let rings = smoothstep(0.6, 1.0, ringPattern) * 0.5;
 
-    let r = textureSample(uTexture, uSampler, rOffset).r;
-    let g = textureSample(uTexture, uSampler, gOffset).g;
-    let b = textureSample(uTexture, uSampler, bOffset).b;
-    var color = vec4<f32>(r, g, b, 1.0);
+    // Color mixing
+    var baseColor = mix(uniforms.uColorOuter, uniforms.uColorInner, vortexStrength);
+    baseColor = vec4<f32>(baseColor.rgb * (0.7 + spiral * 0.5 * vortexStrength), baseColor.a);
+    baseColor = vec4<f32>(baseColor.rgb + rings * uniforms.uColorInner.rgb * vortexStrength * 0.4, baseColor.a);
 
-    let glowStrength = vortexStrength * (0.5 + 0.5 * sin(uniforms.uTime * 2.0 + distToCenter * 10.0));
-    let glowColor = mix(uniforms.uColorOuter, uniforms.uColorInner, vortexStrength);
-    color = mix(color, glowColor, glowStrength * 0.4);
+    // Center glow
+    let centerGlow = exp(-distToCenter * 6.0) * 0.6;
+    baseColor = vec4<f32>(baseColor.rgb + uniforms.uColorInner.rgb * centerGlow, baseColor.a);
 
-    let edgeDarken = smoothstep(0.5, 0.0, distToCenter);
-    color = vec4<f32>(color.rgb * (1.0 - edgeDarken * 0.5), color.a);
+    // Edge glow
+    let edgeGlow = smoothstep(0.5, 0.35, distToCenter) * smoothstep(0.15, 0.3, distToCenter);
+    baseColor = vec4<f32>(baseColor.rgb + uniforms.uColorOuter.rgb * edgeGlow * 0.3, baseColor.a);
 
-    let ringPattern = sin(distToCenter * 30.0 - uniforms.uTime * 4.0);
-    let ringPatternSmooth = smoothstep(0.7, 1.0, ringPattern);
-    color = vec4<f32>(color.rgb + ringPatternSmooth * glowColor.rgb * 0.3 * vortexStrength, color.a);
+    // Pulse
+    let pulse = 0.9 + sin(uniforms.uTime * 2.0) * 0.1;
+    baseColor = vec4<f32>(baseColor.rgb * pulse, baseColor.a);
 
-    return color;
+    // Alpha
+    var alpha = circleMask;
+    alpha = alpha * (0.85 + vortexStrength * 0.15);
+
+    return vec4<f32>(baseColor.rgb, alpha);
 }
 `
 
@@ -231,7 +245,6 @@ export interface WormholeFilterOptions {
     rotation?: number
     colorInner?: [number, number, number, number]
     colorOuter?: [number, number, number, number]
-    chromaticAberration?: number
 }
 
 export class WormholeFilter extends Filter {
@@ -242,7 +255,6 @@ export class WormholeFilter extends Filter {
         uRotation: number
         uColorInner: Float32Array
         uColorOuter: Float32Array
-        uChromaticAberration: number
     }
 
     constructor(options: WormholeFilterOptions = {}) {
@@ -250,10 +262,9 @@ export class WormholeFilter extends Filter {
             center = [0.5, 0.5],
             intensity = 1.0,
             rotation = 1.0,
-            // Lovecraftian purple/teal colors
-            colorInner = [0.4, 0.1, 0.6, 1.0],  // Deep purple
-            colorOuter = [0.2, 0.5, 0.6, 1.0],  // Teal
-            chromaticAberration = 1.0,
+            // Abyss purple/teal colors
+            colorInner = [0.3, 0.8, 0.77, 1.0],  // Teal
+            colorOuter = [0.24, 0.10, 0.31, 1.0],  // Deep purple
         } = options
 
         const glProgram = GlProgram.from({
@@ -289,7 +300,6 @@ export class WormholeFilter extends Filter {
                     uRotation: { value: rotation, type: 'f32' },
                     uColorInner: { value: new Float32Array(colorInner), type: 'vec4<f32>' },
                     uColorOuter: { value: new Float32Array(colorOuter), type: 'vec4<f32>' },
-                    uChromaticAberration: { value: chromaticAberration, type: 'f32' },
                 },
             },
         })

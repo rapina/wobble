@@ -203,6 +203,19 @@ export class WobblediverScene extends BaseMiniGameScene {
     private resultCountCurrent = { hp: 0, time: 0, total: 0 }
     private resultGrade = { letter: 'D', color: 0xe85d4c }
 
+    // Pending result (wait for suction animation)
+    private pendingResult: {
+        hpPercent: number
+        timeTaken: number
+        perfect: boolean
+        startX: number
+        startY: number
+        targetX: number
+        targetY: number
+    } | null = null
+    private pendingResultTimer = 0
+    private readonly SUCTION_ANIMATION_DURATION = 0.7  // Slightly longer than wormhole's suckDuration
+
     // Result screen abyss effects
     private declare resultEffectContainer: Container
     private declare resultEffectGraphics: Graphics
@@ -215,6 +228,10 @@ export class WobblediverScene extends BaseMiniGameScene {
     private declare goalMoves: boolean
     private declare goalMoveSpeed: number
     private declare goalMoveRange: number
+    private declare goalWidthScale: number      // Wormhole horizontal width (starts large, shrinks)
+    private goalMoveTimer = 0                   // Timer for periodic movement
+    private goalMoveDuration = 0                // How long current movement lasts
+    private goalMoveActive = false              // Is goal currently moving?
     private declare obstacleCount: number
     private declare minRopeLength: number
     private declare maxRopeLength: number
@@ -276,7 +293,8 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Difficulty defaults
         this.goalMoves = false
         this.goalMoveSpeed = 1
-        this.goalMoveRange = 50
+        this.goalMoveRange = 40
+        this.goalWidthScale = 2.5  // Start with wide wormhole
         this.obstacleCount = 0
         this.minRopeLength = 100
         this.maxRopeLength = 200
@@ -1403,18 +1421,15 @@ export class WobblediverScene extends BaseMiniGameScene {
         const goalX = (this.boundaryLeft + this.boundaryRight) / 2
         const goalY = (this.boundaryTop + this.boundaryBottom) / 2 + 50
 
-        // Create wormhole finish portal
-        this.wormhole = new Wormhole(
-            {
-                x: goalX,
-                y: goalY,
-                radius: 50,
-                perfectRadius: 20,
-                isFinish: true,
-                portalColor: 'gold',
-            },
-            this.app
-        )
+        // Create wormhole finish portal (teal matches Abyss theme)
+        this.wormhole = new Wormhole({
+            x: goalX,
+            y: goalY,
+            radius: 50,
+            perfectRadius: 20,
+            isFinish: true,
+            portalColor: 'teal',
+        })
         this.gameContainer.addChild(this.wormhole.container)
 
         // Keep old goal for backward compatibility (but hide it)
@@ -2638,29 +2653,48 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     private positionGoal(): void {
-        // Goal should be in the middle area, ALWAYS above the swamp
+        // Goal spawns in a limited range above the abyss water surface
+        // This ensures it's far enough from the starting anchor point at the top
         const padding = 60
-        const abyssTop = this.boundaryBottom - 80  // Match abyss height
-        const safeAreaBottom = abyssTop - 60  // Keep goal well above swamp with buffer
+        const abyssTop = this.boundaryBottom - 80  // Water surface level
 
-        // Goal can spawn from middle to safe area above swamp
-        const minY = this.boundaryTop + (this.boundaryBottom - this.boundaryTop) * 0.4
-        const maxY = safeAreaBottom
+        // Goal spawn range: from water surface up to 180px above it
+        const GOAL_RANGE_ABOVE_WATER = 180
+        const GOAL_MIN_DISTANCE_FROM_WATER = 50  // Buffer above water
+
+        const maxY = abyssTop - GOAL_MIN_DISTANCE_FROM_WATER
+        const minY = abyssTop - GOAL_RANGE_ABOVE_WATER
 
         const x = this.boundaryLeft + padding + Math.random() * (this.boundaryRight - this.boundaryLeft - padding * 2)
         const y = minY + Math.random() * (maxY - minY)
 
-        // Adjust goal size based on difficulty
-        const baseRadius = 50
-        const difficultyScale = Math.max(0.6, 1 - this.roundNumber * 0.02)
-        const radius = baseRadius * difficultyScale
+        // Fixed vertical radius, but horizontal width shrinks over rounds
+        const baseRadius = 35  // Vertical size stays constant
+
+        // Width scale: starts at 2.5 (wide), shrinks to 1.0 (circular) over ~15 rounds
+        this.goalWidthScale = Math.max(1.0, 2.5 - this.roundNumber * 0.1)
+
+        // Enable periodic movement after round 5
+        if (this.roundNumber >= 5) {
+            this.goalMoves = true
+            this.goalMoveSpeed = 0.8 + Math.min(this.roundNumber - 5, 10) * 0.1
+            this.goalMoveRange = 30 + Math.min(this.roundNumber - 5, 10) * 3
+        } else {
+            this.goalMoves = false
+        }
+
+        // Reset movement timer for periodic movement
+        this.goalMoveTimer = 3 + Math.random() * 2  // Wait 3-5 seconds before moving
+        this.goalMoveDuration = 0
+        this.goalMoveActive = false
 
         this.goal.moveTo(x, y)
-        this.goal.setRadius(radius)
+        this.goal.setRadius(baseRadius)
 
-        // Position wormhole at same location
+        // Position wormhole at same location with width scale
         this.wormhole.moveTo(x, y)
-        this.wormhole.setRadius(radius)
+        this.wormhole.setRadius(baseRadius)
+        this.wormhole.setWidthScale(this.goalWidthScale)
 
         // Clear and spawn portal pairs based on difficulty
         this.spawnPortalPairs()
@@ -2694,22 +2728,19 @@ export class WobblediverScene extends BaseMiniGameScene {
             const exitX = this.width - padding - Math.random() * (this.width * 0.3)
             const exitY = this.boundaryTop + 100 + Math.random() * (abyssTop - this.boundaryTop - 200)
 
-            const portalPair = new PortalPair(
-                {
-                    entrance: {
-                        x: entranceX,
-                        y: entranceY,
-                        radius: 35,
-                    },
-                    exit: {
-                        x: exitX,
-                        y: exitY,
-                        radius: 35,
-                    },
-                    color,
+            const portalPair = new PortalPair({
+                entrance: {
+                    x: entranceX,
+                    y: entranceY,
+                    radius: 35,
                 },
-                this.app
-            )
+                exit: {
+                    x: exitX,
+                    y: exitY,
+                    radius: 35,
+                },
+                color,
+            })
 
             this.portalPairs.push(portalPair)
             this.gameContainer.addChild(portalPair.container)
@@ -2738,36 +2769,45 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     private createRandomObstacle(): ObstacleWobble {
-        const movements: ObstacleMovement[] = ['static', 'horizontal', 'vertical']
+        const movements: ObstacleMovement[] = ['static', 'sway', 'vertical']
         const movement = movements[Math.floor(Math.random() * movements.length)]
+
+        // Alternate between left and right walls
+        const side: 'left' | 'right' = this.obstacles.length % 2 === 0 ? 'left' : 'right'
 
         return new ObstacleWobble({
             x: 0,
             y: 0,
-            radius: 25,
+            radius: 18,
             movement,
-            speed: 1 + Math.random(),
-            range: 40 + Math.random() * 40,
+            speed: 0.8 + Math.random() * 0.8,
+            range: 25 + Math.random() * 30,
+            tentacleLength: 120 + Math.random() * 60,
+            side,
+            attackRange: 100 + Math.random() * 40,
         })
     }
 
     private repositionObstacle(obstacle: ObstacleWobble): void {
-        // Position between anchor and goal, avoiding both
-        const padding = 50
-        const minY = 150
-        const maxY = this.height - 220
+        // Position on walls - tentacles extend from left/right boundaries
+        const minY = 120
+        const maxY = this.height - 200  // Above the abyss
 
-        let x: number, y: number
+        // Get the side from obstacle
+        const side = obstacle.side
+
+        // Position on the wall
+        const x = side === 'left' ? this.boundaryLeft : this.boundaryRight
+        let y: number
         let attempts = 0
         const maxAttempts = 20
 
         do {
-            x = padding + Math.random() * (this.width - padding * 2)
             y = minY + Math.random() * (maxY - minY)
             attempts++
         } while (
             attempts < maxAttempts &&
-            (this.isNearGoal(x, y, 80) || this.isNearAnchor(x, y, 100))
+            (this.isNearGoal(x, y, 100) || this.isNearAnchor(x, y, 80))
         )
 
         obstacle.moveTo(x, y)
@@ -2830,8 +2870,66 @@ export class WobblediverScene extends BaseMiniGameScene {
                 }
             }
 
-            // Check if animation complete - handle round end (skip if waiting for retry)
-            if (this.wobble.isAnimationComplete() && this.roundTransitionTime <= 0 && !this.isShowingResult && !this.isWaitingForRetry) {
+            // Handle pending result (wait for suction animation to complete)
+            if (this.pendingResult && this.pendingResultTimer > 0) {
+                this.pendingResultTimer -= deltaSeconds
+
+                // Animate wobble getting sucked into the funnel
+                if (this.wobble) {
+                    const totalDuration = this.SUCTION_ANIMATION_DURATION
+                    const elapsed = totalDuration - this.pendingResultTimer
+                    const progress = Math.min(1, elapsed / totalDuration)
+
+                    // Ease-in for acceleration effect (being pulled in faster)
+                    const easeIn = progress * progress
+
+                    // Spiral into the funnel center
+                    const { startX, startY, targetX, targetY } = this.pendingResult
+
+                    // Spiral: starts at 0, peaks in middle, ends at 0
+                    const spiralIntensity = Math.sin(progress * Math.PI)
+                    const spiralRadius = 12 * spiralIntensity
+                    const spiralAngle = progress * Math.PI * 3  // 1.5 rotations
+                    const spiralX = Math.cos(spiralAngle) * spiralRadius
+                    const spiralY = Math.sin(spiralAngle) * spiralRadius * 0.35  // Flatten for perspective
+
+                    // Move towards center + sink into funnel
+                    const newX = startX + (targetX - startX) * easeIn + spiralX
+                    const newY = startY + (targetY - startY) * easeIn + spiralY
+                    const funnelDepth = this.wormhole.radius * 0.4 * easeIn  // Sink into funnel
+                    this.wobble.container.position.set(newX, newY + funnelDepth)
+
+                    // Scale down as it enters the funnel
+                    const scale = Math.max(0, 1 - easeIn * 1.3)
+                    this.wobble.container.scale.set(scale)
+
+                    // Fade out in the last portion
+                    if (progress > 0.5) {
+                        const fadeProgress = (progress - 0.5) / 0.5
+                        this.wobble.container.alpha = 1 - fadeProgress
+                    }
+
+                    // Gentle rotation as it spirals
+                    this.wobble.container.rotation = spiralAngle * 0.3
+                }
+
+                if (this.pendingResultTimer <= 0) {
+                    // Animation complete - show result
+                    const { hpPercent, timeTaken, perfect } = this.pendingResult
+                    this.showStageResult(0, hpPercent, timeTaken, perfect)
+                    this.pendingResult = null
+
+                    // Reset wobble transform for next round
+                    if (this.wobble) {
+                        this.wobble.container.rotation = 0
+                        this.wobble.container.alpha = 1
+                        this.wobble.container.scale.set(1)
+                    }
+                }
+            }
+
+            // Check if animation complete - handle round end (skip if waiting for retry or pending result)
+            if (this.wobble.isAnimationComplete() && this.roundTransitionTime <= 0 && !this.isShowingResult && !this.isWaitingForRetry && !this.pendingResult) {
                 this.handleRoundEnd()
             }
 
@@ -2856,12 +2954,21 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Update goal (old, hidden)
         this.goal.update(deltaSeconds)
 
+        // Update wormhole proximity based on player distance
+        if (this.wobble) {
+            const dx = this.wobble.x - this.wormhole.x
+            const dy = this.wobble.y - this.wormhole.y
+            const distance = Math.sqrt(dx * dx + dy * dy)
+            const normalizedDistance = distance / this.wormhole.radius
+            this.wormhole.setProximity(normalizedDistance)
+        }
+
         // Update wormhole
-        this.wormhole.update(deltaSeconds, this.app?.renderer)
+        this.wormhole.update(deltaSeconds)
 
         // Update portal pairs
         for (const portalPair of this.portalPairs) {
-            portalPair.update(deltaSeconds, this.app?.renderer)
+            portalPair.update(deltaSeconds)
         }
 
         // Move goal if enabled and update wobble's goal tracking
@@ -2873,9 +2980,14 @@ export class WobblediverScene extends BaseMiniGameScene {
             }
         }
 
-        // Update obstacles
+        // Update obstacles and check proximity for attack
         for (const obstacle of this.obstacles) {
             obstacle.update(deltaSeconds)
+            // Check if player is near - triggers attack behavior
+            if (this.wobble && this.wobble.state === 'released') {
+                const pos = this.wobble.getPosition()
+                obstacle.checkProximity(pos.x, pos.y)
+            }
         }
 
         // Update instruction pulse (Balatro-style glow)
@@ -2897,13 +3009,33 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     private updateGoalMovement(deltaSeconds: number): void {
-        // Simple horizontal oscillation
-        const time = Date.now() / 1000
-        const baseX = this.width / 2
-        const newX = baseX + Math.sin(time * this.goalMoveSpeed) * this.goalMoveRange
+        // Periodic movement: wait, then move for a duration, then stop
+        if (!this.goalMoveActive) {
+            // Waiting phase
+            this.goalMoveTimer -= deltaSeconds
+            if (this.goalMoveTimer <= 0) {
+                // Start moving
+                this.goalMoveActive = true
+                this.goalMoveDuration = 2.5 + Math.random() * 1.5  // Move for 2.5-4 seconds
+            }
+        } else {
+            // Moving phase
+            this.goalMoveDuration -= deltaSeconds
 
-        this.goal.moveTo(newX, this.goal.y)
-        this.wormhole.moveTo(newX, this.wormhole.y)
+            // Smooth oscillation while moving
+            const time = Date.now() / 1000
+            const baseX = (this.boundaryLeft + this.boundaryRight) / 2
+            const newX = baseX + Math.sin(time * this.goalMoveSpeed) * this.goalMoveRange
+
+            this.goal.moveTo(newX, this.goal.y)
+            this.wormhole.moveTo(newX, this.wormhole.y)
+
+            if (this.goalMoveDuration <= 0) {
+                // Stop moving, wait again
+                this.goalMoveActive = false
+                this.goalMoveTimer = 4 + Math.random() * 3  // Wait 4-7 seconds
+            }
+        }
     }
 
     private checkCollisions(): void {
@@ -2913,7 +3045,7 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         // Check wormhole hit (new finish portal)
         const wormholeHit = this.wormhole.checkHit(pos.x, pos.y)
-        if (wormholeHit.hit) {
+        if (wormholeHit.hit && !this.pendingResult) {
             this.wobble.markSuccess()
             this.wormhole.showHit(wormholeHit.perfect)
 
@@ -2932,9 +3064,17 @@ export class WobblediverScene extends BaseMiniGameScene {
             const hpPercent = this.wobble.getHpPercent()
             const timeTaken = Date.now() / 1000 - this.roundStartTime
 
-            // Show stage result with sequential counting and grade
-            // Score will be added to scoreSystem when result is hidden
-            this.showStageResult(0, hpPercent, timeTaken, wormholeHit.perfect)
+            // Store pending result with position info for suction animation
+            this.pendingResult = {
+                hpPercent,
+                timeTaken,
+                perfect: wormholeHit.perfect,
+                startX: pos.x,
+                startY: pos.y,
+                targetX: this.wormhole.x,
+                targetY: this.wormhole.y,
+            }
+            this.pendingResultTimer = this.SUCTION_ANIMATION_DURATION
             return
         }
 
@@ -3185,10 +3325,10 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     protected onDifficultyChange(config: DifficultyConfig, previousPhase: DifficultyPhase): void {
+        // Note: goalMoves and goalWidthScale are now controlled by round number in positionGoal()
         switch (config.phase) {
             case 'easy':
                 // Full trajectory visibility
-                this.goalMoves = false
                 this.obstacleCount = 0
                 this.minRopeLength = 120
                 this.maxRopeLength = 180
@@ -3197,7 +3337,6 @@ export class WobblediverScene extends BaseMiniGameScene {
 
             case 'medium':
                 // Trajectory visible for first 2 seconds only
-                this.goalMoves = false
                 this.obstacleCount = 1
                 this.minRopeLength = 100
                 this.maxRopeLength = 200
@@ -3207,9 +3346,6 @@ export class WobblediverScene extends BaseMiniGameScene {
 
             case 'hard':
                 // Trajectory flickers on/off
-                this.goalMoves = true
-                this.goalMoveSpeed = 1
-                this.goalMoveRange = 40
                 this.obstacleCount = 2
                 this.minRopeLength = 80
                 this.maxRopeLength = 220
@@ -3220,9 +3356,6 @@ export class WobblediverScene extends BaseMiniGameScene {
 
             case 'insane':
                 // Trajectory barely visible - quick flashes
-                this.goalMoves = true
-                this.goalMoveSpeed = 1.5
-                this.goalMoveRange = 60
                 this.obstacleCount = 3
                 this.minRopeLength = 60
                 this.maxRopeLength = 250
@@ -3271,13 +3404,18 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         // Reset difficulty params
         this.goalMoves = false
+        this.goalWidthScale = 2.5
+        this.goalMoveTimer = 0
+        this.goalMoveDuration = 0
+        this.goalMoveActive = false
         this.obstacleCount = 0
         this.minRopeLength = 100
         this.maxRopeLength = 200
 
         // Reset goal position
         this.goal.moveTo(this.width / 2, this.height - 200)
-        this.goal.setRadius(50)
+        this.goal.setRadius(35)
+        this.wormhole.setWidthScale(2.5)
 
         // Hide instruction and HP bar
         this.instructionText.alpha = 0

@@ -1,401 +1,496 @@
 /**
- * Wormhole.ts - Lovecraftian dimensional portal as goal
+ * Wormhole.ts - Gravity well portal with funnel effect
  *
- * A swirling vortex of cosmic horror that serves as the finish line
- * Features: vortex shader, tentacle-like edges, watching eyes, particles
+ * A teleporter pad with a visible gravity funnel pulling downward
+ * Creates the illusion of depth and gravitational pull
  */
 
-import { Container, Graphics, Sprite, RenderTexture } from 'pixi.js'
-import { WormholeFilter } from '@/components/canvas/filters/WormholeFilter'
+import { Container, Graphics } from 'pixi.js'
 
 export interface WormholeConfig {
     x: number
     y: number
     radius: number
-    perfectRadius?: number  // Inner zone for perfect hit
-    isFinish?: boolean      // True for goal wormhole, false for portal
-    portalColor?: 'purple' | 'teal' | 'red' | 'gold'  // Color theme
+    perfectRadius?: number
+    isFinish?: boolean
+    portalColor?: 'purple' | 'teal' | 'red' | 'gold'
+    widthScale?: number  // Horizontal stretch factor (1.0 = normal, 2.0 = double width)
 }
 
-// Particle sucked into vortex
-interface VortexParticle {
-    x: number
-    y: number
-    angle: number
-    distance: number
+// Particle falling into the funnel
+interface FunnelParticle {
+    angle: number           // Position around the funnel
+    depth: number           // 0 = at opening, 1 = at singularity
     speed: number
     size: number
     alpha: number
+    rotationSpeed: number
 }
 
-// Tentacle framing the portal
-interface Tentacle {
-    angle: number
-    length: number
+// Gravity line spiraling down
+interface GravityLine {
+    startAngle: number
     phase: number
-    thickness: number
+    speed: number
 }
 
-// Watching eye in the abyss
-interface AbyssEye {
+// Light beam shooting upward
+interface LightBeam {
     angle: number
-    distance: number
-    size: number
-    blinkTimer: number
-    lookAngle: number
+    width: number
+    height: number
+    alpha: number
+    speed: number
+    phase: number
 }
 
 export class Wormhole {
     public container: Container
-    private vortexGraphics: Graphics
-    private vortexSprite: Sprite
-    private vortexFilter: WormholeFilter
-    private renderTexture: RenderTexture
-    private glowGraphics: Graphics
-    private tentacleGraphics: Graphics
-    private particleGraphics: Graphics
-    private eyeGraphics: Graphics
+    private funnelGraphics: Graphics       // The funnel/gravity well
+    private baseGraphics: Graphics         // Top ellipse ring
+    private glowGraphics: Graphics         // Glow effects
+    private beamGraphics: Graphics         // Light beams
+    private particleGraphics: Graphics     // Particles
 
     public x: number
     public y: number
     public radius: number
     public perfectRadius: number
     public isFinish: boolean
+    public widthScale: number  // Horizontal stretch (1.0 = circle, 2.0 = wide ellipse)
 
     // Animation state
     private time = 0
+    private rotationAngle = 0
+    private pulsePhase = 0
     private isHit = false
     private hitFlashTimer = 0
-    private pulsePhase = 0
 
-    // Vortex particles
-    private particles: VortexParticle[] = []
-    private particleSpawnTimer = 0
+    // Proximity effect
+    private proximityIntensity = 0
+    private targetProximity = 0
 
-    // Tentacles
-    private tentacles: Tentacle[] = []
+    // Suction animation
+    private isSucking = false
+    private suckTimer = 0
+    private suckDuration = 0.6
 
-    // Watching eyes
-    private eyes: AbyssEye[] = []
+    // Visual elements
+    private funnelParticles: FunnelParticle[] = []
+    private gravityLines: GravityLine[] = []
+    private beams: LightBeam[] = []
 
-    // Portal color theme
-    private colorTheme: {
-        inner: [number, number, number, number]
-        outer: [number, number, number, number]
+    // Portal colors
+    private colors: {
+        primary: number
+        secondary: number
         glow: number
+        beam: number
+        dark: number
     }
 
-    constructor(config: WormholeConfig, app?: any) {
+    // Funnel dimensions
+    private readonly ellipseRatio = 0.35
+    private readonly funnelDepth = 0.8      // How deep the funnel appears (relative to radius)
+
+    constructor(config: WormholeConfig) {
         this.container = new Container()
         this.x = config.x
         this.y = config.y
         this.radius = config.radius
         this.perfectRadius = config.perfectRadius ?? config.radius * 0.4
         this.isFinish = config.isFinish ?? true
+        this.widthScale = config.widthScale ?? 1.0
 
-        // Set color theme
-        this.colorTheme = this.getColorTheme(config.portalColor ?? (this.isFinish ? 'gold' : 'purple'))
+        this.colors = this.getColorTheme(config.portalColor ?? (this.isFinish ? 'teal' : 'purple'))
 
-        // Create render texture for shader effect
-        this.renderTexture = RenderTexture.create({
-            width: this.radius * 3,
-            height: this.radius * 3,
-        })
-
-        // Vortex graphics (will be rendered to texture)
-        this.vortexGraphics = new Graphics()
-
-        // Sprite with shader filter
-        this.vortexSprite = Sprite.from(this.renderTexture)
-        this.vortexSprite.anchor.set(0.5)
-        this.vortexFilter = new WormholeFilter({
-            center: [0.5, 0.5],
-            intensity: 1.0,
-            rotation: this.isFinish ? 1.5 : 1.0,
-            colorInner: this.colorTheme.inner,
-            colorOuter: this.colorTheme.outer,
-            chromaticAberration: 1.5,
-        })
-        this.vortexSprite.filters = [this.vortexFilter]
-        this.container.addChild(this.vortexSprite)
-
-        // Glow layer (behind)
+        // Create graphics layers (back to front)
         this.glowGraphics = new Graphics()
-        this.container.addChild(this.glowGraphics)
-        this.container.swapChildren(this.glowGraphics, this.vortexSprite)
-
-        // Tentacles (framing the portal)
-        this.tentacleGraphics = new Graphics()
-        this.container.addChild(this.tentacleGraphics)
-
-        // Particles (sucked into vortex)
+        this.funnelGraphics = new Graphics()
         this.particleGraphics = new Graphics()
-        this.container.addChild(this.particleGraphics)
+        this.baseGraphics = new Graphics()
+        this.beamGraphics = new Graphics()
 
-        // Eyes (watching from the void)
-        this.eyeGraphics = new Graphics()
-        this.container.addChild(this.eyeGraphics)
+        this.container.addChild(this.glowGraphics)
+        this.container.addChild(this.funnelGraphics)
+        this.container.addChild(this.particleGraphics)
+        this.container.addChild(this.baseGraphics)
+        this.container.addChild(this.beamGraphics)
 
         this.container.position.set(this.x, this.y)
 
-        this.initTentacles()
-        this.initEyes()
-        this.initParticles()
+        this.initGravityLines()
+        this.initBeams()
+        this.initFunnelParticles()
         this.draw()
     }
 
     private getColorTheme(color: string) {
+        // Abyss-style colors: dark, mysterious, bioluminescent
         switch (color) {
             case 'gold':
                 return {
-                    inner: [0.9, 0.7, 0.2, 1.0] as [number, number, number, number],
-                    outer: [0.8, 0.5, 0.1, 1.0] as [number, number, number, number],
-                    glow: 0xf1c40f,
+                    primary: 0xc9a227,      // Muted gold
+                    secondary: 0x8b6914,    // Dark gold
+                    glow: 0xd4a84b,         // Warm glow
+                    beam: 0xe8d5a3,         // Pale gold beam
+                    dark: 0x1a1510,         // Very dark
                 }
             case 'teal':
+                // Finish portal - bioluminescent deep sea creature feel
                 return {
-                    inner: [0.2, 0.7, 0.7, 1.0] as [number, number, number, number],
-                    outer: [0.1, 0.4, 0.5, 1.0] as [number, number, number, number],
-                    glow: 0x4ecdc4,
+                    primary: 0x2dd4bf,      // Bright teal (bioluminescent)
+                    secondary: 0x0d9488,    // Deep teal
+                    glow: 0x5eead4,         // Bright glow
+                    beam: 0x99f6e4,         // Pale teal beam
+                    dark: 0x042f2e,         // Abyssal dark teal
                 }
             case 'red':
+                // Danger/warning - eerie deep sea predator
                 return {
-                    inner: [0.9, 0.2, 0.2, 1.0] as [number, number, number, number],
-                    outer: [0.5, 0.1, 0.2, 1.0] as [number, number, number, number],
-                    glow: 0xe74c3c,
+                    primary: 0xdc2626,      // Blood red
+                    secondary: 0x7f1d1d,    // Deep crimson
+                    glow: 0xef4444,         // Eerie red glow
+                    beam: 0xfca5a5,         // Pale red
+                    dark: 0x1c0a0a,         // Nearly black red
                 }
             case 'purple':
             default:
+                // Default portal - mysterious void
                 return {
-                    inner: [0.6, 0.2, 0.8, 1.0] as [number, number, number, number],
-                    outer: [0.3, 0.1, 0.5, 1.0] as [number, number, number, number],
-                    glow: 0x9b59b6,
+                    primary: 0x8b5cf6,      // Vibrant purple
+                    secondary: 0x5b21b6,    // Deep purple
+                    glow: 0xa78bfa,         // Soft purple glow
+                    beam: 0xc4b5fd,         // Pale lavender beam
+                    dark: 0x0f0a1a,         // Void black-purple
                 }
         }
     }
 
-    private initTentacles(): void {
-        const count = this.isFinish ? 8 : 6
+    private initGravityLines(): void {
+        const count = 12
         for (let i = 0; i < count; i++) {
-            this.tentacles.push({
-                angle: (Math.PI * 2 * i) / count + Math.random() * 0.2,
-                length: this.radius * (1.0 + Math.random() * 0.3),
+            this.gravityLines.push({
+                startAngle: (Math.PI * 2 * i) / count,
                 phase: Math.random() * Math.PI * 2,
-                thickness: 3 + Math.random() * 3,
+                speed: 0.3 + Math.random() * 0.3,
             })
         }
     }
 
-    private initEyes(): void {
-        const count = this.isFinish ? 3 : 2
+    private initBeams(): void {
+        const count = this.isFinish ? 6 : 4
         for (let i = 0; i < count; i++) {
-            this.eyes.push({
-                angle: (Math.PI * 2 * i) / count + Math.random() * 0.5,
-                distance: this.radius * 0.6 + Math.random() * this.radius * 0.2,
-                size: 8 + Math.random() * 6,
-                blinkTimer: Math.random() * 5,
-                lookAngle: 0,
+            this.beams.push({
+                angle: (Math.PI * 2 * i) / count,
+                width: 4 + Math.random() * 3,
+                height: this.radius * (0.6 + Math.random() * 0.4),
+                alpha: 0.25 + Math.random() * 0.2,
+                speed: 0.4 + Math.random() * 0.4,
+                phase: Math.random() * Math.PI * 2,
             })
         }
     }
 
-    private initParticles(): void {
-        const count = 30
+    private initFunnelParticles(): void {
+        const count = 20
         for (let i = 0; i < count; i++) {
-            this.spawnParticle()
+            this.spawnFunnelParticle()
         }
     }
 
-    private spawnParticle(): void {
-        const angle = Math.random() * Math.PI * 2
-        const distance = this.radius * (0.8 + Math.random() * 1.5)
-        this.particles.push({
-            x: Math.cos(angle) * distance,
-            y: Math.sin(angle) * distance,
-            angle,
-            distance,
-            speed: 0.2 + Math.random() * 0.3,
+    private spawnFunnelParticle(): void {
+        this.funnelParticles.push({
+            angle: Math.random() * Math.PI * 2,
+            depth: Math.random() * 0.3,  // Start near the top
+            speed: 0.3 + Math.random() * 0.4,
             size: 2 + Math.random() * 3,
-            alpha: 0.3 + Math.random() * 0.5,
+            alpha: 0.4 + Math.random() * 0.4,
+            rotationSpeed: 2 + Math.random() * 3,
         })
     }
 
     private draw(): void {
-        // Draw vortex base to graphics (will be filtered)
-        const g = this.vortexGraphics
-        g.clear()
-
-        // Circular gradient base
-        const steps = 40
-        for (let i = 0; i < steps; i++) {
-            const ratio = i / steps
-            const r = this.radius * (1.0 - ratio)
-            const alpha = 0.8 - ratio * 0.7
-            g.circle(0, 0, r)
-            g.fill({ color: this.colorTheme.glow, alpha })
-        }
-
-        // Render to texture (shader will be applied to sprite)
-        if (this.vortexSprite.texture.baseTexture) {
-            // Re-render vortex graphics to texture
-            // Note: In production, use app.renderer.render(vortexGraphics, renderTexture)
-        }
+        this.drawGlow()
+        this.drawFunnel()
+        this.drawParticles()
+        this.drawBase()
+        this.drawBeams()
     }
 
     private drawGlow(): void {
         const g = this.glowGraphics
         g.clear()
 
-        const pulse = 1 + Math.sin(this.pulsePhase) * 0.15
-        const alpha = 0.2 + Math.sin(this.pulsePhase) * 0.1
+        const pulse = 1 + Math.sin(this.pulsePhase) * 0.1
+        const intensityBoost = 1 + this.proximityIntensity * 0.5
+        const rx = this.radius * 1.4 * pulse * intensityBoost * this.widthScale
+        const ry = this.radius * 1.4 * pulse * intensityBoost * this.ellipseRatio
 
-        // Soft glow
-        g.circle(0, 0, this.radius * 1.5 * pulse)
-        g.fill({ color: this.colorTheme.glow, alpha: alpha * 0.5 })
+        // Outer glow layers
+        const layers = 4 + Math.floor(this.proximityIntensity * 2)
+        for (let i = layers; i >= 0; i--) {
+            const scale = 1 + i * 0.12
+            const alpha = (0.06 + this.proximityIntensity * 0.04) - i * 0.012
+            g.ellipse(0, 0, rx * scale, ry * scale)
+            g.fill({ color: this.colors.glow, alpha: Math.max(0, alpha) })
+        }
 
-        g.circle(0, 0, this.radius * 1.2 * pulse)
-        g.fill({ color: this.colorTheme.glow, alpha })
+        // Suction/hit flash
+        if (this.isSucking) {
+            const progress = this.suckTimer / this.suckDuration
+            const flashAlpha = Math.sin(progress * Math.PI) * 0.5
+            g.ellipse(0, 0, rx * (1.3 - progress * 0.3), ry * (1.3 - progress * 0.3))
+            g.fill({ color: 0xffffff, alpha: flashAlpha })
+        }
 
-        // Flash on hit
         if (this.hitFlashTimer > 0) {
-            const flashAlpha = this.hitFlashTimer / 0.3
-            g.circle(0, 0, this.radius * 2)
-            g.fill({ color: 0xffffff, alpha: flashAlpha * 0.5 })
+            const flashAlpha = (this.hitFlashTimer / 0.3) * 0.4
+            g.ellipse(0, 0, rx * 1.3, ry * 1.3)
+            g.fill({ color: 0xffffff, alpha: flashAlpha })
         }
     }
 
-    private drawTentacles(): void {
-        const g = this.tentacleGraphics
+    private drawFunnel(): void {
+        const g = this.funnelGraphics
         g.clear()
 
-        for (const tentacle of this.tentacles) {
-            const waveOffset = Math.sin(this.time * 2 + tentacle.phase) * 0.3
-            const angle = tentacle.angle + waveOffset
+        const rx = this.radius * this.widthScale
+        const ry = this.radius * this.ellipseRatio
+        const depth = this.radius * this.funnelDepth
+        const intensityBoost = 1 + this.proximityIntensity * 0.3
 
-            const baseX = Math.cos(angle) * this.radius * 0.7
-            const baseY = Math.sin(angle) * this.radius * 0.7
-            const tipX = Math.cos(angle) * tentacle.length
-            const tipY = Math.sin(angle) * tentacle.length
+        // Draw funnel interior (dark gradient layers)
+        const funnelLayers = 15
+        for (let i = funnelLayers; i >= 0; i--) {
+            const t = i / funnelLayers  // 0 = bottom, 1 = top
+            const layerRx = rx * (0.05 + t * 0.95)
+            const layerRy = ry * (0.05 + t * 0.95)
+            const layerY = depth * (1 - t)  // Lower layers are further down
 
-            // Curved tentacle using quadratic curve
-            const controlX = (baseX + tipX) / 2 + Math.sin(this.time * 3 + tentacle.phase) * 20
-            const controlY = (baseY + tipY) / 2 + Math.cos(this.time * 3 + tentacle.phase) * 20
+            // Darker as it goes deeper
+            const alpha = 0.15 + (1 - t) * 0.25
 
-            g.moveTo(baseX, baseY)
-            g.quadraticCurveTo(controlX, controlY, tipX, tipY)
-            g.stroke({
-                color: this.colorTheme.glow,
-                width: tentacle.thickness,
-                alpha: 0.4,
-            })
-
-            // Segments (suckers)
-            const segments = 4
-            for (let i = 0; i < segments; i++) {
-                const t = (i + 1) / (segments + 1)
-                // Approximate point on quadratic curve
-                const sx = (1 - t) * (1 - t) * baseX + 2 * (1 - t) * t * controlX + t * t * tipX
-                const sy = (1 - t) * (1 - t) * baseY + 2 * (1 - t) * t * controlY + t * t * tipY
-                const segSize = tentacle.thickness * 0.8
-                g.circle(sx, sy, segSize)
-                g.fill({ color: this.colorTheme.glow, alpha: 0.3 })
-            }
+            g.ellipse(0, layerY, layerRx, layerRy)
+            g.fill({ color: this.colors.dark, alpha })
         }
+
+        // Draw gravity spiral lines
+        for (const line of this.gravityLines) {
+            const angle = line.startAngle + this.rotationAngle + Math.sin(this.time * line.speed + line.phase) * 0.2
+
+            // Draw spiral from top to bottom
+            g.moveTo(
+                Math.cos(angle) * rx,
+                Math.sin(angle) * ry
+            )
+
+            const segments = 12
+            for (let i = 1; i <= segments; i++) {
+                const t = i / segments
+                const spiralAngle = angle + t * Math.PI * 0.8  // Spiral twist
+                const shrink = 1 - t * 0.95
+                const px = Math.cos(spiralAngle) * rx * shrink
+                const py = Math.sin(spiralAngle) * ry * shrink + depth * t
+
+                g.lineTo(px, py)
+            }
+
+            g.stroke({
+                color: this.colors.primary,
+                width: 1.5,
+                alpha: (0.2 + this.proximityIntensity * 0.15) * intensityBoost,
+            })
+        }
+
+        // Draw connecting rings at different depths
+        const ringCount = 5
+        for (let i = 1; i < ringCount; i++) {
+            const t = i / ringCount
+            const ringRx = rx * (1 - t * 0.9)
+            const ringRy = ry * (1 - t * 0.9)
+            const ringY = depth * t
+            const alpha = (0.25 - t * 0.15) * intensityBoost
+
+            g.ellipse(0, ringY, ringRx, ringRy)
+            g.stroke({ color: this.colors.secondary, width: 1.5, alpha })
+        }
+
+        // Singularity point at bottom (bright spot)
+        const singularityPulse = 0.6 + Math.sin(this.pulsePhase * 2) * 0.3
+        const singularitySize = 4 + this.proximityIntensity * 3
+
+        // Singularity glow
+        g.circle(0, depth, singularitySize * 2)
+        g.fill({ color: this.colors.glow, alpha: 0.3 * singularityPulse })
+
+        g.circle(0, depth, singularitySize)
+        g.fill({ color: this.colors.beam, alpha: 0.6 * singularityPulse })
+
+        g.circle(0, depth, singularitySize * 0.4)
+        g.fill({ color: 0xffffff, alpha: 0.8 * singularityPulse })
     }
 
     private drawParticles(): void {
         const g = this.particleGraphics
         g.clear()
 
-        for (const particle of this.particles) {
-            g.circle(particle.x, particle.y, particle.size)
-            g.fill({ color: this.colorTheme.glow, alpha: particle.alpha })
+        const rx = this.radius * this.widthScale
+        const ry = this.radius * this.ellipseRatio
+        const depth = this.radius * this.funnelDepth
+
+        for (const particle of this.funnelParticles) {
+            // Calculate position based on depth
+            const shrink = 1 - particle.depth * 0.95
+            const px = Math.cos(particle.angle) * rx * shrink
+            const py = Math.sin(particle.angle) * ry * shrink + depth * particle.depth
+
+            // Fade and shrink as it goes deeper
+            const fadeAlpha = particle.alpha * (1 - particle.depth * 0.7)
+            const size = particle.size * (1 - particle.depth * 0.6)
+
+            // Trail effect
+            const trailCount = 3
+            for (let i = trailCount - 1; i >= 0; i--) {
+                const trailDepth = Math.max(0, particle.depth - i * 0.08)
+                const trailShrink = 1 - trailDepth * 0.95
+                const trailAngle = particle.angle - i * 0.15
+                const tx = Math.cos(trailAngle) * rx * trailShrink
+                const ty = Math.sin(trailAngle) * ry * trailShrink + depth * trailDepth
+                const trailAlpha = fadeAlpha * (1 - i / trailCount) * 0.5
+                const trailSize = size * (1 - i / trailCount * 0.4)
+
+                g.circle(tx, ty, trailSize)
+                g.fill({ color: this.colors.beam, alpha: trailAlpha })
+            }
+
+            // Main particle
+            g.circle(px, py, size)
+            g.fill({ color: this.colors.beam, alpha: fadeAlpha })
+
+            // Bright core
+            g.circle(px, py, size * 0.4)
+            g.fill({ color: 0xffffff, alpha: fadeAlpha * 0.8 })
         }
     }
 
-    private drawEyes(): void {
-        const g = this.eyeGraphics
+    private drawBase(): void {
+        const g = this.baseGraphics
         g.clear()
 
-        for (const eye of this.eyes) {
-            const eyeX = Math.cos(eye.angle) * eye.distance
-            const eyeY = Math.sin(eye.angle) * eye.distance
+        const rx = this.radius * this.widthScale
+        const ry = this.radius * this.ellipseRatio
+        const alphaBoost = 1 + this.proximityIntensity * 0.3
 
-            const isBlinking = eye.blinkTimer < 0.2
+        // Outer ring (main portal edge)
+        g.ellipse(0, 0, rx, ry)
+        g.stroke({ color: this.colors.primary, width: 3, alpha: Math.min(1, 0.9 * alphaBoost) })
 
-            if (!isBlinking) {
-                // Eye white
-                g.ellipse(eyeX, eyeY, eye.size, eye.size * 0.7)
-                g.fill({ color: 0xffffff, alpha: 0.3 })
+        // Second ring
+        g.ellipse(0, 0, rx * 0.92, ry * 0.92)
+        g.stroke({ color: this.colors.secondary, width: 2, alpha: Math.min(1, 0.6 * alphaBoost) })
 
-                // Pupil (looks around)
-                const pupilX = eyeX + Math.cos(eye.lookAngle) * eye.size * 0.3
-                const pupilY = eyeY + Math.sin(eye.lookAngle) * eye.size * 0.3
-                g.circle(pupilX, pupilY, eye.size * 0.4)
-                g.fill({ color: this.colorTheme.glow })
+        // Perfect zone ring (also scaled horizontally)
+        const perfectRx = this.perfectRadius * this.widthScale
+        const perfectRy = this.perfectRadius * this.ellipseRatio
+        g.ellipse(0, 0, perfectRx, perfectRy)
+        g.stroke({ color: this.colors.beam, width: 2, alpha: Math.min(1, 0.5 * alphaBoost) })
 
-                // Highlight
-                g.circle(pupilX - eye.size * 0.1, pupilY - eye.size * 0.1, eye.size * 0.15)
-                g.fill({ color: 0xffffff, alpha: 0.8 })
-            }
+        // Rotating dashed outer decoration
+        const dashRx = rx * 1.08
+        const dashRy = ry * 1.08
+        const dashCount = 20
+        for (let i = 0; i < dashCount; i++) {
+            const startAngle = (Math.PI * 2 * i) / dashCount + this.rotationAngle * 0.5
+            const endAngle = startAngle + (Math.PI / dashCount) * 0.5
+
+            const x1 = Math.cos(startAngle) * dashRx
+            const y1 = Math.sin(startAngle) * dashRy
+            const x2 = Math.cos(endAngle) * dashRx
+            const y2 = Math.sin(endAngle) * dashRy
+
+            g.moveTo(x1, y1)
+            g.lineTo(x2, y2)
+            g.stroke({ color: this.colors.primary, width: 2, alpha: 0.35 * alphaBoost })
         }
     }
 
-    /**
-     * Update animation
-     */
-    update(deltaSeconds: number, renderer?: any): void {
+    private drawBeams(): void {
+        const g = this.beamGraphics
+        g.clear()
+
+        const intensityBoost = 1 + this.proximityIntensity * 0.6
+        const suckBoost = this.isSucking ? 1.4 : 1
+
+        for (const beam of this.beams) {
+            const angle = beam.angle + this.rotationAngle * 0.3
+            const bx = Math.cos(angle) * this.radius * 0.75 * this.widthScale
+            const by = Math.sin(angle) * this.radius * 0.75 * this.ellipseRatio
+
+            const baseHeight = beam.height * intensityBoost * suckBoost
+            const animatedHeight = baseHeight * (0.6 + Math.sin(this.time * beam.speed * 3 + beam.phase) * 0.4)
+            const animatedAlpha = beam.alpha * (0.5 + Math.sin(this.time * beam.speed * 2 + beam.phase) * 0.5) * intensityBoost
+
+            // Outer beam
+            g.moveTo(bx - beam.width / 2, by)
+            g.lineTo(bx + beam.width / 2, by)
+            g.lineTo(bx + beam.width * 0.15, by - animatedHeight)
+            g.lineTo(bx - beam.width * 0.15, by - animatedHeight)
+            g.closePath()
+            g.fill({ color: this.colors.beam, alpha: animatedAlpha * 0.4 })
+
+            // Inner bright core
+            g.moveTo(bx - beam.width * 0.25, by)
+            g.lineTo(bx + beam.width * 0.25, by)
+            g.lineTo(bx, by - animatedHeight * 0.85)
+            g.closePath()
+            g.fill({ color: 0xffffff, alpha: animatedAlpha * 0.35 })
+        }
+    }
+
+    update(deltaSeconds: number): void {
         this.time += deltaSeconds
-        this.pulsePhase += deltaSeconds * 3
+        this.pulsePhase += deltaSeconds * (2.5 + this.proximityIntensity * 2)
+        this.rotationAngle += deltaSeconds * (0.4 + this.proximityIntensity * 0.8)
 
-        // Update shader time
-        this.vortexFilter.time = this.time
+        // Smooth proximity transition
+        this.proximityIntensity += (this.targetProximity - this.proximityIntensity) * deltaSeconds * 5
 
-        // Update particles (spiral inward)
-        for (const particle of this.particles) {
-            particle.distance -= particle.speed * deltaSeconds * 50
-            particle.angle += deltaSeconds * 2
-            particle.x = Math.cos(particle.angle) * particle.distance
-            particle.y = Math.sin(particle.angle) * particle.distance
-
-            // Fade as approaching center
-            if (particle.distance < this.radius * 0.3) {
-                particle.alpha *= 0.95
+        // Suction animation
+        if (this.isSucking) {
+            this.suckTimer += deltaSeconds
+            // Spawn extra particles during suction
+            if (Math.random() < deltaSeconds * 25) {
+                this.spawnFunnelParticle()
             }
-
-            // Respawn if too close
-            if (particle.distance < 5 || particle.alpha < 0.1) {
-                const newAngle = Math.random() * Math.PI * 2
-                const newDistance = this.radius * (0.8 + Math.random() * 1.5)
-                particle.angle = newAngle
-                particle.distance = newDistance
-                particle.x = Math.cos(newAngle) * newDistance
-                particle.y = Math.sin(newAngle) * newDistance
-                particle.alpha = 0.3 + Math.random() * 0.5
+            if (this.suckTimer >= this.suckDuration) {
+                this.isSucking = false
+                this.suckTimer = 0
             }
         }
 
-        // Spawn new particles occasionally
-        this.particleSpawnTimer -= deltaSeconds
-        if (this.particleSpawnTimer <= 0 && this.particles.length < 40) {
-            this.spawnParticle()
-            this.particleSpawnTimer = 0.1
-        }
+        // Update funnel particles (spiral down into singularity)
+        const speedMultiplier = 1 + this.proximityIntensity * 0.5 + (this.isSucking ? 1 : 0)
+        for (let i = this.funnelParticles.length - 1; i >= 0; i--) {
+            const particle = this.funnelParticles[i]
+            particle.depth += particle.speed * deltaSeconds * speedMultiplier
+            particle.angle += particle.rotationSpeed * deltaSeconds * (1 + particle.depth)  // Faster rotation as it goes deeper
 
-        // Update eyes
-        for (const eye of this.eyes) {
-            eye.blinkTimer -= deltaSeconds
-            if (eye.blinkTimer <= 0) {
-                eye.blinkTimer = 3 + Math.random() * 4
+            // Respawn when reached singularity
+            if (particle.depth >= 1) {
+                this.funnelParticles.splice(i, 1)
+                this.spawnFunnelParticle()
             }
-
-            // Look around slowly
-            eye.lookAngle += deltaSeconds * (Math.random() - 0.5) * 2
         }
 
-        // Update tentacles animation
-        for (const tentacle of this.tentacles) {
-            tentacle.phase += deltaSeconds * 0.5
+        // Maintain particle count
+        while (this.funnelParticles.length < 20 + (this.isSucking ? 15 : 0)) {
+            this.spawnFunnelParticle()
+        }
+
+        // Update beams
+        for (const beam of this.beams) {
+            beam.phase += deltaSeconds * beam.speed
         }
 
         // Hit flash decay
@@ -403,78 +498,80 @@ export class Wormhole {
             this.hitFlashTimer -= deltaSeconds
         }
 
-        // Re-render graphics
-        if (renderer) {
-            renderer.render({
-                container: this.vortexGraphics,
-                target: this.renderTexture,
-                clear: true,
-            })
-        }
-
         this.draw()
-        this.drawGlow()
-        this.drawTentacles()
-        this.drawParticles()
-        this.drawEyes()
     }
 
-    /**
-     * Check if a point is inside the wormhole
-     */
+    setProximity(normalizedDistance: number): void {
+        if (normalizedDistance > 2) {
+            this.targetProximity = 0
+        } else if (normalizedDistance > 1) {
+            this.targetProximity = (2 - normalizedDistance) * 0.3
+        } else {
+            this.targetProximity = 1 - normalizedDistance * 0.7
+        }
+    }
+
     checkHit(px: number, py: number): { hit: boolean; perfect: boolean; distance: number } {
         const dx = px - this.x
         const dy = py - this.y
-        const distance = Math.sqrt(dx * dx + dy * dy)
 
-        const hit = distance <= this.radius
-        const perfect = distance <= this.perfectRadius
+        // Elliptical hit detection: normalize by radii
+        const rx = this.radius * this.widthScale
+        const ry = this.radius * this.ellipseRatio
+        const normalizedDist = Math.sqrt((dx / rx) ** 2 + (dy / ry) ** 2)
 
-        return { hit, perfect, distance }
+        // Perfect zone also elliptical
+        const perfectRx = this.perfectRadius * this.widthScale
+        const perfectRy = this.perfectRadius * this.ellipseRatio
+        const perfectNormalizedDist = Math.sqrt((dx / perfectRx) ** 2 + (dy / perfectRy) ** 2)
+
+        return {
+            hit: normalizedDist <= 1,
+            perfect: perfectNormalizedDist <= 1,
+            distance: normalizedDist * this.radius,  // Approximate distance for compatibility
+        }
     }
 
-    /**
-     * Show hit animation
-     */
+    showSuckIn(): void {
+        this.isSucking = true
+        this.suckTimer = 0
+        // Burst of particles
+        for (let i = 0; i < 15; i++) {
+            this.spawnFunnelParticle()
+        }
+    }
+
     showHit(perfect: boolean): void {
         this.isHit = true
         this.hitFlashTimer = 0.3
-
-        // Pulse effect
         this.pulsePhase = 0
+        this.showSuckIn()
     }
 
-    /**
-     * Move wormhole to new position
-     */
-    moveTo(newX: number, y: number): void {
+    moveTo(newX: number, newY: number): void {
         this.x = newX
-        this.y = y
-        this.container.position.set(newX, y)
+        this.y = newY
+        this.container.position.set(newX, newY)
         this.isHit = false
     }
 
-    /**
-     * Resize wormhole
-     */
     setRadius(radius: number, perfectRadius?: number): void {
         this.radius = radius
         this.perfectRadius = perfectRadius ?? radius * 0.4
+        this.beams = []
+        this.initBeams()
+        this.draw()
+    }
 
-        // Recreate render texture with new size
-        this.renderTexture.resize(radius * 3, radius * 3)
-
-        // Reinitialize tentacles and eyes for new size
-        this.tentacles = []
-        this.eyes = []
-        this.initTentacles()
-        this.initEyes()
-
+    /**
+     * Set horizontal width scale (1.0 = normal, 2.0 = double width)
+     */
+    setWidthScale(scale: number): void {
+        this.widthScale = scale
         this.draw()
     }
 
     destroy(): void {
-        this.renderTexture.destroy(true)
         this.container.destroy({ children: true })
     }
 }

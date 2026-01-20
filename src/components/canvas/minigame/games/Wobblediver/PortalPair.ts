@@ -48,33 +48,27 @@ export class PortalPair {
     private teleportProgress = 0
     private teleportingObject: { x: number; y: number } | null = null
 
-    constructor(config: PortalPairConfig, app?: any) {
+    constructor(config: PortalPairConfig) {
         this.container = new Container()
 
         // Create entrance portal
-        this.entrance = new Wormhole(
-            {
-                x: config.entrance.x,
-                y: config.entrance.y,
-                radius: config.entrance.radius,
-                isFinish: false,
-                portalColor: config.color,
-            },
-            app
-        )
+        this.entrance = new Wormhole({
+            x: config.entrance.x,
+            y: config.entrance.y,
+            radius: config.entrance.radius,
+            isFinish: false,
+            portalColor: config.color,
+        })
         this.container.addChild(this.entrance.container)
 
         // Create exit portal
-        this.exit = new Wormhole(
-            {
-                x: config.exit.x,
-                y: config.exit.y,
-                radius: config.exit.radius,
-                isFinish: false,
-                portalColor: config.color,
-            },
-            app
-        )
+        this.exit = new Wormhole({
+            x: config.exit.x,
+            y: config.exit.y,
+            radius: config.exit.radius,
+            isFinish: false,
+            portalColor: config.color,
+        })
         this.container.addChild(this.exit.container)
 
         // Connection visualization (behind portals)
@@ -138,12 +132,12 @@ export class PortalPair {
     /**
      * Update animations and check for teleportation
      */
-    update(deltaSeconds: number, renderer?: any): void {
+    update(deltaSeconds: number): void {
         this.time += deltaSeconds
 
         // Update portals
-        this.entrance.update(deltaSeconds, renderer)
-        this.exit.update(deltaSeconds, renderer)
+        this.entrance.update(deltaSeconds)
+        this.exit.update(deltaSeconds)
 
         // Update connection particles
         for (const particle of this.connectionParticles) {
