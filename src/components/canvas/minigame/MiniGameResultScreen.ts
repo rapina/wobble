@@ -343,7 +343,7 @@ export class MiniGameResultScreen {
         this.card.addChild(cardBg)
 
         // Title badge
-        const badgeWidth = this.theme === 'abyss' ? 160 : 140
+        const badgeWidth = this.theme === 'abyss' ? 180 : 140  // Wider for "CONSUMED" with letterSpacing
         const badgeHeight = 32
         const badgeShadow = new Graphics()
         badgeShadow.roundRect(-badgeWidth / 2 + 2, this.cardY - 12 + 4, badgeWidth, badgeHeight, 8)

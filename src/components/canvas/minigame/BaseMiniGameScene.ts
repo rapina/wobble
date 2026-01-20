@@ -417,6 +417,18 @@ export abstract class BaseMiniGameScene {
     protected onGameEnd(): void {
         // Override in subclasses
     }
+
+    /**
+     * Get game-specific data for records
+     * Override in subclasses to provide game-specific metrics
+     */
+    public getGameData(): Record<string, unknown> {
+        return {
+            score: this.scoreSystem.score,
+            gameTime: this.gameTime,
+            maxCombo: this.scoreSystem.currentState.maxCombo,
+        }
+    }
     protected onGameReset(): void {
         // Override in subclasses
     }

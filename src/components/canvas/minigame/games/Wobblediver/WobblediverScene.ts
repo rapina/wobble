@@ -260,7 +260,7 @@ export class WobblediverScene extends BaseMiniGameScene {
     private declare transitionSubText: Text
     private isTransitioning = false
     private transitionTime = 0
-    private transitionDuration = 2.0  // Total transition time
+    private transitionDuration = 2.5  // Total transition time (close: 0.5s, hold: 1.3s, open: 0.7s)
     private transitionTentacles: { x: number; y: number; angle: number; length: number; phase: number }[] = []
     private transitionEyes: { x: number; y: number; size: number; openness: number; targetOpenness: number }[] = []
     private transitionDepthParticles: { x: number; y: number; size: number; speed: number; alpha: number }[] = []
@@ -1616,23 +1616,23 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Survival Bonus row (was HP Bonus)
         this.stageHpLabelText = new Text({ text: 'Survival', style: labelStyle })
         this.stageHpLabelText.anchor.set(0, 0.5)
-        this.stageHpLabelText.position.set(-95, -55)
+        this.stageHpLabelText.position.set(-105, -55)
         this.stageResultContainer.addChild(this.stageHpLabelText)
 
         this.stageHpValueText = new Text({ text: '+0', style: valueStyle })
         this.stageHpValueText.anchor.set(1, 0.5)
-        this.stageHpValueText.position.set(95, -55)
+        this.stageHpValueText.position.set(105, -55)
         this.stageResultContainer.addChild(this.stageHpValueText)
 
         // Swift Bonus row (was Time Bonus)
         this.stageTimeLabelText = new Text({ text: 'Swift', style: labelStyle })
         this.stageTimeLabelText.anchor.set(0, 0.5)
-        this.stageTimeLabelText.position.set(-95, -25)
+        this.stageTimeLabelText.position.set(-105, -25)
         this.stageResultContainer.addChild(this.stageTimeLabelText)
 
         this.stageTimeValueText = new Text({ text: '+0', style: valueStyle })
         this.stageTimeValueText.anchor.set(1, 0.5)
-        this.stageTimeValueText.position.set(95, -25)
+        this.stageTimeValueText.position.set(105, -25)
         this.stageResultContainer.addChild(this.stageTimeValueText)
 
         // Total row
@@ -1646,7 +1646,7 @@ export class WobblediverScene extends BaseMiniGameScene {
             }),
         })
         this.stageTotalLabelText.anchor.set(0, 0.5)
-        this.stageTotalLabelText.position.set(-95, 10)
+        this.stageTotalLabelText.position.set(-105, 10)
         this.stageResultContainer.addChild(this.stageTotalLabelText)
 
         this.stageTotalValueText = new Text({
@@ -1659,7 +1659,7 @@ export class WobblediverScene extends BaseMiniGameScene {
             }),
         })
         this.stageTotalValueText.anchor.set(1, 0.5)
-        this.stageTotalValueText.position.set(95, 10)
+        this.stageTotalValueText.position.set(105, 10)
         this.stageResultContainer.addChild(this.stageTotalValueText)
 
         // Grade text (S, A, B, C, D) - eldritch style
@@ -1700,7 +1700,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         const g = this.stageResultGraphics
         g.clear()
 
-        const w = 240
+        const w = 260  // Wider to prevent text clipping
         const h = 230
         const yOffset = -120
 
@@ -2155,60 +2155,140 @@ export class WobblediverScene extends BaseMiniGameScene {
         const g = this.transitionGraphics
         g.clear()
 
-        // Phase 1: Darkness closes in (0 - 0.5s)
-        // Phase 2: Tentacles and eyes appear, text shows (0.3 - 1.5s)
-        // Phase 3: Everything fades out (1.5 - 2.0s)
+        // Phase 1: Darkness closes in completely (0 - 0.5s)
+        // Phase 2: Full darkness with effects (0.5 - 1.8s)
+        // Phase 3: Abyss opens - vertical split reveal (1.8 - 2.5s)
 
-        // Calculate vignette intensity
-        let vignetteIntensity = 0
-        if (t < 0.5) {
-            vignetteIntensity = t / 0.5
-        } else if (t < 1.5) {
-            vignetteIntensity = 1
-        } else {
-            vignetteIntensity = 1 - (t - 1.5) / 0.5
-        }
-
-        // Dark vignette overlay
-        const vignetteAlpha = 0.85 * vignetteIntensity
-        g.rect(0, 0, this.width, this.height)
-        g.fill({ color: 0x0a0510, alpha: vignetteAlpha })
-
-        // Radial gradient effect (darker edges)
         const cx = this.width / 2
         const cy = this.height / 2
-        for (let r = 0; r < 5; r++) {
-            const radius = (this.width * 0.3) + r * (this.width * 0.15)
-            const alpha = (r / 5) * 0.3 * vignetteIntensity
-            g.ellipse(cx, cy, radius, radius * 0.7)
-            g.fill({ color: 0x0a0510, alpha })
-        }
 
-        // Draw tentacles
-        if (t > 0.2 && t < 1.8) {
-            const tentacleProgress = Math.min(1, (t - 0.2) / 0.6)
-            const tentacleFade = t > 1.4 ? 1 - (t - 1.4) / 0.4 : 1
+        // Calculate phase-specific values
+        const closePhaseEnd = 0.5
+        const holdPhaseEnd = 1.8
+        const openPhaseEnd = duration
 
-            for (const tentacle of this.transitionTentacles) {
-                this.drawTransitionTentacle(g, tentacle, tentacleProgress * tentacleFade, t)
+        if (t < closePhaseEnd) {
+            // Phase 1: Iris closing effect (circular mask shrinking)
+            const closeProgress = t / closePhaseEnd
+            const easeClose = 1 - Math.pow(1 - closeProgress, 3)  // Ease out cubic
+
+            // Draw closing iris - reveal shrinks from edges
+            const maxRadius = Math.sqrt(cx * cx + cy * cy) * 1.2
+            const irisRadius = maxRadius * (1 - easeClose)
+
+            // Full dark background
+            g.rect(0, 0, this.width, this.height)
+            g.fill({ color: 0x0a0510, alpha: 1.0 })
+
+            // Cut out the visible area (circular reveal getting smaller)
+            if (irisRadius > 10) {
+                g.ellipse(cx, cy, irisRadius, irisRadius * 0.8)
+                g.cut()
+            }
+
+            // Glowing edge around the iris
+            if (irisRadius > 20) {
+                for (let i = 0; i < 3; i++) {
+                    const glowRadius = irisRadius + i * 8
+                    g.ellipse(cx, cy, glowRadius, glowRadius * 0.8)
+                    g.stroke({ color: 0x6b5b95, width: 4 - i, alpha: 0.4 - i * 0.1 })
+                }
+            }
+
+        } else if (t < holdPhaseEnd) {
+            // Phase 2: Full darkness - show all the spooky effects
+            g.rect(0, 0, this.width, this.height)
+            g.fill({ color: 0x0a0510, alpha: 1.0 })
+
+            // Subtle inner glow from center
+            const pulseIntensity = 0.3 + Math.sin((t - closePhaseEnd) * 4) * 0.1
+            for (let i = 0; i < 4; i++) {
+                const glowRadius = 50 + i * 40
+                g.ellipse(cx, cy, glowRadius, glowRadius * 0.7)
+                g.fill({ color: 0x6b5b95, alpha: pulseIntensity * (0.15 - i * 0.03) })
+            }
+
+        } else {
+            // Phase 3: Abyss opening - vertical split like an eye opening
+            const openProgress = (t - holdPhaseEnd) / (openPhaseEnd - holdPhaseEnd)
+            const easeOpen = openProgress * openProgress * (3 - 2 * openProgress)  // Smoothstep
+
+            // The "eyelids" split apart vertically
+            const splitDistance = cy * easeOpen * 1.2
+
+            // Top half (slides up)
+            g.rect(0, 0, this.width, cy - splitDistance)
+            g.fill({ color: 0x0a0510, alpha: 1.0 })
+
+            // Bottom half (slides down)
+            g.rect(0, cy + splitDistance, this.width, this.height - cy - splitDistance)
+            g.fill({ color: 0x0a0510, alpha: 1.0 })
+
+            // Glowing edges where the split happens
+            const glowAlpha = 0.6 * (1 - easeOpen)
+
+            // Top edge glow
+            for (let i = 0; i < 4; i++) {
+                const edgeY = cy - splitDistance + i * 3
+                g.moveTo(0, edgeY)
+                g.lineTo(this.width, edgeY)
+                g.stroke({ color: 0x4ecdc4, width: 4 - i, alpha: glowAlpha * (1 - i * 0.2) })
+            }
+
+            // Bottom edge glow
+            for (let i = 0; i < 4; i++) {
+                const edgeY = cy + splitDistance - i * 3
+                g.moveTo(0, edgeY)
+                g.lineTo(this.width, edgeY)
+                g.stroke({ color: 0x4ecdc4, width: 4 - i, alpha: glowAlpha * (1 - i * 0.2) })
+            }
+
+            // Tentacles reaching from the edges during open
+            if (easeOpen < 0.7) {
+                const tentacleAlpha = (0.7 - easeOpen) / 0.7
+                // Top tentacles
+                for (let i = 0; i < 5; i++) {
+                    const tx = this.width * (0.1 + i * 0.2)
+                    const reachY = cy - splitDistance + 30 * tentacleAlpha
+                    g.moveTo(tx - 10, cy - splitDistance)
+                    g.quadraticCurveTo(tx, reachY, tx + 10, cy - splitDistance)
+                    g.fill({ color: 0x4a1a55, alpha: tentacleAlpha * 0.6 })
+                }
+                // Bottom tentacles
+                for (let i = 0; i < 5; i++) {
+                    const tx = this.width * (0.15 + i * 0.2)
+                    const reachY = cy + splitDistance - 30 * tentacleAlpha
+                    g.moveTo(tx - 10, cy + splitDistance)
+                    g.quadraticCurveTo(tx, reachY, tx + 10, cy + splitDistance)
+                    g.fill({ color: 0x4a1a55, alpha: tentacleAlpha * 0.6 })
+                }
             }
         }
 
-        // Draw eyes
-        if (t > 0.4 && t < 1.7) {
-            const eyeProgress = Math.min(1, (t - 0.4) / 0.4)
-            const eyeFade = t > 1.3 ? 1 - (t - 1.3) / 0.4 : 1
+        // Calculate visibility for effects (only during hold phase)
+        const effectsVisible = t >= closePhaseEnd && t < holdPhaseEnd
+        const effectsFade = t > holdPhaseEnd - 0.3 ? Math.max(0, (holdPhaseEnd - t) / 0.3) : 1
+
+        // Draw tentacles (only during hold phase)
+        if (effectsVisible) {
+            const tentacleProgress = Math.min(1, (t - closePhaseEnd) / 0.5)
+            for (const tentacle of this.transitionTentacles) {
+                this.drawTransitionTentacle(g, tentacle, tentacleProgress * effectsFade, t)
+            }
+        }
+
+        // Draw eyes (only during hold phase)
+        if (effectsVisible) {
+            const eyeProgress = Math.min(1, (t - closePhaseEnd - 0.1) / 0.3)
 
             for (const eye of this.transitionEyes) {
                 eye.openness = Math.min(eye.openness + deltaSeconds * 3, eye.targetOpenness) * eyeProgress
-                this.drawTransitionEye(g, eye, eyeFade, t)
+                this.drawTransitionEye(g, eye, effectsFade, t)
             }
         }
 
-        // Draw depth descent particles (float upward to show sinking feeling)
-        if (t > 0.1 && t < 1.8) {
-            const particleFade = t < 0.3 ? (t - 0.1) / 0.2 : (t > 1.5 ? 1 - (t - 1.5) / 0.3 : 1)
-
+        // Draw depth descent particles (only during hold phase)
+        if (effectsVisible) {
             for (const particle of this.transitionDepthParticles) {
                 // Move particles upward (we're sinking, so particles go up)
                 particle.y -= particle.speed * deltaSeconds
@@ -2224,22 +2304,22 @@ export class WobblediverScene extends BaseMiniGameScene {
                 g.moveTo(particle.x, particle.y)
                 g.lineTo(particle.x, particle.y + trailLength)
                 g.stroke({
-                    color: 0x4ecdc4,  // Teal color
+                    color: 0x4ecdc4,
                     width: particle.size,
-                    alpha: particle.alpha * particleFade,
+                    alpha: particle.alpha * effectsFade,
                     cap: 'round',
                 })
 
                 // Small glow
                 g.circle(particle.x, particle.y, particle.size * 1.5)
-                g.fill({ color: 0x4ecdc4, alpha: particle.alpha * 0.3 * particleFade })
+                g.fill({ color: 0x4ecdc4, alpha: particle.alpha * 0.3 * effectsFade })
             }
         }
 
-        // Draw depth meter (vertical progress bar on right side)
-        if (t > 0.2 && t < 1.7) {
-            const meterFade = t < 0.5 ? (t - 0.2) / 0.3 : (t > 1.4 ? 1 - (t - 1.4) / 0.3 : 1)
-            this.transitionDepthMeter = Math.min(1, this.transitionDepthMeter + deltaSeconds * 0.8)
+        // Draw depth meter (only during hold phase)
+        if (effectsVisible) {
+            const meterFade = effectsFade
+            this.transitionDepthMeter = Math.min(1, this.transitionDepthMeter + deltaSeconds * 0.6)
 
             const meterX = this.width - 40
             const meterY = this.height * 0.25
@@ -2272,12 +2352,11 @@ export class WobblediverScene extends BaseMiniGameScene {
             g.fill({ color: 0xff6b6b, alpha: meterFade })
         }
 
-        // Stage text animation
-        if (t > 0.3 && t < 1.6) {
-            const textProgress = Math.min(1, (t - 0.3) / 0.3)
-            const textFade = t > 1.3 ? 1 - (t - 1.3) / 0.3 : 1
+        // Stage text animation (only during hold phase)
+        if (effectsVisible) {
+            const textProgress = Math.min(1, (t - closePhaseEnd) / 0.3)
 
-            this.transitionStageText.alpha = textProgress * textFade
+            this.transitionStageText.alpha = textProgress * effectsFade
             this.transitionStageText.scale.set(0.5 + textProgress * 0.5)
 
             // Shake effect
@@ -2285,10 +2364,8 @@ export class WobblediverScene extends BaseMiniGameScene {
             this.transitionStageText.position.set(this.width / 2 + shake, this.height / 2 - 30)
 
             // Sub text (slightly delayed)
-            if (t > 0.5) {
-                const subProgress = Math.min(1, (t - 0.5) / 0.3)
-                this.transitionSubText.alpha = subProgress * textFade * 0.8
-            }
+            const subProgress = Math.min(1, (t - closePhaseEnd - 0.2) / 0.3)
+            this.transitionSubText.alpha = Math.max(0, subProgress) * effectsFade * 0.8
         } else {
             this.transitionStageText.alpha = 0
             this.transitionSubText.alpha = 0
@@ -3589,6 +3666,18 @@ export class WobblediverScene extends BaseMiniGameScene {
         }
 
         super.destroy()
+    }
+
+    /**
+     * Get Wobblediver-specific game data for records
+     */
+    public override getGameData(): Record<string, unknown> {
+        return {
+            ...super.getGameData(),
+            depth: this.roundNumber,
+            rank: this.resultGrade.letter,
+            isPerfect: this.resultGrade.letter === 'S',
+        }
     }
 
     protected onResize(): void {

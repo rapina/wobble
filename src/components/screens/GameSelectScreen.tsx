@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Play, Lock, Gamepad2, Scissors } from 'lucide-react'
+import { ArrowLeft, Play, Lock, Gamepad2, Trophy, Target } from 'lucide-react'
 import Balatro from '@/components/Balatro'
 import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
 import { cn } from '@/lib/utils'
+import { useMinigameRecordStore } from '@/stores/minigameRecordStore'
 
 // Balatro theme (matching HomeScreen)
 const theme = {
@@ -19,40 +20,34 @@ const theme = {
     orange: '#FF8C42',
 }
 
+// Wobblediver abyss theme
+const abyssTheme = {
+    bg: '#0a0510',
+    bgGradient: 'linear-gradient(180deg, #1a0a25 0%, #0a0510 50%, #051015 100%)',
+    accent: '#6b5b95',
+    accentLight: '#8b7bb5',
+    teal: '#4ecdc4',
+    danger: '#cc4444',
+    glow: '#6b5b9580',
+}
+
 interface Adventure {
     id: string
     titleKey: string
-    episodeKey?: string
     descKey: string
     available: boolean
     color: string
-    type: 'adventure' | 'minigame'
-    icon?: 'wobble' | 'pendulum' | 'dive'
-    badge?: string
+    tags?: string[]
 }
 
 const ADVENTURES: Adventure[] = [
-    // Wobble Survivor hidden for now
-    // {
-    //     id: 'wobble-survivor',
-    //     titleKey: 'game.wobbleAdventure',
-    //     episodeKey: 'game.wobbleAdventureEpisode',
-    //     descKey: 'game.wobbleAdventureDesc',
-    //     available: true,
-    //     color: '#FF6B9D',
-    //     type: 'adventure',
-    //     icon: 'wobble',
-    //     badge: 'BETA',
-    // },
     {
         id: 'wobblediver',
         titleKey: 'game.wobblediver',
-        episodeKey: 'game.minigame',
         descKey: 'game.wobblediverDesc',
         available: true,
-        color: '#5DADE2',
-        type: 'minigame',
-        icon: 'dive',
+        color: '#6b5b95',
+        tags: ['진자 운동', '중력', '운동량'],
     },
     {
         id: 'coming-soon',
@@ -60,23 +55,361 @@ const ADVENTURES: Adventure[] = [
         descKey: '',
         available: false,
         color: '#666666',
-        type: 'adventure',
     },
 ]
 
-interface AdventureSelectScreenProps {
+interface GameSelectScreenProps {
     onBack: () => void
     onSelectAdventure: (adventureId: string) => void
 }
 
-export function GameSelectScreen({ onBack, onSelectAdventure }: AdventureSelectScreenProps) {
+// Wobblediver themed card component
+function WobblediverCard({
+    adventure,
+    onSelect,
+    mounted,
+    delay,
+    t,
+    bestDepth,
+    highScore,
+}: {
+    adventure: Adventure
+    onSelect: () => void
+    mounted: boolean
+    delay: number
+    t: (key: string) => string
+    bestDepth: number
+    highScore: number
+}) {
+    const hasRecords = bestDepth > 0 || highScore > 0
+    return (
+        <div
+            className={cn(
+                'transition-all duration-500',
+                mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+            )}
+            style={{ transitionDelay: `${delay}ms` }}
+        >
+            <button
+                onClick={onSelect}
+                className="w-full rounded-2xl overflow-hidden transition-all active:scale-[0.98] hover:scale-[1.01]"
+                style={{
+                    background: abyssTheme.bgGradient,
+                    border: `3px solid ${abyssTheme.accent}50`,
+                    boxShadow: `0 0 20px ${abyssTheme.glow}, 0 8px 0 ${theme.border}`,
+                }}
+            >
+                {/* Main visual area */}
+                <div className="relative h-44 overflow-hidden">
+                    {/* Animated background gradient */}
+                    <div
+                        className="absolute inset-0"
+                        style={{
+                            background: `radial-gradient(ellipse at 50% 120%, ${abyssTheme.accent}40 0%, transparent 60%)`,
+                        }}
+                    />
+
+                    {/* Floating particles effect */}
+                    <div className="absolute inset-0 overflow-hidden">
+                        {[...Array(8)].map((_, i) => (
+                            <div
+                                key={i}
+                                className="absolute w-1 h-1 rounded-full bg-teal-400/30 animate-pulse"
+                                style={{
+                                    left: `${15 + i * 10}%`,
+                                    top: `${60 + (i % 3) * 15}%`,
+                                    animationDelay: `${i * 0.3}s`,
+                                }}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Tentacles from sides */}
+                    <div
+                        className="absolute left-0 top-1/2 w-8 h-32 -translate-y-1/2"
+                        style={{
+                            background: `linear-gradient(90deg, ${abyssTheme.accent}60 0%, transparent 100%)`,
+                            clipPath: 'polygon(0 20%, 100% 30%, 80% 50%, 100% 70%, 0 80%)',
+                        }}
+                    />
+                    <div
+                        className="absolute right-0 top-1/3 w-6 h-24 -translate-y-1/2"
+                        style={{
+                            background: `linear-gradient(-90deg, ${abyssTheme.accent}40 0%, transparent 100%)`,
+                            clipPath: 'polygon(100% 25%, 0 35%, 20% 50%, 0 65%, 100% 75%)',
+                        }}
+                    />
+
+                    {/* Main character illustration */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        {/* Rope */}
+                        <div
+                            className="w-0.5 h-8"
+                            style={{
+                                background: 'linear-gradient(180deg, #8B6914 0%, #D4A84B 100%)',
+                            }}
+                        />
+
+                        {/* Wobble character */}
+                        <div className="relative">
+                            <WobbleDisplay
+                                size={56}
+                                shape="circle"
+                                color={0xf5b041}
+                                expression="worried"
+                            />
+                            {/* Glow effect behind character */}
+                            <div
+                                className="absolute inset-0 -z-10 rounded-full blur-xl"
+                                style={{ background: '#f5b04140', transform: 'scale(1.5)' }}
+                            />
+                        </div>
+
+                        {/* Abyss water surface */}
+                        <div className="relative mt-2 w-full">
+                            {/* Wave effect */}
+                            <svg className="w-full h-8" viewBox="0 0 200 32" preserveAspectRatio="none">
+                                <defs>
+                                    <linearGradient id="abyssGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" stopColor={abyssTheme.accent} stopOpacity="0.6" />
+                                        <stop offset="100%" stopColor={abyssTheme.bg} stopOpacity="1" />
+                                    </linearGradient>
+                                </defs>
+                                <path
+                                    d="M0,8 Q25,4 50,8 T100,8 T150,8 T200,8 L200,32 L0,32 Z"
+                                    fill="url(#abyssGradient)"
+                                />
+                            </svg>
+
+                            {/* Eyes in the abyss */}
+                            <div className="absolute top-3 left-1/4 flex gap-1">
+                                <div className="w-2 h-1.5 rounded-full bg-red-400/50 animate-pulse" />
+                            </div>
+                            <div
+                                className="absolute top-4 right-1/3 flex gap-1"
+                                style={{ animationDelay: '0.5s' }}
+                            >
+                                <div className="w-1.5 h-1 rounded-full bg-red-400/40 animate-pulse" />
+                            </div>
+                            <div className="absolute top-5 left-1/2 flex gap-1">
+                                <div
+                                    className="w-2.5 h-2 rounded-full bg-red-400/60 animate-pulse"
+                                    style={{ animationDelay: '1s' }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Physics tags - top left */}
+                    {adventure.tags && (
+                        <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                            {adventure.tags.map((tag) => (
+                                <span
+                                    key={tag}
+                                    className="px-2 py-0.5 rounded text-[10px] font-bold backdrop-blur-sm"
+                                    style={{
+                                        background: `${abyssTheme.teal}30`,
+                                        color: abyssTheme.teal,
+                                        border: `1px solid ${abyssTheme.teal}50`,
+                                    }}
+                                >
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Play button */}
+                    <div
+                        className="absolute right-3 bottom-3 w-14 h-14 rounded-xl flex items-center justify-center transition-transform hover:scale-110"
+                        style={{
+                            background: `linear-gradient(135deg, ${abyssTheme.teal} 0%, ${abyssTheme.accent} 100%)`,
+                            border: `3px solid ${theme.border}`,
+                            boxShadow: `0 4px 0 ${theme.border}, 0 0 15px ${abyssTheme.teal}50`,
+                        }}
+                    >
+                        <Play className="w-7 h-7 text-white ml-0.5" fill="white" />
+                    </div>
+                </div>
+
+                {/* Info area */}
+                <div
+                    className="p-4 text-left"
+                    style={{
+                        background: `linear-gradient(180deg, ${abyssTheme.accent}20 0%, ${abyssTheme.bg} 100%)`,
+                        borderTop: `2px solid ${abyssTheme.accent}30`,
+                    }}
+                >
+                    <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                            <h3
+                                className="text-xl font-black tracking-tight"
+                                style={{
+                                    color: '#fff',
+                                    textShadow: `0 0 20px ${abyssTheme.accent}`,
+                                }}
+                            >
+                                {t(adventure.titleKey)}
+                            </h3>
+                            <p
+                                className="text-xs mt-1.5 leading-relaxed line-clamp-2"
+                                style={{ color: `${abyssTheme.teal}cc` }}
+                            >
+                                {t(adventure.descKey)}
+                            </p>
+                        </div>
+
+                        {/* Records display */}
+                        {hasRecords && (
+                            <div className="flex flex-col gap-1 ml-3 shrink-0">
+                                <div
+                                    className="flex items-center gap-1.5 px-2 py-1 rounded"
+                                    style={{
+                                        background: `${abyssTheme.accent}30`,
+                                        border: `1px solid ${abyssTheme.accent}50`,
+                                    }}
+                                >
+                                    <Target className="w-3 h-3" style={{ color: abyssTheme.teal }} />
+                                    <span
+                                        className="text-[10px] font-bold"
+                                        style={{ color: abyssTheme.teal }}
+                                    >
+                                        {bestDepth}
+                                    </span>
+                                </div>
+                                <div
+                                    className="flex items-center gap-1.5 px-2 py-1 rounded"
+                                    style={{
+                                        background: `${theme.gold}20`,
+                                        border: `1px solid ${theme.gold}50`,
+                                    }}
+                                >
+                                    <Trophy className="w-3 h-3" style={{ color: theme.gold }} />
+                                    <span
+                                        className="text-[10px] font-bold"
+                                        style={{ color: theme.gold }}
+                                    >
+                                        {highScore.toLocaleString()}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </button>
+        </div>
+    )
+}
+
+// Generic locked/coming soon card
+function LockedCard({
+    adventure,
+    mounted,
+    delay,
+    t,
+}: {
+    adventure: Adventure
+    mounted: boolean
+    delay: number
+    t: (key: string) => string
+}) {
+    return (
+        <div
+            className={cn(
+                'transition-all duration-500',
+                mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+            )}
+            style={{ transitionDelay: `${delay}ms` }}
+        >
+            <div
+                className="w-full rounded-2xl overflow-hidden opacity-50"
+                style={{
+                    background: theme.bgPanel,
+                    border: `3px solid ${theme.border}`,
+                    boxShadow: `0 4px 0 ${theme.border}`,
+                }}
+            >
+                {/* Thumbnail Area */}
+                <div
+                    className="relative h-24 flex items-center justify-center"
+                    style={{ background: theme.bgPanelLight }}
+                >
+                    <div
+                        className="w-14 h-14 rounded-xl flex items-center justify-center"
+                        style={{
+                            background: theme.bgPanel,
+                            border: `3px solid ${theme.border}`,
+                        }}
+                    >
+                        <Lock className="w-7 h-7 text-white/30" />
+                    </div>
+                </div>
+
+                {/* Info Area */}
+                <div
+                    className="p-4 text-left"
+                    style={{
+                        borderTop: `3px solid ${theme.border}`,
+                        background: theme.bgPanel,
+                    }}
+                >
+                    <h3 className="text-base font-black text-white/40">{t(adventure.titleKey)}</h3>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreenProps) {
     const { t } = useTranslation()
     const [mounted, setMounted] = useState(false)
+    const wobblediverRecord = useMinigameRecordStore((s) => s.getWobblediverRecord())
 
     useEffect(() => {
         const timer = setTimeout(() => setMounted(true), 100)
         return () => clearTimeout(timer)
     }, [])
+
+    const renderCard = (adventure: Adventure, index: number) => {
+        if (!adventure.available) {
+            return (
+                <LockedCard
+                    key={adventure.id}
+                    adventure={adventure}
+                    mounted={mounted}
+                    delay={index * 150}
+                    t={t}
+                />
+            )
+        }
+
+        // Game-specific cards
+        switch (adventure.id) {
+            case 'wobblediver':
+                return (
+                    <WobblediverCard
+                        key={adventure.id}
+                        adventure={adventure}
+                        onSelect={() => onSelectAdventure(adventure.id)}
+                        mounted={mounted}
+                        delay={index * 150}
+                        t={t}
+                        bestDepth={wobblediverRecord.bestDepth}
+                        highScore={wobblediverRecord.highScore}
+                    />
+                )
+            default:
+                return (
+                    <LockedCard
+                        key={adventure.id}
+                        adventure={adventure}
+                        mounted={mounted}
+                        delay={index * 150}
+                        t={t}
+                    />
+                )
+        }
+    }
 
     return (
         <div className="relative w-full h-full overflow-hidden" style={{ background: theme.felt }}>
@@ -161,190 +494,8 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: AdventureSelectS
                     paddingRight: 'max(env(safe-area-inset-right, 0px), 16px)',
                 }}
             >
-                {/* Adventure Cards */}
-                <div className="space-y-4 mt-4">
-                    {ADVENTURES.map((adventure, index) => (
-                        <div
-                            key={adventure.id}
-                            className={cn(
-                                'transition-all duration-500',
-                                mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-                            )}
-                            style={{ transitionDelay: `${index * 150}ms` }}
-                        >
-                            <button
-                                onClick={() =>
-                                    adventure.available && onSelectAdventure(adventure.id)
-                                }
-                                disabled={!adventure.available}
-                                className={cn(
-                                    'w-full rounded-2xl overflow-hidden transition-all',
-                                    adventure.available
-                                        ? 'active:scale-[0.98] hover:scale-[1.01]'
-                                        : 'cursor-not-allowed'
-                                )}
-                                style={{
-                                    background: theme.bgPanel,
-                                    border: `4px solid ${theme.border}`,
-                                    boxShadow: adventure.available
-                                        ? `0 6px 0 ${theme.border}`
-                                        : `0 4px 0 ${theme.border}`,
-                                    opacity: adventure.available ? 1 : 0.6,
-                                }}
-                            >
-                                {/* Thumbnail Area */}
-                                <div
-                                    className="relative h-32 flex items-center justify-center"
-                                    style={{
-                                        background: adventure.available
-                                            ? `linear-gradient(135deg, ${adventure.color}50 0%, ${theme.bgPanel} 100%)`
-                                            : theme.bgPanelLight,
-                                    }}
-                                >
-                                    {adventure.available ? (
-                                        <>
-                                            {/* Icon based on type */}
-                                            {adventure.icon === 'wobble' ? (
-                                                <div className="flex items-center gap-3">
-                                                    <WobbleDisplay
-                                                        size={60}
-                                                        shape="circle"
-                                                        color={0xf5b041}
-                                                        expression="worried"
-                                                    />
-                                                    <WobbleDisplay
-                                                        size={44}
-                                                        shape="shadow"
-                                                        color={0x1a1a1a}
-                                                        expression="angry"
-                                                    />
-                                                </div>
-                                            ) : adventure.icon === 'pendulum' ? (
-                                                <div className="flex items-center gap-2">
-                                                    {/* Rope */}
-                                                    <div className="relative">
-                                                        <div
-                                                            className="absolute w-0.5 h-12 left-1/2 -translate-x-1/2 -top-2"
-                                                            style={{ background: '#8B4513' }}
-                                                        />
-                                                        <WobbleDisplay
-                                                            size={48}
-                                                            shape="circle"
-                                                            color={0xf5b041}
-                                                            expression="excited"
-                                                        />
-                                                    </div>
-                                                    <div
-                                                        className="w-10 h-10 rounded-lg flex items-center justify-center"
-                                                        style={{
-                                                            background: adventure.color,
-                                                            border: `2px solid ${theme.border}`,
-                                                        }}
-                                                    >
-                                                        <Scissors className="w-5 h-5 text-white" />
-                                                    </div>
-                                                </div>
-                                            ) : adventure.icon === 'dive' ? (
-                                                <div className="flex flex-col items-center gap-1">
-                                                    <WobbleDisplay
-                                                        size={48}
-                                                        shape="circle"
-                                                        color={0xf5b041}
-                                                        expression="excited"
-                                                    />
-                                                    {/* Water waves */}
-                                                    <div
-                                                        className="w-20 h-3 rounded-full"
-                                                        style={{
-                                                            background: `linear-gradient(180deg, ${adventure.color}80 0%, ${adventure.color} 100%)`,
-                                                        }}
-                                                    />
-                                                </div>
-                                            ) : null}
-
-                                            {/* BETA Badge */}
-                                            {adventure.badge && (
-                                                <div
-                                                    className="absolute top-3 right-3 px-2 py-0.5 rounded text-[10px] font-black"
-                                                    style={{
-                                                        background: '#e74c3c',
-                                                        color: '#fff',
-                                                        border: `2px solid ${theme.border}`,
-                                                    }}
-                                                >
-                                                    {adventure.badge}
-                                                </div>
-                                            )}
-
-                                            {/* Episode Badge */}
-                                            {adventure.episodeKey && (
-                                                <div
-                                                    className="absolute top-3 left-3 px-2.5 py-1 rounded-lg text-xs font-black"
-                                                    style={{
-                                                        background: adventure.color,
-                                                        color: '#fff',
-                                                        border: `2px solid ${theme.border}`,
-                                                        boxShadow: `0 2px 0 ${theme.border}`,
-                                                    }}
-                                                >
-                                                    {t(adventure.episodeKey)}
-                                                </div>
-                                            )}
-
-                                            {/* Play Button */}
-                                            <div
-                                                className="absolute right-3 bottom-3 w-12 h-12 rounded-xl flex items-center justify-center"
-                                                style={{
-                                                    background: theme.gold,
-                                                    border: `3px solid ${theme.border}`,
-                                                    boxShadow: `0 3px 0 ${theme.border}`,
-                                                }}
-                                            >
-                                                <Play
-                                                    className="w-6 h-6 text-black ml-0.5"
-                                                    fill="black"
-                                                />
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div
-                                            className="w-16 h-16 rounded-xl flex items-center justify-center"
-                                            style={{
-                                                background: theme.bgPanel,
-                                                border: `3px solid ${theme.border}`,
-                                            }}
-                                        >
-                                            <Lock className="w-8 h-8 text-white/30" />
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Info Area */}
-                                <div
-                                    className="p-4 text-left"
-                                    style={{
-                                        borderTop: `3px solid ${theme.border}`,
-                                        background: adventure.available
-                                            ? theme.bgPanelLight
-                                            : theme.bgPanel,
-                                    }}
-                                >
-                                    <h3
-                                        className="text-lg font-black"
-                                        style={{ color: adventure.available ? '#fff' : '#666' }}
-                                    >
-                                        {t(adventure.titleKey)}
-                                    </h3>
-                                    {adventure.descKey && (
-                                        <p className="text-xs text-white/50 mt-1 line-clamp-2 leading-relaxed">
-                                            {t(adventure.descKey)}
-                                        </p>
-                                    )}
-                                </div>
-                            </button>
-                        </div>
-                    ))}
-                </div>
+                {/* Game Cards */}
+                <div className="space-y-4 mt-4">{ADVENTURES.map((adventure, index) => renderCard(adventure, index))}</div>
 
                 {/* Footer hint */}
                 <div className="mt-8 text-center">

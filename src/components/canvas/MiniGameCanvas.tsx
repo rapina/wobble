@@ -3,6 +3,7 @@ import { usePixiApp } from '@/hooks/usePixiApp'
 import { BaseMiniGameScene, MiniGameCallbacks, MiniGamePhase } from './minigame'
 import { WobblediverScene } from './minigame/games/Wobblediver'
 import { RefreshCw } from 'lucide-react'
+import { useMinigameRecordStore } from '@/stores/minigameRecordStore'
 
 export type MiniGameId = 'wobblediver'
 
@@ -119,8 +120,20 @@ export const MiniGameCanvas = forwardRef<MiniGameCanvasHandle, MiniGameCanvasPro
             }
 
             try {
+                const recordWobblediverGame = useMinigameRecordStore.getState().recordWobblediverGame
+
                 const callbacks: MiniGameCallbacks = {
                     onGameOver: () => {
+                        // Record game result based on game type
+                        if (gameId === 'wobblediver' && sceneRef.current) {
+                            const gameData = sceneRef.current.getGameData()
+                            recordWobblediverGame({
+                                depth: (gameData.depth as number) || 0,
+                                score: (gameData.score as number) || 0,
+                                rank: (gameData.rank as string) || 'D',
+                                isPerfect: (gameData.isPerfect as boolean) || false,
+                            })
+                        }
                         onGameOverRef.current?.()
                     },
                     onRetry: () => {

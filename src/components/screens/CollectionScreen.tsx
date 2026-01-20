@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Sparkles, BookOpen, Trophy, Users } from 'lucide-react'
+import { ArrowLeft, Sparkles, BookOpen, Trophy, Users, Target, Waves } from 'lucide-react'
 import Balatro from '@/components/Balatro'
 import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
 import { useCollectionStore } from '@/stores/collectionStore'
-import { useProgressStore, GameStats } from '@/stores/progressStore'
+import { useProgressStore } from '@/stores/progressStore'
+import { useMinigameRecordStore, WobblediverRecord } from '@/stores/minigameRecordStore'
 import { WOBBLE_CHARACTERS, WobbleShape, WobbleExpression } from '@/components/canvas/Wobble'
 import { formulas } from '@/formulas/registry'
 import { cn } from '@/lib/utils'
@@ -45,7 +46,8 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
     const { t, i18n } = useTranslation()
     const isKorean = i18n.language === 'ko'
     const { unlockedWobbles, getProgress } = useCollectionStore()
-    const { getStudiedFormulas, getGameStats } = useProgressStore()
+    const { getStudiedFormulas } = useProgressStore()
+    const wobblediverRecord = useMinigameRecordStore((s) => s.getWobblediverRecord())
     const progress = getProgress()
     const [mounted, setMounted] = useState(false)
     const [activeTab, setActiveTab] = useState<TabType>('characters')
@@ -86,7 +88,6 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
     }
 
     const studiedFormulas = getStudiedFormulas()
-    const gameStats = getGameStats()
     const totalFormulas = Object.keys(formulas).length
 
     const tabs: { id: TabType; icon: React.ReactNode; label: string }[] = [
@@ -280,7 +281,7 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                     />
                 )}
                 {activeTab === 'records' && (
-                    <RecordsTab mounted={mounted} isKorean={isKorean} gameStats={gameStats} />
+                    <RecordsTab mounted={mounted} isKorean={isKorean} wobblediverRecord={wobblediverRecord} />
                 )}
             </div>
         </div>
@@ -673,22 +674,23 @@ function FormulasTab({
     )
 }
 
+// Abyss theme for Wobblediver (matching GameSelectScreen)
+const abyssTheme = {
+    bg: '#0a0510',
+    accent: '#6b5b95',
+    teal: '#4ecdc4',
+}
+
 // Records Tab Component
 function RecordsTab({
     mounted,
     isKorean,
-    gameStats,
+    wobblediverRecord,
 }: {
     mounted: boolean
     isKorean: boolean
-    gameStats: GameStats
+    wobblediverRecord: WobblediverRecord
 }) {
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60)
-        const secs = Math.floor(seconds % 60)
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-    }
-
     const rankColors: Record<string, string> = {
         S: '#ffd700',
         A: '#9b59b6',
@@ -697,185 +699,223 @@ function RecordsTab({
         D: '#95a5a6',
     }
 
-    const stats = [
-        {
-            icon: '🎮',
-            label: isKorean ? '총 플레이' : 'Total Games',
-            value: `${gameStats.totalGames}`,
-            color: theme.blue,
-        },
-        {
-            icon: '⏱',
-            label: isKorean ? '총 플레이 시간' : 'Play Time',
-            value: formatTime(gameStats.totalPlayTime),
-            color: theme.green,
-        },
-        {
-            icon: '💀',
-            label: isKorean ? '총 처치' : 'Total Kills',
-            value: `${gameStats.totalKills}`,
-            color: theme.red,
-        },
-        {
-            icon: '🏆',
-            label: isKorean ? '최고 생존' : 'Best Survival',
-            value: formatTime(gameStats.bestTime),
-            color: theme.gold,
-        },
-        {
-            icon: '⭐',
-            label: isKorean ? '최고 레벨' : 'Best Level',
-            value: `Lv.${gameStats.bestLevel}`,
-            color: theme.purple,
-        },
-    ]
+    const hasRecords = wobblediverRecord.totalGames > 0
 
-    if (gameStats.totalGames === 0) {
-        return (
+    return (
+        <div className="space-y-4">
+            {/* Wobblediver Record Card */}
             <div
                 className={cn(
-                    'flex flex-col items-center justify-center py-16',
                     'transition-all duration-500',
-                    mounted ? 'opacity-100' : 'opacity-0'
+                    mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                 )}
             >
                 <div
-                    className="w-20 h-20 flex items-center justify-center mb-5 rounded-xl"
+                    className="rounded-xl overflow-hidden"
+                    style={{
+                        background: `linear-gradient(180deg, #1a0a25 0%, ${abyssTheme.bg} 100%)`,
+                        border: `3px solid ${abyssTheme.accent}50`,
+                        boxShadow: `0 4px 0 ${theme.border}, 0 0 15px ${abyssTheme.accent}30`,
+                    }}
+                >
+                    {/* Header */}
+                    <div
+                        className="px-4 py-3 flex items-center gap-3"
+                        style={{
+                            background: `linear-gradient(90deg, ${abyssTheme.accent}30 0%, transparent 100%)`,
+                            borderBottom: `2px solid ${abyssTheme.accent}30`,
+                        }}
+                    >
+                        <div
+                            className="w-10 h-10 rounded-lg flex items-center justify-center"
+                            style={{
+                                background: abyssTheme.accent,
+                                border: `2px solid ${theme.border}`,
+                            }}
+                        >
+                            <Waves className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <h3 className="font-black text-white text-sm">
+                                {isKorean ? '워블다이버' : 'Wobblediver'}
+                            </h3>
+                            <p className="text-[10px] font-medium" style={{ color: abyssTheme.teal }}>
+                                {isKorean ? '심연 다이빙 미니게임' : 'Abyss Diving Minigame'}
+                            </p>
+                        </div>
+                        {/* Best Rank Badge */}
+                        <div
+                            className="ml-auto px-3 py-1.5 rounded-lg"
+                            style={{
+                                background: hasRecords ? rankColors[wobblediverRecord.bestRank] : 'rgba(255,255,255,0.1)',
+                                border: `2px solid ${theme.border}`,
+                                boxShadow: `0 2px 0 ${theme.border}`,
+                            }}
+                        >
+                            <span className="text-lg font-black" style={{ color: hasRecords ? 'white' : 'rgba(255,255,255,0.3)' }}>
+                                {hasRecords ? wobblediverRecord.bestRank : '-'}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="p-4">
+                        <div className="grid grid-cols-2 gap-3">
+                            {/* Best Depth */}
+                            <div
+                                className="p-3 rounded-lg"
+                                style={{
+                                    background: 'rgba(0,0,0,0.3)',
+                                    border: `2px solid ${abyssTheme.accent}30`,
+                                }}
+                            >
+                                <div className="flex items-center gap-2 mb-1">
+                                    <Target className="w-3.5 h-3.5" style={{ color: abyssTheme.teal }} />
+                                    <span className="text-[10px] font-medium text-white/50">
+                                        {isKorean ? '최고 깊이' : 'Best Depth'}
+                                    </span>
+                                </div>
+                                <div
+                                    className="text-2xl font-black"
+                                    style={{ color: abyssTheme.teal }}
+                                >
+                                    {wobblediverRecord.bestDepth}
+                                </div>
+                            </div>
+
+                            {/* High Score */}
+                            <div
+                                className="p-3 rounded-lg"
+                                style={{
+                                    background: 'rgba(0,0,0,0.3)',
+                                    border: `2px solid ${theme.gold}30`,
+                                }}
+                            >
+                                <div className="flex items-center gap-2 mb-1">
+                                    <Trophy className="w-3.5 h-3.5" style={{ color: theme.gold }} />
+                                    <span className="text-[10px] font-medium text-white/50">
+                                        {isKorean ? '최고 점수' : 'High Score'}
+                                    </span>
+                                </div>
+                                <div
+                                    className="text-2xl font-black"
+                                    style={{ color: theme.gold }}
+                                >
+                                    {wobblediverRecord.highScore.toLocaleString()}
+                                </div>
+                            </div>
+
+                            {/* Total Games */}
+                            <div
+                                className="p-3 rounded-lg"
+                                style={{
+                                    background: 'rgba(0,0,0,0.3)',
+                                    border: `2px solid ${theme.blue}30`,
+                                }}
+                            >
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-xs">🎮</span>
+                                    <span className="text-[10px] font-medium text-white/50">
+                                        {isKorean ? '총 플레이' : 'Total Games'}
+                                    </span>
+                                </div>
+                                <div
+                                    className="text-2xl font-black"
+                                    style={{ color: theme.blue }}
+                                >
+                                    {wobblediverRecord.totalGames}
+                                </div>
+                            </div>
+
+                            {/* Perfect Escapes */}
+                            <div
+                                className="p-3 rounded-lg"
+                                style={{
+                                    background: 'rgba(0,0,0,0.3)',
+                                    border: `2px solid ${rankColors.S}30`,
+                                }}
+                            >
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-xs">⭐</span>
+                                    <span className="text-[10px] font-medium text-white/50">
+                                        {isKorean ? 'S랭크 횟수' : 'S-Ranks'}
+                                    </span>
+                                </div>
+                                <div
+                                    className="text-2xl font-black"
+                                    style={{ color: rankColors.S }}
+                                >
+                                    {wobblediverRecord.perfectEscapes}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Average Stats or Play Prompt */}
+                        <div
+                            className="mt-3 pt-3 flex justify-between text-[10px]"
+                            style={{ borderTop: `1px solid ${abyssTheme.accent}20` }}
+                        >
+                            {hasRecords ? (
+                                <>
+                                    <span className="text-white/40">
+                                        {isKorean ? '평균 깊이' : 'Avg Depth'}:{' '}
+                                        <span style={{ color: abyssTheme.teal }}>
+                                            {(wobblediverRecord.totalDepth / wobblediverRecord.totalGames).toFixed(1)}
+                                        </span>
+                                    </span>
+                                    <span className="text-white/40">
+                                        {isKorean ? '평균 점수' : 'Avg Score'}:{' '}
+                                        <span style={{ color: theme.gold }}>
+                                            {Math.round(wobblediverRecord.totalScore / wobblediverRecord.totalGames).toLocaleString()}
+                                        </span>
+                                    </span>
+                                </>
+                            ) : (
+                                <span className="text-white/30 w-full text-center">
+                                    {isKorean ? '아직 플레이 기록이 없습니다' : 'No play records yet'}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Last Played */}
+                    {wobblediverRecord.lastPlayedAt && (
+                        <div
+                            className="px-4 py-2 text-center text-[10px] font-medium"
+                            style={{
+                                background: 'rgba(0,0,0,0.2)',
+                                color: 'rgba(255,255,255,0.35)',
+                                borderTop: `1px solid ${abyssTheme.accent}20`,
+                            }}
+                        >
+                            {isKorean ? '마지막 플레이: ' : 'Last played: '}
+                            {new Date(wobblediverRecord.lastPlayedAt).toLocaleDateString()}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* More Games Coming Soon */}
+            <div
+                className={cn(
+                    'transition-all duration-500 delay-150',
+                    mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                )}
+            >
+                <div
+                    className="p-4 rounded-xl text-center"
                     style={{
                         background: theme.bgPanel,
                         border: `3px solid ${theme.border}`,
                         boxShadow: `0 4px 0 ${theme.border}`,
+                        opacity: 0.6,
                     }}
                 >
-                    <Trophy className="w-10 h-10 text-white/25" />
-                </div>
-                <p
-                    className="text-center text-sm font-medium whitespace-pre-line"
-                    style={{ color: 'rgba(255,255,255,0.45)' }}
-                >
-                    {isKorean
-                        ? '아직 게임 기록이 없습니다.\n서바이버 모드를 플레이해보세요!'
-                        : 'No game records yet.\nTry playing Survivor mode!'}
-                </p>
-            </div>
-        )
-    }
-
-    return (
-        <>
-            {/* Best Rank Card */}
-            <div
-                className={cn(
-                    'transition-all duration-500',
-                    mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-                )}
-            >
-                <div
-                    className="p-6 text-center mb-5 rounded-xl relative overflow-hidden"
-                    style={{
-                        background: theme.bgPanel,
-                        border: `3px solid ${rankColors[gameStats.bestRank] || theme.border}`,
-                        boxShadow: `0 4px 0 ${theme.border}, 0 0 20px ${rankColors[gameStats.bestRank]}30`,
-                    }}
-                >
-                    {/* Shine effect */}
-                    <div
-                        className="absolute inset-0 opacity-10"
-                        style={{
-                            background: `linear-gradient(135deg, ${rankColors[gameStats.bestRank]} 0%, transparent 50%, transparent 100%)`,
-                        }}
-                    />
-
-                    <p
-                        className="text-xs font-bold mb-2 tracking-wider"
-                        style={{ color: 'rgba(255,255,255,0.5)' }}
-                    >
-                        {isKorean ? '최고 랭크' : 'BEST RANK'}
+                    <p className="text-white/40 text-xs font-medium">
+                        {isKorean ? '더 많은 미니게임이 곧 추가됩니다!' : 'More minigames coming soon!'}
                     </p>
-                    <div
-                        className="text-7xl font-black"
-                        style={{
-                            color: rankColors[gameStats.bestRank] || 'white',
-                            textShadow: `0 4px 0 rgba(0,0,0,0.3), 0 0 20px ${rankColors[gameStats.bestRank]}50`,
-                        }}
-                    >
-                        {gameStats.bestRank}
-                    </div>
-                    <div
-                        className="mt-2 inline-block px-3 py-1 rounded-md"
-                        style={{
-                            background: rankColors[gameStats.bestRank],
-                            border: `2px solid ${theme.border}`,
-                            boxShadow: `0 2px 0 ${theme.border}`,
-                        }}
-                    >
-                        <span className="text-xs font-black text-white tracking-wide">
-                            {gameStats.bestRank === 'S'
-                                ? 'PERFECT'
-                                : gameStats.bestRank === 'A'
-                                  ? 'EXCELLENT'
-                                  : gameStats.bestRank === 'B'
-                                    ? 'GREAT'
-                                    : gameStats.bestRank === 'C'
-                                      ? 'GOOD'
-                                      : 'NICE TRY'}
-                        </span>
-                    </div>
                 </div>
             </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-3">
-                {stats.map((stat, index) => (
-                    <div
-                        key={stat.label}
-                        className={cn(
-                            'transition-all duration-300',
-                            mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                        )}
-                        style={{ transitionDelay: `${(index + 1) * 80}ms` }}
-                    >
-                        <div
-                            className="p-4 rounded-xl"
-                            style={{
-                                background: theme.bgPanel,
-                                border: `3px solid ${theme.border}`,
-                                boxShadow: `0 4px 0 ${theme.border}`,
-                            }}
-                        >
-                            <div className="flex items-center gap-2 mb-2">
-                                <span className="text-lg">{stat.icon}</span>
-                                <span className="text-white/55 text-xs font-medium">
-                                    {stat.label}
-                                </span>
-                            </div>
-                            <div
-                                className="text-2xl font-black"
-                                style={{
-                                    color: stat.color,
-                                    textShadow: '0 2px 0 rgba(0,0,0,0.2)',
-                                }}
-                            >
-                                {stat.value}
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {/* Last Played */}
-            {gameStats.lastPlayedAt && (
-                <p
-                    className={cn(
-                        'text-center text-white/35 text-xs font-medium mt-6',
-                        'transition-all duration-500 delay-700',
-                        mounted ? 'opacity-100' : 'opacity-0'
-                    )}
-                >
-                    {isKorean ? '마지막 플레이: ' : 'Last played: '}
-                    {new Date(gameStats.lastPlayedAt).toLocaleDateString()}
-                </p>
-            )}
-        </>
+        </div>
     )
 }
