@@ -48,7 +48,7 @@ const ADVENTURES: Adventure[] = [
         descKey: 'game.wobblediverDesc',
         available: true,
         color: '#6b5b95',
-        tags: ['진자 운동', '중력', '운동량'],
+        tags: ['game.physicsTags.pendulumMotion', 'game.physicsTags.gravity', 'game.physicsTags.momentum'],
     },
     {
         id: 'coming-soon',
@@ -214,7 +214,7 @@ function WobblediverCard({
                                         border: `1px solid ${abyssTheme.teal}50`,
                                     }}
                                 >
-                                    {tag}
+                                    {t(tag)}
                                 </span>
                             ))}
                         </div>

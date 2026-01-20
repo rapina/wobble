@@ -85,7 +85,12 @@
         "formulaLearned": "今日学んだ公式",
         "formulaUsed": "ミニゲームで使った公式だよ！",
         "realWorldUse": "実生活での応用",
-        "continue": "続ける"
+        "continue": "続ける",
+        "physicsTags": {
+            "pendulumMotion": "振り子運動",
+            "gravity": "重力",
+            "momentum": "運動量"
+        }
     },
     "share": {
         "title": "結果をシェア",

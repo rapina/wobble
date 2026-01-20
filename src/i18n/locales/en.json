@@ -85,7 +85,12 @@
         "formulaLearned": "Physics You Used",
         "formulaUsed": "These formulas powered your game!",
         "realWorldUse": "Real-world use",
-        "continue": "Continue"
+        "continue": "Continue",
+        "physicsTags": {
+            "pendulumMotion": "Pendulum Motion",
+            "gravity": "Gravity",
+            "momentum": "Momentum"
+        }
     },
     "share": {
         "title": "Share Result",
