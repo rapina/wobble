@@ -22,6 +22,7 @@ import { ObstacleWobble, ObstacleMovement } from './ObstacleWobble'
 import { AnchorWobble } from './AnchorWobble'
 import { WobblediverIntro } from './WobblediverIntro'
 import { AbyssFluidFilter } from '@/components/canvas/filters/AbyssFluidFilter'
+import { BalatroFilter } from '@/components/canvas/filters/BalatroFilter'
 
 // Balatro-style colors
 const BALATRO = {
@@ -145,6 +146,11 @@ export class WobblediverScene extends BaseMiniGameScene {
     private declare instructionText: Text
     private declare outText: Text
 
+    // Animated background (Balatro-style)
+    private declare abyssBackgroundSprite: Sprite
+    private declare abyssBackgroundFilter: BalatroFilter
+    private abyssBackgroundTime = 0
+
     // Abyss danger zone
     private declare abyssBackContainer: Container  // Behind wobble (eyes, particles)
     private declare abyssFrontContainer: Container  // In front of wobble (fluid surface)
@@ -257,6 +263,8 @@ export class WobblediverScene extends BaseMiniGameScene {
     private transitionDuration = 2.0  // Total transition time
     private transitionTentacles: { x: number; y: number; angle: number; length: number; phase: number }[] = []
     private transitionEyes: { x: number; y: number; size: number; openness: number; targetOpenness: number }[] = []
+    private transitionDepthParticles: { x: number; y: number; size: number; speed: number; alpha: number }[] = []
+    private transitionDepthMeter = 0  // Progress from 0 to 1 for depth descent animation
 
     // Custom in-game HUD (replaces default HUD)
     private declare customHudContainer: Container
@@ -440,11 +448,26 @@ export class WobblediverScene extends BaseMiniGameScene {
         const g = this.playerHeartsGraphics
         g.clear()
 
-        // Don't draw if no wobble or wobble is in certain states
+        // Don't draw if no wobble
         if (!this.wobble) return
-        if (this.wobble.state === 'drowning' && this.wobble.getDrowningProgress() > 0.5) return
 
+        // Hide hearts during certain states (like speech bubbles do)
+        const hideStates = ['drowning', 'success', 'failed']
+        if (hideStates.includes(this.wobble.state)) return
+
+        // Hide during pending result (suction animation)
+        if (this.pendingResult) return
+
+        // Hide during transitions
+        if (this.isTransitioning || this.isShowingResult) return
+
+        // Get position and validate it
         const pos = this.wobble.getPosition()
+        if (!pos || isNaN(pos.x) || isNaN(pos.y)) return
+
+        // Check if position is within reasonable bounds
+        if (pos.x < -100 || pos.x > this.width + 100 || pos.y < -100 || pos.y > this.height + 100) return
+
         const heartSize = 10
         const heartGap = 4
         const totalWidth = this.customHudLives * (heartSize + heartGap) - heartGap
@@ -502,8 +525,30 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     private setupBackground(): void {
+        // Animated Balatro-style background (behind everything)
+        this.abyssBackgroundSprite = new Sprite(Texture.WHITE)
+        this.abyssBackgroundSprite.width = this.width
+        this.abyssBackgroundSprite.height = this.height
+        this.gameContainer.addChildAt(this.abyssBackgroundSprite, 0)
+
+        // Create Balatro filter with abyss colors - dark purple/teal theme
+        this.abyssBackgroundFilter = new BalatroFilter({
+            color1: [0.08, 0.04, 0.15, 1.0],   // Deep purple-black
+            color2: [0.05, 0.15, 0.18, 1.0],   // Dark teal
+            color3: [0.02, 0.02, 0.05, 1.0],   // Near black
+            spinSpeed: 3.0,                     // Slower, more ominous
+            contrast: 2.5,
+            lighting: 0.15,                     // Dim
+            spinAmount: 0.3,
+            pixelFilter: 600.0,                 // Less pixelated
+            spinEase: 0.8,
+        })
+        this.abyssBackgroundFilter.setDimensions(this.width, this.height)
+        this.abyssBackgroundSprite.filters = [this.abyssBackgroundFilter]
+
+        // Static graphics overlay (grid pattern, etc.)
         this.backgroundGraphics = new Graphics()
-        this.gameContainer.addChildAt(this.backgroundGraphics, 0)
+        this.gameContainer.addChild(this.backgroundGraphics)
 
         this.drawGameArea()
     }
@@ -1163,6 +1208,23 @@ export class WobblediverScene extends BaseMiniGameScene {
     private updateAbyss(deltaSeconds: number): void {
         this.abyssTime += deltaSeconds
 
+        // Update animated background
+        this.abyssBackgroundTime += deltaSeconds
+        this.abyssBackgroundFilter.time = this.abyssBackgroundTime
+
+        // Adjust background intensity based on depth (round number)
+        // Deeper = more intense, faster, more contrast
+        const depthProgress = Math.min(this.roundNumber / 20, 1) // Max intensity at depth 20
+        const baseSpinSpeed = 3.0 + depthProgress * 5.0 // 3 -> 8
+        const baseContrast = 2.5 + depthProgress * 2.0 // 2.5 -> 4.5
+        const baseLighting = 0.15 - depthProgress * 0.1 // 0.15 -> 0.05 (darker)
+        const baseSpinAmount = 0.3 + depthProgress * 0.4 // 0.3 -> 0.7
+
+        this.abyssBackgroundFilter.uniforms.uSpinSpeed = baseSpinSpeed
+        this.abyssBackgroundFilter.uniforms.uContrast = baseContrast
+        this.abyssBackgroundFilter.uniforms.uLighting = baseLighting
+        this.abyssBackgroundFilter.uniforms.uSpinAmount = baseSpinAmount
+
         const abyssTop = this.boundaryBottom - 80
 
         // Update particles (falling into abyss)
@@ -1272,28 +1334,7 @@ export class WobblediverScene extends BaseMiniGameScene {
     private drawGameArea(): void {
         const g = this.backgroundGraphics
         g.clear()
-
-        const left = this.boundaryLeft
-        const top = this.boundaryTop
-        const width = this.boundaryRight - this.boundaryLeft
-        const waterTop = this.boundaryBottom - 80  // Where water starts
-
-        // Main card background - full screen, no rounded corners
-        g.rect(left, top, width, this.boundaryBottom - top)
-        g.fill({ color: BALATRO.bgCard })
-
-        // Decorative pattern (subtle grid) - only above water
-        const gridSize = 40
-        for (let x = left + gridSize; x < this.boundaryRight; x += gridSize) {
-            g.moveTo(x, top)
-            g.lineTo(x, waterTop)
-            g.stroke({ color: BALATRO.border, width: 1, alpha: 0.06 })
-        }
-        for (let y = top + gridSize; y < waterTop; y += gridSize) {
-            g.moveTo(left, y)
-            g.lineTo(this.boundaryRight, y)
-            g.stroke({ color: BALATRO.border, width: 1, alpha: 0.06 })
-        }
+        // No solid fill or grid - let the animated Balatro background show through
     }
 
     private setupBoundary(): void {
@@ -1982,9 +2023,9 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.transitionGraphics = new Graphics()
         this.transitionContainer.addChild(this.transitionGraphics)
 
-        // Stage number text - eldritch style
+        // Depth number text - eldritch style
         this.transitionStageText = new Text({
-            text: 'STAGE 1',
+            text: 'DEPTH 1',
             style: new TextStyle({
                 fontFamily: 'Arial Black, sans-serif',
                 fontSize: 64,
@@ -2018,21 +2059,21 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.transitionTime = 0
         this.transitionContainer.visible = true
 
-        // Update stage text
-        this.transitionStageText.text = `STAGE ${stageNumber}`
+        // Update depth text
+        this.transitionStageText.text = `DEPTH ${stageNumber}`
         this.transitionStageText.alpha = 0
         this.transitionStageText.scale.set(0.5)
 
-        // Ominous messages based on stage
+        // Ominous messages about descending deeper
         const messages = [
-            '심연이 깨어난다...',
-            '그것들이 배고파한다...',
-            '도망칠 곳은 없다...',
-            '눈들이 지켜보고 있다...',
-            '깊은 곳에서 무언가가...',
-            '피할 수 없다...',
-            '그들이 온다...',
-            '희망은 없다...',
+            '심연으로 하강 중...',
+            '더 깊은 어둠 속으로...',
+            '빛이 사라진다...',
+            '수압이 높아진다...',
+            '그것들이 깨어난다...',
+            '돌아갈 수 없다...',
+            '끝없는 심연...',
+            '희망이 사라진다...',
         ]
         this.transitionSubText.text = messages[(stageNumber - 1) % messages.length]
         this.transitionSubText.alpha = 0
@@ -2086,6 +2127,22 @@ export class WobblediverScene extends BaseMiniGameScene {
                 targetOpenness: 1,
             })
         }
+
+        // Generate depth descent particles (float upward to show sinking)
+        this.transitionDepthParticles = []
+        const particleCount = 30 + stageNumber * 5
+        for (let i = 0; i < particleCount; i++) {
+            this.transitionDepthParticles.push({
+                x: Math.random() * this.width,
+                y: Math.random() * this.height,
+                size: 1 + Math.random() * 3,
+                speed: 100 + Math.random() * 200,
+                alpha: 0.2 + Math.random() * 0.4,
+            })
+        }
+
+        // Reset depth meter
+        this.transitionDepthMeter = 0
     }
 
     private updateTransition(deltaSeconds: number): void {
@@ -2146,6 +2203,73 @@ export class WobblediverScene extends BaseMiniGameScene {
                 eye.openness = Math.min(eye.openness + deltaSeconds * 3, eye.targetOpenness) * eyeProgress
                 this.drawTransitionEye(g, eye, eyeFade, t)
             }
+        }
+
+        // Draw depth descent particles (float upward to show sinking feeling)
+        if (t > 0.1 && t < 1.8) {
+            const particleFade = t < 0.3 ? (t - 0.1) / 0.2 : (t > 1.5 ? 1 - (t - 1.5) / 0.3 : 1)
+
+            for (const particle of this.transitionDepthParticles) {
+                // Move particles upward (we're sinking, so particles go up)
+                particle.y -= particle.speed * deltaSeconds
+
+                // Reset particles that go off screen
+                if (particle.y < -10) {
+                    particle.y = this.height + 10
+                    particle.x = Math.random() * this.width
+                }
+
+                // Draw particle with trailing effect
+                const trailLength = particle.speed * 0.05
+                g.moveTo(particle.x, particle.y)
+                g.lineTo(particle.x, particle.y + trailLength)
+                g.stroke({
+                    color: 0x4ecdc4,  // Teal color
+                    width: particle.size,
+                    alpha: particle.alpha * particleFade,
+                    cap: 'round',
+                })
+
+                // Small glow
+                g.circle(particle.x, particle.y, particle.size * 1.5)
+                g.fill({ color: 0x4ecdc4, alpha: particle.alpha * 0.3 * particleFade })
+            }
+        }
+
+        // Draw depth meter (vertical progress bar on right side)
+        if (t > 0.2 && t < 1.7) {
+            const meterFade = t < 0.5 ? (t - 0.2) / 0.3 : (t > 1.4 ? 1 - (t - 1.4) / 0.3 : 1)
+            this.transitionDepthMeter = Math.min(1, this.transitionDepthMeter + deltaSeconds * 0.8)
+
+            const meterX = this.width - 40
+            const meterY = this.height * 0.25
+            const meterHeight = this.height * 0.5
+            const meterWidth = 8
+
+            // Meter background
+            g.roundRect(meterX - meterWidth / 2, meterY, meterWidth, meterHeight, 4)
+            g.fill({ color: 0x1a0a20, alpha: 0.6 * meterFade })
+            g.stroke({ color: 0x4ecdc4, width: 1, alpha: 0.4 * meterFade })
+
+            // Meter fill (fills from top to bottom = descending)
+            const fillHeight = meterHeight * this.transitionDepthMeter
+            g.roundRect(meterX - meterWidth / 2 + 1, meterY + 1, meterWidth - 2, fillHeight - 2, 3)
+            g.fill({ color: 0x4ecdc4, alpha: 0.8 * meterFade })
+
+            // Depth markers
+            for (let i = 0; i <= 4; i++) {
+                const markerY = meterY + (meterHeight * i) / 4
+                g.moveTo(meterX - meterWidth / 2 - 5, markerY)
+                g.lineTo(meterX - meterWidth / 2, markerY)
+                g.stroke({ color: 0x4ecdc4, width: 1, alpha: 0.5 * meterFade })
+            }
+
+            // Depth arrow indicator at current position
+            const arrowY = meterY + fillHeight
+            g.moveTo(meterX + meterWidth / 2 + 3, arrowY - 4)
+            g.lineTo(meterX + meterWidth / 2 + 10, arrowY)
+            g.lineTo(meterX + meterWidth / 2 + 3, arrowY + 4)
+            g.fill({ color: 0xff6b6b, alpha: meterFade })
         }
 
         // Stage text animation
