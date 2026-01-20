@@ -5,6 +5,7 @@
 
 import { Container, Graphics, Text, TextStyle } from 'pixi.js'
 import { getRankFromScore, RankConfig } from './MiniGameTypes'
+import i18n from '@/i18n'
 
 export type ResultScreenTheme = 'default' | 'abyss'
 
@@ -433,11 +434,11 @@ export class MiniGameResultScreen {
 
         // Rank message - different for abyss theme
         const abyssMessages: Record<string, string> = {
-            'S': '심연이 두려워한다',
-            'A': '인상적인 저항',
-            'B': '쓸만한 먹이',
-            'C': '평범한 제물',
-            'D': '보잘것없는 영혼',
+            'S': i18n.t('wobblediver.ranks.S'),
+            'A': i18n.t('wobblediver.ranks.A'),
+            'B': i18n.t('wobblediver.ranks.B'),
+            'C': i18n.t('wobblediver.ranks.C'),
+            'D': i18n.t('wobblediver.ranks.D'),
         }
         const rankMessage = new Text({
             text: this.theme === 'abyss' ? (abyssMessages[rankConfig.rank] || rankConfig.message) : rankConfig.message,

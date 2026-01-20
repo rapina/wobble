@@ -23,6 +23,7 @@ import { AnchorWobble } from './AnchorWobble'
 import { WobblediverIntro } from './WobblediverIntro'
 import { AbyssFluidFilter } from '@/components/canvas/filters/AbyssFluidFilter'
 import { BalatroFilter } from '@/components/canvas/filters/BalatroFilter'
+import i18n from '@/i18n'
 
 // Balatro-style colors
 const BALATRO = {
@@ -859,7 +860,13 @@ export class WobblediverScene extends BaseMiniGameScene {
         const abyssTop = this.boundaryBottom - 80
 
         // Show panic speech bubble
-        const panicPhrases = ['으아아악!', '살려줘!', '안돼에!', '꺄아악!', '도와줘!']
+        const panicPhrases = [
+            i18n.t('wobblediver.panic.phrase1'),
+            i18n.t('wobblediver.panic.phrase2'),
+            i18n.t('wobblediver.panic.phrase3'),
+            i18n.t('wobblediver.panic.phrase4'),
+            i18n.t('wobblediver.panic.phrase5'),
+        ]
         const phrase = panicPhrases[Math.floor(Math.random() * panicPhrases.length)]
         this.wobble.showSpeechBubble(phrase, 1.0)
 
@@ -2041,7 +2048,7 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         // Sub text - ominous message
         this.transitionSubText = new Text({
-            text: '심연이 깨어난다...',
+            text: i18n.t('wobblediver.transitions.awaken'),
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 18,
@@ -2066,14 +2073,14 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         // Ominous messages about descending deeper
         const messages = [
-            '심연으로 하강 중...',
-            '더 깊은 어둠 속으로...',
-            '빛이 사라진다...',
-            '수압이 높아진다...',
-            '그것들이 깨어난다...',
-            '돌아갈 수 없다...',
-            '끝없는 심연...',
-            '희망이 사라진다...',
+            i18n.t('wobblediver.transitions.depth1'),
+            i18n.t('wobblediver.transitions.depth2'),
+            i18n.t('wobblediver.transitions.depth3'),
+            i18n.t('wobblediver.transitions.depth4'),
+            i18n.t('wobblediver.transitions.depth5'),
+            i18n.t('wobblediver.transitions.depth6'),
+            i18n.t('wobblediver.transitions.depth7'),
+            i18n.t('wobblediver.transitions.depth8'),
         ]
         this.transitionSubText.text = messages[(stageNumber - 1) % messages.length]
         this.transitionSubText.alpha = 0
@@ -3252,11 +3259,23 @@ export class WobblediverScene extends BaseMiniGameScene {
 
             // Show relief/success speech bubble
             if (wormholeHit.perfect) {
-                const perfectPhrases = ['완벽해!', '최고다!', '대단해!', '야호!', '차원이동 성공!']
+                const perfectPhrases = [
+                    i18n.t('wobblediver.perfect.phrase1'),
+                    i18n.t('wobblediver.perfect.phrase2'),
+                    i18n.t('wobblediver.perfect.phrase3'),
+                    i18n.t('wobblediver.perfect.phrase4'),
+                    i18n.t('wobblediver.perfect.phrase5'),
+                ]
                 const phrase = perfectPhrases[Math.floor(Math.random() * perfectPhrases.length)]
                 this.wobble.showSpeechBubble(phrase, 1.0)
             } else {
-                const successPhrases = ['휴~', '살았다!', '다행이야', '위험했어', '웜홀 진입!']
+                const successPhrases = [
+                    i18n.t('wobblediver.success.phrase1'),
+                    i18n.t('wobblediver.success.phrase2'),
+                    i18n.t('wobblediver.success.phrase3'),
+                    i18n.t('wobblediver.success.phrase4'),
+                    i18n.t('wobblediver.success.phrase5'),
+                ]
                 const phrase = successPhrases[Math.floor(Math.random() * successPhrases.length)]
                 this.wobble.showSpeechBubble(phrase, 1.0)
             }
@@ -3287,7 +3306,12 @@ export class WobblediverScene extends BaseMiniGameScene {
                 this.wobble.teleportTo(teleportResult.exitX, teleportResult.exitY)
 
                 // Show teleport speech bubble
-                const teleportPhrases = ['워프!', '순간이동!', '차원이동!', '텔레포트!']
+                const teleportPhrases = [
+                    i18n.t('wobblediver.teleport.phrase1'),
+                    i18n.t('wobblediver.teleport.phrase2'),
+                    i18n.t('wobblediver.teleport.phrase3'),
+                    i18n.t('wobblediver.teleport.phrase4'),
+                ]
                 const phrase = teleportPhrases[Math.floor(Math.random() * teleportPhrases.length)]
                 this.wobble.showSpeechBubble(phrase, 0.8)
 
@@ -3364,7 +3388,16 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     // Pain phrases for wall bounces
-    private readonly painPhrases = ['아야!', '으악!', '아프다!', '윽!', '앗!', '꺄악!']
+    private getPainPhrases(): string[] {
+        return [
+            i18n.t('wobblediver.pain.phrase1'),
+            i18n.t('wobblediver.pain.phrase2'),
+            i18n.t('wobblediver.pain.phrase3'),
+            i18n.t('wobblediver.pain.phrase4'),
+            i18n.t('wobblediver.pain.phrase5'),
+            i18n.t('wobblediver.pain.phrase6'),
+        ]
+    }
 
     /**
      * Check for wall collisions and handle bouncing
@@ -3420,7 +3453,8 @@ export class WobblediverScene extends BaseMiniGameScene {
      */
     private showPainBubble(): void {
         if (!this.wobble) return
-        const phrase = this.painPhrases[Math.floor(Math.random() * this.painPhrases.length)]
+        const painPhrases = this.getPainPhrases()
+        const phrase = painPhrases[Math.floor(Math.random() * painPhrases.length)]
         this.wobble.showSpeechBubble(phrase, 0.8)
     }
 
