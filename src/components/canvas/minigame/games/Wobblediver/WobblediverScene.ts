@@ -2875,6 +2875,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.isDrowningActive = false
         this.drowningBubbles = []
         this.surfaceRipples = []
+        this.abyssSplashEffects = []
 
         // Apply trajectory visibility based on current difficulty
         this.wobble.setTrajectoryMode(this.trajectoryMode, {
@@ -2942,6 +2943,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.isDrowningActive = false
         this.drowningBubbles = []
         this.surfaceRipples = []
+        this.abyssSplashEffects = []
 
         // Apply trajectory visibility based on current difficulty
         this.wobble.setTrajectoryMode(this.trajectoryMode, {
@@ -3775,6 +3777,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.drowningBubbles = []
         this.surfaceRipples = []
         this.abyssBloodLevel = 0
+        this.abyssSplashEffects = []
 
         // Reset transition state
         this.isTransitioning = false
