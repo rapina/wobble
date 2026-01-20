@@ -2,43 +2,60 @@ import { useCallback, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { NativePurchases, Product, Transaction } from '@capgo/native-purchases'
 import { usePurchaseStore } from '@/stores/purchaseStore'
+import { useFormulaUnlockStore } from '@/stores/formulaUnlockStore'
 
 const REMOVE_ADS_PRODUCT_ID = 'remove_ads'
+const UNLOCK_ALL_FORMULAS_PRODUCT_ID = 'unlock_all_formulas'
 
 interface UseInAppPurchaseReturn {
     isNative: boolean
-    product: Product | null
+    removeAdsProduct: Product | null
+    unlockAllFormulasProduct: Product | null
     isLoading: boolean
     error: string | null
-    loadProduct: () => Promise<void>
+    loadProducts: () => Promise<void>
     purchaseRemoveAds: () => Promise<boolean>
+    purchaseUnlockAllFormulas: () => Promise<boolean>
     restorePurchases: () => Promise<boolean>
 }
 
 export function useInAppPurchase(): UseInAppPurchaseReturn {
     const isNative = Capacitor.isNativePlatform()
-    const [product, setProduct] = useState<Product | null>(null)
+    const [removeAdsProduct, setRemoveAdsProduct] = useState<Product | null>(null)
+    const [unlockAllFormulasProduct, setUnlockAllFormulasProduct] = useState<Product | null>(null)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    const { setAdFree } = usePurchaseStore()
+    const { setAdFree, setAllFormulasUnlocked } = usePurchaseStore()
+    const { unlockAll } = useFormulaUnlockStore()
 
     const checkPurchaseStatus = useCallback(
         (transactions: Transaction[]): boolean => {
+            let hasAnyPurchase = false
+
             const removeAdsPurchase = transactions.find(
                 (t) => t.productIdentifier === REMOVE_ADS_PRODUCT_ID
             )
-
             if (removeAdsPurchase) {
                 setAdFree(true)
-                return true
+                hasAnyPurchase = true
             }
-            return false
+
+            const unlockAllPurchase = transactions.find(
+                (t) => t.productIdentifier === UNLOCK_ALL_FORMULAS_PRODUCT_ID
+            )
+            if (unlockAllPurchase) {
+                setAllFormulasUnlocked(true)
+                unlockAll()
+                hasAnyPurchase = true
+            }
+
+            return hasAnyPurchase
         },
-        [setAdFree]
+        [setAdFree, setAllFormulasUnlocked, unlockAll]
     )
 
-    const loadProduct = useCallback(async () => {
+    const loadProducts = useCallback(async () => {
         if (!isNative) return
 
         setIsLoading(true)
@@ -46,15 +63,19 @@ export function useInAppPurchase(): UseInAppPurchaseReturn {
 
         try {
             const result = await NativePurchases.getProducts({
-                productIdentifiers: [REMOVE_ADS_PRODUCT_ID],
+                productIdentifiers: [REMOVE_ADS_PRODUCT_ID, UNLOCK_ALL_FORMULAS_PRODUCT_ID],
             })
 
-            if (result.products.length > 0) {
-                setProduct(result.products[0])
+            for (const product of result.products) {
+                if (product.identifier === REMOVE_ADS_PRODUCT_ID) {
+                    setRemoveAdsProduct(product)
+                } else if (product.identifier === UNLOCK_ALL_FORMULAS_PRODUCT_ID) {
+                    setUnlockAllFormulasProduct(product)
+                }
             }
         } catch (err) {
-            console.error('Failed to load product:', err)
-            setError('Failed to load product')
+            console.error('Failed to load products:', err)
+            setError('Failed to load products')
         } finally {
             setIsLoading(false)
         }
@@ -86,6 +107,33 @@ export function useInAppPurchase(): UseInAppPurchaseReturn {
         }
     }, [isNative, setAdFree])
 
+    const purchaseUnlockAllFormulas = useCallback(async (): Promise<boolean> => {
+        if (!isNative) return false
+
+        setIsLoading(true)
+        setError(null)
+
+        try {
+            const transaction = await NativePurchases.purchaseProduct({
+                productIdentifier: UNLOCK_ALL_FORMULAS_PRODUCT_ID,
+            })
+
+            if (transaction && transaction.transactionId) {
+                setAllFormulasUnlocked(true)
+                unlockAll()
+                return true
+            }
+            return false
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'Purchase failed'
+            console.error('Purchase failed:', err)
+            setError(errorMessage)
+            return false
+        } finally {
+            setIsLoading(false)
+        }
+    }, [isNative, setAllFormulasUnlocked, unlockAll])
+
     const restorePurchases = useCallback(async (): Promise<boolean> => {
         if (!isNative) return false
 
@@ -98,8 +146,8 @@ export function useInAppPurchase(): UseInAppPurchaseReturn {
 
             // Then get the list of purchases
             const result = await NativePurchases.getPurchases()
-            const hasRemoveAds = checkPurchaseStatus(result.purchases)
-            return hasRemoveAds
+            const hasAnyPurchase = checkPurchaseStatus(result.purchases)
+            return hasAnyPurchase
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : 'Restore failed'
             console.error('Restore failed:', err)
@@ -112,11 +160,13 @@ export function useInAppPurchase(): UseInAppPurchaseReturn {
 
     return {
         isNative,
-        product,
+        removeAdsProduct,
+        unlockAllFormulasProduct,
         isLoading,
         error,
-        loadProduct,
+        loadProducts,
         purchaseRemoveAds,
+        purchaseUnlockAllFormulas,
         restorePurchases,
     }
 }

@@ -7,6 +7,7 @@ import { useProgressStore } from '@/stores/progressStore'
 import { Pause, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Balatro from '@/components/Balatro'
+import { gamePreset } from '@/config/backgroundPresets'
 
 const theme = {
     border: '#1a1a1a',
@@ -79,14 +80,16 @@ export function GameScreen({ onBack }: MinigameScreenProps) {
         () => (
             <div className="absolute inset-0 opacity-70">
                 <Balatro
-                    color1="#F5B041"
-                    color2="#5DADE2"
-                    color3="#1a1a2e"
-                    spinSpeed={3}
-                    contrast={2.5}
-                    lighting={0.3}
-                    spinAmount={0.2}
-                    pixelFilter={800}
+                    color1={gamePreset.color1}
+                    color2={gamePreset.color2}
+                    color3={gamePreset.color3}
+                    spinSpeed={gamePreset.spinSpeed}
+                    spinRotation={gamePreset.spinRotation}
+                    contrast={gamePreset.contrast}
+                    lighting={gamePreset.lighting}
+                    spinAmount={gamePreset.spinAmount}
+                    pixelFilter={gamePreset.pixelFilter}
+                    isRotate={gamePreset.isRotate}
                     mouseInteraction={false}
                 />
             </div>

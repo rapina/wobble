@@ -4,6 +4,7 @@ import { MiniGameCanvas, MiniGameCanvasHandle, MiniGameId } from '@/components/c
 import { Pause } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Balatro from '@/components/Balatro'
+import { minigamePreset } from '@/config/backgroundPresets'
 
 const theme = {
     border: '#1a1a1a',
@@ -56,14 +57,16 @@ export function MiniGameScreen({ gameId, onBack }: MiniGameScreenProps) {
         () => (
             <div className="absolute inset-0 opacity-70">
                 <Balatro
-                    color1="#F5B041"
-                    color2="#5DADE2"
-                    color3="#1a1a2e"
-                    spinSpeed={3}
-                    contrast={2.5}
-                    lighting={0.3}
-                    spinAmount={0.2}
-                    pixelFilter={800}
+                    color1={minigamePreset.color1}
+                    color2={minigamePreset.color2}
+                    color3={minigamePreset.color3}
+                    spinSpeed={minigamePreset.spinSpeed}
+                    spinRotation={minigamePreset.spinRotation}
+                    contrast={minigamePreset.contrast}
+                    lighting={minigamePreset.lighting}
+                    spinAmount={minigamePreset.spinAmount}
+                    pixelFilter={minigamePreset.pixelFilter}
+                    isRotate={minigamePreset.isRotate}
                     mouseInteraction={false}
                 />
             </div>

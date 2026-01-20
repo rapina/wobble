@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Sparkles, BookOpen, Trophy, Users, Target, Waves } from 'lucide-react'
 import Balatro from '@/components/Balatro'
+import { collectionPreset } from '@/config/backgroundPresets'
 import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
 import { useCollectionStore } from '@/stores/collectionStore'
 import { useProgressStore } from '@/stores/progressStore'
@@ -110,19 +111,19 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
 
     return (
         <div className="relative w-full h-full overflow-hidden" style={{ background: theme.felt }}>
-            {/* Balatro Background - HomeScreen과 동일한 스타일 */}
+            {/* Balatro Background */}
             <div className="absolute inset-0 opacity-40">
                 <Balatro
-                    color1="#2d5a4a"
-                    color2="#1a4035"
-                    color3="#0d2018"
-                    spinSpeed={1.5}
-                    spinRotation={-1}
-                    contrast={2}
-                    lighting={0.2}
-                    spinAmount={0.1}
-                    pixelFilter={600}
-                    isRotate={true}
+                    color1={collectionPreset.color1}
+                    color2={collectionPreset.color2}
+                    color3={collectionPreset.color3}
+                    spinSpeed={collectionPreset.spinSpeed}
+                    spinRotation={collectionPreset.spinRotation}
+                    contrast={collectionPreset.contrast}
+                    lighting={collectionPreset.lighting}
+                    spinAmount={collectionPreset.spinAmount}
+                    pixelFilter={collectionPreset.pixelFilter}
+                    isRotate={collectionPreset.isRotate}
                     mouseInteraction={false}
                 />
             </div>

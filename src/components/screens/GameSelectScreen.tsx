@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Play, Lock, Gamepad2, Trophy, Target } from 'lucide-react'
 import Balatro from '@/components/Balatro'
+import { gameSelectPreset } from '@/config/backgroundPresets'
 import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
 import { cn } from '@/lib/utils'
 import { useMinigameRecordStore } from '@/stores/minigameRecordStore'
@@ -416,16 +417,16 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreen
             {/* Balatro Background */}
             <div className="absolute inset-0 opacity-40">
                 <Balatro
-                    color1="#2d5a4a"
-                    color2="#1a4035"
-                    color3="#0d2018"
-                    spinSpeed={1.5}
-                    spinRotation={-1}
-                    contrast={2}
-                    lighting={0.2}
-                    spinAmount={0.1}
-                    pixelFilter={600}
-                    isRotate={true}
+                    color1={gameSelectPreset.color1}
+                    color2={gameSelectPreset.color2}
+                    color3={gameSelectPreset.color3}
+                    spinSpeed={gameSelectPreset.spinSpeed}
+                    spinRotation={gameSelectPreset.spinRotation}
+                    contrast={gameSelectPreset.contrast}
+                    lighting={gameSelectPreset.lighting}
+                    spinAmount={gameSelectPreset.spinAmount}
+                    pixelFilter={gameSelectPreset.pixelFilter}
+                    isRotate={gameSelectPreset.isRotate}
                     mouseInteraction={false}
                 />
             </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Check, Star, Zap, Target, Crown } from 'lucide-react'
 import Balatro from '@/components/Balatro'
+import { achievementsPreset } from '@/config/backgroundPresets'
 import { useAchievementStore, AchievementProgress } from '@/stores/achievementStore'
 import { ACHIEVEMENTS, CATEGORY_INFO, AchievementCategory, Achievement } from '@/data/achievements'
 import { t } from '@/utils/localization'
@@ -49,19 +50,19 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
 
     return (
         <div className="relative w-full h-full overflow-hidden" style={{ background: theme.felt }}>
-            {/* Balatro Background - HomeScreen과 동일한 스타일 */}
+            {/* Balatro Background */}
             <div className="absolute inset-0 opacity-40">
                 <Balatro
-                    color1="#2d5a4a"
-                    color2="#1a4035"
-                    color3="#0d2018"
-                    spinSpeed={1.5}
-                    spinRotation={-1}
-                    contrast={2}
-                    lighting={0.2}
-                    spinAmount={0.1}
-                    pixelFilter={600}
-                    isRotate={true}
+                    color1={achievementsPreset.color1}
+                    color2={achievementsPreset.color2}
+                    color3={achievementsPreset.color3}
+                    spinSpeed={achievementsPreset.spinSpeed}
+                    spinRotation={achievementsPreset.spinRotation}
+                    contrast={achievementsPreset.contrast}
+                    lighting={achievementsPreset.lighting}
+                    spinAmount={achievementsPreset.spinAmount}
+                    pixelFilter={achievementsPreset.pixelFilter}
+                    isRotate={achievementsPreset.isRotate}
                     mouseInteraction={false}
                 />
             </div>

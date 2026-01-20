@@ -38,6 +38,7 @@ import { Formula, FormulaCategory } from '../../formulas/types'
 import { WobbleShape } from '../canvas/Wobble'
 import { WobbleDisplay } from '../canvas/WobbleDisplay'
 import Balatro from '@/components/Balatro'
+import { sandboxPreset } from '@/config/backgroundPresets'
 import { t as localizeText } from '@/utils/localization'
 
 // Balatro-inspired color palette
@@ -79,9 +80,7 @@ export function SandboxScreen({
     const { t, i18n } = useTranslation()
     const { formula, variables, inputVariables, setVariable } = useSimulation(formulaId)
     const {
-        isInitialized,
         isBannerVisible,
-        showBanner,
         hideBanner,
         showRewardAd,
         isRewardAdLoading,
@@ -425,33 +424,31 @@ export function SandboxScreen({
         completeDiscovery,
     ])
 
-    // Show AdMob banner when initialized (unless ad-free)
+    // Banner is now initialized in HomeScreen
+    // This screen only handles hiding when unmounting
     useEffect(() => {
-        if (isInitialized && !isBannerVisible && !isAdFree) {
-            showBanner()
-        }
         return () => {
             if (isBannerVisible) {
                 hideBanner()
             }
         }
-    }, [isInitialized, isAdFree])
+    }, [isBannerVisible, hideBanner])
 
     // Memoize Balatro background to prevent re-render on variable changes
     const balatroBackground = useMemo(
         () => (
             <div className="absolute inset-0 opacity-60">
                 <Balatro
-                    color1="#c9a227"
-                    color2="#4a9eff"
-                    color3="#1a1a2e"
-                    spinSpeed={2}
-                    spinRotation={-1}
-                    contrast={2.5}
-                    lighting={0.3}
-                    spinAmount={0.15}
-                    pixelFilter={800}
-                    isRotate={true}
+                    color1={sandboxPreset.color1}
+                    color2={sandboxPreset.color2}
+                    color3={sandboxPreset.color3}
+                    spinSpeed={sandboxPreset.spinSpeed}
+                    spinRotation={sandboxPreset.spinRotation}
+                    contrast={sandboxPreset.contrast}
+                    lighting={sandboxPreset.lighting}
+                    spinAmount={sandboxPreset.spinAmount}
+                    pixelFilter={sandboxPreset.pixelFilter}
+                    isRotate={sandboxPreset.isRotate}
                     mouseInteraction={false}
                 />
             </div>

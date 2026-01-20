@@ -8,6 +8,7 @@ import { GameScreen } from './GameScreen.tsx'
 import { GameSelectScreen } from './GameSelectScreen.tsx'
 import { MiniGameScreen } from './MiniGameScreen.tsx'
 import { AchievementsScreen } from './AchievementsScreen'
+import { ShopScreen } from './ShopScreen'
 import { IntroScreen, IntroScene } from './IntroScreen'
 import { formulaList } from '../../formulas/registry'
 import { Formula } from '../../formulas/types'
@@ -26,6 +27,7 @@ type ScreenState =
     | 'minigame'
     | 'learning'
     | 'achievements'
+    | 'shop'
 
 export function MainScreen() {
     // Check if intro has been seen, show intro first if not
@@ -36,7 +38,7 @@ export function MainScreen() {
     const [selectedMiniGame, setSelectedMiniGame] = useState<MiniGameId | null>(null)
     const [isTransitioning, setIsTransitioning] = useState(false)
     const audioRef = useRef<HTMLAudioElement | null>(null)
-    const { isMusicEnabled } = useMusic()
+    const { isMusicEnabled, volume } = useMusic()
     const { restorePurchases } = useInAppPurchase()
 
     // Restore purchases on app start (for reinstall support)
@@ -59,7 +61,7 @@ export function MainScreen() {
     useEffect(() => {
         const audio = new Audio('/assets/bg.mp3')
         audio.loop = true
-        audio.volume = 0.02
+        audio.volume = volume * 0.1 // Scale down for background music
         audioRef.current = audio
 
         const handleInteraction = () => {
@@ -97,6 +99,13 @@ export function MainScreen() {
         }
     }, [isMusicEnabled])
 
+    // Update volume when changed
+    useEffect(() => {
+        const audio = audioRef.current
+        if (!audio) return
+        audio.volume = volume * 0.1 // Scale down for background music
+    }, [volume])
+
     const handleSelectMode = (mode: GameMode) => {
         if (mode === 'sandbox') {
             setIsTransitioning(true)
@@ -123,6 +132,12 @@ export function MainScreen() {
             setIsTransitioning(true)
             setTimeout(() => {
                 setScreenState('achievements')
+                setIsTransitioning(false)
+            }, 150)
+        } else if (mode === 'shop') {
+            setIsTransitioning(true)
+            setTimeout(() => {
+                setScreenState('shop')
                 setIsTransitioning(false)
             }, 150)
         }
@@ -201,6 +216,8 @@ export function MainScreen() {
                     />
                 ) : screenState === 'achievements' ? (
                     <AchievementsScreen onBack={handleBackToHome} />
+                ) : screenState === 'shop' ? (
+                    <ShopScreen onBack={handleBackToHome} />
                 ) : null}
             </div>
         </div>
