@@ -85,7 +85,12 @@
         "formulaLearned": "오늘 배운 공식",
         "formulaUsed": "방금 미니게임에서 사용된 공식이에요!",
         "realWorldUse": "실생활 적용",
-        "continue": "계속하기"
+        "continue": "계속하기",
+        "physicsTags": {
+            "pendulumMotion": "진자 운동",
+            "gravity": "중력",
+            "momentum": "운동량"
+        }
     },
     "share": {
         "title": "결과 공유하기",
