@@ -96,5 +96,77 @@
         "title": "Achievements",
         "unlocked": "Achievement Unlocked!",
         "progress": "{{unlocked}} of {{total}} unlocked"
+    },
+    "wobblediver": {
+        "intro": {
+            "title1": "Wobblediver",
+            "message1": "...Where am I?\nSomething is watching me from below...",
+            "title2": "I Must Escape",
+            "message2": "Hanging from a pendulum, swinging...\nTap at the right moment to jump!",
+            "title3": "To the Safe Zone!",
+            "message3": "Land on the yellow point to survive!\nHigher accuracy = higher score.",
+            "title4": "Avoid the Abyss",
+            "message4": "Down there... eyes are waiting.\nFall in and... there's no return.",
+            "title5": "...I Must Survive",
+            "message5": "They are hungry."
+        },
+        "panic": {
+            "phrase1": "Ahhhhh!",
+            "phrase2": "Help me!",
+            "phrase3": "No!",
+            "phrase4": "Aaahhh!",
+            "phrase5": "Save me!"
+        },
+        "transitions": {
+            "awaken": "The abyss awakens...",
+            "depth1": "Descending into the abyss...",
+            "depth2": "Deeper into darkness...",
+            "depth3": "Light is disappearing...",
+            "depth4": "Water pressure rising...",
+            "depth5": "They are waking up...",
+            "depth6": "No turning back...",
+            "depth7": "Endless abyss...",
+            "depth8": "Hope is fading..."
+        },
+        "perfect": {
+            "phrase1": "Perfect!",
+            "phrase2": "Amazing!",
+            "phrase3": "Awesome!",
+            "phrase4": "Yay!",
+            "phrase5": "Dimension shift!"
+        },
+        "success": {
+            "phrase1": "Phew~",
+            "phrase2": "I survived!",
+            "phrase3": "Lucky!",
+            "phrase4": "That was close",
+            "phrase5": "Wormhole entry!"
+        },
+        "teleport": {
+            "phrase1": "Warp!",
+            "phrase2": "Teleport!",
+            "phrase3": "Dimension shift!",
+            "phrase4": "Portal jump!"
+        },
+        "pain": {
+            "phrase1": "Ow!",
+            "phrase2": "Ugh!",
+            "phrase3": "It hurts!",
+            "phrase4": "Agh!",
+            "phrase5": "Ouch!",
+            "phrase6": "Argh!"
+        },
+        "ranks": {
+            "S": "The abyss fears you",
+            "A": "Impressive resistance",
+            "B": "Decent prey",
+            "C": "Ordinary sacrifice",
+            "D": "Insignificant soul"
+        },
+        "buttons": {
+            "next": "Next",
+            "start": "...Let's go",
+            "skip": "Skip"
+        }
     }
 }

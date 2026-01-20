@@ -1,9 +1,10 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js'
 import { Wobble } from '../../../Wobble'
+import i18n from '@/i18n'
 
 interface IntroStep {
-    title: string
-    message: string
+    titleKey: string
+    messageKey: string
     wobbleExpression: 'happy' | 'excited' | 'surprised' | 'worried'
     showPendulum?: boolean
     showGoal?: boolean
@@ -12,32 +13,32 @@ interface IntroStep {
 
 const INTRO_STEPS: IntroStep[] = [
     {
-        title: '워블다이버',
-        message: '...여기가 어디지?\n아래에서 뭔가 나를 보고 있어...',
+        titleKey: 'wobblediver.intro.title1',
+        messageKey: 'wobblediver.intro.message1',
         wobbleExpression: 'worried',
         showPendulum: false,
     },
     {
-        title: '탈출해야 해',
-        message: '진자에 매달려 흔들리다가\n타이밍에 맞춰 탭해서 뛰어내려!',
+        titleKey: 'wobblediver.intro.title2',
+        messageKey: 'wobblediver.intro.message2',
         wobbleExpression: 'surprised',
         showPendulum: true,
     },
     {
-        title: '안전 지대로!',
-        message: '노란 지점에 착지하면 살 수 있어!\n정확할수록 점수가 높아.',
+        titleKey: 'wobblediver.intro.title3',
+        messageKey: 'wobblediver.intro.message3',
         wobbleExpression: 'worried',
         showGoal: true,
     },
     {
-        title: '심연을 피해',
-        message: '저 아래... 눈들이 기다리고 있어.\n빠지면... 돌아올 수 없어.',
+        titleKey: 'wobblediver.intro.title4',
+        messageKey: 'wobblediver.intro.message4',
         wobbleExpression: 'worried',
         showSwamp: true,
     },
     {
-        title: '...살아남아야 해',
-        message: '그것들이 배고파하고 있어.',
+        titleKey: 'wobblediver.intro.title5',
+        messageKey: 'wobblediver.intro.message5',
         wobbleExpression: 'worried',
     },
 ]
@@ -544,7 +545,8 @@ export class WobblediverIntro {
         this.contentContainer.addChild(title)
 
         // Typewriter animation for title
-        this.titleAnimator = TextAnimator.typewriter(title, step.title, 0.6, () => {
+        const titleText = i18n.t(step.titleKey)
+        this.titleAnimator = TextAnimator.typewriter(title, titleText, 0.6, () => {
             this.animationsComplete = true
         })
 
@@ -574,8 +576,9 @@ export class WobblediverIntro {
 
         // Message container with fade-in animation
         const messageContainer = new Container()
+        const messageText = i18n.t(step.messageKey)
         const message = new Text({
-            text: step.message,
+            text: messageText,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 14,
@@ -620,7 +623,7 @@ export class WobblediverIntro {
             this.skipButton.cursor = 'pointer'
 
             const skipText = new Text({
-                text: 'Skip',
+                text: i18n.t('wobblediver.buttons.skip'),
                 style: new TextStyle({
                     fontFamily: 'Arial, sans-serif',
                     fontSize: 14,
@@ -653,7 +656,7 @@ export class WobblediverIntro {
         this.nextButton.addChild(btnBg)
 
         const btnText = new Text({
-            text: isLastStep ? '...가자' : '다음',
+            text: isLastStep ? i18n.t('wobblediver.buttons.start') : i18n.t('wobblediver.buttons.next'),
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 16,
