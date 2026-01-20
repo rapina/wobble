@@ -12,6 +12,7 @@ interface MiniGameCanvasProps {
     onGameOver?: () => void
     onRetry?: () => void
     onExit?: () => void
+    onContinueWithAd?: (onSuccess: () => void, onFail?: () => void) => void
     width?: number | string
     height?: number | string
 }
@@ -40,7 +41,7 @@ function createMiniGameScene(
 
 export const MiniGameCanvas = forwardRef<MiniGameCanvasHandle, MiniGameCanvasProps>(
     function MiniGameCanvas(
-        { gameId, onGameOver, onRetry, onExit, width = '100%', height = '100%' },
+        { gameId, onGameOver, onRetry, onExit, onContinueWithAd, width = '100%', height = '100%' },
         ref
     ) {
         const containerRef = useRef<HTMLDivElement>(null)
@@ -53,6 +54,7 @@ export const MiniGameCanvas = forwardRef<MiniGameCanvasHandle, MiniGameCanvasPro
         const onGameOverRef = useRef(onGameOver)
         const onRetryRef = useRef(onRetry)
         const onExitRef = useRef(onExit)
+        const onContinueWithAdRef = useRef(onContinueWithAd)
 
         useEffect(() => {
             onGameOverRef.current = onGameOver
@@ -65,6 +67,10 @@ export const MiniGameCanvas = forwardRef<MiniGameCanvasHandle, MiniGameCanvasPro
         useEffect(() => {
             onExitRef.current = onExit
         }, [onExit])
+
+        useEffect(() => {
+            onContinueWithAdRef.current = onContinueWithAd
+        }, [onContinueWithAd])
 
         const error = appError || sceneError
 
@@ -142,6 +148,11 @@ export const MiniGameCanvas = forwardRef<MiniGameCanvasHandle, MiniGameCanvasPro
                     onExit: () => {
                         onExitRef.current?.()
                     },
+                    onContinueWithAd: onContinueWithAdRef.current
+                        ? (onSuccess, onFail) => {
+                            onContinueWithAdRef.current?.(onSuccess, onFail)
+                        }
+                        : undefined,
                 }
 
                 const scene = createMiniGameScene(gameId, app, callbacks)

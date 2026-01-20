@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MiniGameCanvas, MiniGameCanvasHandle, MiniGameId } from '@/components/canvas/MiniGameCanvas'
-import { Pause } from 'lucide-react'
+import { Pause, Play, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Balatro from '@/components/Balatro'
 import { minigamePreset } from '@/config/backgroundPresets'
+import { useAdMob } from '@/hooks/useAdMob'
 
 const theme = {
     border: '#1a1a1a',
@@ -21,6 +22,7 @@ export function MiniGameScreen({ gameId, onBack }: MiniGameScreenProps) {
     const [isPaused, setIsPaused] = useState(false)
 
     const canvasRef = useRef<MiniGameCanvasHandle>(null)
+    const { showRewardAd, webSimulationActive, completeWebSimulation, cancelWebSimulation } = useAdMob()
 
     // Mount animation
     useEffect(() => {
@@ -50,6 +52,10 @@ export function MiniGameScreen({ gameId, onBack }: MiniGameScreenProps) {
 
     const handleExit = () => {
         onBack()
+    }
+
+    const handleContinueWithAd = (onSuccess: () => void, onFail?: () => void) => {
+        showRewardAd(onSuccess, onFail)
     }
 
     // Memoized Balatro background
@@ -105,6 +111,7 @@ export function MiniGameScreen({ gameId, onBack }: MiniGameScreenProps) {
                     gameId={gameId}
                     onRetry={handleRetry}
                     onExit={handleExit}
+                    onContinueWithAd={handleContinueWithAd}
                 />
             </div>
 
@@ -148,6 +155,38 @@ export function MiniGameScreen({ gameId, onBack }: MiniGameScreenProps) {
                         >
                             EXIT
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Web Ad Simulation Overlay */}
+            {webSimulationActive && (
+                <div
+                    className="absolute inset-0 z-40 flex flex-col items-center justify-center"
+                    style={{ background: 'rgba(0,0,0,0.9)' }}
+                >
+                    <div className="bg-gray-800 rounded-xl p-6 max-w-xs text-center">
+                        <Play className="w-16 h-16 mx-auto mb-4 text-cyan-400" />
+                        <h3 className="text-white text-lg font-bold mb-2">Rewarded Ad</h3>
+                        <p className="text-gray-400 text-sm mb-6">
+                            (Web Simulation)
+                        </p>
+                        <div className="flex gap-3 justify-center">
+                            <button
+                                onClick={completeWebSimulation}
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500 text-white font-bold transition-all active:scale-95"
+                            >
+                                <Play className="w-4 h-4" />
+                                Watch Ad
+                            </button>
+                            <button
+                                onClick={cancelWebSimulation}
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-600 text-white font-bold transition-all active:scale-95"
+                            >
+                                <X className="w-4 h-4" />
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

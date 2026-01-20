@@ -15,6 +15,7 @@ export interface MiniGameCallbacks {
     onGameOver?: (state: MiniGameState) => void
     onRetry?: () => void
     onExit?: () => void
+    onContinueWithAd?: (onSuccess: () => void, onFail?: () => void) => void
 }
 
 let sceneIdCounter = 0
@@ -108,6 +109,17 @@ export abstract class BaseMiniGameScene {
         })
         this.resultScreen.onRetry = () => this.handleRetry()
         this.resultScreen.onExit = () => this.callbacks.onExit?.()
+        this.resultScreen.onContinueWithAd = this.callbacks.onContinueWithAd
+            ? (onSuccess, onFail) => {
+                this.callbacks.onContinueWithAd!(
+                    () => {
+                        onSuccess()
+                        this.handleContinue()
+                    },
+                    onFail
+                )
+            }
+            : undefined
         this.container.addChild(this.resultScreen.screenContainer)
 
         // Bind animate function
@@ -303,6 +315,27 @@ export abstract class BaseMiniGameScene {
     }
 
     /**
+     * Handle continue after watching rewarded ad
+     * Restores one life and resumes from current state
+     */
+    protected handleContinue(): void {
+        // Hide result screen
+        this.resultScreen.hide()
+
+        // Restore one life
+        this.lifeSystem.gainLife()
+
+        // Resume game
+        this.gamePhase = 'playing'
+
+        // Update HUD
+        this.hud.updateLives(this.lifeSystem.lives, this.lifeSystem.maxLives)
+
+        // Notify subclass
+        this.onGameContinue()
+    }
+
+    /**
      * Reset the game
      */
     public reset(): void {
@@ -430,6 +463,9 @@ export abstract class BaseMiniGameScene {
         }
     }
     protected onGameReset(): void {
+        // Override in subclasses
+    }
+    protected onGameContinue(): void {
         // Override in subclasses
     }
 }

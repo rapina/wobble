@@ -131,7 +131,19 @@
             "depth5": "奴らが目覚める...",
             "depth6": "もう戻れない...",
             "depth7": "終わりなき深淵...",
-            "depth8": "希望が消えていく..."
+            "depth8": "希望が消えていく...",
+            "tapToStart": "タップしてスタート"
+        },
+        "hints": {
+            "wormholeShrinks": "誰かが出口を締めている... (ワームホール縮小)",
+            "goalMoves": "出口が逃げ始める... (ワームホール移動)",
+            "portalAppears": "次元の裂け目が開く... (ポータル出現)",
+            "obstacleAppears": "壁で何かが蠢いている... (触手出現)",
+            "moreObstacles": "更に多くが目覚める... (触手増加)",
+            "maxObstacles": "四方八方から這い出す... (触手最大)",
+            "trajectoryTimed": "直感を信じる時... (軌道制限)",
+            "trajectoryFlicker": "何かが視界を遮る... (軌道点滅)",
+            "trajectoryMinimal": "ほとんど見えない... (軌道微弱)"
         },
         "perfect": {
             "phrase1": "完璧！",

@@ -259,13 +259,16 @@ export class WobblediverScene extends BaseMiniGameScene {
     private declare transitionGraphics: Graphics
     private declare transitionStageText: Text
     private declare transitionSubText: Text
+    private declare transitionHintText: Text  // Difficulty hint messages
+    private declare transitionTapText: Text   // Tap to start prompt
     private isTransitioning = false
     private transitionTime = 0
-    private transitionDuration = 2.5  // Total transition time (close: 0.5s, hold: 1.3s, open: 0.7s)
+    private transitionAnimTime = 0  // Separate time for animations (always advances)
+    private transitionDuration = 3.2  // Total transition time (close: 0.5s, hold phase, open: 0.7s)
+    private transitionWaitingForTap = false  // Waiting for user tap to close
     private transitionTentacles: { x: number; y: number; angle: number; length: number; phase: number }[] = []
     private transitionEyes: { x: number; y: number; size: number; openness: number; targetOpenness: number }[] = []
     private transitionDepthParticles: { x: number; y: number; size: number; speed: number; alpha: number }[] = []
-    private transitionDepthMeter = 0  // Progress from 0 to 1 for depth descent animation
 
     // Custom in-game HUD (replaces default HUD)
     private declare customHudContainer: Container
@@ -2047,7 +2050,7 @@ export class WobblediverScene extends BaseMiniGameScene {
             }),
         })
         this.transitionStageText.anchor.set(0.5)
-        this.transitionStageText.position.set(this.width / 2, this.height / 2 - 20)
+        this.transitionStageText.position.set(this.width / 2, this.height * 0.22)
         this.transitionContainer.addChild(this.transitionStageText)
 
         // Sub text - ominous message (optimized for mobile 9:16)
@@ -2061,13 +2064,94 @@ export class WobblediverScene extends BaseMiniGameScene {
             }),
         })
         this.transitionSubText.anchor.set(0.5)
-        this.transitionSubText.position.set(this.width / 2, this.height / 2 + 20)
+        this.transitionSubText.position.set(this.width / 2, this.height * 0.22 + 50)
         this.transitionContainer.addChild(this.transitionSubText)
+
+        // Hint text - difficulty change messages (loading-style)
+        this.transitionHintText = new Text({
+            text: '',
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 11,
+                fill: 0x4ecdc4,  // Teal color to stand out
+                letterSpacing: 1,
+                lineHeight: 18,
+            }),
+        })
+        this.transitionHintText.anchor.set(0.5, 0)  // Anchor top-center for multi-line
+        this.transitionHintText.position.set(this.width / 2, this.height * 0.22 + 90)
+        this.transitionContainer.addChild(this.transitionHintText)
+
+        // Tap to start prompt
+        this.transitionTapText = new Text({
+            text: i18n.t('wobblediver.transitions.tapToStart'),
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 12,
+                fill: 0x888899,
+                letterSpacing: 2,
+            }),
+        })
+        this.transitionTapText.anchor.set(0.5)
+        this.transitionTapText.position.set(this.width / 2, this.height - 80)
+        this.transitionContainer.addChild(this.transitionTapText)
+    }
+
+    /**
+     * Generate difficulty hint messages based on the current stage
+     * Explains what changes at this depth to help players understand progression
+     */
+    private getDifficultyHints(stageNumber: number): string[] {
+        const hints: string[] = []
+
+        // Wormhole shrinks (rounds 2-15: shrinks by 0.1 per round from 2.5 to 1.0)
+        if (stageNumber >= 2 && stageNumber <= 15) {
+            hints.push(i18n.t('wobblediver.hints.wormholeShrinks'))
+        }
+
+        // Goal starts moving at round 5
+        if (stageNumber === 5) {
+            hints.push(i18n.t('wobblediver.hints.goalMoves'))
+        }
+
+        // Portals appear at round 5, then more every 3 rounds (max 2)
+        if (stageNumber === 5 || stageNumber === 8) {
+            hints.push(i18n.t('wobblediver.hints.portalAppears'))
+        }
+
+        // Obstacle count changes based on difficulty phase
+        // Medium phase starts typically around stage 3-5
+        if (stageNumber === 3) {
+            hints.push(i18n.t('wobblediver.hints.obstacleAppears'))
+        }
+        // Hard phase adds more obstacles
+        if (stageNumber === 6) {
+            hints.push(i18n.t('wobblediver.hints.moreObstacles'))
+        }
+        // Insane phase
+        if (stageNumber === 10) {
+            hints.push(i18n.t('wobblediver.hints.maxObstacles'))
+        }
+
+        // Trajectory visibility changes
+        if (stageNumber === 3) {
+            hints.push(i18n.t('wobblediver.hints.trajectoryTimed'))
+        }
+        if (stageNumber === 6) {
+            hints.push(i18n.t('wobblediver.hints.trajectoryFlicker'))
+        }
+        if (stageNumber === 10) {
+            hints.push(i18n.t('wobblediver.hints.trajectoryMinimal'))
+        }
+
+        return hints
     }
 
     private startStageTransition(stageNumber: number): void {
         this.isTransitioning = true
         this.transitionTime = 0
+        this.transitionAnimTime = 0
+        this.transitionWaitingForTap = false
         this.transitionContainer.visible = true
 
         // Update depth text
@@ -2088,6 +2172,16 @@ export class WobblediverScene extends BaseMiniGameScene {
         ]
         this.transitionSubText.text = messages[(stageNumber - 1) % messages.length]
         this.transitionSubText.alpha = 0
+
+        // Get difficulty hints for this stage
+        const hints = this.getDifficultyHints(stageNumber)
+        if (hints.length > 0) {
+            // Show hints with loading-style dots animation
+            this.transitionHintText.text = `▸ ${hints.join('\n▸ ')}`
+        } else {
+            this.transitionHintText.text = ''
+        }
+        this.transitionHintText.alpha = 0
 
         // Generate tentacles from edges
         this.transitionTentacles = []
@@ -2126,13 +2220,13 @@ export class WobblediverScene extends BaseMiniGameScene {
             })
         }
 
-        // Generate transition eyes
+        // Generate transition eyes (positioned below text area to avoid overlap)
         this.transitionEyes = []
         const eyeCount = 3 + Math.min(stageNumber, 5)
         for (let i = 0; i < eyeCount; i++) {
             this.transitionEyes.push({
-                x: this.width * 0.2 + Math.random() * this.width * 0.6,
-                y: this.height * 0.3 + Math.random() * this.height * 0.4,
+                x: this.width * 0.15 + Math.random() * this.width * 0.7,
+                y: this.height * 0.45 + Math.random() * this.height * 0.4,  // Lower area (45-85%)
                 size: 15 + Math.random() * 25,
                 openness: 0,
                 targetOpenness: 1,
@@ -2151,31 +2245,35 @@ export class WobblediverScene extends BaseMiniGameScene {
                 alpha: 0.2 + Math.random() * 0.4,
             })
         }
-
-        // Reset depth meter
-        this.transitionDepthMeter = 0
     }
 
     private updateTransition(deltaSeconds: number): void {
         if (!this.isTransitioning) return
 
-        this.transitionTime += deltaSeconds
+        // Always advance animation time for visual effects
+        this.transitionAnimTime += deltaSeconds
+
+        // Don't advance phase time if waiting for tap (freeze at hold phase)
+        if (!this.transitionWaitingForTap) {
+            this.transitionTime += deltaSeconds
+        }
         const t = this.transitionTime
+        const animT = this.transitionAnimTime  // Use for animations that should continue
         const duration = this.transitionDuration
 
         const g = this.transitionGraphics
         g.clear()
 
         // Phase 1: Darkness closes in completely (0 - 0.5s)
-        // Phase 2: Full darkness with effects (0.5 - 1.8s)
-        // Phase 3: Abyss opens - vertical split reveal (1.8 - 2.5s)
+        // Phase 2: Full darkness with effects (0.5 - 2.5s)
+        // Phase 3: Abyss opens - vertical split reveal (2.5 - 3.2s)
 
         const cx = this.width / 2
         const cy = this.height / 2
 
         // Calculate phase-specific values
         const closePhaseEnd = 0.5
-        const holdPhaseEnd = 1.8
+        const holdPhaseEnd = 2.5
         const openPhaseEnd = duration
 
         if (t < closePhaseEnd) {
@@ -2212,7 +2310,7 @@ export class WobblediverScene extends BaseMiniGameScene {
             g.fill({ color: 0x0a0510, alpha: 1.0 })
 
             // Subtle inner glow from center
-            const pulseIntensity = 0.3 + Math.sin((t - closePhaseEnd) * 4) * 0.1
+            const pulseIntensity = 0.3 + Math.sin(animT * 4) * 0.1
             for (let i = 0; i < 4; i++) {
                 const glowRadius = 50 + i * 40
                 g.ellipse(cx, cy, glowRadius, glowRadius * 0.7)
@@ -2284,7 +2382,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         if (effectsVisible) {
             const tentacleProgress = Math.min(1, (t - closePhaseEnd) / 0.5)
             for (const tentacle of this.transitionTentacles) {
-                this.drawTransitionTentacle(g, tentacle, tentacleProgress * effectsFade, t)
+                this.drawTransitionTentacle(g, tentacle, tentacleProgress * effectsFade, animT)
             }
         }
 
@@ -2294,7 +2392,7 @@ export class WobblediverScene extends BaseMiniGameScene {
 
             for (const eye of this.transitionEyes) {
                 eye.openness = Math.min(eye.openness + deltaSeconds * 3, eye.targetOpenness) * eyeProgress
-                this.drawTransitionEye(g, eye, effectsFade, t)
+                this.drawTransitionEye(g, eye, effectsFade, animT)
             }
         }
 
@@ -2327,42 +2425,6 @@ export class WobblediverScene extends BaseMiniGameScene {
             }
         }
 
-        // Draw depth meter (only during hold phase)
-        if (effectsVisible) {
-            const meterFade = effectsFade
-            this.transitionDepthMeter = Math.min(1, this.transitionDepthMeter + deltaSeconds * 0.6)
-
-            const meterX = this.width - 40
-            const meterY = this.height * 0.25
-            const meterHeight = this.height * 0.5
-            const meterWidth = 8
-
-            // Meter background
-            g.roundRect(meterX - meterWidth / 2, meterY, meterWidth, meterHeight, 4)
-            g.fill({ color: 0x1a0a20, alpha: 0.6 * meterFade })
-            g.stroke({ color: 0x4ecdc4, width: 1, alpha: 0.4 * meterFade })
-
-            // Meter fill (fills from top to bottom = descending)
-            const fillHeight = meterHeight * this.transitionDepthMeter
-            g.roundRect(meterX - meterWidth / 2 + 1, meterY + 1, meterWidth - 2, fillHeight - 2, 3)
-            g.fill({ color: 0x4ecdc4, alpha: 0.8 * meterFade })
-
-            // Depth markers
-            for (let i = 0; i <= 4; i++) {
-                const markerY = meterY + (meterHeight * i) / 4
-                g.moveTo(meterX - meterWidth / 2 - 5, markerY)
-                g.lineTo(meterX - meterWidth / 2, markerY)
-                g.stroke({ color: 0x4ecdc4, width: 1, alpha: 0.5 * meterFade })
-            }
-
-            // Depth arrow indicator at current position
-            const arrowY = meterY + fillHeight
-            g.moveTo(meterX + meterWidth / 2 + 3, arrowY - 4)
-            g.lineTo(meterX + meterWidth / 2 + 10, arrowY)
-            g.lineTo(meterX + meterWidth / 2 + 3, arrowY + 4)
-            g.fill({ color: 0xff6b6b, alpha: meterFade })
-        }
-
         // Stage text animation (only during hold phase)
         if (effectsVisible) {
             const textProgress = Math.min(1, (t - closePhaseEnd) / 0.3)
@@ -2371,22 +2433,65 @@ export class WobblediverScene extends BaseMiniGameScene {
             this.transitionStageText.scale.set(0.5 + textProgress * 0.5)
 
             // Shake effect
-            const shake = Math.sin(t * 30) * 3 * (1 - textProgress)
-            this.transitionStageText.position.set(this.width / 2 + shake, this.height / 2 - 30)
+            const shake = Math.sin(animT * 30) * 3 * (1 - textProgress)
+            this.transitionStageText.position.set(this.width / 2 + shake, this.height * 0.22)
 
             // Sub text (slightly delayed)
             const subProgress = Math.min(1, (t - closePhaseEnd - 0.2) / 0.3)
             this.transitionSubText.alpha = Math.max(0, subProgress) * effectsFade * 0.8
+
+            // Hint text (appears after sub text, typewriter-style fade in)
+            const hintDelay = 0.6  // Delay after hold phase starts
+            const hintProgress = Math.min(1, (t - closePhaseEnd - hintDelay) / 0.5)
+            if (hintProgress > 0 && this.transitionHintText.text) {
+                this.transitionHintText.alpha = Math.max(0, hintProgress) * effectsFade * 0.9
+                // Subtle pulse effect
+                const pulse = 1 + Math.sin(animT * 4) * 0.02
+                this.transitionHintText.scale.set(pulse)
+            }
+
+            // Tap to start prompt (appears after all text, pulsing)
+            const tapDelay = 1.2
+            const tapProgress = Math.min(1, (t - closePhaseEnd - tapDelay) / 0.3)
+            if (tapProgress > 0) {
+                const tapPulse = 0.5 + Math.sin(animT * 3) * 0.3
+                this.transitionTapText.alpha = tapProgress * tapPulse * effectsFade
+
+                // Set waiting for tap once animations are mostly done
+                if (!this.transitionWaitingForTap && tapProgress >= 1) {
+                    this.transitionWaitingForTap = true
+                }
+            }
+        } else if (t >= holdPhaseEnd) {
+            // Opening phase - fade out all text
+            const openProgress = (t - holdPhaseEnd) / (openPhaseEnd - holdPhaseEnd)
+            this.transitionStageText.alpha = 1 - openProgress
+            this.transitionSubText.alpha = (1 - openProgress) * 0.8
+            this.transitionHintText.alpha = (1 - openProgress) * 0.9
+            this.transitionTapText.alpha = 0
         } else {
             this.transitionStageText.alpha = 0
             this.transitionSubText.alpha = 0
+            this.transitionHintText.alpha = 0
+            this.transitionTapText.alpha = 0
         }
 
-        // End transition
-        if (t >= duration) {
+        // End transition (after opening animation completes)
+        if (t >= duration && !this.transitionWaitingForTap) {
             this.isTransitioning = false
             this.transitionContainer.visible = false
         }
+    }
+
+    /**
+     * Handle tap during transition to close it
+     */
+    private onTransitionTap(): void {
+        if (!this.transitionWaitingForTap) return
+
+        this.transitionWaitingForTap = false
+        // Jump to the opening phase
+        this.transitionTime = 2.5  // Start of open phase
     }
 
     private drawTransitionTentacle(
@@ -2714,7 +2819,12 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     private onTap(): void {
-        if (this.isTransitioning) return  // Block input during transition
+        // Handle tap during transition
+        if (this.isTransitioning) {
+            this.onTransitionTap()
+            return
+        }
+
         if (!this.isWaitingForTap || !this.wobble) return
         if (this.wobble.state !== 'swinging') return
 

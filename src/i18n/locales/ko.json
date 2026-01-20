@@ -131,7 +131,19 @@
             "depth5": "그것들이 깨어난다...",
             "depth6": "돌아갈 수 없다...",
             "depth7": "끝없는 심연...",
-            "depth8": "희망이 사라진다..."
+            "depth8": "희망이 사라진다...",
+            "tapToStart": "터치하여 시작"
+        },
+        "hints": {
+            "wormholeShrinks": "누군가 출구를 조이고 있다... (웜홀 축소)",
+            "goalMoves": "출구가 도망치기 시작한다... (웜홀 이동)",
+            "portalAppears": "차원의 틈새가 열린다... (포탈 등장)",
+            "obstacleAppears": "벽에서 뭔가 꿈틀댄다... (촉수 등장)",
+            "moreObstacles": "더 많은 것들이 깨어난다... (촉수 증가)",
+            "maxObstacles": "사방에서 기어나온다... (촉수 최대)",
+            "trajectoryTimed": "직감을 믿어야 할 때... (궤도 제한)",
+            "trajectoryFlicker": "뭔가 시야를 가린다... (궤도 깜빡임)",
+            "trajectoryMinimal": "거의 보이지 않는다... (궤도 희미)"
         },
         "perfect": {
             "phrase1": "완벽해!",

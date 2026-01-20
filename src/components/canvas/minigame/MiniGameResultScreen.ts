@@ -146,6 +146,13 @@ export class MiniGameResultScreen {
     // Callbacks
     onRetry?: () => void
     onExit?: () => void
+    onContinueWithAd?: (onSuccess: () => void, onFail?: () => void) => void
+
+    // Continue with ad feature
+    private continuesUsed = 0
+    private maxContinues = 3
+    private continueButton: Container | null = null
+    private continueLoading = false
 
     constructor(context: MiniGameResultContext) {
         this.screenContainer = context.container
@@ -460,9 +467,27 @@ export class MiniGameResultScreen {
         this.buttonsContainer.alpha = 0
         this.screenContainer.addChild(this.buttonsContainer)
 
-        const btnY = this.centerY + this.cardHeight / 2 + 40
         const btnWidth = 100
         const btnGap = 16
+
+        // Continue with ad button (if available)
+        const canContinue = this.continuesUsed < this.maxContinues && this.onContinueWithAd
+        const continueY = this.centerY + this.cardHeight / 2 + 35
+        const normalBtnY = canContinue ? continueY + 55 : this.centerY + this.cardHeight / 2 + 40
+
+        if (canContinue) {
+            const remaining = this.maxContinues - this.continuesUsed
+            const continueLabel = this.theme === 'abyss'
+                ? `REVIVE (${remaining})`
+                : `CONTINUE (${remaining})`
+
+            this.continueButton = this.createContinueButton(continueLabel, 180, 44, c.cyan)
+            this.continueButton.position.set(this.centerX, continueY)
+            this.continueButton.eventMode = 'static'
+            this.continueButton.cursor = 'pointer'
+            this.continueButton.on('pointertap', () => this.handleContinueWithAd())
+            this.buttonsContainer.addChild(this.continueButton)
+        }
 
         // Theme-specific button colors
         const retryColor = this.theme === 'abyss' ? c.blue : COLORS.blue
@@ -471,7 +496,7 @@ export class MiniGameResultScreen {
         // Retry button
         const retryLabel = this.theme === 'abyss' ? 'DESCEND' : 'RETRY'
         const retryBtn = this.createButton(retryLabel, btnWidth, 40, retryColor)
-        retryBtn.position.set(this.centerX - btnWidth / 2 - btnGap / 2, btnY)
+        retryBtn.position.set(this.centerX - btnWidth / 2 - btnGap / 2, normalBtnY)
         retryBtn.eventMode = 'static'
         retryBtn.cursor = 'pointer'
         retryBtn.on('pointertap', () => this.onRetry?.())
@@ -480,11 +505,106 @@ export class MiniGameResultScreen {
         // Exit button
         const exitLabel = this.theme === 'abyss' ? 'FLEE' : 'EXIT'
         const exitBtn = this.createButton(exitLabel, btnWidth, 40, exitColor)
-        exitBtn.position.set(this.centerX + btnWidth / 2 + btnGap / 2, btnY)
+        exitBtn.position.set(this.centerX + btnWidth / 2 + btnGap / 2, normalBtnY)
         exitBtn.eventMode = 'static'
         exitBtn.cursor = 'pointer'
         exitBtn.on('pointertap', () => this.onExit?.())
         this.buttonsContainer.addChild(exitBtn)
+    }
+
+    /**
+     * Create a continue button with video ad icon
+     */
+    private createContinueButton(label: string, width: number, height: number, color: number): Container {
+        const btn = new Container()
+
+        // Shadow (slightly larger for emphasis)
+        const shadow = new Graphics()
+        shadow.roundRect(-width / 2 + 3, -height / 2 + 4, width, height, 10)
+        shadow.fill(0x000000)
+        btn.addChild(shadow)
+
+        // Background with gradient-like effect
+        const bg = new Graphics()
+        bg.roundRect(-width / 2, -height / 2, width, height, 10)
+        bg.fill(color)
+        bg.roundRect(-width / 2, -height / 2, width, height, 10)
+        bg.stroke({ color: this.colors.border, width: 2 })
+        btn.addChild(bg)
+
+        // Highlight at top
+        const highlight = new Graphics()
+        highlight.roundRect(-width / 2 + 2, -height / 2 + 2, width - 4, height / 3, 8)
+        highlight.fill({ color: 0xffffff, alpha: 0.15 })
+        btn.addChild(highlight)
+
+        // Video icon (play triangle in circle)
+        const iconSize = 16
+        const iconX = -width / 2 + 22
+        const icon = new Graphics()
+        icon.circle(iconX, 0, iconSize / 2 + 2)
+        icon.fill({ color: 0xffffff, alpha: 0.2 })
+        icon.moveTo(iconX - 4, -5)
+        icon.lineTo(iconX - 4, 5)
+        icon.lineTo(iconX + 5, 0)
+        icon.closePath()
+        icon.fill({ color: 0xffffff, alpha: 0.9 })
+        btn.addChild(icon)
+
+        // Label
+        const text = new Text({
+            text: label,
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 14,
+                fontWeight: 'bold',
+                fill: this.colors.textPrimary,
+                letterSpacing: 1,
+            }),
+        })
+        text.anchor.set(0.5)
+        text.position.set(10, 0)  // Offset to account for icon
+        btn.addChild(text)
+
+        return btn
+    }
+
+    /**
+     * Handle continue with ad button press
+     */
+    private handleContinueWithAd(): void {
+        if (this.continueLoading || !this.onContinueWithAd) return
+        if (this.continuesUsed >= this.maxContinues) return
+
+        this.continueLoading = true
+
+        // Visual feedback - disable button
+        if (this.continueButton) {
+            this.continueButton.alpha = 0.5
+        }
+
+        this.onContinueWithAd(
+            // On success
+            () => {
+                this.continuesUsed++
+                this.continueLoading = false
+                // The scene will handle hiding the result screen and continuing
+            },
+            // On fail
+            () => {
+                this.continueLoading = false
+                if (this.continueButton) {
+                    this.continueButton.alpha = 1
+                }
+            }
+        )
+    }
+
+    /**
+     * Reset continues counter (call when starting new game from menu)
+     */
+    resetContinues(): void {
+        this.continuesUsed = 0
     }
 
     private createStatRow(x: number, y: number, label: string, value: string, color: number): void {

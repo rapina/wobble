@@ -131,7 +131,19 @@
             "depth5": "They are waking up...",
             "depth6": "No turning back...",
             "depth7": "Endless abyss...",
-            "depth8": "Hope is fading..."
+            "depth8": "Hope is fading...",
+            "tapToStart": "TAP TO START"
+        },
+        "hints": {
+            "wormholeShrinks": "Someone's squeezing the exit... (wormhole shrinks)",
+            "goalMoves": "The exit is running away... (wormhole moves)",
+            "portalAppears": "A rift in space opens... (portal appears)",
+            "obstacleAppears": "Something stirs in the walls... (tentacles emerge)",
+            "moreObstacles": "More of them are waking... (more tentacles)",
+            "maxObstacles": "They're everywhere... (max tentacles)",
+            "trajectoryTimed": "Trust your instincts... (trajectory limited)",
+            "trajectoryFlicker": "Something clouds your vision... (trajectory flickers)",
+            "trajectoryMinimal": "Can barely see anything... (trajectory faint)"
         },
         "perfect": {
             "phrase1": "Perfect!",
