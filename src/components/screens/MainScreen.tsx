@@ -7,7 +7,6 @@ import { CollectionScreen } from './CollectionScreen'
 import { GameScreen } from './GameScreen.tsx'
 import { GameSelectScreen } from './GameSelectScreen.tsx'
 import { MiniGameScreen } from './MiniGameScreen.tsx'
-import { AchievementsScreen } from './AchievementsScreen'
 import { ShopScreen } from './ShopScreen'
 import { IntroScreen, IntroScene } from './IntroScreen'
 import { formulaList } from '../../formulas/registry'
@@ -26,7 +25,6 @@ type ScreenState =
     | 'game'
     | 'minigame'
     | 'learning'
-    | 'achievements'
     | 'shop'
 
 export function MainScreen() {
@@ -128,12 +126,6 @@ export function MainScreen() {
                 setScreenState('adventure-select')
                 setIsTransitioning(false)
             }, 150)
-        } else if (mode === 'achievements') {
-            setIsTransitioning(true)
-            setTimeout(() => {
-                setScreenState('achievements')
-                setIsTransitioning(false)
-            }, 150)
         } else if (mode === 'shop') {
             setIsTransitioning(true)
             setTimeout(() => {
@@ -214,8 +206,6 @@ export function MainScreen() {
                         gameId={selectedMiniGame}
                         onBack={handleBackToAdventureSelect}
                     />
-                ) : screenState === 'achievements' ? (
-                    <AchievementsScreen onBack={handleBackToHome} />
                 ) : screenState === 'shop' ? (
                     <ShopScreen onBack={handleBackToHome} />
                 ) : null}

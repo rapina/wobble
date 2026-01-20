@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Sparkles, BookOpen, Trophy, Users, Target, Waves } from 'lucide-react'
+import { ArrowLeft, Sparkles, BookOpen, Trophy, Users, Target, Waves, Star, Zap, Crown, Check } from 'lucide-react'
 import Balatro from '@/components/Balatro'
 import { collectionPreset } from '@/config/backgroundPresets'
 import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
 import { useCollectionStore } from '@/stores/collectionStore'
 import { useProgressStore } from '@/stores/progressStore'
 import { useMinigameRecordStore, WobblediverRecord } from '@/stores/minigameRecordStore'
+import { useAchievementStore, AchievementProgress } from '@/stores/achievementStore'
+import { ACHIEVEMENTS, CATEGORY_INFO, AchievementCategory, Achievement } from '@/data/achievements'
 import { WOBBLE_CHARACTERS, WobbleShape, WobbleExpression } from '@/components/canvas/Wobble'
 import { formulas } from '@/formulas/registry'
 import { cn } from '@/lib/utils'
@@ -37,7 +39,15 @@ const theme = {
     pink: '#FF6B9D',
 }
 
-type TabType = 'characters' | 'formulas' | 'records'
+type TabType = 'characters' | 'formulas' | 'records' | 'achievements'
+
+// Category icons for achievements
+const CATEGORY_ICONS: Record<AchievementCategory, React.ReactNode> = {
+    learning: <Star className="w-5 h-5" />,
+    combat: <Zap className="w-5 h-5" />,
+    collection: <Target className="w-5 h-5" />,
+    mastery: <Crown className="w-5 h-5" />,
+}
 
 interface CollectionScreenProps {
     onBack: () => void
@@ -49,7 +59,9 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
     const { unlockedWobbles, getProgress } = useCollectionStore()
     const { getStudiedFormulas } = useProgressStore()
     const wobblediverRecord = useMinigameRecordStore((s) => s.getWobblediverRecord())
+    const { isUnlocked: isAchievementUnlocked, getProgress: getAchievementProgress, getAchievementProgress: getAchievementItemProgress } = useAchievementStore()
     const progress = getProgress()
+    const achievementProgress = getAchievementProgress()
     const [mounted, setMounted] = useState(false)
     const [activeTab, setActiveTab] = useState<TabType>('characters')
     const [selectedWobble, setSelectedWobble] = useState<WobbleShape | null>(null)
@@ -103,8 +115,13 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
             label: isKorean ? '학습' : 'Study',
         },
         {
-            id: 'records',
+            id: 'achievements',
             icon: <Trophy className="w-4 h-4" />,
+            label: isKorean ? '업적' : 'Achievements',
+        },
+        {
+            id: 'records',
+            icon: <Target className="w-4 h-4" />,
             label: isKorean ? '기록' : 'Stats',
         },
     ]
@@ -204,7 +221,9 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                             ? theme.blue
                             : tab.id === 'formulas'
                               ? theme.gold
-                              : theme.red
+                              : tab.id === 'achievements'
+                                ? theme.purple
+                                : theme.red
                     return (
                         <button
                             key={tab.id}
@@ -279,6 +298,15 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                         isKorean={isKorean}
                         studiedFormulas={studiedFormulas}
                         totalFormulas={totalFormulas}
+                    />
+                )}
+                {activeTab === 'achievements' && (
+                    <AchievementsTab
+                        mounted={mounted}
+                        lang={i18n.language}
+                        isAchievementUnlocked={isAchievementUnlocked}
+                        getAchievementItemProgress={getAchievementItemProgress}
+                        achievementProgress={achievementProgress}
                     />
                 )}
                 {activeTab === 'records' && (
@@ -917,6 +945,329 @@ function RecordsTab({
                     </p>
                 </div>
             </div>
+        </div>
+    )
+}
+
+// Achievements Tab Component
+function AchievementsTab({
+    mounted,
+    lang,
+    isAchievementUnlocked,
+    getAchievementItemProgress,
+    achievementProgress,
+}: {
+    mounted: boolean
+    lang: string
+    isAchievementUnlocked: (id: string) => boolean
+    getAchievementItemProgress: (id: string) => AchievementProgress | null
+    achievementProgress: { unlocked: number; total: number }
+}) {
+    const isKorean = lang === 'ko'
+    const categories: AchievementCategory[] = ['learning', 'combat', 'collection', 'mastery']
+
+    return (
+        <>
+            {/* Overall Progress Card */}
+            <div
+                className={cn(
+                    'mb-5 p-4 rounded-xl relative overflow-hidden',
+                    'transition-all duration-500',
+                    mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
+                )}
+                style={{
+                    background: theme.bgPanel,
+                    border: `3px solid ${theme.gold}`,
+                    boxShadow: `0 4px 0 ${theme.border}, 0 0 20px ${theme.gold}30`,
+                }}
+            >
+                {/* Shine effect */}
+                <div
+                    className="absolute inset-0 opacity-10"
+                    style={{
+                        background: `linear-gradient(135deg, ${theme.gold} 0%, transparent 50%, transparent 100%)`,
+                    }}
+                />
+
+                <div className="relative flex items-center justify-between mb-3">
+                    <span className="text-white/60 text-sm font-bold">
+                        {isKorean ? '전체 진행률' : 'Overall Progress'}
+                    </span>
+                    <div
+                        className="px-3 py-1 rounded-lg"
+                        style={{
+                            background: theme.gold,
+                            border: `2px solid ${theme.border}`,
+                            boxShadow: `0 2px 0 ${theme.border}`,
+                        }}
+                    >
+                        <span className="text-sm font-black text-black">
+                            {achievementProgress.unlocked} / {achievementProgress.total}
+                        </span>
+                    </div>
+                </div>
+                <div
+                    className="h-4 rounded-lg overflow-hidden"
+                    style={{
+                        background: theme.bgPanelLight,
+                        border: `2px solid ${theme.border}`,
+                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3)',
+                    }}
+                >
+                    <div
+                        className="h-full rounded transition-all duration-700"
+                        style={{
+                            width: `${(achievementProgress.unlocked / achievementProgress.total) * 100}%`,
+                            background: `linear-gradient(90deg, ${theme.gold}, #e6b84a)`,
+                            boxShadow: '0 1px 0 rgba(255,255,255,0.3)',
+                        }}
+                    />
+                </div>
+            </div>
+
+            {/* Categories */}
+            <div className="space-y-4">
+                {categories.map((category, catIndex) => {
+                    const categoryInfo = CATEGORY_INFO[category]
+                    const categoryAchievements = ACHIEVEMENTS.filter((a) => a.category === category)
+                    const unlockedCount = categoryAchievements.filter((a) =>
+                        isAchievementUnlocked(a.id)
+                    ).length
+                    const allUnlocked = unlockedCount === categoryAchievements.length
+
+                    return (
+                        <div
+                            key={category}
+                            className={cn(
+                                'transition-all duration-300',
+                                mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                            )}
+                            style={{ transitionDelay: `${catIndex * 80 + 100}ms` }}
+                        >
+                            <div
+                                className="rounded-xl p-4 relative overflow-hidden"
+                                style={{
+                                    background: theme.bgPanel,
+                                    border: `3px solid ${allUnlocked ? categoryInfo.color : theme.border}`,
+                                    boxShadow: allUnlocked
+                                        ? `0 4px 0 ${theme.border}, 0 0 12px ${categoryInfo.color}40`
+                                        : `0 4px 0 ${theme.border}`,
+                                }}
+                            >
+                                {/* Shine effect when all unlocked */}
+                                {allUnlocked && (
+                                    <div
+                                        className="absolute inset-0 opacity-10"
+                                        style={{
+                                            background: `linear-gradient(135deg, ${categoryInfo.color} 0%, transparent 50%, transparent 100%)`,
+                                        }}
+                                    />
+                                )}
+
+                                {/* Category Header */}
+                                <div className="relative flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div
+                                            className="w-10 h-10 rounded-lg flex items-center justify-center"
+                                            style={{
+                                                background: categoryInfo.color,
+                                                border: `2px solid ${theme.border}`,
+                                                boxShadow: `0 2px 0 ${theme.border}`,
+                                                color: 'white',
+                                            }}
+                                        >
+                                            {CATEGORY_ICONS[category]}
+                                        </div>
+                                        <h3
+                                            className="font-black tracking-wide"
+                                            style={{
+                                                color: categoryInfo.color,
+                                                textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                                            }}
+                                        >
+                                            {localizeText(categoryInfo.name, lang)}
+                                        </h3>
+                                    </div>
+                                    <div
+                                        className="px-2.5 py-1 rounded-md"
+                                        style={{
+                                            background: categoryInfo.color,
+                                            border: `2px solid ${theme.border}`,
+                                            boxShadow: `0 2px 0 ${theme.border}`,
+                                        }}
+                                    >
+                                        <span className="text-xs font-black text-white">
+                                            {unlockedCount}/{categoryAchievements.length}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Achievement List */}
+                                <div className="space-y-2">
+                                    {categoryAchievements.map((achievement) => {
+                                        const unlocked = isAchievementUnlocked(achievement.id)
+                                        const progress = getAchievementItemProgress(achievement.id)
+
+                                        return (
+                                            <AchievementItem
+                                                key={achievement.id}
+                                                category={category}
+                                                achievement={achievement}
+                                                unlocked={unlocked}
+                                                progress={progress}
+                                                categoryColor={categoryInfo.color}
+                                                lang={lang}
+                                            />
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+
+            {/* Encouragement */}
+            {achievementProgress.unlocked < achievementProgress.total && (
+                <p
+                    className={cn(
+                        'text-center text-white/35 text-xs font-medium mt-6',
+                        'transition-all duration-500 delay-700',
+                        mounted ? 'opacity-100' : 'opacity-0'
+                    )}
+                >
+                    {isKorean
+                        ? '물리 탐험을 계속하며 업적을 달성해보세요!'
+                        : 'Keep exploring physics to unlock more achievements!'}
+                </p>
+            )}
+        </>
+    )
+}
+
+// Individual Achievement Item Component
+function AchievementItem({
+    category,
+    achievement,
+    unlocked,
+    progress,
+    categoryColor,
+    lang,
+}: {
+    category: AchievementCategory
+    achievement: Achievement
+    unlocked: boolean
+    progress: AchievementProgress | null
+    categoryColor: string
+    lang: string
+}) {
+    return (
+        <div
+            className="p-3 rounded-xl transition-all relative overflow-hidden"
+            style={{
+                background: unlocked ? `${categoryColor}15` : theme.bgPanelLight,
+                border: `2px solid ${unlocked ? categoryColor : theme.border}`,
+                boxShadow: unlocked
+                    ? `0 2px 0 ${theme.border}, 0 0 8px ${categoryColor}30`
+                    : `0 2px 0 ${theme.border}`,
+            }}
+        >
+            {/* Shine effect when unlocked */}
+            {unlocked && (
+                <div
+                    className="absolute inset-0 opacity-20"
+                    style={{
+                        background: `linear-gradient(135deg, ${categoryColor} 0%, transparent 50%, transparent 100%)`,
+                    }}
+                />
+            )}
+
+            <div className="relative flex items-center gap-3">
+                {/* Icon */}
+                <div
+                    className="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{
+                        background: unlocked ? categoryColor : theme.bgPanel,
+                        border: `2px solid ${theme.border}`,
+                        boxShadow: `0 2px 0 ${theme.border}`,
+                        color: unlocked ? 'white' : 'rgba(255,255,255,0.3)',
+                    }}
+                >
+                    {unlocked ? (
+                        CATEGORY_ICONS[category]
+                    ) : (
+                        <span className="text-lg font-bold">?</span>
+                    )}
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                    <p
+                        className="font-black text-sm truncate"
+                        style={{
+                            color: unlocked ? 'white' : 'rgba(255,255,255,0.5)',
+                            textShadow: unlocked ? '0 1px 0 rgba(0,0,0,0.2)' : 'none',
+                        }}
+                    >
+                        {localizeText(achievement.name, lang)}
+                    </p>
+                    <p
+                        className="text-xs truncate font-medium"
+                        style={{
+                            color: unlocked ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.35)',
+                        }}
+                    >
+                        {localizeText(achievement.description, lang)}
+                    </p>
+                </div>
+
+                {/* Check mark or Progress */}
+                {unlocked ? (
+                    <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{
+                            background: categoryColor,
+                            border: `2px solid ${theme.border}`,
+                            boxShadow: `0 2px 0 ${theme.border}`,
+                        }}
+                    >
+                        <Check className="w-5 h-5 text-white" />
+                    </div>
+                ) : (
+                    progress && (
+                        <div
+                            className="px-2 py-1 rounded-md flex-shrink-0"
+                            style={{
+                                background: theme.bgPanel,
+                                border: `2px solid ${theme.border}`,
+                            }}
+                        >
+                            <span className="text-xs font-bold text-white/40">
+                                {progress.current}/{progress.target}
+                            </span>
+                        </div>
+                    )
+                )}
+            </div>
+
+            {/* Progress Bar for locked items */}
+            {!unlocked && progress && (
+                <div
+                    className="relative mt-3 h-3 rounded-md overflow-hidden"
+                    style={{
+                        background: theme.bgPanel,
+                        border: `2px solid ${theme.border}`,
+                    }}
+                >
+                    <div
+                        className="h-full rounded transition-all duration-500"
+                        style={{
+                            width: `${progress.percentage}%`,
+                            background: `linear-gradient(90deg, ${categoryColor}80, ${categoryColor})`,
+                        }}
+                    />
+                </div>
+            )}
         </div>
     )
 }

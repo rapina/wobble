@@ -1,19 +1,20 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Settings, Trophy, ShoppingBag, Bug } from 'lucide-react'
+import { Settings, ShoppingBag, Bug, BookOpen } from 'lucide-react'
 import { useAdMob } from '@/hooks/useAdMob'
 import { usePurchaseStore } from '@/stores/purchaseStore'
 import Balatro from '@/components/Balatro'
 import { homePreset } from '@/config/backgroundPresets'
 import ShuffleText from '@/components/ShuffleText'
 import { RotatingText } from '@/components/RotatingText'
-import { BlobDisplay } from '@/components/canvas/BlobDisplay'
+import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
 import { LanguageToggle } from '@/components/LanguageToggle'
 import { SettingsModal } from '@/components/ui/SettingsModal'
 import { DevOptionsModal } from '@/components/ui/DevOptionsModal'
 import { useCollectionStore } from '@/stores/collectionStore'
 import { useProgressStore } from '@/stores/progressStore'
 import { useAchievementStore } from '@/stores/achievementStore'
+import { WOBBLE_CHARACTERS } from '@/components/canvas/Wobble'
 import { formulaList } from '@/formulas/registry'
 import { cn } from '@/lib/utils'
 
@@ -34,7 +35,7 @@ const theme = {
     purple: '#9b59b6',
 }
 
-export type GameMode = 'sandbox' | 'collection' | 'game' | 'learning' | 'achievements' | 'shop'
+export type GameMode = 'sandbox' | 'collection' | 'game' | 'learning' | 'shop'
 
 interface HomeScreenProps {
     onSelectMode: (mode: GameMode) => void
@@ -44,7 +45,7 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
     const { t } = useTranslation()
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
     const [isDevOpen, setIsDevOpen] = useState(false)
-    const { getProgress } = useCollectionStore()
+    const { getProgress, unlockedWobbles } = useCollectionStore()
     const { studiedFormulas } = useProgressStore()
     const { getProgress: getAchievementProgress } = useAchievementStore()
     const { isAdFree } = usePurchaseStore()
@@ -52,7 +53,16 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
     const collectionProgress = getProgress()
     const achievementProgress = getAchievementProgress()
     const unseenFormulaCount = formulaList.length - studiedFormulas.size
-    const remainingAchievements = achievementProgress.total - achievementProgress.unlocked
+
+    // Select a random wobble from unlocked collection (or default to circle)
+    const randomWobble = useMemo(() => {
+        if (unlockedWobbles.length === 0) {
+            return { shape: 'circle' as const, color: WOBBLE_CHARACTERS.circle.color }
+        }
+        const randomIndex = Math.floor(Math.random() * unlockedWobbles.length)
+        const shape = unlockedWobbles[randomIndex]
+        return { shape, color: WOBBLE_CHARACTERS[shape].color }
+    }, [unlockedWobbles])
 
     // Show AdMob banner when initialized (unless ad-free)
     useEffect(() => {
@@ -142,7 +152,7 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
             <div
                 className="relative z-10 h-full flex flex-col"
                 style={{
-                    paddingTop: 'max(env(safe-area-inset-top, 0px), 64px)',
+                    paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 16px) + 64px)',
                     paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 160px)',
                     paddingLeft: 'max(env(safe-area-inset-left, 0px), 40px)',
                     paddingRight: 'max(env(safe-area-inset-right, 0px), 40px)',
@@ -190,9 +200,14 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                     </p>
                 </div>
 
-                {/* Center Blob */}
+                {/* Center Wobble - Random from collection */}
                 <div className="flex-1 flex items-center justify-center min-h-[80px]">
-                    <BlobDisplay size={80} color="#F5B041" expression="happy" />
+                    <WobbleDisplay
+                        size={80}
+                        shape={randomWobble.shape}
+                        color={randomWobble.color}
+                        expression="happy"
+                    />
                 </div>
 
                 {/* Menu Cards */}
@@ -246,7 +261,7 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                         </div>
                     </button>
 
-                    {/* Collection Card */}
+                    {/* Collection Card (도감) */}
                     <button
                         onClick={() => onSelectMode('collection')}
                         className="w-full relative overflow-hidden rounded-xl transition-all active:scale-[0.97]"
@@ -257,6 +272,7 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                         }}
                     >
                         <div className="px-5 py-3 flex items-center justify-center">
+                            <BookOpen className="w-4 h-4 mr-2 text-white" />
                             <span className="text-base font-black text-white tracking-wide uppercase">
                                 {t('home.collection')}
                             </span>
@@ -267,44 +283,8 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                                     color: 'white',
                                 }}
                             >
-                                {collectionProgress.unlocked}/{collectionProgress.total}
-                            </span>
-                        </div>
-                    </button>
-
-                    {/* Achievements Card */}
-                    <button
-                        onClick={() => onSelectMode('achievements')}
-                        className="w-full relative overflow-hidden rounded-xl transition-all active:scale-[0.97]"
-                        style={{
-                            background: remainingAchievements > 0 ? theme.gold : theme.bgPanel,
-                            border: `3px solid ${theme.border}`,
-                            boxShadow: `0 4px 0 ${theme.border}`,
-                        }}
-                    >
-                        <div className="px-5 py-3 flex items-center justify-center">
-                            <Trophy
-                                className={cn(
-                                    'w-4 h-4 mr-2',
-                                    remainingAchievements > 0 ? 'text-black' : 'text-white/60'
-                                )}
-                            />
-                            <span
-                                className={cn(
-                                    'text-base font-black tracking-wide uppercase',
-                                    remainingAchievements > 0 ? 'text-black' : 'text-white/60'
-                                )}
-                            >
-                                {t('home.achievements', 'Achievements')}
-                            </span>
-                            <span
-                                className="ml-3 px-2 py-0.5 text-xs font-bold rounded-md"
-                                style={{
-                                    background: remainingAchievements > 0 ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.1)',
-                                    color: remainingAchievements > 0 ? 'black' : 'white',
-                                }}
-                            >
-                                {achievementProgress.unlocked}/{achievementProgress.total}
+                                {collectionProgress.unlocked + achievementProgress.unlocked}/
+                                {collectionProgress.total + achievementProgress.total}
                             </span>
                         </div>
                     </button>
