@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { App } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
 import { HomeScreen, GameMode } from './HomeScreen'
@@ -13,6 +13,7 @@ import { formulaList } from '../../formulas/registry'
 import { Formula } from '../../formulas/types'
 import { useMusic } from '../../hooks/useMusic'
 import { useInAppPurchase } from '../../hooks/useInAppPurchase'
+import { musicManager } from '../../services/MusicManager'
 import { cn } from '@/lib/utils'
 import type { MiniGameId } from '@/components/canvas/MiniGameCanvas'
 
@@ -35,8 +36,7 @@ export function MainScreen() {
     const [selectedFormula, setSelectedFormula] = useState<Formula | null>(null)
     const [selectedMiniGame, setSelectedMiniGame] = useState<MiniGameId | null>(null)
     const [isTransitioning, setIsTransitioning] = useState(false)
-    const audioRef = useRef<HTMLAudioElement | null>(null)
-    const { isMusicEnabled, volume } = useMusic()
+    const { isMusicEnabled, switchTrack, markUserInteracted } = useMusic()
     const { restorePurchases } = useInAppPurchase()
 
     // Restore purchases on app start (for reinstall support)
@@ -55,54 +55,44 @@ export function MainScreen() {
         }
     }, [screenState, selectedFormula])
 
-    // Background music - initialize audio element
+    // Handle first user interaction for autoplay
     useEffect(() => {
-        const audio = new Audio('/assets/bg.mp3')
-        audio.loop = true
-        audio.volume = volume * 0.1 // Scale down for background music
-        audioRef.current = audio
-
         const handleInteraction = () => {
+            markUserInteracted()
+            // Start with main track after first interaction
             if (isMusicEnabled) {
-                audio.play().catch(() => {})
+                const isSurvivorMode = screenState === 'game' || screenState === 'minigame'
+                switchTrack(isSurvivorMode ? 'survivor' : 'main')
             }
             document.removeEventListener('click', handleInteraction)
         }
         document.addEventListener('click', handleInteraction)
 
+        return () => {
+            document.removeEventListener('click', handleInteraction)
+        }
+    }, [isMusicEnabled, markUserInteracted, switchTrack, screenState])
+
+    // Handle app state changes (background/foreground)
+    useEffect(() => {
         const appStateListener = App.addListener('appStateChange', ({ isActive }) => {
-            if (isActive && isMusicEnabled) {
-                audio.play().catch(() => {})
+            if (isActive) {
+                musicManager.resume()
             } else {
-                audio.pause()
+                musicManager.pauseAll()
             }
         })
 
         return () => {
-            audio.pause()
-            document.removeEventListener('click', handleInteraction)
             appStateListener.then((listener) => listener.remove())
         }
     }, [])
 
-    // Control music based on isMusicEnabled setting
+    // Switch music track based on screen state
     useEffect(() => {
-        const audio = audioRef.current
-        if (!audio) return
-
-        if (isMusicEnabled) {
-            audio.play().catch(() => {})
-        } else {
-            audio.pause()
-        }
-    }, [isMusicEnabled])
-
-    // Update volume when changed
-    useEffect(() => {
-        const audio = audioRef.current
-        if (!audio) return
-        audio.volume = volume * 0.1 // Scale down for background music
-    }, [volume])
+        const isSurvivorMode = screenState === 'game' || screenState === 'minigame'
+        switchTrack(isSurvivorMode ? 'survivor' : 'main')
+    }, [screenState, switchTrack])
 
     const handleSelectMode = (mode: GameMode) => {
         if (mode === 'sandbox') {

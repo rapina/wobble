@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import { musicManager, type MusicTrack } from '../services/MusicManager'
 
 const MUSIC_ENABLED_KEY = 'wobble-music-enabled'
 const MUSIC_VOLUME_KEY = 'wobble-music-volume'
@@ -6,8 +7,11 @@ const MUSIC_VOLUME_KEY = 'wobble-music-volume'
 interface MusicContextValue {
     isMusicEnabled: boolean
     volume: number
+    currentTrack: MusicTrack | null
     toggleMusic: () => void
     setVolume: (volume: number) => void
+    switchTrack: (track: MusicTrack) => void
+    markUserInteracted: () => void
 }
 
 const MusicContext = createContext<MusicContextValue | null>(null)
@@ -23,7 +27,16 @@ export function MusicProvider({ children }: { children: ReactNode }) {
         return saved === null ? 0.5 : parseFloat(saved)
     })
 
+    const [currentTrack, setCurrentTrack] = useState<MusicTrack | null>(null)
+
+    // Sync volume with MusicManager
     useEffect(() => {
+        musicManager.setVolume(volume)
+    }, [volume])
+
+    // Sync enabled state with MusicManager
+    useEffect(() => {
+        musicManager.setEnabled(isMusicEnabled)
         localStorage.setItem(MUSIC_ENABLED_KEY, String(isMusicEnabled))
     }, [isMusicEnabled])
 
@@ -39,8 +52,27 @@ export function MusicProvider({ children }: { children: ReactNode }) {
         setVolumeState(Math.max(0, Math.min(1, newVolume)))
     }, [])
 
+    const switchTrack = useCallback((track: MusicTrack) => {
+        musicManager.switchTrack(track)
+        setCurrentTrack(track)
+    }, [])
+
+    const markUserInteracted = useCallback(() => {
+        musicManager.markUserInteracted()
+    }, [])
+
     return (
-        <MusicContext.Provider value={{ isMusicEnabled, volume, toggleMusic, setVolume }}>
+        <MusicContext.Provider
+            value={{
+                isMusicEnabled,
+                volume,
+                currentTrack,
+                toggleMusic,
+                setVolume,
+                switchTrack,
+                markUserInteracted,
+            }}
+        >
             {children}
         </MusicContext.Provider>
     )
