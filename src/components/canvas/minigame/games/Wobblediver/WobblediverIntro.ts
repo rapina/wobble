@@ -529,13 +529,13 @@ export class WobblediverIntro {
         pointer.fill({ color: cardColor, alpha: 0.9 })
         this.contentContainer.addChild(pointer)
 
-        // Title
-        const titleY = cardY + 28
+        // Title (optimized for mobile 9:16)
+        const titleY = cardY + 24
         const title = new Text({
             text: '',
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: hasEmbed ? 18 : 20,
+                fontSize: hasEmbed ? 15 : 17,
                 fontWeight: 'bold',
                 fill: accentColor,
             }),
@@ -551,7 +551,7 @@ export class WobblediverIntro {
         })
 
         // Embed display area
-        let contentY = titleY + 28
+        let contentY = titleY + 24
         if (hasEmbed) {
             const embedWidth = cardWidth - 40
             const embedHeight = 130
@@ -574,17 +574,17 @@ export class WobblediverIntro {
             contentY = embedY + embedHeight + 12
         }
 
-        // Message container with fade-in animation
+        // Message container with fade-in animation (optimized for mobile 9:16)
         const messageContainer = new Container()
         const messageText = i18n.t(step.messageKey)
         const message = new Text({
             text: messageText,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 14,
+                fontSize: 13,
                 fill: textColor,
                 align: 'center',
-                lineHeight: 22,
+                lineHeight: 20,
             }),
         })
         message.anchor.set(0.5, 0)
@@ -615,10 +615,10 @@ export class WobblediverIntro {
             this.dotsContainer.addChild(dot)
         })
 
-        // Skip button (top right)
+        // Skip button (top right, optimized for mobile 9:16)
         if (!isLastStep) {
             this.skipButton = new Container()
-            this.skipButton.position.set(this.width - 50, 40)
+            this.skipButton.position.set(this.width - 45, 36)
             this.skipButton.eventMode = 'static'
             this.skipButton.cursor = 'pointer'
 
@@ -626,7 +626,7 @@ export class WobblediverIntro {
                 text: i18n.t('wobblediver.buttons.skip'),
                 style: new TextStyle({
                     fontFamily: 'Arial, sans-serif',
-                    fontSize: 14,
+                    fontSize: 12,
                     fill: textColor,
                 }),
             })
@@ -640,10 +640,10 @@ export class WobblediverIntro {
             this.container.addChild(this.skipButton)
         }
 
-        // Next/Start button
-        const btnWidth = isLastStep ? 160 : 120
-        const btnHeight = 44
-        const btnY = this.height - 100
+        // Next/Start button (optimized for mobile 9:16)
+        const btnWidth = isLastStep ? 140 : 110
+        const btnHeight = 40
+        const btnY = this.height - 90
 
         this.nextButton = new Container()
         this.nextButton.position.set(this.centerX, btnY)
@@ -651,7 +651,7 @@ export class WobblediverIntro {
         this.nextButton.cursor = 'pointer'
 
         const btnBg = new Graphics()
-        btnBg.roundRect(-btnWidth / 2, -btnHeight / 2, btnWidth, btnHeight, 22)
+        btnBg.roundRect(-btnWidth / 2, -btnHeight / 2, btnWidth, btnHeight, 20)
         btnBg.fill(accentColor)
         this.nextButton.addChild(btnBg)
 
@@ -659,7 +659,7 @@ export class WobblediverIntro {
             text: isLastStep ? i18n.t('wobblediver.buttons.start') : i18n.t('wobblediver.buttons.next'),
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: 'bold',
                 fill: 0xffffff,
             }),

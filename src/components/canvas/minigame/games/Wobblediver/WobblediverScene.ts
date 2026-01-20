@@ -1446,16 +1446,17 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     private setupOutText(): void {
+        // Optimized for mobile 9:16
         this.outText = new Text({
             text: 'DIE',
             style: new TextStyle({
                 fontFamily: 'Arial Black, sans-serif',
-                fontSize: 48,
+                fontSize: 40,
                 fontWeight: 'bold',
                 fill: 0x8b0000,  // Dark blood red
-                stroke: { color: 0x1a0a0a, width: 4 },
+                stroke: { color: 0x1a0a0a, width: 3 },
                 align: 'center',
-                letterSpacing: 8,
+                letterSpacing: 6,
             }),
         })
         this.outText.anchor.set(0.5)
@@ -1495,16 +1496,17 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     private setupInstruction(): void {
+        // Optimized for mobile 9:16
         this.instructionText = new Text({
             text: 'TAP TO RELEASE',
             style: new TextStyle({
                 fontFamily: 'Arial Black, sans-serif',
-                fontSize: 18,
+                fontSize: 14,
                 fontWeight: 'bold',
                 fill: 0x888899,  // Muted color
                 stroke: { color: BALATRO.bgDark, width: 2 },
                 align: 'center',
-                letterSpacing: 3,
+                letterSpacing: 2,
             }),
         })
         this.instructionText.anchor.set(0.5)
@@ -1592,105 +1594,106 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.stageResultGraphics = new Graphics()
         this.stageResultContainer.addChild(this.stageResultGraphics)
 
+        // Optimized for mobile 9:16
         const labelStyle = new TextStyle({
             fontFamily: 'Arial, sans-serif',
-            fontSize: 14,
+            fontSize: 12,
             fill: 0x8877aa,  // Muted purple
         })
 
         const valueStyle = new TextStyle({
             fontFamily: 'Arial Black, sans-serif',
-            fontSize: 16,
+            fontSize: 14,
             fontWeight: 'bold',
             fill: ABYSS.gold,
         })
 
-        // "ESCAPED" text (abyss theme)
+        // "ESCAPED" text (abyss theme, optimized for mobile)
         this.stageResultText = new Text({
             text: 'ESCAPED',
             style: new TextStyle({
                 fontFamily: 'Arial Black, sans-serif',
-                fontSize: 22,
+                fontSize: 18,
                 fontWeight: 'bold',
                 fill: ABYSS.gold,
-                stroke: { color: 0x1a0a20, width: 4 },
+                stroke: { color: 0x1a0a20, width: 3 },
             }),
         })
         this.stageResultText.anchor.set(0.5)
-        this.stageResultText.position.set(0, -100)
+        this.stageResultText.position.set(0, -90)
         this.stageResultContainer.addChild(this.stageResultText)
 
-        // Survival Bonus row (was HP Bonus)
+        // Survival Bonus row (was HP Bonus, positions optimized for mobile)
         this.stageHpLabelText = new Text({ text: 'Survival', style: labelStyle })
         this.stageHpLabelText.anchor.set(0, 0.5)
-        this.stageHpLabelText.position.set(-105, -55)
+        this.stageHpLabelText.position.set(-95, -50)
         this.stageResultContainer.addChild(this.stageHpLabelText)
 
         this.stageHpValueText = new Text({ text: '+0', style: valueStyle })
         this.stageHpValueText.anchor.set(1, 0.5)
-        this.stageHpValueText.position.set(105, -55)
+        this.stageHpValueText.position.set(95, -50)
         this.stageResultContainer.addChild(this.stageHpValueText)
 
-        // Swift Bonus row (was Time Bonus)
+        // Swift Bonus row (was Time Bonus, positions optimized for mobile)
         this.stageTimeLabelText = new Text({ text: 'Swift', style: labelStyle })
         this.stageTimeLabelText.anchor.set(0, 0.5)
-        this.stageTimeLabelText.position.set(-105, -25)
+        this.stageTimeLabelText.position.set(-95, -25)
         this.stageResultContainer.addChild(this.stageTimeLabelText)
 
         this.stageTimeValueText = new Text({ text: '+0', style: valueStyle })
         this.stageTimeValueText.anchor.set(1, 0.5)
-        this.stageTimeValueText.position.set(105, -25)
+        this.stageTimeValueText.position.set(95, -25)
         this.stageResultContainer.addChild(this.stageTimeValueText)
 
-        // Total row
+        // Total row (optimized for mobile)
         this.stageTotalLabelText = new Text({
             text: 'Tribute',
             style: new TextStyle({
                 fontFamily: 'Arial Black, sans-serif',
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: 'bold',
                 fill: 0xddccee,
             }),
         })
         this.stageTotalLabelText.anchor.set(0, 0.5)
-        this.stageTotalLabelText.position.set(-105, 10)
+        this.stageTotalLabelText.position.set(-95, 10)
         this.stageResultContainer.addChild(this.stageTotalLabelText)
 
         this.stageTotalValueText = new Text({
             text: '+0',
             style: new TextStyle({
                 fontFamily: 'Arial Black, sans-serif',
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: 'bold',
                 fill: ABYSS.gold,
             }),
         })
         this.stageTotalValueText.anchor.set(1, 0.5)
-        this.stageTotalValueText.position.set(105, 10)
+        this.stageTotalValueText.position.set(95, 10)
         this.stageResultContainer.addChild(this.stageTotalValueText)
 
-        // Grade text (S, A, B, C, D) - eldritch style
+        // Grade text (S, A, B, C, D) - eldritch style (optimized for mobile)
         this.stageGradeText = new Text({
             text: 'S',
             style: new TextStyle({
                 fontFamily: 'Arial Black, sans-serif',
-                fontSize: 48,
+                fontSize: 40,
                 fontWeight: 'bold',
                 fill: ABYSS.gold,
-                stroke: { color: 0x1a0a20, width: 4 },
+                stroke: { color: 0x1a0a20, width: 3 },
             }),
         })
         this.stageGradeText.anchor.set(0.5)
-        this.stageGradeText.position.set(0, 70)
+        this.stageGradeText.position.set(0, 60)
         this.stageGradeText.alpha = 0
         this.stageResultContainer.addChild(this.stageGradeText)
 
-        // Legacy score text (hidden)
+        // Legacy score text (hidden, optimized)
         this.stageScoreText = new Text({
             text: '+100',
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 18,
+                fontSize: 14,
                 fontWeight: 'bold',
                 fill: 0xffffff,
             }),
@@ -1707,9 +1710,10 @@ export class WobblediverScene extends BaseMiniGameScene {
         const g = this.stageResultGraphics
         g.clear()
 
-        const w = 260  // Wider to prevent text clipping
-        const h = 230
-        const yOffset = -120
+        // Optimized for mobile 9:16
+        const w = 230  // Slightly narrower for mobile
+        const h = 210
+        const yOffset = -110
 
         // Abyss theme colors
         const bgColor = 0x1a0a20      // Very dark purple
@@ -2030,34 +2034,34 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.transitionGraphics = new Graphics()
         this.transitionContainer.addChild(this.transitionGraphics)
 
-        // Depth number text - eldritch style
+        // Depth number text - eldritch style (optimized for mobile 9:16)
         this.transitionStageText = new Text({
             text: 'DEPTH 1',
             style: new TextStyle({
                 fontFamily: 'Arial Black, sans-serif',
-                fontSize: 64,
+                fontSize: 42,
                 fontWeight: 'bold',
                 fill: 0xcc88ff,
-                stroke: { color: 0x1a0a2e, width: 6 },
-                letterSpacing: 8,
+                stroke: { color: 0x1a0a2e, width: 4 },
+                letterSpacing: 6,
             }),
         })
         this.transitionStageText.anchor.set(0.5)
-        this.transitionStageText.position.set(this.width / 2, this.height / 2 - 30)
+        this.transitionStageText.position.set(this.width / 2, this.height / 2 - 20)
         this.transitionContainer.addChild(this.transitionStageText)
 
-        // Sub text - ominous message
+        // Sub text - ominous message (optimized for mobile 9:16)
         this.transitionSubText = new Text({
             text: i18n.t('wobblediver.transitions.awaken'),
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 18,
+                fontSize: 14,
                 fill: 0x9966cc,
-                letterSpacing: 4,
+                letterSpacing: 3,
             }),
         })
         this.transitionSubText.anchor.set(0.5)
-        this.transitionSubText.position.set(this.width / 2, this.height / 2 + 30)
+        this.transitionSubText.position.set(this.width / 2, this.height / 2 + 20)
         this.transitionContainer.addChild(this.transitionSubText)
     }
 

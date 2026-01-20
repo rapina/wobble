@@ -103,25 +103,26 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
     const studiedFormulas = getStudiedFormulas()
     const totalFormulas = Object.keys(formulas).length
 
+    // Tab icons reduced for mobile 9:16 optimization
     const tabs: { id: TabType; icon: React.ReactNode; label: string }[] = [
         {
             id: 'characters',
-            icon: <Users className="w-4 h-4" />,
-            label: isKorean ? '캐릭터' : 'Characters',
+            icon: <Users className="w-3.5 h-3.5" />,
+            label: isKorean ? '캐릭터' : 'Chars',
         },
         {
             id: 'formulas',
-            icon: <BookOpen className="w-4 h-4" />,
+            icon: <BookOpen className="w-3.5 h-3.5" />,
             label: isKorean ? '학습' : 'Study',
         },
         {
             id: 'achievements',
-            icon: <Trophy className="w-4 h-4" />,
-            label: isKorean ? '업적' : 'Achievements',
+            icon: <Trophy className="w-3.5 h-3.5" />,
+            label: isKorean ? '업적' : 'Achieve',
         },
         {
             id: 'records',
-            icon: <Target className="w-4 h-4" />,
+            icon: <Target className="w-3.5 h-3.5" />,
             label: isKorean ? '기록' : 'Stats',
         },
     ]
@@ -205,13 +206,13 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                 </div>
             </div>
 
-            {/* Tab Bar */}
+            {/* Tab Bar - optimized for mobile 9:16 */}
             <div
-                className="absolute z-20 w-full flex justify-center gap-2"
+                className="absolute z-20 w-full flex justify-center gap-1.5"
                 style={{
-                    top: 'calc(max(env(safe-area-inset-top, 0px), 16px) + 56px)',
-                    paddingLeft: 'max(env(safe-area-inset-left, 0px), 16px)',
-                    paddingRight: 'max(env(safe-area-inset-right, 0px), 16px)',
+                    top: 'calc(max(env(safe-area-inset-top, 0px), 16px) + 52px)',
+                    paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
+                    paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
                 }}
             >
                 {tabs.map((tab) => {
@@ -229,13 +230,13 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={cn(
-                                'flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all',
+                                'flex items-center gap-1.5 px-2.5 py-2 rounded-lg transition-all',
                                 'active:scale-95'
                             )}
                             style={{
                                 background: isActive ? tabColor : theme.bgPanel,
                                 border: `2px solid ${theme.border}`,
-                                boxShadow: `0 3px 0 ${theme.border}`,
+                                boxShadow: `0 2px 0 ${theme.border}`,
                                 opacity: isActive ? 1 : 0.7,
                             }}
                         >
@@ -251,7 +252,7 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                                 {tab.icon}
                             </span>
                             <span
-                                className="text-sm font-bold"
+                                className="text-xs font-bold"
                                 style={{
                                     color: isActive
                                         ? tab.id === 'formulas'
@@ -267,11 +268,11 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                 })}
             </div>
 
-            {/* Content */}
+            {/* Content - adjusted for compact tab bar */}
             <div
                 className="absolute z-10 overflow-y-auto"
                 style={{
-                    top: 'calc(max(env(safe-area-inset-top, 0px), 16px) + 120px)',
+                    top: 'calc(max(env(safe-area-inset-top, 0px), 16px) + 105px)',
                     bottom: 0,
                     left: 0,
                     right: 0,
