@@ -16,6 +16,8 @@ import { BaseMiniGameScene, MiniGameCallbacks } from '../../BaseMiniGameScene'
 import { DifficultyConfig, DifficultyPhase, HitResult } from '../../MiniGameTypes'
 import { SwingingWobble } from './SwingingWobble'
 import { Goal } from './Goal'
+import { Wormhole } from './Wormhole'
+import { PortalPair } from './PortalPair'
 import { ObstacleWobble, ObstacleMovement } from './ObstacleWobble'
 import { AnchorWobble } from './AnchorWobble'
 import { WobblediverIntro } from './WobblediverIntro'
@@ -131,7 +133,9 @@ interface ResultTentacle {
 export class WobblediverScene extends BaseMiniGameScene {
     // Game objects
     private declare wobble: SwingingWobble | null
-    private declare goal: Goal
+    private declare goal: Goal  // Kept for backward compatibility
+    private declare wormhole: Wormhole  // New wormhole finish portal
+    private declare portalPairs: PortalPair[]  // Teleportation portals
     private declare obstacles: ObstacleWobble[]
     private declare anchorWobble: AnchorWobble
 
@@ -1399,13 +1403,32 @@ export class WobblediverScene extends BaseMiniGameScene {
         const goalX = (this.boundaryLeft + this.boundaryRight) / 2
         const goalY = (this.boundaryTop + this.boundaryBottom) / 2 + 50
 
+        // Create wormhole finish portal
+        this.wormhole = new Wormhole(
+            {
+                x: goalX,
+                y: goalY,
+                radius: 50,
+                perfectRadius: 20,
+                isFinish: true,
+                portalColor: 'gold',
+            },
+            this.app
+        )
+        this.gameContainer.addChild(this.wormhole.container)
+
+        // Keep old goal for backward compatibility (but hide it)
         this.goal = new Goal({
             x: goalX,
             y: goalY,
             radius: 50,
             perfectRadius: 20,
         })
+        this.goal.container.visible = false
         this.gameContainer.addChild(this.goal.container)
+
+        // Initialize portal pairs array
+        this.portalPairs = []
     }
 
     private setupInstruction(): void {
@@ -2527,7 +2550,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.positionGoal()
 
         // Tell wobble where goal is for expression tracking
-        this.wobble.setGoalPosition(this.goal.x, this.goal.y)
+        this.wobble.setGoalPosition(this.wormhole.x, this.wormhole.y)
 
         // Update HUD stage display
         this.hud.updateStage(this.roundNumber)
@@ -2591,7 +2614,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         })
 
         // Position goal (keep same position for retry)
-        this.wobble.setGoalPosition(this.goal.x, this.goal.y)
+        this.wobble.setGoalPosition(this.wormhole.x, this.wormhole.y)
 
         // Ready for tap
         this.isWaitingForTap = true
@@ -2634,6 +2657,63 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         this.goal.moveTo(x, y)
         this.goal.setRadius(radius)
+
+        // Position wormhole at same location
+        this.wormhole.moveTo(x, y)
+        this.wormhole.setRadius(radius)
+
+        // Clear and spawn portal pairs based on difficulty
+        this.spawnPortalPairs()
+    }
+
+    private spawnPortalPairs(): void {
+        // Clear existing portals
+        for (const portal of this.portalPairs) {
+            this.gameContainer.removeChild(portal.container)
+            portal.destroy()
+        }
+        this.portalPairs = []
+
+        // Add portals starting from round 5
+        if (this.roundNumber < 5) return
+
+        const portalCount = Math.min(Math.floor((this.roundNumber - 4) / 3), 2)  // Max 2 portal pairs
+        const padding = 80
+        const abyssTop = this.boundaryBottom - 80
+
+        const colors: Array<'purple' | 'teal' | 'red'> = ['purple', 'teal', 'red']
+
+        for (let i = 0; i < portalCount; i++) {
+            const color = colors[i % colors.length]
+
+            // Entrance on left/top side
+            const entranceX = this.boundaryLeft + padding + Math.random() * (this.width * 0.3)
+            const entranceY = this.boundaryTop + 100 + Math.random() * (abyssTop - this.boundaryTop - 200)
+
+            // Exit on right/bottom side (strategic placement)
+            const exitX = this.width - padding - Math.random() * (this.width * 0.3)
+            const exitY = this.boundaryTop + 100 + Math.random() * (abyssTop - this.boundaryTop - 200)
+
+            const portalPair = new PortalPair(
+                {
+                    entrance: {
+                        x: entranceX,
+                        y: entranceY,
+                        radius: 35,
+                    },
+                    exit: {
+                        x: exitX,
+                        y: exitY,
+                        radius: 35,
+                    },
+                    color,
+                },
+                this.app
+            )
+
+            this.portalPairs.push(portalPair)
+            this.gameContainer.addChild(portalPair.container)
+        }
     }
 
     private updateObstacles(): void {
@@ -2773,15 +2853,23 @@ export class WobblediverScene extends BaseMiniGameScene {
             }
         }
 
-        // Update goal
+        // Update goal (old, hidden)
         this.goal.update(deltaSeconds)
+
+        // Update wormhole
+        this.wormhole.update(deltaSeconds, this.app?.renderer)
+
+        // Update portal pairs
+        for (const portalPair of this.portalPairs) {
+            portalPair.update(deltaSeconds, this.app?.renderer)
+        }
 
         // Move goal if enabled and update wobble's goal tracking
         if (this.goalMoves) {
             this.updateGoalMovement(deltaSeconds)
             // Update wobble's goal position for expression tracking
             if (this.wobble) {
-                this.wobble.setGoalPosition(this.goal.x, this.goal.y)
+                this.wobble.setGoalPosition(this.wormhole.x, this.wormhole.y)
             }
         }
 
@@ -2815,6 +2903,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         const newX = baseX + Math.sin(time * this.goalMoveSpeed) * this.goalMoveRange
 
         this.goal.moveTo(newX, this.goal.y)
+        this.wormhole.moveTo(newX, this.wormhole.y)
     }
 
     private checkCollisions(): void {
@@ -2822,19 +2911,19 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         const pos = this.wobble.getPosition()
 
-        // Check goal hit
-        const goalHit = this.goal.checkHit(pos.x, pos.y)
-        if (goalHit.hit) {
+        // Check wormhole hit (new finish portal)
+        const wormholeHit = this.wormhole.checkHit(pos.x, pos.y)
+        if (wormholeHit.hit) {
             this.wobble.markSuccess()
-            this.goal.showHit(goalHit.perfect)
+            this.wormhole.showHit(wormholeHit.perfect)
 
             // Show relief/success speech bubble
-            if (goalHit.perfect) {
-                const perfectPhrases = ['완벽해!', '최고다!', '대단해!', '야호!']
+            if (wormholeHit.perfect) {
+                const perfectPhrases = ['완벽해!', '최고다!', '대단해!', '야호!', '차원이동 성공!']
                 const phrase = perfectPhrases[Math.floor(Math.random() * perfectPhrases.length)]
                 this.wobble.showSpeechBubble(phrase, 1.0)
             } else {
-                const successPhrases = ['휴~', '살았다!', '다행이야', '위험했어']
+                const successPhrases = ['휴~', '살았다!', '다행이야', '위험했어', '웜홀 진입!']
                 const phrase = successPhrases[Math.floor(Math.random() * successPhrases.length)]
                 this.wobble.showSpeechBubble(phrase, 1.0)
             }
@@ -2845,8 +2934,24 @@ export class WobblediverScene extends BaseMiniGameScene {
 
             // Show stage result with sequential counting and grade
             // Score will be added to scoreSystem when result is hidden
-            this.showStageResult(0, hpPercent, timeTaken, goalHit.perfect)
+            this.showStageResult(0, hpPercent, timeTaken, wormholeHit.perfect)
             return
+        }
+
+        // Check portal pair teleportation
+        for (const portalPair of this.portalPairs) {
+            const teleportResult = portalPair.checkTeleport(this.wobble, pos.x, pos.y)
+            if (teleportResult && teleportResult.teleported) {
+                // Teleport wobble to exit portal
+                this.wobble.teleportTo(teleportResult.exitX, teleportResult.exitY)
+
+                // Show teleport speech bubble
+                const teleportPhrases = ['워프!', '순간이동!', '차원이동!', '텔레포트!']
+                const phrase = teleportPhrases[Math.floor(Math.random() * teleportPhrases.length)]
+                this.wobble.showSpeechBubble(phrase, 0.8)
+
+                return
+            }
         }
 
         // Check obstacle collision - push player instead of instant fail
@@ -3206,6 +3311,14 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         // Cleanup goal
         this.goal.destroy()
+
+        // Cleanup wormhole
+        this.wormhole.destroy()
+
+        // Cleanup portal pairs
+        for (const portal of this.portalPairs) {
+            portal.destroy()
+        }
 
         // Cleanup intro
         if (this.intro) {

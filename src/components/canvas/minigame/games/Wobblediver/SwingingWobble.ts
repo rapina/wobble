@@ -949,6 +949,20 @@ export class SwingingWobble {
         return this.getPosition().y
     }
 
+    /**
+     * Teleport to a new position (for portal mechanics)
+     */
+    teleportTo(newX: number, newY: number): void {
+        if (this.state === 'released') {
+            // Update release position to new location
+            this.releaseX = newX
+            this.releaseY = newY
+
+            // Keep current velocity for continued motion
+            // Velocity is already set from release, so we just change position
+        }
+    }
+
     destroy(): void {
         this.container.destroy({ children: true })
     }
