@@ -41,17 +41,17 @@ const DEFAULT_COLORS: ThemeColors = {
 
 // Abyss theme colors (deep purple, blood red, eldritch)
 const ABYSS_COLORS: ThemeColors = {
-    gold: 0xcc88ff,      // Eldritch purple-gold
-    red: 0x8b2020,       // Blood red
-    blue: 0x6a3d7a,      // Deep purple
-    cyan: 0x9b59b6,      // Purple
-    bgCard: 0x1a0a20,    // Very dark purple
-    bgDark: 0x0a0510,    // Almost black with purple tint
-    border: 0x3d1a50,    // Purple border
-    textPrimary: 0xeeddff,  // Pale purple-white
+    gold: 0xcc88ff, // Eldritch purple-gold
+    red: 0x8b2020, // Blood red
+    blue: 0x6a3d7a, // Deep purple
+    cyan: 0x9b59b6, // Purple
+    bgCard: 0x1a0a20, // Very dark purple
+    bgDark: 0x0a0510, // Almost black with purple tint
+    border: 0x3d1a50, // Purple border
+    textPrimary: 0xeeddff, // Pale purple-white
     textSecondary: 0x8877aa, // Muted purple
-    accent: 0xcc88ff,    // Bright purple
-    glow: 0x6a3080,      // Purple glow
+    accent: 0xcc88ff, // Bright purple
+    glow: 0x6a3080, // Purple glow
 }
 
 // Backwards compatibility
@@ -216,7 +216,7 @@ export class MiniGameResultScreen {
 
         // Card pop-in animation
         if (this.card) {
-            const cardDelay = this.theme === 'abyss' ? 0.3 : 0.1  // Delay card for abyss darkness
+            const cardDelay = this.theme === 'abyss' ? 0.3 : 0.1 // Delay card for abyss darkness
             const cardDuration = 0.4
             const cardProgress = Math.max(0, (this.animTime - cardDelay) / cardDuration)
 
@@ -330,7 +330,13 @@ export class MiniGameResultScreen {
         const cardShadow = new Graphics()
         if (this.theme === 'abyss') {
             // Red glow shadow for abyss
-            cardShadow.roundRect(this.cardX + 6, this.cardY + 8, this.cardWidth, this.cardHeight, 16)
+            cardShadow.roundRect(
+                this.cardX + 6,
+                this.cardY + 8,
+                this.cardWidth,
+                this.cardHeight,
+                16
+            )
             cardShadow.fill({ color: 0x8b0000, alpha: 0.4 })
         }
         cardShadow.roundRect(this.cardX + 4, this.cardY + 6, this.cardWidth, this.cardHeight, 16)
@@ -341,7 +347,13 @@ export class MiniGameResultScreen {
         const cardBg = new Graphics()
         if (this.theme === 'abyss') {
             // Outer glow
-            cardBg.roundRect(this.cardX - 4, this.cardY - 4, this.cardWidth + 8, this.cardHeight + 8, 18)
+            cardBg.roundRect(
+                this.cardX - 4,
+                this.cardY - 4,
+                this.cardWidth + 8,
+                this.cardHeight + 8,
+                18
+            )
             cardBg.fill({ color: c.glow, alpha: 0.3 })
         }
         cardBg.roundRect(this.cardX, this.cardY, this.cardWidth, this.cardHeight, 16)
@@ -351,7 +363,7 @@ export class MiniGameResultScreen {
         this.card.addChild(cardBg)
 
         // Title badge
-        const badgeWidth = this.theme === 'abyss' ? 180 : 140  // Wider for "CONSUMED" with letterSpacing
+        const badgeWidth = this.theme === 'abyss' ? 180 : 140 // Wider for "CONSUMED" with letterSpacing
         const badgeHeight = 32
         const badgeShadow = new Graphics()
         badgeShadow.roundRect(-badgeWidth / 2 + 2, this.cardY - 12 + 4, badgeWidth, badgeHeight, 8)
@@ -416,7 +428,13 @@ export class MiniGameResultScreen {
         }
 
         const rankShadow = new Graphics()
-        rankShadow.roundRect(-rankBoxSize / 2 + 2, -rankBoxSize / 2 + 4, rankBoxSize, rankBoxSize, 12)
+        rankShadow.roundRect(
+            -rankBoxSize / 2 + 2,
+            -rankBoxSize / 2 + 4,
+            rankBoxSize,
+            rankBoxSize,
+            12
+        )
         rankShadow.fill(0x000000)
         this.rankContainer.addChild(rankShadow)
 
@@ -441,14 +459,17 @@ export class MiniGameResultScreen {
 
         // Rank message - different for abyss theme
         const abyssMessages: Record<string, string> = {
-            'S': i18n.t('wobblediver.ranks.S'),
-            'A': i18n.t('wobblediver.ranks.A'),
-            'B': i18n.t('wobblediver.ranks.B'),
-            'C': i18n.t('wobblediver.ranks.C'),
-            'D': i18n.t('wobblediver.ranks.D'),
+            S: i18n.t('wobblediver.ranks.S'),
+            A: i18n.t('wobblediver.ranks.A'),
+            B: i18n.t('wobblediver.ranks.B'),
+            C: i18n.t('wobblediver.ranks.C'),
+            D: i18n.t('wobblediver.ranks.D'),
         }
         const rankMessage = new Text({
-            text: this.theme === 'abyss' ? (abyssMessages[rankConfig.rank] || rankConfig.message) : rankConfig.message,
+            text:
+                this.theme === 'abyss'
+                    ? abyssMessages[rankConfig.rank] || rankConfig.message
+                    : rankConfig.message,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 10,
@@ -477,9 +498,8 @@ export class MiniGameResultScreen {
 
         if (canContinue) {
             const remaining = this.maxContinues - this.continuesUsed
-            const continueLabel = this.theme === 'abyss'
-                ? `REVIVE (${remaining})`
-                : `CONTINUE (${remaining})`
+            const continueLabel =
+                this.theme === 'abyss' ? `REVIVE (${remaining})` : `CONTINUE (${remaining})`
 
             this.continueButton = this.createContinueButton(continueLabel, 180, 44, c.cyan)
             this.continueButton.position.set(this.centerX, continueY)
@@ -515,7 +535,12 @@ export class MiniGameResultScreen {
     /**
      * Create a continue button with video ad icon
      */
-    private createContinueButton(label: string, width: number, height: number, color: number): Container {
+    private createContinueButton(
+        label: string,
+        width: number,
+        height: number,
+        color: number
+    ): Container {
         const btn = new Container()
 
         // Shadow (slightly larger for emphasis)
@@ -563,7 +588,7 @@ export class MiniGameResultScreen {
             }),
         })
         text.anchor.set(0.5)
-        text.position.set(10, 0)  // Offset to account for icon
+        text.position.set(10, 0) // Offset to account for icon
         btn.addChild(text)
 
         return btn
@@ -721,22 +746,22 @@ export class MiniGameResultScreen {
             const side = i % 4
             let x: number, y: number, angle: number
             switch (side) {
-                case 0:  // Top
+                case 0: // Top
                     x = this.width * 0.1 + Math.random() * this.width * 0.8
                     y = 0
                     angle = Math.PI / 2 + (Math.random() - 0.5) * 0.4
                     break
-                case 1:  // Right
+                case 1: // Right
                     x = this.width
                     y = this.height * 0.1 + Math.random() * this.height * 0.8
                     angle = Math.PI + (Math.random() - 0.5) * 0.4
                     break
-                case 2:  // Bottom
+                case 2: // Bottom
                     x = this.width * 0.1 + Math.random() * this.width * 0.8
                     y = this.height
                     angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.4
                     break
-                default:  // Left
+                default: // Left
                     x = 0
                     y = this.height * 0.1 + Math.random() * this.height * 0.8
                     angle = (Math.random() - 0.5) * 0.4
@@ -824,7 +849,8 @@ export class MiniGameResultScreen {
         for (let i = 0; i < segments; i++) {
             const t = i / segments
             const width = baseWidth * (1 - t * 0.7)
-            const wave = Math.sin(this.animTime * tentacle.waveSpeed + tentacle.phase + i * 0.4) * 8 * t
+            const wave =
+                Math.sin(this.animTime * tentacle.waveSpeed + tentacle.phase + i * 0.4) * 8 * t
 
             // Curve toward center
             const toCenterX = this.centerX - x
@@ -836,8 +862,8 @@ export class MiniGameResultScreen {
             const nextY = y + Math.sin(angle) * segmentLength + Math.sin(angle + Math.PI / 2) * wave
 
             // Draw segment
-            const perpX = Math.cos(angle + Math.PI / 2) * width / 2
-            const perpY = Math.sin(angle + Math.PI / 2) * width / 2
+            const perpX = (Math.cos(angle + Math.PI / 2) * width) / 2
+            const perpY = (Math.sin(angle + Math.PI / 2) * width) / 2
 
             g.moveTo(x + perpX, y + perpY)
             g.lineTo(nextX + perpX * 0.8, nextY + perpY * 0.8)
@@ -900,7 +926,11 @@ export class MiniGameResultScreen {
         g.fill({ color: 0x000000, alpha: 0.98 })
 
         // Highlight
-        g.circle(pupilX - pupilSize * 0.4, pupilY - pupilSize * 0.2 * eye.openness, pupilSize * 0.25)
+        g.circle(
+            pupilX - pupilSize * 0.4,
+            pupilY - pupilSize * 0.2 * eye.openness,
+            pupilSize * 0.25
+        )
         g.fill({ color: 0xffffff, alpha: 0.8 })
     }
 

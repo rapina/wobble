@@ -263,8 +263,8 @@ export class WormholeFilter extends Filter {
             intensity = 1.0,
             rotation = 1.0,
             // Abyss purple/teal colors
-            colorInner = [0.3, 0.8, 0.77, 1.0],  // Teal
-            colorOuter = [0.24, 0.10, 0.31, 1.0],  // Deep purple
+            colorInner = [0.3, 0.8, 0.77, 1.0], // Teal
+            colorOuter = [0.24, 0.1, 0.31, 1.0], // Deep purple
         } = options
 
         const glProgram = GlProgram.from({
@@ -320,7 +320,10 @@ export class WormholeFilter extends Filter {
         this.uniforms.uCenter[1] = y
     }
 
-    setColors(inner: [number, number, number, number], outer: [number, number, number, number]): void {
+    setColors(
+        inner: [number, number, number, number],
+        outer: [number, number, number, number]
+    ): void {
         this.uniforms.uColorInner.set(inner)
         this.uniforms.uColorOuter.set(outer)
     }

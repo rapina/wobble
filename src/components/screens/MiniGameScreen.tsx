@@ -1,6 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { MiniGameCanvas, MiniGameCanvasHandle, MiniGameId } from '@/components/canvas/MiniGameCanvas'
+import {
+    MiniGameCanvas,
+    MiniGameCanvasHandle,
+    MiniGameId,
+} from '@/components/canvas/MiniGameCanvas'
 import { Pause, Play, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Balatro from '@/components/Balatro'
@@ -22,7 +26,8 @@ export function MiniGameScreen({ gameId, onBack }: MiniGameScreenProps) {
     const [isPaused, setIsPaused] = useState(false)
 
     const canvasRef = useRef<MiniGameCanvasHandle>(null)
-    const { showRewardAd, webSimulationActive, completeWebSimulation, cancelWebSimulation } = useAdMob()
+    const { showRewardAd, webSimulationActive, completeWebSimulation, cancelWebSimulation } =
+        useAdMob()
 
     // Mount animation
     useEffect(() => {
@@ -148,14 +153,18 @@ export function MiniGameScreen({ gameId, onBack }: MiniGameScreenProps) {
                         <div
                             className="absolute top-0 left-8 right-8 h-1 rounded-full"
                             style={{
-                                background: 'linear-gradient(90deg, transparent, #c9a227, transparent)',
+                                background:
+                                    'linear-gradient(90deg, transparent, #c9a227, transparent)',
                                 boxShadow: '0 0 20px rgba(201, 162, 39, 0.5)',
                             }}
                         />
 
                         <h2
                             className="text-2xl font-bold mb-8 text-center"
-                            style={{ color: '#c9a227', textShadow: '0 0 20px rgba(201, 162, 39, 0.3)' }}
+                            style={{
+                                color: '#c9a227',
+                                textShadow: '0 0 20px rgba(201, 162, 39, 0.3)',
+                            }}
                         >
                             PAUSED
                         </h2>
@@ -168,7 +177,8 @@ export function MiniGameScreen({ gameId, onBack }: MiniGameScreenProps) {
                                     background: '#4ecdc4',
                                     color: '#0d1117',
                                     border: '2px solid #6ee7de',
-                                    boxShadow: '0 4px 0 #2d9990, 0 6px 15px rgba(78, 205, 196, 0.3)',
+                                    boxShadow:
+                                        '0 4px 0 #2d9990, 0 6px 15px rgba(78, 205, 196, 0.3)',
                                 }}
                             >
                                 <Play className="inline-block w-4 h-4 mr-2 mb-0.5" />
@@ -181,7 +191,8 @@ export function MiniGameScreen({ gameId, onBack }: MiniGameScreenProps) {
                                     background: '#c9a227',
                                     color: '#0d1117',
                                     border: '2px solid #ddb832',
-                                    boxShadow: '0 4px 0 #9b7f1e, 0 6px 15px rgba(201, 162, 39, 0.3)',
+                                    boxShadow:
+                                        '0 4px 0 #9b7f1e, 0 6px 15px rgba(201, 162, 39, 0.3)',
                                 }}
                             >
                                 RETRY
@@ -213,9 +224,7 @@ export function MiniGameScreen({ gameId, onBack }: MiniGameScreenProps) {
                     <div className="bg-gray-800 rounded-xl p-6 max-w-xs text-center">
                         <Play className="w-16 h-16 mx-auto mb-4 text-cyan-400" />
                         <h3 className="text-white text-lg font-bold mb-2">Rewarded Ad</h3>
-                        <p className="text-gray-400 text-sm mb-6">
-                            (Web Simulation)
-                        </p>
+                        <p className="text-gray-400 text-sm mb-6">(Web Simulation)</p>
                         <div className="flex gap-3 justify-center">
                             <button
                                 onClick={completeWebSimulation}

@@ -95,7 +95,7 @@ export class LifeSystem {
      * Reset to initial state
      */
     reset(): void {
-        this.state.lives = this.state.maxLives  // Reset to current maxLives
+        this.state.lives = this.state.maxLives // Reset to current maxLives
 
         if (this.onLifeChange) {
             this.onLifeChange(this.state.lives, this.state.maxLives)

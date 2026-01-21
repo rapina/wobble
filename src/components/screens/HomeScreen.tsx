@@ -211,10 +211,7 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                 </div>
 
                 {/* Menu Cards */}
-                <div
-                    className="space-y-2.5 mx-auto w-full"
-                    style={{ maxWidth: 320 }}
-                >
+                <div className="space-y-2.5 mx-auto w-full" style={{ maxWidth: 320 }}>
                     {/* Sandbox - Main Card */}
                     <button
                         onClick={() => onSelectMode('sandbox')}
@@ -353,9 +350,7 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
             <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
             {/* Dev Options Modal */}
-            {IS_DEV && (
-                <DevOptionsModal isOpen={isDevOpen} onClose={() => setIsDevOpen(false)} />
-            )}
+            {IS_DEV && <DevOptionsModal isOpen={isDevOpen} onClose={() => setIsDevOpen(false)} />}
         </div>
     )
 }

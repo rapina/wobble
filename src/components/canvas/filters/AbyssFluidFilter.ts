@@ -287,12 +287,12 @@ export class AbyssFluidFilter extends Filter {
     constructor(options: AbyssFluidFilterOptions = {}) {
         const {
             // Default: cosmic purple palette
-            colorDeep = [0.24, 0.10, 0.31, 1.0],    // #3d1a50 - Dark saturated purple
-            colorMid = [0.36, 0.18, 0.46, 1.0],     // #5c2d75 - Medium purple
+            colorDeep = [0.24, 0.1, 0.31, 1.0], // #3d1a50 - Dark saturated purple
+            colorMid = [0.36, 0.18, 0.46, 1.0], // #5c2d75 - Medium purple
             colorSurface = [0.48, 0.25, 0.58, 1.0], // #7a4095 - Bright purple
             flowSpeed = 1.0,
             waveIntensity = 1.0,
-            surfaceY = 0.2,    // Surface at 20% from top
+            surfaceY = 0.2, // Surface at 20% from top
             bloodLevel = 0.0,
         } = options
 
@@ -357,11 +357,11 @@ export class AbyssFluidFilter extends Filter {
         const t = value
 
         // Purple to blood red transition
-        this.uniforms.uColorDeep[0] = 0.24 + (0.38 - 0.24) * t  // R
-        this.uniforms.uColorDeep[1] = 0.10 + (0.06 - 0.10) * t  // G
-        this.uniforms.uColorDeep[2] = 0.31 + (0.06 - 0.31) * t  // B
+        this.uniforms.uColorDeep[0] = 0.24 + (0.38 - 0.24) * t // R
+        this.uniforms.uColorDeep[1] = 0.1 + (0.06 - 0.1) * t // G
+        this.uniforms.uColorDeep[2] = 0.31 + (0.06 - 0.31) * t // B
 
-        this.uniforms.uColorMid[0] = 0.36 + (0.50 - 0.36) * t
+        this.uniforms.uColorMid[0] = 0.36 + (0.5 - 0.36) * t
         this.uniforms.uColorMid[1] = 0.18 + (0.13 - 0.18) * t
         this.uniforms.uColorMid[2] = 0.46 + (0.13 - 0.46) * t
 

@@ -1,6 +1,18 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Sparkles, BookOpen, Trophy, Users, Target, Waves, Star, Zap, Crown, Check } from 'lucide-react'
+import {
+    ArrowLeft,
+    Sparkles,
+    BookOpen,
+    Trophy,
+    Users,
+    Target,
+    Waves,
+    Star,
+    Zap,
+    Crown,
+    Check,
+} from 'lucide-react'
 import Balatro from '@/components/Balatro'
 import { collectionPreset } from '@/config/backgroundPresets'
 import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
@@ -59,7 +71,11 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
     const { unlockedWobbles, getProgress } = useCollectionStore()
     const { getStudiedFormulas } = useProgressStore()
     const wobblediverRecord = useMinigameRecordStore((s) => s.getWobblediverRecord())
-    const { isUnlocked: isAchievementUnlocked, getProgress: getAchievementProgress, getAchievementProgress: getAchievementItemProgress } = useAchievementStore()
+    const {
+        isUnlocked: isAchievementUnlocked,
+        getProgress: getAchievementProgress,
+        getAchievementProgress: getAchievementItemProgress,
+    } = useAchievementStore()
     const progress = getProgress()
     const achievementProgress = getAchievementProgress()
     const [mounted, setMounted] = useState(false)
@@ -311,7 +327,11 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                     />
                 )}
                 {activeTab === 'records' && (
-                    <RecordsTab mounted={mounted} isKorean={isKorean} wobblediverRecord={wobblediverRecord} />
+                    <RecordsTab
+                        mounted={mounted}
+                        isKorean={isKorean}
+                        wobblediverRecord={wobblediverRecord}
+                    />
                 )}
             </div>
         </div>
@@ -769,7 +789,10 @@ function RecordsTab({
                             <h3 className="font-black text-white text-sm">
                                 {isKorean ? '워블다이버' : 'Wobblediver'}
                             </h3>
-                            <p className="text-[10px] font-medium" style={{ color: abyssTheme.teal }}>
+                            <p
+                                className="text-[10px] font-medium"
+                                style={{ color: abyssTheme.teal }}
+                            >
                                 {isKorean ? '심연 다이빙 미니게임' : 'Abyss Diving Minigame'}
                             </p>
                         </div>
@@ -777,12 +800,17 @@ function RecordsTab({
                         <div
                             className="ml-auto px-3 py-1.5 rounded-lg"
                             style={{
-                                background: hasRecords ? rankColors[wobblediverRecord.bestRank] : 'rgba(255,255,255,0.1)',
+                                background: hasRecords
+                                    ? rankColors[wobblediverRecord.bestRank]
+                                    : 'rgba(255,255,255,0.1)',
                                 border: `2px solid ${theme.border}`,
                                 boxShadow: `0 2px 0 ${theme.border}`,
                             }}
                         >
-                            <span className="text-lg font-black" style={{ color: hasRecords ? 'white' : 'rgba(255,255,255,0.3)' }}>
+                            <span
+                                className="text-lg font-black"
+                                style={{ color: hasRecords ? 'white' : 'rgba(255,255,255,0.3)' }}
+                            >
                                 {hasRecords ? wobblediverRecord.bestRank : '-'}
                             </span>
                         </div>
@@ -800,7 +828,10 @@ function RecordsTab({
                                 }}
                             >
                                 <div className="flex items-center gap-2 mb-1">
-                                    <Target className="w-3.5 h-3.5" style={{ color: abyssTheme.teal }} />
+                                    <Target
+                                        className="w-3.5 h-3.5"
+                                        style={{ color: abyssTheme.teal }}
+                                    />
                                     <span className="text-[10px] font-medium text-white/50">
                                         {isKorean ? '최고 깊이' : 'Best Depth'}
                                     </span>
@@ -827,10 +858,7 @@ function RecordsTab({
                                         {isKorean ? '최고 점수' : 'High Score'}
                                     </span>
                                 </div>
-                                <div
-                                    className="text-2xl font-black"
-                                    style={{ color: theme.gold }}
-                                >
+                                <div className="text-2xl font-black" style={{ color: theme.gold }}>
                                     {wobblediverRecord.highScore.toLocaleString()}
                                 </div>
                             </div>
@@ -849,10 +877,7 @@ function RecordsTab({
                                         {isKorean ? '총 플레이' : 'Total Games'}
                                     </span>
                                 </div>
-                                <div
-                                    className="text-2xl font-black"
-                                    style={{ color: theme.blue }}
-                                >
+                                <div className="text-2xl font-black" style={{ color: theme.blue }}>
                                     {wobblediverRecord.totalGames}
                                 </div>
                             </div>
@@ -890,19 +915,27 @@ function RecordsTab({
                                     <span className="text-white/40">
                                         {isKorean ? '평균 깊이' : 'Avg Depth'}:{' '}
                                         <span style={{ color: abyssTheme.teal }}>
-                                            {(wobblediverRecord.totalDepth / wobblediverRecord.totalGames).toFixed(1)}
+                                            {(
+                                                wobblediverRecord.totalDepth /
+                                                wobblediverRecord.totalGames
+                                            ).toFixed(1)}
                                         </span>
                                     </span>
                                     <span className="text-white/40">
                                         {isKorean ? '평균 점수' : 'Avg Score'}:{' '}
                                         <span style={{ color: theme.gold }}>
-                                            {Math.round(wobblediverRecord.totalScore / wobblediverRecord.totalGames).toLocaleString()}
+                                            {Math.round(
+                                                wobblediverRecord.totalScore /
+                                                    wobblediverRecord.totalGames
+                                            ).toLocaleString()}
                                         </span>
                                     </span>
                                 </>
                             ) : (
                                 <span className="text-white/30 w-full text-center">
-                                    {isKorean ? '아직 플레이 기록이 없습니다' : 'No play records yet'}
+                                    {isKorean
+                                        ? '아직 플레이 기록이 없습니다'
+                                        : 'No play records yet'}
                                 </span>
                             )}
                         </div>
@@ -942,7 +975,9 @@ function RecordsTab({
                     }}
                 >
                     <p className="text-white/40 text-xs font-medium">
-                        {isKorean ? '더 많은 미니게임이 곧 추가됩니다!' : 'More minigames coming soon!'}
+                        {isKorean
+                            ? '더 많은 미니게임이 곧 추가됩니다!'
+                            : 'More minigames coming soon!'}
                     </p>
                 </div>
             </div>

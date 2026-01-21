@@ -16,7 +16,7 @@ export interface PendulumPhysics {
     anchorX: number
     anchorY: number
     ropeLength: number
-    angle: number      // Current angle from vertical (radians)
+    angle: number // Current angle from vertical (radians)
     angularVelocity: number
     gravity: number
 }
@@ -30,7 +30,7 @@ export class SwingingWobble {
 
     // Physics state
     public physics: PendulumPhysics
-    private damping = 0.998  // Very slight damping for realism
+    private damping = 0.998 // Very slight damping for realism
 
     // Trajectory preview constants (must match release physics)
     private readonly releaseScale = 2.5
@@ -38,10 +38,10 @@ export class SwingingWobble {
 
     // Trajectory visibility settings (controlled by difficulty)
     private trajectoryMode: 'always' | 'timed' | 'flicker' | 'hidden' = 'always'
-    private trajectoryDuration = 0      // How long trajectory shows (for 'timed' mode)
-    private trajectoryTimer = 0         // Current timer
-    private flickerInterval = 0.3       // Flicker on/off interval
-    private flickerOnRatio = 0.5        // Ratio of time visible during flicker
+    private trajectoryDuration = 0 // How long trajectory shows (for 'timed' mode)
+    private trajectoryTimer = 0 // Current timer
+    private flickerInterval = 0.3 // Flicker on/off interval
+    private flickerOnRatio = 0.5 // Ratio of time visible during flicker
 
     // Game state
     public state: SwingState = 'swinging'
@@ -66,7 +66,7 @@ export class SwingingWobble {
     // HP system
     private maxHp = 100
     private currentHp = 100
-    private hpDamageOnBounce = 25  // HP lost per wall bounce
+    private hpDamageOnBounce = 25 // HP lost per wall bounce
     private isHurt = false
     private hurtTimer = 0
 
@@ -84,7 +84,12 @@ export class SwingingWobble {
     private speechBubbleDuration = 0
     private isSpeechBubbleVisible = false
 
-    constructor(anchorX: number, anchorY: number, ropeLength: number, startAngle: number = Math.PI / 4) {
+    constructor(
+        anchorX: number,
+        anchorY: number,
+        ropeLength: number,
+        startAngle: number = Math.PI / 4
+    ) {
         this.container = new Container()
 
         // Initialize physics
@@ -95,7 +100,7 @@ export class SwingingWobble {
             ropeLength,
             angle: startAngle,
             angularVelocity: 0,
-            gravity: 600,  // Pixel-based gravity for responsive swing
+            gravity: 600, // Pixel-based gravity for responsive swing
         }
 
         // Create trajectory preview (behind rope)
@@ -158,7 +163,7 @@ export class SwingingWobble {
         const pos = this.getPosition()
         const barWidth = 40
         const barHeight = 6
-        const barY = pos.y - 28  // Above wobble
+        const barY = pos.y - 28 // Above wobble
 
         // Background
         g.roundRect(pos.x - barWidth / 2, barY, barWidth, barHeight, 3)
@@ -173,11 +178,11 @@ export class SwingingWobble {
             // Color based on HP
             let color: number
             if (hpPercent > 0.5) {
-                color = 0x4ecdc4  // Cyan
+                color = 0x4ecdc4 // Cyan
             } else if (hpPercent > 0.25) {
-                color = 0xc9a227  // Gold
+                color = 0xc9a227 // Gold
             } else {
-                color = 0xe85d4c  // Red
+                color = 0xe85d4c // Red
             }
 
             g.roundRect(pos.x - barWidth / 2 + 1, barY + 1, fillWidth, barHeight - 2, 2)
@@ -292,7 +297,7 @@ export class SwingingWobble {
 
         if (options?.duration !== undefined) {
             this.trajectoryDuration = options.duration
-            this.trajectoryTimer = options.duration  // Start with full time
+            this.trajectoryTimer = options.duration // Start with full time
         }
         if (options?.flickerInterval !== undefined) {
             this.flickerInterval = options.flickerInterval
@@ -331,7 +336,7 @@ export class SwingingWobble {
 
         // Trigger shock reaction
         this.isShocked = true
-        this.shockTimer = 0.4  // Show shocked expression for 0.4 seconds
+        this.shockTimer = 0.4 // Show shocked expression for 0.4 seconds
     }
 
     /**
@@ -348,7 +353,7 @@ export class SwingingWobble {
         if (this.state !== 'released') return false
 
         // Correct position to prevent multiple collisions
-        const buffer = 20  // Push out of wall
+        const buffer = 20 // Push out of wall
         if (wallSide === 'left') {
             this.releaseX = boundaryValue + buffer
             // Reverse X velocity with some energy loss
@@ -400,7 +405,7 @@ export class SwingingWobble {
         const dy = this.releaseY - obstacleY
         const dist = Math.sqrt(dx * dx + dy * dy)
 
-        if (dist < 1) return  // Avoid division by zero
+        if (dist < 1) return // Avoid division by zero
 
         // Normalize direction
         const dirX = dx / dist
@@ -498,7 +503,8 @@ export class SwingingWobble {
 
     private updateSwinging(deltaSeconds: number): void {
         // Pendulum equation: α = -(g/L) * sin(θ)
-        const angularAcceleration = -(this.physics.gravity / this.physics.ropeLength) * Math.sin(this.physics.angle)
+        const angularAcceleration =
+            -(this.physics.gravity / this.physics.ropeLength) * Math.sin(this.physics.angle)
 
         // Update angular velocity
         this.physics.angularVelocity += angularAcceleration * deltaSeconds
@@ -584,11 +590,11 @@ export class SwingingWobble {
         this.drowningTimer += deltaSeconds
 
         // Sink slowly with struggle
-        const sinkSpeed = 40 + this.drowningTimer * 20  // Accelerate sinking
+        const sinkSpeed = 40 + this.drowningTimer * 20 // Accelerate sinking
         this.drowningDepth += sinkSpeed * deltaSeconds
 
         // Wobble and rotate as sinking (struggling)
-        const struggleIntensity = Math.max(0, 1 - this.drowningTimer * 0.5)  // Fades over 2 seconds
+        const struggleIntensity = Math.max(0, 1 - this.drowningTimer * 0.5) // Fades over 2 seconds
         const wobbleX = Math.sin(this.drowningTimer * 8) * 5 * struggleIntensity
         const wobbleY = Math.sin(this.drowningTimer * 6) * 3 * struggleIntensity
 
@@ -682,9 +688,9 @@ export class SwingingWobble {
         // Simulate projectile motion and draw dots
         let x = startX
         let y = startY
-        const dt = 0.05  // Time step for simulation
-        const numPoints = 12  // Number of preview points
-        const maxTime = 0.8  // Max preview time
+        const dt = 0.05 // Time step for simulation
+        const numPoints = 12 // Number of preview points
+        const maxTime = 0.8 // Max preview time
 
         for (let i = 0; i < numPoints; i++) {
             const t = (i + 1) * (maxTime / numPoints)
@@ -695,7 +701,7 @@ export class SwingingWobble {
 
             // Fade out dots over distance
             const alpha = 0.6 * (1 - i / numPoints)
-            const dotSize = 4 * (1 - i / numPoints * 0.5)
+            const dotSize = 4 * (1 - (i / numPoints) * 0.5)
 
             // Draw dot
             g.circle(x, y, dotSize)
@@ -741,7 +747,7 @@ export class SwingingWobble {
             scaleX = 1.2
             scaleY = 0.85
         } else if (this.state === 'failed') {
-            expression = 'dizzy'  // Dazed look after failure
+            expression = 'dizzy' // Dazed look after failure
             // Squished look
             scaleX = 1.3
             scaleY = 0.7
@@ -749,11 +755,11 @@ export class SwingingWobble {
             // Panic/struggle expression while drowning
             const progress = this.getDrowningProgress()
             if (progress < 0.3) {
-                expression = 'struggle'  // Initial panic
+                expression = 'struggle' // Initial panic
             } else if (progress < 0.7) {
-                expression = 'dizzy'  // Losing consciousness
+                expression = 'dizzy' // Losing consciousness
             } else {
-                expression = 'sleepy'  // Fading out
+                expression = 'sleepy' // Fading out
             }
             // Rapid breathing/pulsing effect + shrinking as consumed
             const pulse = Math.sin(this.drowningTimer * 12) * 0.1 * (1 - progress)
@@ -808,7 +814,7 @@ export class SwingingWobble {
         } else if (this.state === 'swinging') {
             // Check if shocked (switch was pressed)
             if (this.isShocked) {
-                expression = 'struggle'  // Pained expression
+                expression = 'struggle' // Pained expression
                 // Shake/vibrate effect
                 const shakeIntensity = this.shockTimer / 0.4
                 scaleX = 1 + Math.sin(this.shockTimer * 50) * 0.1 * shakeIntensity
@@ -840,8 +846,10 @@ export class SwingingWobble {
 
         // Calculate current position BEFORE changing state
         // (getPosition() returns different values based on state)
-        const currentX = this.physics.anchorX + Math.sin(this.physics.angle) * this.physics.ropeLength
-        const currentY = this.physics.anchorY + Math.cos(this.physics.angle) * this.physics.ropeLength
+        const currentX =
+            this.physics.anchorX + Math.sin(this.physics.angle) * this.physics.ropeLength
+        const currentY =
+            this.physics.anchorY + Math.cos(this.physics.angle) * this.physics.ropeLength
 
         this.releaseX = currentX
         this.releaseY = currentY
@@ -906,7 +914,7 @@ export class SwingingWobble {
         if (this.state === 'drowning') {
             // Fade out as sinking deeper
             const progress = this.getDrowningProgress()
-            return Math.max(0, 1 - progress * 0.8)  // Don't fully fade to see sinking
+            return Math.max(0, 1 - progress * 0.8) // Don't fully fade to see sinking
         }
         return 1
     }

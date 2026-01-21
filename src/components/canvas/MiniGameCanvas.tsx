@@ -126,7 +126,8 @@ export const MiniGameCanvas = forwardRef<MiniGameCanvasHandle, MiniGameCanvasPro
             }
 
             try {
-                const recordWobblediverGame = useMinigameRecordStore.getState().recordWobblediverGame
+                const recordWobblediverGame =
+                    useMinigameRecordStore.getState().recordWobblediverGame
 
                 const callbacks: MiniGameCallbacks = {
                     onGameOver: () => {
@@ -150,8 +151,8 @@ export const MiniGameCanvas = forwardRef<MiniGameCanvasHandle, MiniGameCanvasPro
                     },
                     onContinueWithAd: onContinueWithAdRef.current
                         ? (onSuccess, onFail) => {
-                            onContinueWithAdRef.current?.(onSuccess, onFail)
-                        }
+                              onContinueWithAdRef.current?.(onSuccess, onFail)
+                          }
                         : undefined,
                 }
 

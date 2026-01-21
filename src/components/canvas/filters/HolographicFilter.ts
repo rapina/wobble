@@ -340,52 +340,52 @@ fn main(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
  * Each theme has: hueCenter (0-1), hueRange, saturation
  */
 export interface HolographicTheme {
-    hueCenter: number    // Center hue (0-1, maps to 0-360 degrees)
-    hueRange: number     // How much hue varies (0-0.5)
-    saturation: number   // Color saturation (0-1)
-    name: string         // Theme name for debugging
+    hueCenter: number // Center hue (0-1, maps to 0-360 degrees)
+    hueRange: number // How much hue varies (0-0.5)
+    saturation: number // Color saturation (0-1)
+    name: string // Theme name for debugging
 }
 
 export const HOLOGRAPHIC_THEMES: Record<PhysicsCategory, HolographicTheme> = {
     // Mechanics (역학) - Balatro Blue (#4a9eff)
     mechanics: {
-        hueCenter: 0.58,     // Blue (210°)
-        hueRange: 0.08,      // Tight range - blue to cyan
-        saturation: 0.9,     // Saturated Balatro style
+        hueCenter: 0.58, // Blue (210°)
+        hueRange: 0.08, // Tight range - blue to cyan
+        saturation: 0.9, // Saturated Balatro style
         name: 'Mechanics',
     },
     // Electromagnetism (전자기학) - Balatro Cyan (#00aacc)
     electromagnetism: {
-        hueCenter: 0.52,     // Cyan (187°)
-        hueRange: 0.06,      // Tight electric cyan
-        saturation: 0.95,    // Very saturated for electric feel
+        hueCenter: 0.52, // Cyan (187°)
+        hueRange: 0.06, // Tight electric cyan
+        saturation: 0.95, // Very saturated for electric feel
         name: 'Electromagnetism',
     },
     // Wave Physics (파동학) - Purple/Violet
     wave: {
-        hueCenter: 0.75,     // Purple (270°)
-        hueRange: 0.1,       // Purple to magenta
+        hueCenter: 0.75, // Purple (270°)
+        hueRange: 0.1, // Purple to magenta
         saturation: 0.85,
         name: 'Wave',
     },
     // Thermodynamics (열역학) - Balatro Red (#e85d4c)
     thermodynamics: {
-        hueCenter: 0.02,     // Red-Orange (7°)
-        hueRange: 0.06,      // Red to orange
+        hueCenter: 0.02, // Red-Orange (7°)
+        hueRange: 0.06, // Red to orange
         saturation: 0.9,
         name: 'Thermodynamics',
     },
     // Quantum Mechanics (양자역학) - Balatro Green (#2e7d32)
     quantum: {
-        hueCenter: 0.35,     // Green (126°)
-        hueRange: 0.08,      // Green to teal
+        hueCenter: 0.35, // Green (126°)
+        hueRange: 0.08, // Green to teal
         saturation: 0.85,
         name: 'Quantum',
     },
     // Fluid Dynamics (유체역학) - Aqua/Teal
     fluid: {
-        hueCenter: 0.48,     // Teal (173°)
-        hueRange: 0.06,      // Tight aqua range
+        hueCenter: 0.48, // Teal (173°)
+        hueRange: 0.06, // Tight aqua range
         saturation: 0.8,
         name: 'Fluid',
     },

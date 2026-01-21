@@ -75,7 +75,7 @@ interface AbyssMouth {
     x: number
     y: number
     width: number
-    openness: number  // 0 = closed, 1 = fully open
+    openness: number // 0 = closed, 1 = fully open
     targetOpenness: number
     teethCount: number
 }
@@ -84,7 +84,7 @@ interface AbyssMouth {
 interface AbyssSplash {
     x: number
     y: number
-    progress: number  // 0 to 1
+    progress: number // 0 to 1
     size: number
     droplets: { x: number; y: number; vx: number; vy: number; size: number }[]
 }
@@ -118,7 +118,7 @@ interface ResultEye {
     lookAngle: number
     targetLookAngle: number
     blinkTimer: number
-    intensity: number  // Glow intensity
+    intensity: number // Glow intensity
 }
 
 // Result screen tentacle (framing the result card)
@@ -134,75 +134,75 @@ interface ResultTentacle {
 
 export class WobblediverScene extends BaseMiniGameScene {
     // Game objects
-    private declare wobble: SwingingWobble | null
-    private declare goal: Goal  // Kept for backward compatibility
-    private declare wormhole: Wormhole  // New wormhole finish portal
-    private declare portalPairs: PortalPair[]  // Teleportation portals
-    private declare obstacles: ObstacleWobble[]
-    private declare anchorWobble: AnchorWobble
+    declare private wobble: SwingingWobble | null
+    declare private goal: Goal // Kept for backward compatibility
+    declare private wormhole: Wormhole // New wormhole finish portal
+    declare private portalPairs: PortalPair[] // Teleportation portals
+    declare private obstacles: ObstacleWobble[]
+    declare private anchorWobble: AnchorWobble
 
     // Visual elements
-    private declare backgroundGraphics: Graphics
-    private declare boundaryGraphics: Graphics
-    private declare instructionText: Text
-    private declare outText: Text
+    declare private backgroundGraphics: Graphics
+    declare private boundaryGraphics: Graphics
+    declare private instructionText: Text
+    declare private outText: Text
 
     // Animated background (Balatro-style)
-    private declare abyssBackgroundSprite: Sprite
-    private declare abyssBackgroundFilter: BalatroFilter
+    declare private abyssBackgroundSprite: Sprite
+    declare private abyssBackgroundFilter: BalatroFilter
     private abyssBackgroundTime = 0
 
     // Abyss danger zone
-    private declare abyssBackContainer: Container  // Behind wobble (eyes, particles)
-    private declare abyssFrontContainer: Container  // In front of wobble (fluid surface)
-    private declare abyssBackGraphics: Graphics
-    private declare abyssFrontGraphics: Graphics
-    private declare abyssFluidSprite: Sprite  // Sprite for shader-based fluid
-    private declare abyssFluidFilter: AbyssFluidFilter
-    private declare abyssEyes: AbyssEye[]
-    private declare abyssParticles: AbyssParticle[]
-    private declare abyssBubbles: AbyssBubble[]
-    private declare abyssMouth: AbyssMouth
+    declare private abyssBackContainer: Container // Behind wobble (eyes, particles)
+    declare private abyssFrontContainer: Container // In front of wobble (fluid surface)
+    declare private abyssBackGraphics: Graphics
+    declare private abyssFrontGraphics: Graphics
+    declare private abyssFluidSprite: Sprite // Sprite for shader-based fluid
+    declare private abyssFluidFilter: AbyssFluidFilter
+    declare private abyssEyes: AbyssEye[]
+    declare private abyssParticles: AbyssParticle[]
+    declare private abyssBubbles: AbyssBubble[]
+    declare private abyssMouth: AbyssMouth
     private abyssTime = 0
-    private abyssSurfacePoints: number[] = []  // Y offsets for wavy surface
-    private abyssBloodLevel = 0  // 0 = normal, 1 = fully red
+    private abyssSurfacePoints: number[] = [] // Y offsets for wavy surface
+    private abyssBloodLevel = 0 // 0 = normal, 1 = fully red
     private abyssSplashEffects: AbyssSplash[] = []
-    private drowningBubbles: DrowningBubble[] = []  // Initialized as empty array
-    private surfaceRipples: SurfaceRipple[] = []  // Initialized as empty array
-    private drowningX = 0  // Where wobble drowned
+    private drowningBubbles: DrowningBubble[] = [] // Initialized as empty array
+    private surfaceRipples: SurfaceRipple[] = [] // Initialized as empty array
+    private drowningX = 0 // Where wobble drowned
     private isDrowningActive = false
 
     // Game boundary
-    private declare boundaryPadding: number
-    private declare boundaryLeft: number
-    private declare boundaryRight: number
-    private declare boundaryTop: number
-    private declare boundaryBottom: number
+    declare private boundaryPadding: number
+    declare private boundaryLeft: number
+    declare private boundaryRight: number
+    declare private boundaryTop: number
+    declare private boundaryBottom: number
 
     // Game state
-    private declare roundNumber: number
-    private declare isWaitingForTap: boolean
-    private declare roundTransitionTime: number
-    private declare roundStartTime: number  // Time tracking for scoring
-    private isWaitingForRetry = false  // True when waiting to restart after death
+    declare private roundNumber: number
+    declare private isWaitingForTap: boolean
+    declare private roundTransitionTime: number
+    declare private roundStartTime: number // Time tracking for scoring
+    private isWaitingForRetry = false // True when waiting to restart after death
 
     // HP bar (legacy - now on wobble)
-    private declare hpBarContainer: Container
-    private declare hpBarBackground: Graphics
-    private declare hpBarFill: Graphics
+    declare private hpBarContainer: Container
+    declare private hpBarBackground: Graphics
+    declare private hpBarFill: Graphics
 
     // Stage result popup
-    private declare stageResultContainer: Container
-    private declare stageResultGraphics: Graphics
-    private declare stageResultText: Text
-    private declare stageGradeText: Text
-    private declare stageScoreText: Text
-    private declare stageHpLabelText: Text
-    private declare stageHpValueText: Text
-    private declare stageTimeLabelText: Text
-    private declare stageTimeValueText: Text
-    private declare stageTotalLabelText: Text
-    private declare stageTotalValueText: Text
+    declare private stageResultContainer: Container
+    declare private stageResultGraphics: Graphics
+    declare private stageResultText: Text
+    declare private stageGradeText: Text
+    declare private stageScoreText: Text
+    declare private stageHpLabelText: Text
+    declare private stageHpValueText: Text
+    declare private stageTimeLabelText: Text
+    declare private stageTimeValueText: Text
+    declare private stageTotalLabelText: Text
+    declare private stageTotalValueText: Text
     private isShowingResult = false
     private resultDisplayTime = 0
     private resultPhase: 'hp' | 'time' | 'total' | 'grade' | 'done' = 'hp'
@@ -221,63 +221,81 @@ export class WobblediverScene extends BaseMiniGameScene {
         targetY: number
     } | null = null
     private pendingResultTimer = 0
-    private readonly SUCTION_ANIMATION_DURATION = 0.7  // Slightly longer than wormhole's suckDuration
+    private readonly SUCTION_ANIMATION_DURATION = 0.7 // Slightly longer than wormhole's suckDuration
 
     // Result screen abyss effects
-    private declare resultEffectContainer: Container
-    private declare resultEffectGraphics: Graphics
+    declare private resultEffectContainer: Container
+    declare private resultEffectGraphics: Graphics
     private resultEyes: ResultEye[] = []
     private resultTentacles: ResultTentacle[] = []
     private resultEffectTime = 0
     private resultVignetteAlpha = 0
 
     // Difficulty parameters
-    private declare goalMoves: boolean
-    private declare goalMoveSpeed: number
-    private declare goalMoveRange: number
-    private declare goalWidthScale: number      // Wormhole horizontal width (starts large, shrinks)
-    private goalMoveTimer = 0                   // Timer for periodic movement
-    private goalMoveDuration = 0                // How long current movement lasts
-    private goalMoveActive = false              // Is goal currently moving?
-    private declare obstacleCount: number
-    private declare minRopeLength: number
-    private declare maxRopeLength: number
+    declare private goalMoves: boolean
+    declare private goalMoveSpeed: number
+    declare private goalMoveRange: number
+    declare private goalWidthScale: number // Wormhole horizontal width (starts large, shrinks)
+    private goalMoveTimer = 0 // Timer for periodic movement
+    private goalMoveDuration = 0 // How long current movement lasts
+    private goalMoveActive = false // Is goal currently moving?
+    declare private obstacleCount: number
+    declare private minRopeLength: number
+    declare private maxRopeLength: number
 
     // Trajectory visibility settings (per difficulty)
-    private declare trajectoryMode: 'always' | 'timed' | 'flicker' | 'hidden'
-    private declare trajectoryDuration: number
-    private declare trajectoryFlickerInterval: number
-    private declare trajectoryFlickerOnRatio: number
+    declare private trajectoryMode: 'always' | 'timed' | 'flicker' | 'hidden'
+    declare private trajectoryDuration: number
+    declare private trajectoryFlickerInterval: number
+    declare private trajectoryFlickerOnRatio: number
 
     // Intro system
-    private declare introContainer: Container
-    private declare intro: WobblediverIntro | null
+    declare private introContainer: Container
+    declare private intro: WobblediverIntro | null
     private isShowingIntro = false
 
     // Stage transition effect
-    private declare transitionContainer: Container
-    private declare transitionGraphics: Graphics
-    private declare transitionStageText: Text
-    private declare transitionSubText: Text
-    private declare transitionHintText: Text  // Difficulty hint messages
-    private declare transitionTapText: Text   // Tap to start prompt
+    declare private transitionContainer: Container
+    declare private transitionGraphics: Graphics
+    declare private transitionStageText: Text
+    declare private transitionSubText: Text
+    declare private transitionHintText: Text // Difficulty hint messages
+    declare private transitionTapText: Text // Tap to start prompt
     private isTransitioning = false
     private transitionTime = 0
-    private transitionAnimTime = 0  // Separate time for animations (always advances)
-    private transitionDuration = 3.2  // Total transition time (close: 0.5s, hold phase, open: 0.7s)
-    private transitionWaitingForTap = false  // Waiting for user tap to close
-    private transitionTentacles: { x: number; y: number; angle: number; length: number; phase: number }[] = []
-    private transitionEyes: { x: number; y: number; size: number; openness: number; targetOpenness: number }[] = []
-    private transitionDepthParticles: { x: number; y: number; size: number; speed: number; alpha: number }[] = []
+    private transitionAnimTime = 0 // Separate time for animations (always advances)
+    private transitionDuration = 3.2 // Total transition time (close: 0.5s, hold phase, open: 0.7s)
+    private transitionWaitingForTap = false // Waiting for user tap to close
+    private transitionTentacles: {
+        x: number
+        y: number
+        angle: number
+        length: number
+        phase: number
+    }[] = []
+    private transitionEyes: {
+        x: number
+        y: number
+        size: number
+        openness: number
+        targetOpenness: number
+    }[] = []
+    private transitionDepthParticles: {
+        x: number
+        y: number
+        size: number
+        speed: number
+        alpha: number
+    }[] = []
 
     // Custom in-game HUD (replaces default HUD)
-    private declare customHudContainer: Container
-    private declare playerHeartsGraphics: Graphics  // Hearts above player
-    private declare cornerHudGraphics: Graphics     // Stage/time/score in corner
-    private declare stageText: Text
-    private declare timeText: Text
-    private declare cornerScoreText: Text
-    private customHudLives = 3  // Track lives for heart display
+    declare private customHudContainer: Container
+    declare private playerHeartsGraphics: Graphics // Hearts above player
+    declare private cornerHudGraphics: Graphics // Stage/time/score in corner
+    declare private stageText: Text
+    declare private timeText: Text
+    declare private cornerScoreText: Text
+    private customHudLives = 3 // Track lives for heart display
 
     constructor(app: Application, callbacks?: MiniGameCallbacks) {
         super(app, callbacks)
@@ -296,17 +314,17 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.roundStartTime = 0
 
         // Define game boundary - use full screen, leave space for banner ad at bottom
-        this.boundaryPadding = 0  // No side padding - use full width
+        this.boundaryPadding = 0 // No side padding - use full width
         this.boundaryLeft = 0
         this.boundaryRight = this.width
-        this.boundaryTop = 0  // Start from top
-        this.boundaryBottom = this.height - 60  // Leave 60px for banner ad
+        this.boundaryTop = 0 // Start from top
+        this.boundaryBottom = this.height - 60 // Leave 60px for banner ad
 
         // Difficulty defaults
         this.goalMoves = false
         this.goalMoveSpeed = 1
         this.goalMoveRange = 40
-        this.goalWidthScale = 2.5  // Start with wide wormhole
+        this.goalWidthScale = 2.5 // Start with wide wormhole
         this.obstacleCount = 0
         this.minRopeLength = 100
         this.maxRopeLength = 200
@@ -346,24 +364,19 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.container.addChild(this.introContainer)
 
         // Create intro instance
-        this.intro = new WobblediverIntro(
-            this.introContainer,
-            this.width,
-            this.height,
-            {
-                onStart: () => {
-                    this.isShowingIntro = false
-                    this.introContainer.visible = false
-                    // Actually start the game now
-                    this.startNewRound()
-                },
-                onSkip: () => {
-                    this.isShowingIntro = false
-                    this.introContainer.visible = false
-                    this.startNewRound()
-                },
-            }
-        )
+        this.intro = new WobblediverIntro(this.introContainer, this.width, this.height, {
+            onStart: () => {
+                this.isShowingIntro = false
+                this.introContainer.visible = false
+                // Actually start the game now
+                this.startNewRound()
+            },
+            onSkip: () => {
+                this.isShowingIntro = false
+                this.introContainer.visible = false
+                this.startNewRound()
+            },
+        })
     }
 
     private setupCustomHUD(): void {
@@ -425,7 +438,7 @@ export class WobblediverScene extends BaseMiniGameScene {
                 fill: ABYSS.gold,
             }),
         })
-        this.cornerScoreText.anchor.set(0, 0)  // Left-aligned
+        this.cornerScoreText.anchor.set(0, 0) // Left-aligned
         this.cornerScoreText.position.set(24, 50)
         this.customHudContainer.addChild(this.cornerScoreText)
 
@@ -470,13 +483,14 @@ export class WobblediverScene extends BaseMiniGameScene {
         if (!pos || isNaN(pos.x) || isNaN(pos.y)) return
 
         // Check if position is within reasonable bounds
-        if (pos.x < -100 || pos.x > this.width + 100 || pos.y < -100 || pos.y > this.height + 100) return
+        if (pos.x < -100 || pos.x > this.width + 100 || pos.y < -100 || pos.y > this.height + 100)
+            return
 
         const heartSize = 10
         const heartGap = 4
         const totalWidth = this.customHudLives * (heartSize + heartGap) - heartGap
         const startX = pos.x - totalWidth / 2
-        const heartY = pos.y - 45  // Above the wobble
+        const heartY = pos.y - 45 // Above the wobble
 
         // Draw each heart
         for (let i = 0; i < 3; i++) {
@@ -515,7 +529,7 @@ export class WobblediverScene extends BaseMiniGameScene {
 
     private setupAnchorWobble(): void {
         const anchorX = this.width / 2
-        const anchorY = 70  // Fixed position from top (clear of HUD)
+        const anchorY = 70 // Fixed position from top (clear of HUD)
 
         this.anchorWobble = new AnchorWobble(anchorX, anchorY)
         this.gameContainer.addChild(this.anchorWobble.container)
@@ -523,7 +537,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Connect switch press to add energy
         this.anchorWobble.onPress = () => {
             if (this.wobble && this.wobble.state === 'swinging') {
-                this.wobble.addEnergy(0.8)  // Add angular velocity
+                this.wobble.addEnergy(0.8) // Add angular velocity
             }
         }
     }
@@ -537,14 +551,14 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         // Create Balatro filter with abyss colors - dark purple/teal theme
         this.abyssBackgroundFilter = new BalatroFilter({
-            color1: [0.08, 0.04, 0.15, 1.0],   // Deep purple-black
-            color2: [0.05, 0.15, 0.18, 1.0],   // Dark teal
-            color3: [0.02, 0.02, 0.05, 1.0],   // Near black
-            spinSpeed: 3.0,                     // Slower, more ominous
+            color1: [0.08, 0.04, 0.15, 1.0], // Deep purple-black
+            color2: [0.05, 0.15, 0.18, 1.0], // Dark teal
+            color3: [0.02, 0.02, 0.05, 1.0], // Near black
+            spinSpeed: 3.0, // Slower, more ominous
             contrast: 2.5,
-            lighting: 0.15,                     // Dim
+            lighting: 0.15, // Dim
             spinAmount: 0.3,
-            pixelFilter: 600.0,                 // Less pixelated
+            pixelFilter: 600.0, // Less pixelated
             spinEase: 0.8,
         })
         this.abyssBackgroundFilter.setDimensions(this.width, this.height)
@@ -573,7 +587,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Create shader-based fluid
         // Fluid covers from boundaryBottom - 80 (surface) to bottom of screen
         const fluidSurfaceY = this.boundaryBottom - 80
-        const fluidHeight = this.height - fluidSurfaceY + 20  // Extend beyond screen bottom
+        const fluidHeight = this.height - fluidSurfaceY + 20 // Extend beyond screen bottom
         const fluidWidth = this.boundaryRight - this.boundaryLeft
 
         // Create a white sprite as base for the filter
@@ -585,7 +599,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Create and apply the filter
         // surfaceY = 0 means surface at the very top of the sprite
         this.abyssFluidFilter = new AbyssFluidFilter({
-            surfaceY: 0.0,  // Surface at the top of the sprite
+            surfaceY: 0.0, // Surface at the top of the sprite
             flowSpeed: 1.2,
             waveIntensity: 1.0,
         })
@@ -614,7 +628,7 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         // Initialize eyes (positioned around the mouth)
         this.abyssEyes = []
-        const eyeCount = 4 + Math.floor(Math.random() * 3)  // 4-6 eyes
+        const eyeCount = 4 + Math.floor(Math.random() * 3) // 4-6 eyes
         for (let i = 0; i < eyeCount; i++) {
             this.abyssEyes.push(this.createAbyssEye())
         }
@@ -643,7 +657,10 @@ export class WobblediverScene extends BaseMiniGameScene {
 
     private createAbyssBubble(): AbyssBubble {
         return {
-            x: this.boundaryLeft + 30 + Math.random() * (this.boundaryRight - this.boundaryLeft - 60),
+            x:
+                this.boundaryLeft +
+                30 +
+                Math.random() * (this.boundaryRight - this.boundaryLeft - 60),
             y: this.boundaryBottom - 20 - Math.random() * 40,
             size: 3 + Math.random() * 6,
             speed: 15 + Math.random() * 25,
@@ -657,7 +674,10 @@ export class WobblediverScene extends BaseMiniGameScene {
     private createAbyssEye(): AbyssEye {
         const abyssTop = this.boundaryBottom - 80
         return {
-            x: this.boundaryLeft + 40 + Math.random() * (this.boundaryRight - this.boundaryLeft - 80),
+            x:
+                this.boundaryLeft +
+                40 +
+                Math.random() * (this.boundaryRight - this.boundaryLeft - 80),
             y: abyssTop + 20 + Math.random() * 50,
             size: 8 + Math.random() * 12,
             blinkTimer: 0,
@@ -694,7 +714,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         }
 
         // Calculate fluid area bounds for overlay positioning
-        const fluidSurfaceY = this.boundaryBottom - 80  // Match setupAbyss
+        const fluidSurfaceY = this.boundaryBottom - 80 // Match setupAbyss
         const waterLeft = this.boundaryLeft
         const waterRight = this.boundaryRight
 
@@ -711,16 +731,17 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Surface tension line - synced with shader's wave formula exactly
         // Shader: surfaceWave = sin(x * 15 + t * 2) * 0.025 + sin(x * 8 - t * 1.5) * 0.0175 + sin(x * 25 + t * 4) * 0.01
         const surfaceLineColor = this.lerpColor(0xc88ee0, 0xee8888, blood)
-        const fluidHeight = this.height - fluidSurfaceY + 20  // Match setupAbyss
-        const flowTime = this.abyssTime * 1.2  // Match shader's flowSpeed (uFlowSpeed = 1.2)
+        const fluidHeight = this.height - fluidSurfaceY + 20 // Match setupAbyss
+        const flowTime = this.abyssTime * 1.2 // Match shader's flowSpeed (uFlowSpeed = 1.2)
 
         gFront.moveTo(waterLeft, fluidSurfaceY)
         for (let x = waterLeft; x <= waterRight; x += 2) {
             const normalizedX = (x - waterLeft) / (waterRight - waterLeft)
             // Match shader's wave formula exactly - same coefficients as GLSL/WGSL
-            const wave = Math.sin(normalizedX * 15.0 + flowTime * 2.0) * 0.025 * fluidHeight
-                       + Math.sin(normalizedX * 8.0 - flowTime * 1.5) * 0.0175 * fluidHeight
-                       + Math.sin(normalizedX * 25.0 + flowTime * 4.0) * 0.01 * fluidHeight
+            const wave =
+                Math.sin(normalizedX * 15.0 + flowTime * 2.0) * 0.025 * fluidHeight +
+                Math.sin(normalizedX * 8.0 - flowTime * 1.5) * 0.0175 * fluidHeight +
+                Math.sin(normalizedX * 25.0 + flowTime * 4.0) * 0.01 * fluidHeight
             gFront.lineTo(x, fluidSurfaceY + wave)
         }
         gFront.stroke({ color: surfaceLineColor, width: 3, alpha: 0.9 })
@@ -745,14 +766,22 @@ export class WobblediverScene extends BaseMiniGameScene {
             const wobbleX = Math.sin(bubble.wobble) * 3
             gFront.circle(bubble.x + wobbleX, bubble.y, bubble.size)
             gFront.fill({ color: blood > 0.5 ? 0x8b4444 : 0x6b5080, alpha: bubble.alpha * 0.8 })
-            gFront.circle(bubble.x + wobbleX - bubble.size * 0.3, bubble.y - bubble.size * 0.3, bubble.size * 0.2)
+            gFront.circle(
+                bubble.x + wobbleX - bubble.size * 0.3,
+                bubble.y - bubble.size * 0.3,
+                bubble.size * 0.2
+            )
             gFront.fill({ color: 0xffffff, alpha: bubble.alpha * 0.4 })
         }
 
         // Draw surface ripples
         for (const ripple of this.surfaceRipples) {
             gFront.ellipse(ripple.x, ripple.y, ripple.radius, ripple.radius * 0.3)
-            gFront.stroke({ color: blood > 0.5 ? 0x8b4444 : 0x7a5a90, width: 2, alpha: ripple.alpha })
+            gFront.stroke({
+                color: blood > 0.5 ? 0x8b4444 : 0x7a5a90,
+                width: 2,
+                alpha: ripple.alpha,
+            })
         }
     }
 
@@ -784,7 +813,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Create droplets that fly up and out
         const dropletCount = 8 + Math.floor(Math.random() * 5)
         for (let i = 0; i < dropletCount; i++) {
-            const angle = -Math.PI + Math.random() * Math.PI  // Upward arc
+            const angle = -Math.PI + Math.random() * Math.PI // Upward arc
             const speed = 80 + Math.random() * 120
             droplets.push({
                 x: x + (Math.random() - 0.5) * 20,
@@ -903,12 +932,12 @@ export class WobblediverScene extends BaseMiniGameScene {
             const dx = pos.x - eye.x
             const dy = abyssTop - eye.y
             eye.targetLookAngle = Math.atan2(dy, dx)
-            eye.nextBlink = 3  // Don't blink while watching
+            eye.nextBlink = 3 // Don't blink while watching
         }
 
         // Open mouth in anticipation
         this.abyssMouth.targetOpenness = 1
-        this.abyssMouth.x = pos.x  // Move mouth to drowning spot
+        this.abyssMouth.x = pos.x // Move mouth to drowning spot
     }
 
     /**
@@ -1013,7 +1042,7 @@ export class WobblediverScene extends BaseMiniGameScene {
 
     private drawAbyssMouth(g: Graphics): void {
         const mouth = this.abyssMouth
-        if (mouth.openness < 0.05) return  // Don't draw if barely open
+        if (mouth.openness < 0.05) return // Don't draw if barely open
 
         // Scary mode when drowning - bigger and more menacing
         const scaryScale = this.isDrowningActive ? 1.5 : 1.0
@@ -1055,7 +1084,12 @@ export class WobblediverScene extends BaseMiniGameScene {
             const tongueSpeed = this.isDrowningActive ? 12 : 5
             const tongueRange = this.isDrowningActive ? 10 : 5
             const tongueWiggle = Math.sin(this.abyssTime * tongueSpeed) * tongueRange
-            g.ellipse(mouth.x + tongueWiggle, mouth.y + openHeight * 0.2, halfWidth * 0.4, openHeight * 0.3)
+            g.ellipse(
+                mouth.x + tongueWiggle,
+                mouth.y + openHeight * 0.2,
+                halfWidth * 0.4,
+                openHeight * 0.3
+            )
             g.fill({ color: this.isDrowningActive ? 0xaa2255 : 0x8b2252, alpha: 0.9 })
         }
 
@@ -1072,7 +1106,7 @@ export class WobblediverScene extends BaseMiniGameScene {
             g.lineTo(toothX, toothY + toothHeight * mouth.openness)
             g.lineTo(toothX + teethWidth * 0.3, toothY)
             g.closePath()
-            g.fill({ color: this.isDrowningActive ? 0xffffee : 0xf5f5dc })  // Brighter when scary
+            g.fill({ color: this.isDrowningActive ? 0xffffee : 0xf5f5dc }) // Brighter when scary
         }
 
         // Lower teeth (smaller) - also bigger when scary
@@ -1095,7 +1129,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         const blinkProgress = isBlinking ? eye.blinkTimer / eye.blinkDuration : 0
         const eyeOpenness = isBlinking ? Math.abs(Math.sin(blinkProgress * Math.PI)) : 1
 
-        if (eyeOpenness < 0.1) return  // Fully closed
+        if (eyeOpenness < 0.1) return // Fully closed
 
         // Eye glow
         g.ellipse(eye.x, eye.y, eye.size + 4, (eye.size * 0.6 + 4) * eyeOpenness)
@@ -1108,10 +1142,11 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Iris
         const irisSize = eye.size * 0.6
         const pupilX = eye.x + Math.cos(eye.lookAngle) * eye.size * eye.pupilOffset * 0.5
-        const pupilY = eye.y + Math.sin(eye.lookAngle) * eye.size * 0.3 * eye.pupilOffset * eyeOpenness
+        const pupilY =
+            eye.y + Math.sin(eye.lookAngle) * eye.size * 0.3 * eye.pupilOffset * eyeOpenness
 
         g.ellipse(pupilX, pupilY, irisSize, irisSize * 0.6 * eyeOpenness)
-        g.fill({ color: 0x8b0000, alpha: 0.95 })  // Dark red iris
+        g.fill({ color: 0x8b0000, alpha: 0.95 }) // Dark red iris
 
         // Pupil
         const pupilSize = irisSize * 0.5
@@ -1132,17 +1167,21 @@ export class WobblediverScene extends BaseMiniGameScene {
         const blinkProgress = isBlinking ? eye.blinkTimer / eye.blinkDuration : 0
         const eyeOpenness = isBlinking ? Math.abs(Math.sin(blinkProgress * Math.PI)) : 1
 
-        if (eyeOpenness < 0.1) return  // Fully closed
+        if (eyeOpenness < 0.1) return // Fully closed
 
         // Scary mode - eyes get bigger and more intense
         const scaryScale = this.isDrowningActive ? 1.4 : 1.0
-        const pulseScale = this.isDrowningActive ? 1.0 + Math.sin(this.abyssTime * 6 + eye.x * 0.1) * 0.15 : 1.0
+        const pulseScale = this.isDrowningActive
+            ? 1.0 + Math.sin(this.abyssTime * 6 + eye.x * 0.1) * 0.15
+            : 1.0
         const totalScale = scaryScale * pulseScale
 
         const scaledSize = eye.size * totalScale
 
         // Glowing outer aura - much brighter when scary
-        const glowColor = this.isDrowningActive ? 0xff2222 : this.lerpColor(0x7a5a90, 0xaa5555, blood)
+        const glowColor = this.isDrowningActive
+            ? 0xff2222
+            : this.lerpColor(0x7a5a90, 0xaa5555, blood)
         const glowAlpha = this.isDrowningActive
             ? 0.5 + Math.sin(this.abyssTime * 8 + eye.x * 0.05) * 0.2
             : 0.25 + Math.sin(this.abyssTime * 2 + eye.x * 0.01) * 0.1
@@ -1163,7 +1202,9 @@ export class WobblediverScene extends BaseMiniGameScene {
         g.fill({ color: glowColor, alpha: glowAlpha * 0.7 })
 
         // Eye glow ring - bright
-        const ringColor = this.isDrowningActive ? 0xaa2020 : this.lerpColor(0x5a3d70, 0x8b4040, blood)
+        const ringColor = this.isDrowningActive
+            ? 0xaa2020
+            : this.lerpColor(0x5a3d70, 0x8b4040, blood)
         g.ellipse(eye.x, eye.y, scaledSize + 3, (scaledSize * 0.6 + 3) * eyeOpenness)
         g.fill({ color: ringColor, alpha: this.isDrowningActive ? 0.6 : 0.4 })
 
@@ -1188,9 +1229,12 @@ export class WobblediverScene extends BaseMiniGameScene {
         const irisScale = this.isDrowningActive ? 0.75 : 0.6
         const irisSize = scaledSize * irisScale
         const pupilX = eye.x + Math.cos(eye.lookAngle) * scaledSize * eye.pupilOffset * 0.5
-        const pupilY = eye.y + Math.sin(eye.lookAngle) * scaledSize * 0.3 * eye.pupilOffset * eyeOpenness
+        const pupilY =
+            eye.y + Math.sin(eye.lookAngle) * scaledSize * 0.3 * eye.pupilOffset * eyeOpenness
 
-        const irisColor = this.isDrowningActive ? 0xee0000 : this.lerpColor(0x8b0000, 0xcc2222, blood)
+        const irisColor = this.isDrowningActive
+            ? 0xee0000
+            : this.lerpColor(0x8b0000, 0xcc2222, blood)
         g.ellipse(pupilX, pupilY, irisSize, irisSize * 0.6 * eyeOpenness)
         g.fill({ color: irisColor, alpha: 0.95 })
 
@@ -1207,11 +1251,19 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         // Bright highlight for menacing look
         const highlightSize = this.isDrowningActive ? pupilSize * 0.3 : pupilSize * 0.2
-        g.circle(pupilX - pupilSize * 0.3 + shakeX, pupilY - pupilSize * 0.2 * eyeOpenness + shakeY, highlightSize)
+        g.circle(
+            pupilX - pupilSize * 0.3 + shakeX,
+            pupilY - pupilSize * 0.2 * eyeOpenness + shakeY,
+            highlightSize
+        )
         g.fill({ color: 0xffffff, alpha: 0.9 })
 
         // Small secondary highlight
-        g.circle(pupilX + pupilSize * 0.2 + shakeX, pupilY + pupilSize * 0.1 * eyeOpenness + shakeY, highlightSize * 0.5)
+        g.circle(
+            pupilX + pupilSize * 0.2 + shakeX,
+            pupilY + pupilSize * 0.1 * eyeOpenness + shakeY,
+            highlightSize * 0.5
+        )
         g.fill({ color: 0xffffff, alpha: 0.5 })
     }
 
@@ -1244,7 +1296,8 @@ export class WobblediverScene extends BaseMiniGameScene {
 
             // Reset particle when it goes too low or fades
             if (particle.y > this.boundaryBottom || particle.alpha <= 0) {
-                particle.x = this.boundaryLeft + Math.random() * (this.boundaryRight - this.boundaryLeft)
+                particle.x =
+                    this.boundaryLeft + Math.random() * (this.boundaryRight - this.boundaryLeft)
                 particle.y = this.boundaryBottom - 100 - Math.random() * 30
                 particle.alpha = 0.3 + Math.random() * 0.4
             }
@@ -1284,7 +1337,7 @@ export class WobblediverScene extends BaseMiniGameScene {
             const openThreshold = (this.boundaryBottom - this.boundaryTop) * 0.4
             if (distanceToAbyss < openThreshold) {
                 // The closer to bottom, the more open (0 to 1)
-                this.abyssMouth.targetOpenness = 1 - (distanceToAbyss / openThreshold)
+                this.abyssMouth.targetOpenness = 1 - distanceToAbyss / openThreshold
                 // Move mouth toward player X position
                 this.abyssMouth.x += (playerPos.x - this.abyssMouth.x) * deltaSeconds * 2
             } else {
@@ -1360,7 +1413,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         const left = this.boundaryLeft
         const top = this.boundaryTop
         const right = this.boundaryRight
-        const bottom = this.boundaryBottom - 80  // Stop above water
+        const bottom = this.boundaryBottom - 80 // Stop above water
         const wallHeight = bottom - top
         const dangerWidth = 10
 
@@ -1383,8 +1436,8 @@ export class WobblediverScene extends BaseMiniGameScene {
         const spikeCount = Math.floor(wallHeight / spikeSpacing)
         for (let i = 0; i < spikeCount; i++) {
             const spikeY = top + 20 + i * spikeSpacing
-            const spikeWidth = 14 + (i % 3) * 3  // Horizontal length (pointing inward)
-            const spikeHeight = 8 + (i % 2) * 2   // Vertical thickness
+            const spikeWidth = 14 + (i % 3) * 3 // Horizontal length (pointing inward)
+            const spikeHeight = 8 + (i % 2) * 2 // Vertical thickness
 
             // Main spike shape (horizontal triangle pointing right)
             g.moveTo(left, spikeY - spikeHeight / 2)
@@ -1417,7 +1470,7 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         // Right wall horizontal spikes/thorns (pointing left)
         for (let i = 0; i < spikeCount; i++) {
-            const spikeY = top + 35 + i * spikeSpacing  // Offset from left wall
+            const spikeY = top + 35 + i * spikeSpacing // Offset from left wall
             const spikeWidth = 14 + ((i + 1) % 3) * 3
             const spikeHeight = 8 + ((i + 1) % 2) * 2
 
@@ -1456,7 +1509,7 @@ export class WobblediverScene extends BaseMiniGameScene {
                 fontFamily: 'Arial Black, sans-serif',
                 fontSize: 40,
                 fontWeight: 'bold',
-                fill: 0x8b0000,  // Dark blood red
+                fill: 0x8b0000, // Dark blood red
                 stroke: { color: 0x1a0a0a, width: 3 },
                 align: 'center',
                 letterSpacing: 6,
@@ -1506,7 +1559,7 @@ export class WobblediverScene extends BaseMiniGameScene {
                 fontFamily: 'Arial Black, sans-serif',
                 fontSize: 14,
                 fontWeight: 'bold',
-                fill: 0x888899,  // Muted color
+                fill: 0x888899, // Muted color
                 stroke: { color: BALATRO.bgDark, width: 2 },
                 align: 'center',
                 letterSpacing: 2,
@@ -1524,7 +1577,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.hpBarContainer = new Container()
         this.hpBarContainer.position.set(this.width / 2 - 60, this.height - 60)
         this.hpBarContainer.alpha = 0
-        this.hpBarContainer.visible = false  // HP bar now on wobble
+        this.hpBarContainer.visible = false // HP bar now on wobble
         this.uiContainer.addChild(this.hpBarContainer)
 
         const barWidth = 120
@@ -1541,7 +1594,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.hpBarFill = new Graphics()
         this.hpBarContainer.addChild(this.hpBarFill)
 
-        this.updateHpBar(1)  // Start full
+        this.updateHpBar(1) // Start full
     }
 
     private updateHpBar(hpPercent: number): void {
@@ -1557,11 +1610,11 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Color based on HP level
         let color: number
         if (hpPercent > 0.5) {
-            color = BALATRO.cyan  // Healthy
+            color = BALATRO.cyan // Healthy
         } else if (hpPercent > 0.25) {
-            color = BALATRO.accent  // Caution (gold)
+            color = BALATRO.accent // Caution (gold)
         } else {
-            color = BALATRO.red  // Danger
+            color = BALATRO.red // Danger
         }
 
         g.roundRect(2, 2, fillWidth, barHeight - 4, 4)
@@ -1571,12 +1624,12 @@ export class WobblediverScene extends BaseMiniGameScene {
     private setupStageResult(): void {
         // Abyss theme colors
         const ABYSS = {
-            purple: 0x6a3d7a,      // Deep purple
-            darkPurple: 0x2a1a30,  // Very dark purple
-            red: 0x8b2020,         // Blood red
-            gold: 0xc9a227,        // Eldritch gold
-            text: 0xccbbdd,        // Pale purple text
-            glow: 0x5a2d70,        // Purple glow
+            purple: 0x6a3d7a, // Deep purple
+            darkPurple: 0x2a1a30, // Very dark purple
+            red: 0x8b2020, // Blood red
+            gold: 0xc9a227, // Eldritch gold
+            text: 0xccbbdd, // Pale purple text
+            glow: 0x5a2d70, // Purple glow
         }
 
         // Result effect container (behind result card - for eyes, tentacles, vignette)
@@ -1601,7 +1654,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         const labelStyle = new TextStyle({
             fontFamily: 'Arial, sans-serif',
             fontSize: 12,
-            fill: 0x8877aa,  // Muted purple
+            fill: 0x8877aa, // Muted purple
         })
 
         const valueStyle = new TextStyle({
@@ -1714,14 +1767,14 @@ export class WobblediverScene extends BaseMiniGameScene {
         g.clear()
 
         // Optimized for mobile 9:16
-        const w = 230  // Slightly narrower for mobile
+        const w = 230 // Slightly narrower for mobile
         const h = 210
         const yOffset = -110
 
         // Abyss theme colors
-        const bgColor = 0x1a0a20      // Very dark purple
-        const borderColor = 0x6a3d7a  // Deep purple
-        const glowColor = 0x8b2020    // Blood red glow
+        const bgColor = 0x1a0a20 // Very dark purple
+        const borderColor = 0x6a3d7a // Deep purple
+        const glowColor = 0x8b2020 // Blood red glow
         const dividerColor = 0x3d1a50 // Purple divider
 
         // Outer glow (eldritch)
@@ -1777,7 +1830,9 @@ export class WobblediverScene extends BaseMiniGameScene {
                 openness: 0,
                 targetOpenness: 1,
                 lookAngle: Math.atan2(
-                    this.height / 2 - 20 - (this.height / 2 - 20 + Math.sin(angle) * distance * 0.6),
+                    this.height / 2 -
+                        20 -
+                        (this.height / 2 - 20 + Math.sin(angle) * distance * 0.6),
                     this.width / 2 - (this.width / 2 + Math.cos(angle) * distance)
                 ),
                 targetLookAngle: Math.atan2(-Math.sin(angle), -Math.cos(angle)),
@@ -1792,22 +1847,22 @@ export class WobblediverScene extends BaseMiniGameScene {
             const side = i % 4
             let x, y, angle
             switch (side) {
-                case 0:  // Top
+                case 0: // Top
                     x = this.width * 0.2 + Math.random() * this.width * 0.6
                     y = 0
                     angle = Math.PI / 2 + (Math.random() - 0.5) * 0.4
                     break
-                case 1:  // Right
+                case 1: // Right
                     x = this.width
                     y = this.height * 0.2 + Math.random() * this.height * 0.6
                     angle = Math.PI + (Math.random() - 0.5) * 0.4
                     break
-                case 2:  // Bottom
+                case 2: // Bottom
                     x = this.width * 0.2 + Math.random() * this.width * 0.6
                     y = this.height
                     angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.4
                     break
-                default:  // Left
+                default: // Left
                     x = 0
                     y = this.height * 0.2 + Math.random() * this.height * 0.6
                     angle = (Math.random() - 0.5) * 0.4
@@ -1923,8 +1978,8 @@ export class WobblediverScene extends BaseMiniGameScene {
             const nextY = y + Math.sin(angle) * segmentLength + Math.sin(angle + Math.PI / 2) * wave
 
             // Draw segment
-            const perpX = Math.cos(angle + Math.PI / 2) * width / 2
-            const perpY = Math.sin(angle + Math.PI / 2) * width / 2
+            const perpX = (Math.cos(angle + Math.PI / 2) * width) / 2
+            const perpY = (Math.sin(angle + Math.PI / 2) * width) / 2
 
             g.moveTo(x + perpX, y + perpY)
             g.lineTo(nextX + perpX * 0.8, nextY + perpY * 0.8)
@@ -1983,7 +2038,11 @@ export class WobblediverScene extends BaseMiniGameScene {
         g.fill({ color: 0x000000, alpha: 0.98 })
 
         // Highlight
-        g.circle(pupilX - pupilSize * 0.4, pupilY - pupilSize * 0.2 * eye.openness, pupilSize * 0.25)
+        g.circle(
+            pupilX - pupilSize * 0.4,
+            pupilY - pupilSize * 0.2 * eye.openness,
+            pupilSize * 0.25
+        )
         g.fill({ color: 0xffffff, alpha: 0.8 })
     }
 
@@ -2073,12 +2132,12 @@ export class WobblediverScene extends BaseMiniGameScene {
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 11,
-                fill: 0x4ecdc4,  // Teal color to stand out
+                fill: 0x4ecdc4, // Teal color to stand out
                 letterSpacing: 1,
                 lineHeight: 18,
             }),
         })
-        this.transitionHintText.anchor.set(0.5, 0)  // Anchor top-center for multi-line
+        this.transitionHintText.anchor.set(0.5, 0) // Anchor top-center for multi-line
         this.transitionHintText.position.set(this.width / 2, this.height * 0.22 + 90)
         this.transitionContainer.addChild(this.transitionHintText)
 
@@ -2187,25 +2246,25 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.transitionTentacles = []
         const tentacleCount = 8 + Math.min(stageNumber, 8)
         for (let i = 0; i < tentacleCount; i++) {
-            const side = i % 4  // 0=top, 1=right, 2=bottom, 3=left
+            const side = i % 4 // 0=top, 1=right, 2=bottom, 3=left
             let x, y, angle
             switch (side) {
-                case 0:  // Top
+                case 0: // Top
                     x = Math.random() * this.width
                     y = 0
                     angle = Math.PI / 2 + (Math.random() - 0.5) * 0.5
                     break
-                case 1:  // Right
+                case 1: // Right
                     x = this.width
                     y = Math.random() * this.height
                     angle = Math.PI + (Math.random() - 0.5) * 0.5
                     break
-                case 2:  // Bottom
+                case 2: // Bottom
                     x = Math.random() * this.width
                     y = this.height
                     angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.5
                     break
-                default:  // Left
+                default: // Left
                     x = 0
                     y = Math.random() * this.height
                     angle = (Math.random() - 0.5) * 0.5
@@ -2226,7 +2285,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         for (let i = 0; i < eyeCount; i++) {
             this.transitionEyes.push({
                 x: this.width * 0.15 + Math.random() * this.width * 0.7,
-                y: this.height * 0.45 + Math.random() * this.height * 0.4,  // Lower area (45-85%)
+                y: this.height * 0.45 + Math.random() * this.height * 0.4, // Lower area (45-85%)
                 size: 15 + Math.random() * 25,
                 openness: 0,
                 targetOpenness: 1,
@@ -2258,7 +2317,7 @@ export class WobblediverScene extends BaseMiniGameScene {
             this.transitionTime += deltaSeconds
         }
         const t = this.transitionTime
-        const animT = this.transitionAnimTime  // Use for animations that should continue
+        const animT = this.transitionAnimTime // Use for animations that should continue
         const duration = this.transitionDuration
 
         const g = this.transitionGraphics
@@ -2279,7 +2338,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         if (t < closePhaseEnd) {
             // Phase 1: Iris closing effect (circular mask shrinking)
             const closeProgress = t / closePhaseEnd
-            const easeClose = 1 - Math.pow(1 - closeProgress, 3)  // Ease out cubic
+            const easeClose = 1 - Math.pow(1 - closeProgress, 3) // Ease out cubic
 
             // Draw closing iris - reveal shrinks from edges
             const maxRadius = Math.sqrt(cx * cx + cy * cy) * 1.2
@@ -2303,7 +2362,6 @@ export class WobblediverScene extends BaseMiniGameScene {
                     g.stroke({ color: 0x6b5b95, width: 4 - i, alpha: 0.4 - i * 0.1 })
                 }
             }
-
         } else if (t < holdPhaseEnd) {
             // Phase 2: Full darkness - show all the spooky effects
             g.rect(0, 0, this.width, this.height)
@@ -2316,11 +2374,10 @@ export class WobblediverScene extends BaseMiniGameScene {
                 g.ellipse(cx, cy, glowRadius, glowRadius * 0.7)
                 g.fill({ color: 0x6b5b95, alpha: pulseIntensity * (0.15 - i * 0.03) })
             }
-
         } else {
             // Phase 3: Abyss opening - vertical split like an eye opening
             const openProgress = (t - holdPhaseEnd) / (openPhaseEnd - holdPhaseEnd)
-            const easeOpen = openProgress * openProgress * (3 - 2 * openProgress)  // Smoothstep
+            const easeOpen = openProgress * openProgress * (3 - 2 * openProgress) // Smoothstep
 
             // The "eyelids" split apart vertically
             const splitDistance = cy * easeOpen * 1.2
@@ -2391,7 +2448,8 @@ export class WobblediverScene extends BaseMiniGameScene {
             const eyeProgress = Math.min(1, (t - closePhaseEnd - 0.1) / 0.3)
 
             for (const eye of this.transitionEyes) {
-                eye.openness = Math.min(eye.openness + deltaSeconds * 3, eye.targetOpenness) * eyeProgress
+                eye.openness =
+                    Math.min(eye.openness + deltaSeconds * 3, eye.targetOpenness) * eyeProgress
                 this.drawTransitionEye(g, eye, effectsFade, animT)
             }
         }
@@ -2441,7 +2499,7 @@ export class WobblediverScene extends BaseMiniGameScene {
             this.transitionSubText.alpha = Math.max(0, subProgress) * effectsFade * 0.8
 
             // Hint text (appears after sub text, typewriter-style fade in)
-            const hintDelay = 0.6  // Delay after hold phase starts
+            const hintDelay = 0.6 // Delay after hold phase starts
             const hintProgress = Math.min(1, (t - closePhaseEnd - hintDelay) / 0.5)
             if (hintProgress > 0 && this.transitionHintText.text) {
                 this.transitionHintText.alpha = Math.max(0, hintProgress) * effectsFade * 0.9
@@ -2491,7 +2549,7 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         this.transitionWaitingForTap = false
         // Jump to the opening phase
-        this.transitionTime = 2.5  // Start of open phase
+        this.transitionTime = 2.5 // Start of open phase
     }
 
     private drawTransitionTentacle(
@@ -2518,12 +2576,14 @@ export class WobblediverScene extends BaseMiniGameScene {
             // Curve the tentacle
             angle += Math.sin(time * 3 + tentacle.phase + i * 0.3) * 0.15
 
-            const nextX = x + Math.cos(angle) * segmentLength + Math.cos(angle + Math.PI / 2) * waveOffset
-            const nextY = y + Math.sin(angle) * segmentLength + Math.sin(angle + Math.PI / 2) * waveOffset
+            const nextX =
+                x + Math.cos(angle) * segmentLength + Math.cos(angle + Math.PI / 2) * waveOffset
+            const nextY =
+                y + Math.sin(angle) * segmentLength + Math.sin(angle + Math.PI / 2) * waveOffset
 
             // Draw tentacle segment
-            const perpX = Math.cos(angle + Math.PI / 2) * width / 2
-            const perpY = Math.sin(angle + Math.PI / 2) * width / 2
+            const perpX = (Math.cos(angle + Math.PI / 2) * width) / 2
+            const perpY = (Math.sin(angle + Math.PI / 2) * width) / 2
 
             g.moveTo(x + perpX, y + perpY)
             g.lineTo(nextX + perpX * 0.8, nextY + perpY * 0.8)
@@ -2583,11 +2643,20 @@ export class WobblediverScene extends BaseMiniGameScene {
         g.fill({ color: 0x000000, alpha: 0.98 * fade })
 
         // Highlight
-        g.circle(eye.x + lookX - pupilSize * 0.5, eye.y + lookY - pupilSize * 0.2 * openness, pupilSize * 0.3)
+        g.circle(
+            eye.x + lookX - pupilSize * 0.5,
+            eye.y + lookY - pupilSize * 0.2 * openness,
+            pupilSize * 0.3
+        )
         g.fill({ color: 0xffffff, alpha: 0.8 * fade })
     }
 
-    private showStageResult(score: number, hpPercent: number, timeTaken: number, perfect: boolean): void {
+    private showStageResult(
+        score: number,
+        hpPercent: number,
+        timeTaken: number,
+        perfect: boolean
+    ): void {
         this.isShowingResult = true
         this.resultDisplayTime = 0
         this.resultPhase = 'hp'
@@ -2621,13 +2690,16 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         // Grade colors (abyss theme)
         const gradeColors: Record<string, number> = {
-            'S': 0xffd700,   // Eldritch gold - escaped the abyss
-            'A': 0xc9a227,   // Gold
-            'B': 0x8b6914,   // Dark gold
-            'C': 0x6a3d7a,   // Deep purple
-            'D': 0x8b2020,   // Blood red - barely survived
+            S: 0xffd700, // Eldritch gold - escaped the abyss
+            A: 0xc9a227, // Gold
+            B: 0x8b6914, // Dark gold
+            C: 0x6a3d7a, // Deep purple
+            D: 0x8b2020, // Blood red - barely survived
         }
-        this.resultGrade = { letter: grade.letter, color: gradeColors[grade.letter] || BALATRO.accent }
+        this.resultGrade = {
+            letter: grade.letter,
+            color: gradeColors[grade.letter] || BALATRO.accent,
+        }
 
         // Update texts (initially zeros)
         this.stageResultText.text = perfect ? 'FLAWLESS' : 'ESCAPED'
@@ -2669,7 +2741,7 @@ export class WobblediverScene extends BaseMiniGameScene {
      * Update result display counting animation
      */
     private updateResultCounting(deltaSeconds: number): void {
-        const countSpeed = 300  // Points per second
+        const countSpeed = 300 // Points per second
         const increment = countSpeed * deltaSeconds
 
         switch (this.resultPhase) {
@@ -2700,7 +2772,7 @@ export class WobblediverScene extends BaseMiniGameScene {
             case 'total':
                 if (this.resultCountCurrent.total < this.resultCountTarget.total) {
                     this.resultCountCurrent.total = Math.min(
-                        this.resultCountCurrent.total + increment * 1.5,  // Count total faster
+                        this.resultCountCurrent.total + increment * 1.5, // Count total faster
                         this.resultCountTarget.total
                     )
                     this.stageTotalValueText.text = `+${Math.round(this.resultCountCurrent.total)}`
@@ -2779,7 +2851,12 @@ export class WobblediverScene extends BaseMiniGameScene {
         requestAnimationFrame(animateOut)
     }
 
-    private calculateGrade(score: number, hpPercent: number, timeTaken: number, perfect: boolean): { letter: string; description: string } {
+    private calculateGrade(
+        score: number,
+        hpPercent: number,
+        timeTaken: number,
+        perfect: boolean
+    ): { letter: string; description: string } {
         // Grade formula:
         // S: Perfect hit + full HP + fast (<3s)
         // A: Good score (>250) or perfect hit
@@ -2837,7 +2914,7 @@ export class WobblediverScene extends BaseMiniGameScene {
     private startNewRound(): void {
         this.roundNumber++
         this.roundTransitionTime = 0
-        this.roundStartTime = Date.now() / 1000  // Track start time for scoring
+        this.roundStartTime = Date.now() / 1000 // Track start time for scoring
 
         // Start stage transition effect (skip for first round as intro handles it)
         if (this.roundNumber > 1) {
@@ -2855,13 +2932,13 @@ export class WobblediverScene extends BaseMiniGameScene {
         }
 
         // Generate new positions
-        const anchorX = this.getAnchorX()  // Always center
+        const anchorX = this.getAnchorX() // Always center
         const ropeLength = this.getRandomRopeLength()
         const startAngle = this.getRandomStartAngle()
 
         // Create new wobble (anchor Y matches AnchorWobble position)
         this.wobble = new SwingingWobble(anchorX, this.boundaryTop + 60, ropeLength, startAngle)
-        this.wobble.resetHp()  // Ensure full HP for new round
+        this.wobble.resetHp() // Ensure full HP for new round
         this.gameContainer.addChild(this.wobble.container)
 
         // Add abyss front container AFTER wobble so it renders on top
@@ -2972,7 +3049,7 @@ export class WobblediverScene extends BaseMiniGameScene {
     private getRandomStartAngle(): number {
         // Start from either left or right side
         const side = Math.random() > 0.5 ? 1 : -1
-        const angle = (Math.PI / 6) + Math.random() * (Math.PI / 4)
+        const angle = Math.PI / 6 + Math.random() * (Math.PI / 4)
         return angle * side
     }
 
@@ -2980,20 +3057,23 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Goal spawns in a limited range above the abyss water surface
         // This ensures it's far enough from the starting anchor point at the top
         const padding = 60
-        const abyssTop = this.boundaryBottom - 80  // Water surface level
+        const abyssTop = this.boundaryBottom - 80 // Water surface level
 
         // Goal spawn range: from water surface up to 180px above it
         const GOAL_RANGE_ABOVE_WATER = 180
-        const GOAL_MIN_DISTANCE_FROM_WATER = 50  // Buffer above water
+        const GOAL_MIN_DISTANCE_FROM_WATER = 50 // Buffer above water
 
         const maxY = abyssTop - GOAL_MIN_DISTANCE_FROM_WATER
         const minY = abyssTop - GOAL_RANGE_ABOVE_WATER
 
-        const x = this.boundaryLeft + padding + Math.random() * (this.boundaryRight - this.boundaryLeft - padding * 2)
+        const x =
+            this.boundaryLeft +
+            padding +
+            Math.random() * (this.boundaryRight - this.boundaryLeft - padding * 2)
         const y = minY + Math.random() * (maxY - minY)
 
         // Fixed vertical radius, but horizontal width shrinks over rounds
-        const baseRadius = 35  // Vertical size stays constant
+        const baseRadius = 35 // Vertical size stays constant
 
         // Width scale: starts at 2.5 (wide), shrinks to 1.0 (circular) over ~15 rounds
         this.goalWidthScale = Math.max(1.0, 2.5 - this.roundNumber * 0.1)
@@ -3008,7 +3088,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         }
 
         // Reset movement timer for periodic movement
-        this.goalMoveTimer = 3 + Math.random() * 2  // Wait 3-5 seconds before moving
+        this.goalMoveTimer = 3 + Math.random() * 2 // Wait 3-5 seconds before moving
         this.goalMoveDuration = 0
         this.goalMoveActive = false
 
@@ -3035,7 +3115,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Add portals starting from round 5
         if (this.roundNumber < 5) return
 
-        const portalCount = Math.min(Math.floor((this.roundNumber - 4) / 3), 2)  // Max 2 portal pairs
+        const portalCount = Math.min(Math.floor((this.roundNumber - 4) / 3), 2) // Max 2 portal pairs
         const padding = 80
         const abyssTop = this.boundaryBottom - 80
 
@@ -3046,11 +3126,13 @@ export class WobblediverScene extends BaseMiniGameScene {
 
             // Entrance on left/top side
             const entranceX = this.boundaryLeft + padding + Math.random() * (this.width * 0.3)
-            const entranceY = this.boundaryTop + 100 + Math.random() * (abyssTop - this.boundaryTop - 200)
+            const entranceY =
+                this.boundaryTop + 100 + Math.random() * (abyssTop - this.boundaryTop - 200)
 
             // Exit on right/bottom side (strategic placement)
             const exitX = this.width - padding - Math.random() * (this.width * 0.3)
-            const exitY = this.boundaryTop + 100 + Math.random() * (abyssTop - this.boundaryTop - 200)
+            const exitY =
+                this.boundaryTop + 100 + Math.random() * (abyssTop - this.boundaryTop - 200)
 
             const portalPair = new PortalPair({
                 entrance: {
@@ -3115,7 +3197,7 @@ export class WobblediverScene extends BaseMiniGameScene {
     private repositionObstacle(obstacle: ObstacleWobble): void {
         // Position on walls - tentacles extend from left/right boundaries
         const minY = 120
-        const maxY = this.height - 200  // Above the abyss
+        const maxY = this.height - 200 // Above the abyss
 
         // Get the side from obstacle
         const side = obstacle.side
@@ -3213,14 +3295,14 @@ export class WobblediverScene extends BaseMiniGameScene {
                     // Spiral: starts at 0, peaks in middle, ends at 0
                     const spiralIntensity = Math.sin(progress * Math.PI)
                     const spiralRadius = 12 * spiralIntensity
-                    const spiralAngle = progress * Math.PI * 3  // 1.5 rotations
+                    const spiralAngle = progress * Math.PI * 3 // 1.5 rotations
                     const spiralX = Math.cos(spiralAngle) * spiralRadius
-                    const spiralY = Math.sin(spiralAngle) * spiralRadius * 0.35  // Flatten for perspective
+                    const spiralY = Math.sin(spiralAngle) * spiralRadius * 0.35 // Flatten for perspective
 
                     // Move towards center + sink into funnel
                     const newX = startX + (targetX - startX) * easeIn + spiralX
                     const newY = startY + (targetY - startY) * easeIn + spiralY
-                    const funnelDepth = this.wormhole.radius * 0.4 * easeIn  // Sink into funnel
+                    const funnelDepth = this.wormhole.radius * 0.4 * easeIn // Sink into funnel
                     this.wobble.container.position.set(newX, newY + funnelDepth)
 
                     // Scale down as it enters the funnel
@@ -3253,7 +3335,13 @@ export class WobblediverScene extends BaseMiniGameScene {
             }
 
             // Check if animation complete - handle round end (skip if waiting for retry or pending result)
-            if (this.wobble.isAnimationComplete() && this.roundTransitionTime <= 0 && !this.isShowingResult && !this.isWaitingForRetry && !this.pendingResult) {
+            if (
+                this.wobble.isAnimationComplete() &&
+                this.roundTransitionTime <= 0 &&
+                !this.isShowingResult &&
+                !this.isWaitingForRetry &&
+                !this.pendingResult
+            ) {
                 this.handleRoundEnd()
             }
 
@@ -3340,7 +3428,7 @@ export class WobblediverScene extends BaseMiniGameScene {
             if (this.goalMoveTimer <= 0) {
                 // Start moving
                 this.goalMoveActive = true
-                this.goalMoveDuration = 2.5 + Math.random() * 1.5  // Move for 2.5-4 seconds
+                this.goalMoveDuration = 2.5 + Math.random() * 1.5 // Move for 2.5-4 seconds
             }
         } else {
             // Moving phase
@@ -3357,7 +3445,7 @@ export class WobblediverScene extends BaseMiniGameScene {
             if (this.goalMoveDuration <= 0) {
                 // Stop moving, wait again
                 this.goalMoveActive = false
-                this.goalMoveTimer = 4 + Math.random() * 3  // Wait 4-7 seconds
+                this.goalMoveTimer = 4 + Math.random() * 3 // Wait 4-7 seconds
             }
         }
     }
@@ -3522,7 +3610,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         if (!this.wobble || this.wobble.state !== 'released') return
 
         const pos = this.wobble.getPosition()
-        const wobbleRadius = 15  // Approximate wobble radius
+        const wobbleRadius = 15 // Approximate wobble radius
 
         // Check left wall
         if (pos.x < this.boundaryLeft + wobbleRadius) {
@@ -3642,7 +3730,7 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         // Minimal animation - just fade
         let elapsed = 0
-        const duration = 1.0  // Longer duration for death screen
+        const duration = 1.0 // Longer duration for death screen
         const animate = () => {
             elapsed += 1 / 60
             const progress = Math.min(elapsed / duration, 1)
@@ -3702,7 +3790,7 @@ export class WobblediverScene extends BaseMiniGameScene {
                 this.maxRopeLength = 220
                 this.trajectoryMode = 'flicker'
                 this.trajectoryFlickerInterval = 0.4
-                this.trajectoryFlickerOnRatio = 0.4  // 40% visible
+                this.trajectoryFlickerOnRatio = 0.4 // 40% visible
                 break
 
             case 'insane':
@@ -3712,7 +3800,7 @@ export class WobblediverScene extends BaseMiniGameScene {
                 this.maxRopeLength = 250
                 this.trajectoryMode = 'flicker'
                 this.trajectoryFlickerInterval = 0.6
-                this.trajectoryFlickerOnRatio = 0.15  // 15% visible (brief flashes)
+                this.trajectoryFlickerOnRatio = 0.15 // 15% visible (brief flashes)
                 break
         }
     }

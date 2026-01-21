@@ -16,8 +16,8 @@ export interface ObstacleConfig {
     range?: number
     tentacleLength?: number
     segments?: number
-    side?: 'left' | 'right'  // Which wall the tentacle comes from
-    attackRange?: number      // How close player needs to be to trigger attack
+    side?: 'left' | 'right' // Which wall the tentacle comes from
+    attackRange?: number // How close player needs to be to trigger attack
 }
 
 interface TentacleSegment {
@@ -36,7 +36,7 @@ export class ObstacleWobble {
     public x: number
     public y: number
     public radius: number
-    private anchorX: number   // Wall anchor point
+    private anchorX: number // Wall anchor point
     private anchorY: number
     private startX: number
     private startY: number
@@ -47,16 +47,16 @@ export class ObstacleWobble {
     private targetLength: number
     private segmentCount: number
     private segments: TentacleSegment[] = []
-    public side: 'left' | 'right'  // Public so scene can read it
+    public side: 'left' | 'right' // Public so scene can read it
 
     // Attack state
     private attackRange: number
     private isAttacking = false
     private attackTimer = 0
-    private readonly ATTACK_SPEED = 400      // How fast tentacle extends
-    private readonly RETRACT_SPEED = 150     // How fast it retracts
-    private readonly IDLE_LENGTH = 30        // Length when idle (just peeking out)
-    private readonly ATTACK_HOLD_TIME = 0.8  // How long to stay extended
+    private readonly ATTACK_SPEED = 400 // How fast tentacle extends
+    private readonly RETRACT_SPEED = 150 // How fast it retracts
+    private readonly IDLE_LENGTH = 30 // Length when idle (just peeking out)
+    private readonly ATTACK_HOLD_TIME = 0.8 // How long to stay extended
 
     // Movement
     private movement: ObstacleMovement
@@ -160,7 +160,11 @@ export class ObstacleWobble {
             const wave = Math.sin(this.time * waveSpeed + i * 0.6 + this.phase) * waveAmplitude * t
 
             // Secondary wave for organic feel
-            const wave2 = Math.sin(this.time * waveSpeed * 1.3 + i * 0.4 + this.phase + 1) * waveAmplitude * 0.4 * t
+            const wave2 =
+                Math.sin(this.time * waveSpeed * 1.3 + i * 0.4 + this.phase + 1) *
+                waveAmplitude *
+                0.4 *
+                t
 
             // Attack lunge motion
             const attackLunge = this.isAttacking

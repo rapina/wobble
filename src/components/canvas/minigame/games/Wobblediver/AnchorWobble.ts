@@ -18,13 +18,13 @@ export class AnchorWobble {
     // Animation state
     private time = 0
     private pressTimer = 0
-    private pressCooldown = 5.0  // Seconds between presses
+    private pressCooldown = 5.0 // Seconds between presses
     private isPressing = false
     private pressProgress = 0
-    private hasTriggeredCallback = false  // Prevent multiple callback calls per press
+    private hasTriggeredCallback = false // Prevent multiple callback calls per press
 
     // Switch state
-    private leverAngle = 0  // 0 = up, 1 = down
+    private leverAngle = 0 // 0 = up, 1 = down
 
     // Position
     public x: number
@@ -52,7 +52,7 @@ export class AnchorWobble {
         // Create wobble (positioned to the side, ready to jump on switch)
         this.blob = new Blob({
             size: 18,
-            color: 0x9b59b6,  // Purple color
+            color: 0x9b59b6, // Purple color
             shape: 'circle',
             expression: 'happy',
             glowIntensity: 0.2,
@@ -73,10 +73,10 @@ export class AnchorWobble {
 
         // Decorative dots (like indicator lights)
         g.circle(-8, 0, 3)
-        g.fill({ color: 0x2ecc71, alpha: 0.8 })  // Green light
+        g.fill({ color: 0x2ecc71, alpha: 0.8 }) // Green light
 
         g.circle(8, 0, 3)
-        g.fill({ color: 0x333344 })  // Off light
+        g.fill({ color: 0x333344 }) // Off light
     }
 
     private drawLever(pressAmount: number): void {
@@ -89,8 +89,8 @@ export class AnchorWobble {
 
         // Lever arm - rotates based on press amount
         const leverLength = 25
-        const baseAngle = -Math.PI / 6  // Starting angle (up)
-        const pressedAngle = Math.PI / 6  // Pressed angle (down)
+        const baseAngle = -Math.PI / 6 // Starting angle (up)
+        const pressedAngle = Math.PI / 6 // Pressed angle (down)
         const currentAngle = baseAngle + (pressedAngle - baseAngle) * pressAmount
 
         const endX = pivotX + Math.sin(currentAngle) * leverLength
@@ -99,12 +99,12 @@ export class AnchorWobble {
         // Lever arm
         g.moveTo(pivotX, pivotY)
         g.lineTo(endX, endY)
-        g.stroke({ color: 0xc9a227, width: 6 })  // Gold lever
+        g.stroke({ color: 0xc9a227, width: 6 }) // Gold lever
         g.stroke({ color: 0xa88a17, width: 4 })
 
         // Lever handle (big button on top)
         g.circle(endX, endY, 10)
-        g.fill({ color: 0xe74c3c })  // Red button
+        g.fill({ color: 0xe74c3c }) // Red button
         g.stroke({ color: 0xc0392b, width: 2 })
 
         // Highlight on button
@@ -138,7 +138,7 @@ export class AnchorWobble {
 
             if (timeToPress < 0.8) {
                 // Getting ready to jump - crouch and prepare
-                const prepProgress = 1 - (timeToPress / 0.8)
+                const prepProgress = 1 - timeToPress / 0.8
                 const crouch = Math.sin(prepProgress * Math.PI * 0.5) * 5
                 this.blob.setPosition(35 - prepProgress * 15, -8 + crouch)
                 this.blob.updateOptions({
@@ -169,10 +169,10 @@ export class AnchorWobble {
     private updatePress(deltaSeconds: number): void {
         this.pressProgress += deltaSeconds
 
-        const jumpDuration = 0.15  // Jump to switch
-        const pressDuration = 0.1  // Press down
-        const bounceDuration = 0.25  // Bounce back up
-        const returnDuration = 0.2  // Return to position
+        const jumpDuration = 0.15 // Jump to switch
+        const pressDuration = 0.1 // Press down
+        const bounceDuration = 0.25 // Bounce back up
+        const returnDuration = 0.2 // Return to position
         const totalDuration = jumpDuration + pressDuration + bounceDuration + returnDuration
 
         if (this.pressProgress >= totalDuration) {
@@ -192,18 +192,18 @@ export class AnchorWobble {
             // Jump arc to the switch
             const t = this.pressProgress / jumpDuration
             const arcHeight = 20
-            blobX = 35 - t * 35  // Move from side to center
-            blobY = -8 - Math.sin(t * Math.PI) * arcHeight  // Arc up
-            scaleY = 1 + Math.sin(t * Math.PI) * 0.2  // Stretch while jumping
+            blobX = 35 - t * 35 // Move from side to center
+            blobY = -8 - Math.sin(t * Math.PI) * arcHeight // Arc up
+            scaleY = 1 + Math.sin(t * Math.PI) * 0.2 // Stretch while jumping
             scaleX = 1 - Math.sin(t * Math.PI) * 0.1
         } else if (this.pressProgress < jumpDuration + pressDuration) {
             // Press down on switch
             const t = (this.pressProgress - jumpDuration) / pressDuration
             blobX = 0
-            blobY = -28 + t * 10  // Press down
+            blobY = -28 + t * 10 // Press down
             this.leverAngle = t
             this.drawLever(t)
-            scaleX = 1 + t * 0.3  // Squish on impact
+            scaleX = 1 + t * 0.3 // Squish on impact
             scaleY = 1 - t * 0.2
 
             // Trigger callback at the press moment (only once per press)
@@ -214,15 +214,17 @@ export class AnchorWobble {
         } else if (this.pressProgress < jumpDuration + pressDuration + bounceDuration) {
             // Bounce back up
             const t = (this.pressProgress - jumpDuration - pressDuration) / bounceDuration
-            blobX = 0 + t * 20  // Move toward return position
-            blobY = -18 - Math.sin(t * Math.PI) * 15  // Bounce up
+            blobX = 0 + t * 20 // Move toward return position
+            blobY = -18 - Math.sin(t * Math.PI) * 15 // Bounce up
             this.leverAngle = 1 - t
             this.drawLever(1 - t)
             scaleX = 1.3 - t * 0.3
             scaleY = 0.8 + t * 0.2
         } else {
             // Return to idle position
-            const t = (this.pressProgress - jumpDuration - pressDuration - bounceDuration) / returnDuration
+            const t =
+                (this.pressProgress - jumpDuration - pressDuration - bounceDuration) /
+                returnDuration
             blobX = 20 + t * 15
             blobY = -18 + t * 10
             this.leverAngle = 0
@@ -241,19 +243,19 @@ export class AnchorWobble {
             const pressDuration = 0.1
 
             if (this.pressProgress < jumpDuration) {
-                expression = 'excited'  // Jumping
+                expression = 'excited' // Jumping
             } else if (this.pressProgress < jumpDuration + pressDuration) {
-                expression = 'effort'  // Pressing hard
+                expression = 'effort' // Pressing hard
             } else {
-                expression = 'happy'  // Bouncing back
+                expression = 'happy' // Bouncing back
             }
         } else {
             // Idle - anticipate press
             const timeToPress = this.pressCooldown - this.pressTimer
             if (timeToPress < 0.5) {
-                expression = 'angry'  // Concentrating before jump
+                expression = 'angry' // Concentrating before jump
             } else if (timeToPress < 0.8) {
-                expression = 'excited'  // Getting ready
+                expression = 'excited' // Getting ready
             }
         }
 

@@ -24,11 +24,46 @@ export class WavePulseBehavior extends BaseSkillBehavior<WavePulseEffect> {
     readonly category: SkillCategory = 'player'
 
     protected readonly levelEffects: WavePulseEffect[] = [
-        { type: 'wave-pulse', wavelength: 60, amplitude: 25, waveSpeed: 150, waveDamage: 12, waveCount: 2 },
-        { type: 'wave-pulse', wavelength: 70, amplitude: 30, waveSpeed: 170, waveDamage: 16, waveCount: 2 },
-        { type: 'wave-pulse', wavelength: 80, amplitude: 35, waveSpeed: 190, waveDamage: 20, waveCount: 3 },
-        { type: 'wave-pulse', wavelength: 90, amplitude: 40, waveSpeed: 210, waveDamage: 25, waveCount: 3 },
-        { type: 'wave-pulse', wavelength: 100, amplitude: 50, waveSpeed: 250, waveDamage: 32, waveCount: 4 },
+        {
+            type: 'wave-pulse',
+            wavelength: 60,
+            amplitude: 25,
+            waveSpeed: 150,
+            waveDamage: 12,
+            waveCount: 2,
+        },
+        {
+            type: 'wave-pulse',
+            wavelength: 70,
+            amplitude: 30,
+            waveSpeed: 170,
+            waveDamage: 16,
+            waveCount: 2,
+        },
+        {
+            type: 'wave-pulse',
+            wavelength: 80,
+            amplitude: 35,
+            waveSpeed: 190,
+            waveDamage: 20,
+            waveCount: 3,
+        },
+        {
+            type: 'wave-pulse',
+            wavelength: 90,
+            amplitude: 40,
+            waveSpeed: 210,
+            waveDamage: 25,
+            waveCount: 3,
+        },
+        {
+            type: 'wave-pulse',
+            wavelength: 100,
+            amplitude: 50,
+            waveSpeed: 250,
+            waveDamage: 32,
+            waveCount: 4,
+        },
     ]
 
     readonly definition: SkillDefinition<WavePulseEffect> = {

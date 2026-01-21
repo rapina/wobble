@@ -42,43 +42,43 @@ export type PhysicsCategory =
 export const FORMULA_CATEGORY_MAP: Record<string, PhysicsCategory> = {
     // Mechanics (역학)
     'kinetic-energy': 'mechanics',
-    'momentum': 'mechanics',
-    'centripetal': 'mechanics',
-    'gravity': 'mechanics',
-    'hooke': 'mechanics',
+    momentum: 'mechanics',
+    centripetal: 'mechanics',
+    gravity: 'mechanics',
+    hooke: 'mechanics',
     'elastic-collision': 'mechanics',
     'newton-second': 'mechanics',
-    'torque': 'mechanics',
+    torque: 'mechanics',
     'kepler-third': 'mechanics',
     'escape-velocity': 'mechanics',
-    'pendulum': 'mechanics',
+    pendulum: 'mechanics',
 
     // Electromagnetism (전자기학)
-    'lorentz': 'electromagnetism',
-    'coulomb': 'electromagnetism',
+    lorentz: 'electromagnetism',
+    coulomb: 'electromagnetism',
     'electric-discharge': 'electromagnetism',
     'magnetic-field': 'electromagnetism',
 
     // Wave Physics (파동학)
-    'wave': 'wave',
+    wave: 'wave',
     'beat-frequency': 'wave',
-    'snell': 'wave',
-    'doppler': 'wave',
-    'photoelectric': 'wave', // Light-related
+    snell: 'wave',
+    doppler: 'wave',
+    photoelectric: 'wave', // Light-related
 
     // Thermodynamics (열역학)
     'ideal-gas': 'thermodynamics',
     'stefan-boltzmann': 'thermodynamics',
-    'entropy': 'thermodynamics',
+    entropy: 'thermodynamics',
     'thermal-conduction': 'thermodynamics',
 
     // Quantum Mechanics (양자역학)
-    'tunneling': 'quantum',
+    tunneling: 'quantum',
     'radioactive-decay': 'quantum',
 
     // Fluid Dynamics (유체역학)
-    'bernoulli': 'fluid',
-    'buoyancy': 'fluid',
+    bernoulli: 'fluid',
+    buoyancy: 'fluid',
 }
 
 /**

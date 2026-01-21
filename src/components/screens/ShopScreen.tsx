@@ -209,8 +209,10 @@ export function ShopScreen({ onBack }: ShopScreenProps) {
                                             </span>
                                         ) : removeAdsProduct ? (
                                             removeAdsProduct.priceString
+                                        ) : isKorean ? (
+                                            '로딩 중...'
                                         ) : (
-                                            isKorean ? '로딩 중...' : 'Loading...'
+                                            'Loading...'
                                         )}
                                     </button>
                                 )}
@@ -301,8 +303,10 @@ export function ShopScreen({ onBack }: ShopScreenProps) {
                                             </span>
                                         ) : unlockAllFormulasProduct ? (
                                             unlockAllFormulasProduct.priceString
+                                        ) : isKorean ? (
+                                            '로딩 중...'
                                         ) : (
-                                            isKorean ? '로딩 중...' : 'Loading...'
+                                            'Loading...'
                                         )}
                                     </button>
                                 )}

@@ -14,13 +14,13 @@ export interface WormholeConfig {
     perfectRadius?: number
     isFinish?: boolean
     portalColor?: 'purple' | 'teal' | 'red' | 'gold'
-    widthScale?: number  // Horizontal stretch factor (1.0 = normal, 2.0 = double width)
+    widthScale?: number // Horizontal stretch factor (1.0 = normal, 2.0 = double width)
 }
 
 // Particle falling into the funnel
 interface FunnelParticle {
-    angle: number           // Position around the funnel
-    depth: number           // 0 = at opening, 1 = at singularity
+    angle: number // Position around the funnel
+    depth: number // 0 = at opening, 1 = at singularity
     speed: number
     size: number
     alpha: number
@@ -46,18 +46,18 @@ interface LightBeam {
 
 export class Wormhole {
     public container: Container
-    private funnelGraphics: Graphics       // The funnel/gravity well
-    private baseGraphics: Graphics         // Top ellipse ring
-    private glowGraphics: Graphics         // Glow effects
-    private beamGraphics: Graphics         // Light beams
-    private particleGraphics: Graphics     // Particles
+    private funnelGraphics: Graphics // The funnel/gravity well
+    private baseGraphics: Graphics // Top ellipse ring
+    private glowGraphics: Graphics // Glow effects
+    private beamGraphics: Graphics // Light beams
+    private particleGraphics: Graphics // Particles
 
     public x: number
     public y: number
     public radius: number
     public perfectRadius: number
     public isFinish: boolean
-    public widthScale: number  // Horizontal stretch (1.0 = circle, 2.0 = wide ellipse)
+    public widthScale: number // Horizontal stretch (1.0 = circle, 2.0 = wide ellipse)
 
     // Animation state
     private time = 0
@@ -91,7 +91,7 @@ export class Wormhole {
 
     // Funnel dimensions
     private readonly ellipseRatio = 0.35
-    private readonly funnelDepth = 0.8      // How deep the funnel appears (relative to radius)
+    private readonly funnelDepth = 0.8 // How deep the funnel appears (relative to radius)
 
     constructor(config: WormholeConfig) {
         this.container = new Container()
@@ -130,39 +130,39 @@ export class Wormhole {
         switch (color) {
             case 'gold':
                 return {
-                    primary: 0xc9a227,      // Muted gold
-                    secondary: 0x8b6914,    // Dark gold
-                    glow: 0xd4a84b,         // Warm glow
-                    beam: 0xe8d5a3,         // Pale gold beam
-                    dark: 0x1a1510,         // Very dark
+                    primary: 0xc9a227, // Muted gold
+                    secondary: 0x8b6914, // Dark gold
+                    glow: 0xd4a84b, // Warm glow
+                    beam: 0xe8d5a3, // Pale gold beam
+                    dark: 0x1a1510, // Very dark
                 }
             case 'teal':
                 // Finish portal - bioluminescent deep sea creature feel
                 return {
-                    primary: 0x2dd4bf,      // Bright teal (bioluminescent)
-                    secondary: 0x0d9488,    // Deep teal
-                    glow: 0x5eead4,         // Bright glow
-                    beam: 0x99f6e4,         // Pale teal beam
-                    dark: 0x042f2e,         // Abyssal dark teal
+                    primary: 0x2dd4bf, // Bright teal (bioluminescent)
+                    secondary: 0x0d9488, // Deep teal
+                    glow: 0x5eead4, // Bright glow
+                    beam: 0x99f6e4, // Pale teal beam
+                    dark: 0x042f2e, // Abyssal dark teal
                 }
             case 'red':
                 // Danger/warning - eerie deep sea predator
                 return {
-                    primary: 0xdc2626,      // Blood red
-                    secondary: 0x7f1d1d,    // Deep crimson
-                    glow: 0xef4444,         // Eerie red glow
-                    beam: 0xfca5a5,         // Pale red
-                    dark: 0x1c0a0a,         // Nearly black red
+                    primary: 0xdc2626, // Blood red
+                    secondary: 0x7f1d1d, // Deep crimson
+                    glow: 0xef4444, // Eerie red glow
+                    beam: 0xfca5a5, // Pale red
+                    dark: 0x1c0a0a, // Nearly black red
                 }
             case 'purple':
             default:
                 // Default portal - mysterious void
                 return {
-                    primary: 0x8b5cf6,      // Vibrant purple
-                    secondary: 0x5b21b6,    // Deep purple
-                    glow: 0xa78bfa,         // Soft purple glow
-                    beam: 0xc4b5fd,         // Pale lavender beam
-                    dark: 0x0f0a1a,         // Void black-purple
+                    primary: 0x8b5cf6, // Vibrant purple
+                    secondary: 0x5b21b6, // Deep purple
+                    glow: 0xa78bfa, // Soft purple glow
+                    beam: 0xc4b5fd, // Pale lavender beam
+                    dark: 0x0f0a1a, // Void black-purple
                 }
         }
     }
@@ -202,7 +202,7 @@ export class Wormhole {
     private spawnFunnelParticle(): void {
         this.funnelParticles.push({
             angle: Math.random() * Math.PI * 2,
-            depth: Math.random() * 0.3,  // Start near the top
+            depth: Math.random() * 0.3, // Start near the top
             speed: 0.3 + Math.random() * 0.4,
             size: 2 + Math.random() * 3,
             alpha: 0.4 + Math.random() * 0.4,
@@ -231,7 +231,7 @@ export class Wormhole {
         const layers = 4 + Math.floor(this.proximityIntensity * 2)
         for (let i = layers; i >= 0; i--) {
             const scale = 1 + i * 0.12
-            const alpha = (0.06 + this.proximityIntensity * 0.04) - i * 0.012
+            const alpha = 0.06 + this.proximityIntensity * 0.04 - i * 0.012
             g.ellipse(0, 0, rx * scale, ry * scale)
             g.fill({ color: this.colors.glow, alpha: Math.max(0, alpha) })
         }
@@ -263,10 +263,10 @@ export class Wormhole {
         // Draw funnel interior (dark gradient layers)
         const funnelLayers = 15
         for (let i = funnelLayers; i >= 0; i--) {
-            const t = i / funnelLayers  // 0 = bottom, 1 = top
+            const t = i / funnelLayers // 0 = bottom, 1 = top
             const layerRx = rx * (0.05 + t * 0.95)
             const layerRy = ry * (0.05 + t * 0.95)
-            const layerY = depth * (1 - t)  // Lower layers are further down
+            const layerY = depth * (1 - t) // Lower layers are further down
 
             // Darker as it goes deeper
             const alpha = 0.15 + (1 - t) * 0.25
@@ -277,18 +277,18 @@ export class Wormhole {
 
         // Draw gravity spiral lines
         for (const line of this.gravityLines) {
-            const angle = line.startAngle + this.rotationAngle + Math.sin(this.time * line.speed + line.phase) * 0.2
+            const angle =
+                line.startAngle +
+                this.rotationAngle +
+                Math.sin(this.time * line.speed + line.phase) * 0.2
 
             // Draw spiral from top to bottom
-            g.moveTo(
-                Math.cos(angle) * rx,
-                Math.sin(angle) * ry
-            )
+            g.moveTo(Math.cos(angle) * rx, Math.sin(angle) * ry)
 
             const segments = 12
             for (let i = 1; i <= segments; i++) {
                 const t = i / segments
-                const spiralAngle = angle + t * Math.PI * 0.8  // Spiral twist
+                const spiralAngle = angle + t * Math.PI * 0.8 // Spiral twist
                 const shrink = 1 - t * 0.95
                 const px = Math.cos(spiralAngle) * rx * shrink
                 const py = Math.sin(spiralAngle) * ry * shrink + depth * t
@@ -358,7 +358,7 @@ export class Wormhole {
                 const tx = Math.cos(trailAngle) * rx * trailShrink
                 const ty = Math.sin(trailAngle) * ry * trailShrink + depth * trailDepth
                 const trailAlpha = fadeAlpha * (1 - i / trailCount) * 0.5
-                const trailSize = size * (1 - i / trailCount * 0.4)
+                const trailSize = size * (1 - (i / trailCount) * 0.4)
 
                 g.circle(tx, ty, trailSize)
                 g.fill({ color: this.colors.beam, alpha: trailAlpha })
@@ -428,8 +428,12 @@ export class Wormhole {
             const by = Math.sin(angle) * this.radius * 0.75 * this.ellipseRatio
 
             const baseHeight = beam.height * intensityBoost * suckBoost
-            const animatedHeight = baseHeight * (0.6 + Math.sin(this.time * beam.speed * 3 + beam.phase) * 0.4)
-            const animatedAlpha = beam.alpha * (0.5 + Math.sin(this.time * beam.speed * 2 + beam.phase) * 0.5) * intensityBoost
+            const animatedHeight =
+                baseHeight * (0.6 + Math.sin(this.time * beam.speed * 3 + beam.phase) * 0.4)
+            const animatedAlpha =
+                beam.alpha *
+                (0.5 + Math.sin(this.time * beam.speed * 2 + beam.phase) * 0.5) *
+                intensityBoost
 
             // Outer beam
             g.moveTo(bx - beam.width / 2, by)
@@ -454,7 +458,8 @@ export class Wormhole {
         this.rotationAngle += deltaSeconds * (0.4 + this.proximityIntensity * 0.8)
 
         // Smooth proximity transition
-        this.proximityIntensity += (this.targetProximity - this.proximityIntensity) * deltaSeconds * 5
+        this.proximityIntensity +=
+            (this.targetProximity - this.proximityIntensity) * deltaSeconds * 5
 
         // Suction animation
         if (this.isSucking) {
@@ -474,7 +479,7 @@ export class Wormhole {
         for (let i = this.funnelParticles.length - 1; i >= 0; i--) {
             const particle = this.funnelParticles[i]
             particle.depth += particle.speed * deltaSeconds * speedMultiplier
-            particle.angle += particle.rotationSpeed * deltaSeconds * (1 + particle.depth)  // Faster rotation as it goes deeper
+            particle.angle += particle.rotationSpeed * deltaSeconds * (1 + particle.depth) // Faster rotation as it goes deeper
 
             // Respawn when reached singularity
             if (particle.depth >= 1) {
@@ -528,7 +533,7 @@ export class Wormhole {
         return {
             hit: normalizedDist <= 1,
             perfect: perfectNormalizedDist <= 1,
-            distance: normalizedDist * this.radius,  // Approximate distance for compatibility
+            distance: normalizedDist * this.radius, // Approximate distance for compatibility
         }
     }
 

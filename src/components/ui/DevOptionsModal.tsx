@@ -26,7 +26,8 @@ interface DevOptionsModalProps {
 export function DevOptionsModal({ isOpen, onClose }: DevOptionsModalProps) {
     const { i18n } = useTranslation()
     const isKorean = i18n.language === 'ko'
-    const { isAdFree, isAllFormulasUnlocked, setAdFree, setAllFormulasUnlocked } = usePurchaseStore()
+    const { isAdFree, isAllFormulasUnlocked, setAdFree, setAllFormulasUnlocked } =
+        usePurchaseStore()
     const { unlockAll, unlockedFormulas } = useFormulaUnlockStore()
     const [allUnlocked, setAllUnlocked] = useState(false)
     const [debugEnabled, setDebugEnabled] = useState(() => {
@@ -96,7 +97,9 @@ export function DevOptionsModal({ isOpen, onClose }: DevOptionsModalProps) {
                     <div
                         className="p-3 rounded-lg cursor-pointer transition-all active:scale-[0.98]"
                         style={{
-                            background: debugEnabled ? 'rgba(232, 93, 76, 0.2)' : theme.bgPanelLight,
+                            background: debugEnabled
+                                ? 'rgba(232, 93, 76, 0.2)'
+                                : theme.bgPanelLight,
                             border: `2px solid ${debugEnabled ? theme.red : theme.border}`,
                         }}
                         onClick={() => {
@@ -178,7 +181,9 @@ export function DevOptionsModal({ isOpen, onClose }: DevOptionsModalProps) {
                                 boxShadow: `0 2px 0 ${theme.border}`,
                             }}
                         >
-                            {isKorean ? '모든 공식 영구 해금' : 'Force Unlock All Formulas (Purchase)'}
+                            {isKorean
+                                ? '모든 공식 영구 해금'
+                                : 'Force Unlock All Formulas (Purchase)'}
                         </button>
                     ) : (
                         <div
@@ -189,7 +194,9 @@ export function DevOptionsModal({ isOpen, onClose }: DevOptionsModalProps) {
                                 border: `2px solid ${theme.green}`,
                             }}
                         >
-                            {isKorean ? '모든 공식 영구 해금됨' : 'All Formulas Unlocked (Purchase)'}
+                            {isKorean
+                                ? '모든 공식 영구 해금됨'
+                                : 'All Formulas Unlocked (Purchase)'}
                         </div>
                     )}
 

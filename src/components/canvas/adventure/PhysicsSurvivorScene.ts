@@ -1674,7 +1674,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
         const segments = 8
         for (let i = 0; i < segments; i++) {
             const startAngle = (Math.PI * 2 * i) / segments + this.animPhase * 0.5
-            const endAngle = startAngle + (Math.PI * 2) / segments * 0.6 * progress
+            const endAngle = startAngle + ((Math.PI * 2) / segments) * 0.6 * progress
 
             g.arc(px, py, ringRadius, startAngle, endAngle)
             g.stroke({
@@ -1905,7 +1905,13 @@ export class PhysicsSurvivorScene extends AdventureScene {
     /**
      * Spawn hit effect when pulse hits an enemy
      */
-    private spawnPulseHitEffect(x: number, y: number, nx: number, ny: number, intensity: number): void {
+    private spawnPulseHitEffect(
+        x: number,
+        y: number,
+        nx: number,
+        ny: number,
+        intensity: number
+    ): void {
         // Create small burst particles in knockback direction
         const sparkCount = 3 + Math.floor(intensity * 3)
         const baseAngle = Math.atan2(ny, nx)
@@ -2155,7 +2161,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
                 burstGraphics.moveTo(x1, y1)
                 burstGraphics.lineTo(x2, y2)
-                burstGraphics.stroke({ color: 0x66ddff, width: 2, alpha: (1 - burstProgress) * 0.6 })
+                burstGraphics.stroke({
+                    color: 0x66ddff,
+                    width: 2,
+                    alpha: (1 - burstProgress) * 0.6,
+                })
             }
 
             requestAnimationFrame(animateBurst)
@@ -2237,7 +2247,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
             for (let s = 0; s <= segments; s++) {
                 const angle = (s / segments) * Math.PI * 2
                 // Sine wave distortion on the radius
-                const sineOffset = Math.sin(angle * 6 + wavePhase + wave.ringIndex * Math.PI / 3) * this.stats.waveAmplitude * 0.15
+                const sineOffset =
+                    Math.sin(angle * 6 + wavePhase + (wave.ringIndex * Math.PI) / 3) *
+                    this.stats.waveAmplitude *
+                    0.15
                 const r = wave.radius + sineOffset
 
                 points.push({
@@ -2272,7 +2285,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
             // Add flowing particles along the wave
             if (Math.random() < 0.3) {
                 const particleAngle = Math.random() * Math.PI * 2
-                const sineOffset = Math.sin(particleAngle * 6 + wavePhase) * this.stats.waveAmplitude * 0.15
+                const sineOffset =
+                    Math.sin(particleAngle * 6 + wavePhase) * this.stats.waveAmplitude * 0.15
                 const r = wave.radius + sineOffset
                 const px = Math.cos(particleAngle) * r
                 const py = Math.sin(particleAngle) * r
@@ -2452,10 +2466,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 const outerR = radius * 0.9
                 const midR = (innerR + outerR) / 2
 
-                auraGraphics.moveTo(
-                    Math.cos(angle) * innerR,
-                    Math.sin(angle) * innerR
-                )
+                auraGraphics.moveTo(Math.cos(angle) * innerR, Math.sin(angle) * innerR)
                 auraGraphics.quadraticCurveTo(
                     Math.cos(angle + waveOffset) * midR,
                     Math.sin(angle + waveOffset) * midR,
@@ -2469,7 +2480,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
             const particleCount = 10
             for (let i = 0; i < particleCount; i++) {
                 const phase = (this.auraAnimPhase + i * 0.1) % 1
-                const pAngle = (i / particleCount) * Math.PI * 2 + Math.sin(phase * Math.PI * 2) * 0.2
+                const pAngle =
+                    (i / particleCount) * Math.PI * 2 + Math.sin(phase * Math.PI * 2) * 0.2
                 const pDist = radius * (0.2 + phase * 0.7)
                 const px = Math.cos(pAngle) * pDist
                 const py = Math.sin(pAngle) * pDist
@@ -2513,7 +2525,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
             for (let i = 0; i < particleCount; i++) {
                 // Use deterministic pseudo-random based on index and phase
                 const seed = i * 137.5 + this.auraAnimPhase * 0.5
-                const randAngle = (seed % 6.28)
+                const randAngle = seed % 6.28
                 const randDist = ((seed * 0.618) % 1) * radius * 0.85
                 const px = Math.cos(randAngle) * randDist
                 const py = Math.sin(randAngle) * randDist
@@ -2586,7 +2598,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 for (let s = 1; s <= segments; s++) {
                     const t = s / segments
                     const r = radius * (0.35 + t * 0.65)
-                    const curveOffset = Math.sin(t * Math.PI) * curveStrength * (i % 2 === 0 ? 1 : -1)
+                    const curveOffset =
+                        Math.sin(t * Math.PI) * curveStrength * (i % 2 === 0 ? 1 : -1)
                     const angle = baseAngle + rotationOffset + curveOffset
                     shieldGraphics.lineTo(Math.cos(angle) * r, Math.sin(angle) * r)
                 }
@@ -2621,9 +2634,15 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 const headX = ax + Math.cos(tangentAngle) * arrowLen * 0.5
                 const headY = ay + Math.sin(tangentAngle) * arrowLen * 0.5
                 shieldGraphics.moveTo(headX, headY)
-                shieldGraphics.lineTo(headX - Math.cos(tangentAngle - 0.5) * 5, headY - Math.sin(tangentAngle - 0.5) * 5)
+                shieldGraphics.lineTo(
+                    headX - Math.cos(tangentAngle - 0.5) * 5,
+                    headY - Math.sin(tangentAngle - 0.5) * 5
+                )
                 shieldGraphics.moveTo(headX, headY)
-                shieldGraphics.lineTo(headX - Math.cos(tangentAngle + 0.5) * 5, headY - Math.sin(tangentAngle + 0.5) * 5)
+                shieldGraphics.lineTo(
+                    headX - Math.cos(tangentAngle + 0.5) * 5,
+                    headY - Math.sin(tangentAngle + 0.5) * 5
+                )
                 shieldGraphics.stroke({ color: 0x85c1e9, width: 2, alpha: arrowAlpha })
             }
 
@@ -2684,31 +2703,19 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 const arrowAlpha = 0.3 + Math.sin(this.auraAnimPhase * 4 + i) * 0.15
 
                 // Arrow shaft
-                repulseGraphics.moveTo(
-                    Math.cos(angle) * innerDist,
-                    Math.sin(angle) * innerDist
-                )
-                repulseGraphics.lineTo(
-                    Math.cos(angle) * outerDist,
-                    Math.sin(angle) * outerDist
-                )
+                repulseGraphics.moveTo(Math.cos(angle) * innerDist, Math.sin(angle) * innerDist)
+                repulseGraphics.lineTo(Math.cos(angle) * outerDist, Math.sin(angle) * outerDist)
                 repulseGraphics.stroke({ color: 0xf39c12, width: 2, alpha: arrowAlpha })
 
                 // Arrow head
                 const headDist = outerDist
                 const headSize = 6
-                repulseGraphics.moveTo(
-                    Math.cos(angle) * headDist,
-                    Math.sin(angle) * headDist
-                )
+                repulseGraphics.moveTo(Math.cos(angle) * headDist, Math.sin(angle) * headDist)
                 repulseGraphics.lineTo(
                     Math.cos(angle - 0.3) * (headDist - headSize),
                     Math.sin(angle - 0.3) * (headDist - headSize)
                 )
-                repulseGraphics.moveTo(
-                    Math.cos(angle) * headDist,
-                    Math.sin(angle) * headDist
-                )
+                repulseGraphics.moveTo(Math.cos(angle) * headDist, Math.sin(angle) * headDist)
                 repulseGraphics.lineTo(
                     Math.cos(angle + 0.3) * (headDist - headSize),
                     Math.sin(angle + 0.3) * (headDist - headSize)
@@ -2750,7 +2757,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
                         Math.sin(angle + jag) * midR
                     )
                     repulseGraphics.lineTo(Math.cos(angle) * endR, Math.sin(angle) * endR)
-                    repulseGraphics.stroke({ color: 0xffffff, width: 1.5, alpha: 0.6 * (0.3 - arcPhase) / 0.3 })
+                    repulseGraphics.stroke({
+                        color: 0xffffff,
+                        width: 1.5,
+                        alpha: (0.6 * (0.3 - arcPhase)) / 0.3,
+                    })
                 }
             }
 
@@ -2786,7 +2797,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
                 timeGraphics.quadraticCurveTo(
                     Math.cos(angle) * midR * 0.7,
                     Math.sin(angle) * midR * 0.7,
-                    0, 0
+                    0,
+                    0
                 )
                 timeGraphics.stroke({ color: 0x5d6d7e, width: 1, alpha: 0.15 })
             }
@@ -2798,7 +2810,10 @@ export class PhysicsSurvivorScene extends AdventureScene {
             // Hour hand (slowest)
             const hourAngle = slowPhase * 0.1 - Math.PI / 2
             timeGraphics.moveTo(0, 0)
-            timeGraphics.lineTo(Math.cos(hourAngle) * handLen * 0.6, Math.sin(hourAngle) * handLen * 0.6)
+            timeGraphics.lineTo(
+                Math.cos(hourAngle) * handLen * 0.6,
+                Math.sin(hourAngle) * handLen * 0.6
+            )
             timeGraphics.stroke({ color: 0x85929e, width: 2, alpha: 0.4 })
 
             // Minute hand
@@ -2886,7 +2901,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
             // Draw flowing stream lines (water/fluid effect)
             const lineCount = 7
             for (let i = 0; i < lineCount; i++) {
-                const lateralOffset = ((i - (lineCount - 1) / 2) / ((lineCount - 1) / 2)) * streamWidth * 0.8
+                const lateralOffset =
+                    ((i - (lineCount - 1) / 2) / ((lineCount - 1) / 2)) * streamWidth * 0.8
                 const lineStartX = perpX * lateralOffset
                 const lineStartY = perpY * lateralOffset
 
@@ -2905,8 +2921,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
                     if (alpha > 0.05) {
                         const sx = lineStartX + flowDirX * segmentStart
                         const sy = lineStartY + flowDirY * segmentStart
-                        const ex = lineStartX + flowDirX * Math.min(segmentStart + segmentLength, streamRange)
-                        const ey = lineStartY + flowDirY * Math.min(segmentStart + segmentLength, streamRange)
+                        const ex =
+                            lineStartX +
+                            flowDirX * Math.min(segmentStart + segmentLength, streamRange)
+                        const ey =
+                            lineStartY +
+                            flowDirY * Math.min(segmentStart + segmentLength, streamRange)
 
                         flowGraphics.moveTo(sx, sy)
                         flowGraphics.lineTo(ex, ey)
@@ -3102,14 +3122,26 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
             // Motion blur trail (fading behind blade)
             for (let i = 0; i < 5; i++) {
-                const trailAngle = this.slashAngle - (i * 0.15)
+                const trailAngle = this.slashAngle - i * 0.15
                 const trailAlpha = 0.2 * (1 - i / 5)
-                slashGraphics.arc(0, 0, radius, trailAngle - bladeWidth / 2, trailAngle + bladeWidth / 2)
+                slashGraphics.arc(
+                    0,
+                    0,
+                    radius,
+                    trailAngle - bladeWidth / 2,
+                    trailAngle + bladeWidth / 2
+                )
                 slashGraphics.stroke({ color: 0xc0392b, width: 3 - i * 0.4, alpha: trailAlpha })
             }
 
             // Main blade arc (current position)
-            slashGraphics.arc(0, 0, radius, this.slashAngle - bladeWidth / 2, this.slashAngle + bladeWidth / 2)
+            slashGraphics.arc(
+                0,
+                0,
+                radius,
+                this.slashAngle - bladeWidth / 2,
+                this.slashAngle + bladeWidth / 2
+            )
             slashGraphics.stroke({ color: 0xe74c3c, width: 4, alpha: 0.5 })
 
             // Blade tip glow
@@ -3170,7 +3202,11 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // Outer ring - shows beat envelope (pulses with beat frequency)
         const outerAlpha = 0.15 + beatEnvelope * 0.35
         this.beatPulseGraphics.circle(0, 0, radius)
-        this.beatPulseGraphics.stroke({ color: 0x9966ff, width: 2 + beatEnvelope * 3, alpha: outerAlpha })
+        this.beatPulseGraphics.stroke({
+            color: 0x9966ff,
+            width: 2 + beatEnvelope * 3,
+            alpha: outerAlpha,
+        })
 
         // Inner ring - inverse phase for interference pattern
         const innerRadius = radius * 0.6

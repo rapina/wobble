@@ -24,7 +24,7 @@ export interface PortalPairConfig {
 
 // Particle flowing from entrance to exit
 interface ConnectionParticle {
-    progress: number  // 0 = entrance, 1 = exit
+    progress: number // 0 = entrance, 1 = exit
     speed: number
     size: number
     alpha: number
@@ -41,7 +41,7 @@ export class PortalPair {
 
     // Teleportation cooldown per wobble (prevent rapid teleports)
     private cooldownMap = new Map<any, number>()
-    private readonly COOLDOWN_DURATION = 0.5  // seconds
+    private readonly COOLDOWN_DURATION = 0.5 // seconds
 
     // Teleportation state
     private isTeleporting = false
@@ -118,8 +118,14 @@ export class PortalPair {
         // Particles flowing along connection
         for (const particle of this.connectionParticles) {
             const t = particle.progress
-            const px = (1 - t) * (1 - t) * this.entrance.x + 2 * (1 - t) * t * controlX + t * t * this.exit.x
-            const py = (1 - t) * (1 - t) * this.entrance.y + 2 * (1 - t) * t * controlY + t * t * this.exit.y
+            const px =
+                (1 - t) * (1 - t) * this.entrance.x +
+                2 * (1 - t) * t * controlX +
+                t * t * this.exit.x
+            const py =
+                (1 - t) * (1 - t) * this.entrance.y +
+                2 * (1 - t) * t * controlY +
+                t * t * this.exit.y
 
             g.circle(px, py, particle.size)
             g.fill({
@@ -209,12 +215,7 @@ export class PortalPair {
     /**
      * Move portals to new positions
      */
-    movePortals(
-        entranceX: number,
-        entranceY: number,
-        exitX: number,
-        exitY: number
-    ): void {
+    movePortals(entranceX: number, entranceY: number, exitX: number, exitY: number): void {
         this.entrance.moveTo(entranceX, entranceY)
         this.exit.moveTo(exitX, exitY)
     }

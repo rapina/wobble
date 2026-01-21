@@ -48,7 +48,11 @@ const ADVENTURES: Adventure[] = [
         descKey: 'game.wobblediverDesc',
         available: true,
         color: '#6b5b95',
-        tags: ['game.physicsTags.pendulumMotion', 'game.physicsTags.gravity', 'game.physicsTags.momentum'],
+        tags: [
+            'game.physicsTags.pendulumMotion',
+            'game.physicsTags.gravity',
+            'game.physicsTags.momentum',
+        ],
     },
     {
         id: 'coming-soon',
@@ -169,11 +173,29 @@ function WobblediverCard({
                         {/* Abyss water surface */}
                         <div className="relative mt-2 w-full">
                             {/* Wave effect */}
-                            <svg className="w-full h-8" viewBox="0 0 200 32" preserveAspectRatio="none">
+                            <svg
+                                className="w-full h-8"
+                                viewBox="0 0 200 32"
+                                preserveAspectRatio="none"
+                            >
                                 <defs>
-                                    <linearGradient id="abyssGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                        <stop offset="0%" stopColor={abyssTheme.accent} stopOpacity="0.6" />
-                                        <stop offset="100%" stopColor={abyssTheme.bg} stopOpacity="1" />
+                                    <linearGradient
+                                        id="abyssGradient"
+                                        x1="0%"
+                                        y1="0%"
+                                        x2="0%"
+                                        y2="100%"
+                                    >
+                                        <stop
+                                            offset="0%"
+                                            stopColor={abyssTheme.accent}
+                                            stopOpacity="0.6"
+                                        />
+                                        <stop
+                                            offset="100%"
+                                            stopColor={abyssTheme.bg}
+                                            stopOpacity="1"
+                                        />
                                     </linearGradient>
                                 </defs>
                                 <path
@@ -270,7 +292,10 @@ function WobblediverCard({
                                         border: `1px solid ${abyssTheme.accent}50`,
                                     }}
                                 >
-                                    <Target className="w-3 h-3" style={{ color: abyssTheme.teal }} />
+                                    <Target
+                                        className="w-3 h-3"
+                                        style={{ color: abyssTheme.teal }}
+                                    />
                                     <span
                                         className="text-[10px] font-bold"
                                         style={{ color: abyssTheme.teal }}
@@ -496,7 +521,9 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreen
                 }}
             >
                 {/* Game Cards */}
-                <div className="space-y-4 mt-4">{ADVENTURES.map((adventure, index) => renderCard(adventure, index))}</div>
+                <div className="space-y-4 mt-4">
+                    {ADVENTURES.map((adventure, index) => renderCard(adventure, index))}
+                </div>
 
                 {/* Footer hint */}
                 <div className="mt-8 text-center">

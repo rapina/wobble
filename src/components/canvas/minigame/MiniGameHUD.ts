@@ -179,7 +179,14 @@ export class MiniGameHUD {
         this.container.addChild(this.feedbackText)
     }
 
-    private drawCard(g: Graphics, x: number, y: number, w: number, h: number, borderColor: number): void {
+    private drawCard(
+        g: Graphics,
+        x: number,
+        y: number,
+        w: number,
+        h: number,
+        borderColor: number
+    ): void {
         // Shadow
         g.roundRect(x + 2, y + 3, w, h, 8)
         g.fill({ color: 0x000000, alpha: 0.5 })
@@ -259,7 +266,7 @@ export class MiniGameHUD {
      * Update score display
      */
     updateScore(score: number, combo: number): void {
-        if (this.displayMode === 'stage') return  // Don't update score in stage mode
+        if (this.displayMode === 'stage') return // Don't update score in stage mode
 
         this.scoreText.text = score.toLocaleString()
 

@@ -286,9 +286,21 @@ export class ResultScreen {
                 if (!skillDef) return
 
                 const iconBg = new Graphics()
-                iconBg.roundRect(iconX - iconSize / 2, skillIconsY - iconSize / 2, iconSize, iconSize, 4)
+                iconBg.roundRect(
+                    iconX - iconSize / 2,
+                    skillIconsY - iconSize / 2,
+                    iconSize,
+                    iconSize,
+                    4
+                )
                 iconBg.fill(0x2a2a3e)
-                iconBg.roundRect(iconX - iconSize / 2, skillIconsY - iconSize / 2, iconSize, iconSize, 4)
+                iconBg.roundRect(
+                    iconX - iconSize / 2,
+                    skillIconsY - iconSize / 2,
+                    iconSize,
+                    iconSize,
+                    4
+                )
                 iconBg.stroke({ color: skillDef.color, width: 1.5 })
                 this.card!.addChild(iconBg)
 
@@ -320,7 +332,13 @@ export class ResultScreen {
 
         const rankBoxSize = 60
         const rankShadow = new Graphics()
-        rankShadow.roundRect(-rankBoxSize / 2 + 2, -rankBoxSize / 2 + 4, rankBoxSize, rankBoxSize, 12)
+        rankShadow.roundRect(
+            -rankBoxSize / 2 + 2,
+            -rankBoxSize / 2 + 4,
+            rankBoxSize,
+            rankBoxSize,
+            12
+        )
         rankShadow.fill(0x000000)
         this.rankContainer.addChild(rankShadow)
 

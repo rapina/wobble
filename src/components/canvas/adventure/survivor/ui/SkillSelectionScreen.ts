@@ -11,12 +11,7 @@ import { MAX_SKILLS } from '../types'
 import { easeOutBack } from '../utils'
 import { WaveText } from '../../WaveText'
 import { t } from '@/utils/localization'
-import {
-    BALATRO_COLORS,
-    BALATRO_DESIGN,
-    drawBalatroCard,
-    drawBalatroBadge,
-} from './BalatroButton'
+import { BALATRO_COLORS, BALATRO_DESIGN, drawBalatroCard, drawBalatroBadge } from './BalatroButton'
 import { HolographicFilter } from '@/components/canvas/filters/HolographicFilter'
 import { getPhysicsCategory } from '../skills/types'
 
@@ -259,7 +254,6 @@ export class SkillSelectionScreen {
                 this.drawSparkles(card.sparkles, this.animTime, 70, 100)
             }
         })
-
     }
 
     /**
@@ -505,7 +499,11 @@ export class SkillSelectionScreen {
 
         // Card background - Balatro style dark purple/navy
         const cardBg = new Graphics()
-        const borderColor = isBaseSkill ? BALATRO_COLORS.gold : isModifierSkill ? BALATRO_COLORS.cyan : def.color
+        const borderColor = isBaseSkill
+            ? BALATRO_COLORS.gold
+            : isModifierSkill
+              ? BALATRO_COLORS.cyan
+              : def.color
         // Balatro-style dark backgrounds with slight color tint
         const bgColor = isBaseSkill ? 0x1e1a2e : isModifierSkill ? 0x1a2028 : BALATRO_COLORS.bgCard
         drawBalatroCard(cardBg, -cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, {
@@ -582,7 +580,10 @@ export class SkillSelectionScreen {
                 }),
             })
             typeLabel.anchor.set(0.5)
-            typeLabel.position.set(typeBadgeX + typeBadgeWidth / 2, typeBadgeY + typeBadgeHeight / 2)
+            typeLabel.position.set(
+                typeBadgeX + typeBadgeWidth / 2,
+                typeBadgeY + typeBadgeHeight / 2
+            )
             container.addChild(typeLabel)
         }
 
@@ -591,7 +592,13 @@ export class SkillSelectionScreen {
             const levelBadge = new Graphics()
             const lvBadgeWidth = 60
             const lvBadgeHeight = 18
-            levelBadge.roundRect(-lvBadgeWidth / 2, -cardHeight / 2 + 6, lvBadgeWidth, lvBadgeHeight, 4)
+            levelBadge.roundRect(
+                -lvBadgeWidth / 2,
+                -cardHeight / 2 + 6,
+                lvBadgeWidth,
+                lvBadgeHeight,
+                4
+            )
             levelBadge.fill(BALATRO_COLORS.blue)
             levelBadge.stroke({ color: BALATRO_COLORS.border, width: 1.5 })
             container.addChild(levelBadge)
@@ -717,7 +724,11 @@ export class SkillSelectionScreen {
             cardData.isHovered = true
             // Highlight effect - brighter Balatro style
             cardBg.clear()
-            const hoverBgColor = isBaseSkill ? 0x2a2540 : isModifierSkill ? 0x252a35 : BALATRO_COLORS.bgCardLight
+            const hoverBgColor = isBaseSkill
+                ? 0x2a2540
+                : isModifierSkill
+                  ? 0x252a35
+                  : BALATRO_COLORS.bgCardLight
             drawBalatroCard(cardBg, -cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, {
                 bgColor: hoverBgColor,
                 borderColor: BALATRO_COLORS.gold,
@@ -797,7 +808,7 @@ export class SkillSelectionScreen {
         }
 
         // Central glow pulse
-        const pulseAlpha = (Math.sin(time * 3) + 1) / 2 * 0.15
+        const pulseAlpha = ((Math.sin(time * 3) + 1) / 2) * 0.15
         graphics.circle(0, -30, 45)
         graphics.fill({ color: BALATRO_COLORS.gold, alpha: pulseAlpha })
     }

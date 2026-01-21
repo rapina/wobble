@@ -11,7 +11,7 @@ export interface GoalConfig {
     x: number
     y: number
     radius: number
-    perfectRadius?: number  // Inner zone for perfect hit
+    perfectRadius?: number // Inner zone for perfect hit
 }
 
 export class Goal {
@@ -28,7 +28,7 @@ export class Goal {
     // Animation state
     private time = 0
     private isHit = false
-    private bounceAmount = 0  // For landing animation
+    private bounceAmount = 0 // For landing animation
 
     // Helper wobble animation
     private helperSide: 'left' | 'right' = 'left'
@@ -53,7 +53,7 @@ export class Goal {
         // Helper wobble (pushes the cushion)
         this.helperWobble = new Blob({
             size: 22,
-            color: 0x3498db,  // Blue color
+            color: 0x3498db, // Blue color
             shape: 'circle',
             expression: 'happy',
             glowIntensity: 0.2,
@@ -80,10 +80,16 @@ export class Goal {
 
         // Main cushion body (soft rectangle with rounded ends)
         g.roundRect(-width / 2, -height / 2 - bounce * 10, width, height + bounce * 5, height * 0.4)
-        g.fill({ color: 0xe74c3c })  // Red cushion
+        g.fill({ color: 0xe74c3c }) // Red cushion
 
         // Cushion top highlight
-        g.roundRect(-width / 2 + 4, -height / 2 + 4 - bounce * 10, width - 8, height * 0.4, height * 0.3)
+        g.roundRect(
+            -width / 2 + 4,
+            -height / 2 + 4 - bounce * 10,
+            width - 8,
+            height * 0.4,
+            height * 0.3
+        )
         g.fill({ color: 0xec7063, alpha: 0.6 })
 
         // Cushion stripes (like a mattress)
@@ -255,9 +261,9 @@ export class Goal {
     moveTo(newX: number, y: number): void {
         // Determine push direction based on movement
         if (newX > this.x) {
-            this.helperSide = 'left'  // Push from left
+            this.helperSide = 'left' // Push from left
         } else if (newX < this.x) {
-            this.helperSide = 'right'  // Push from right
+            this.helperSide = 'right' // Push from right
         }
 
         this.x = newX

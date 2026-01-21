@@ -16,24 +16,24 @@ interface BaseGameRecord {
 
 // Wobblediver-specific records
 export interface WobblediverRecord extends BaseGameRecord {
-    bestDepth: number           // Highest depth (round) reached
-    highScore: number           // Best total score
-    totalDepth: number          // Sum of all depths reached (for stats)
-    totalScore: number          // Sum of all scores (for stats)
-    perfectEscapes: number      // Number of perfect (S-rank) escapes
-    bestRank: string            // Best rank achieved ('S' | 'A' | 'B' | 'C' | 'D')
+    bestDepth: number // Highest depth (round) reached
+    highScore: number // Best total score
+    totalDepth: number // Sum of all depths reached (for stats)
+    totalScore: number // Sum of all scores (for stats)
+    perfectEscapes: number // Number of perfect (S-rank) escapes
+    bestRank: string // Best rank achieved ('S' | 'A' | 'B' | 'C' | 'D')
 }
 
 // Collision scene records (physics simulation)
 export interface CollisionRecord extends BaseGameRecord {
-    totalSimulations: number    // How many times the simulation was run
+    totalSimulations: number // How many times the simulation was run
 }
 
 // Generic record type for future games
 export interface GenericGameRecord extends BaseGameRecord {
     highScore: number
     bestLevel: number
-    [key: string]: number | string | null  // Allow additional custom fields
+    [key: string]: number | string | null // Allow additional custom fields
 }
 
 // Union type for all game records
@@ -79,11 +79,14 @@ interface MinigameRecordState {
     recordCollisionSimulation: () => void
 
     // Generic game record function (for future games)
-    recordGenericGame: (gameId: MinigameId, result: {
-        score?: number
-        level?: number
-        customFields?: Record<string, number | string>
-    }) => void
+    recordGenericGame: (
+        gameId: MinigameId,
+        result: {
+            score?: number
+            level?: number
+            customFields?: Record<string, number | string>
+        }
+    ) => void
 
     // Get records for a specific game
     getRecord: <T extends MinigameRecord>(gameId: MinigameId) => T | null
@@ -114,7 +117,9 @@ export const useMinigameRecordStore = create<MinigameRecordState>()(
 
             recordWobblediverGame: (result) => {
                 set((state) => {
-                    const current = (state.records.wobblediver as WobblediverRecord) || { ...DEFAULT_WOBBLEDIVER_RECORD }
+                    const current = (state.records.wobblediver as WobblediverRecord) || {
+                        ...DEFAULT_WOBBLEDIVER_RECORD,
+                    }
 
                     // Determine best rank
                     const newBestRank =
@@ -144,7 +149,9 @@ export const useMinigameRecordStore = create<MinigameRecordState>()(
 
             recordCollisionSimulation: () => {
                 set((state) => {
-                    const current = (state.records.collision as CollisionRecord) || { ...DEFAULT_COLLISION_RECORD }
+                    const current = (state.records.collision as CollisionRecord) || {
+                        ...DEFAULT_COLLISION_RECORD,
+                    }
 
                     return {
                         records: {
@@ -173,12 +180,14 @@ export const useMinigameRecordStore = create<MinigameRecordState>()(
                         ...current,
                         totalGames: current.totalGames + 1,
                         lastPlayedAt: Date.now(),
-                        highScore: result.score !== undefined
-                            ? Math.max(current.highScore || 0, result.score)
-                            : current.highScore || 0,
-                        bestLevel: result.level !== undefined
-                            ? Math.max(current.bestLevel || 0, result.level)
-                            : current.bestLevel || 0,
+                        highScore:
+                            result.score !== undefined
+                                ? Math.max(current.highScore || 0, result.score)
+                                : current.highScore || 0,
+                        bestLevel:
+                            result.level !== undefined
+                                ? Math.max(current.bestLevel || 0, result.level)
+                                : current.bestLevel || 0,
                         ...result.customFields,
                     }
 
@@ -196,11 +205,17 @@ export const useMinigameRecordStore = create<MinigameRecordState>()(
             },
 
             getWobblediverRecord: () => {
-                return (get().records.wobblediver as WobblediverRecord) || { ...DEFAULT_WOBBLEDIVER_RECORD }
+                return (
+                    (get().records.wobblediver as WobblediverRecord) || {
+                        ...DEFAULT_WOBBLEDIVER_RECORD,
+                    }
+                )
             },
 
             getCollisionRecord: () => {
-                return (get().records.collision as CollisionRecord) || { ...DEFAULT_COLLISION_RECORD }
+                return (
+                    (get().records.collision as CollisionRecord) || { ...DEFAULT_COLLISION_RECORD }
+                )
             },
 
             isNewBest: (gameId, field, value) => {
@@ -215,11 +230,12 @@ export const useMinigameRecordStore = create<MinigameRecordState>()(
 
             resetGameRecord: (gameId) => {
                 set((state) => {
-                    const defaultRecord = gameId === 'wobblediver'
-                        ? { ...DEFAULT_WOBBLEDIVER_RECORD }
-                        : gameId === 'collision'
-                        ? { ...DEFAULT_COLLISION_RECORD }
-                        : { totalGames: 0, lastPlayedAt: null, highScore: 0, bestLevel: 0 }
+                    const defaultRecord =
+                        gameId === 'wobblediver'
+                            ? { ...DEFAULT_WOBBLEDIVER_RECORD }
+                            : gameId === 'collision'
+                              ? { ...DEFAULT_COLLISION_RECORD }
+                              : { totalGames: 0, lastPlayedAt: null, highScore: 0, bestLevel: 0 }
 
                     return {
                         records: {

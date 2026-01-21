@@ -4,7 +4,10 @@
 
 import { DifficultyConfig, DifficultyPhase, getDifficultyForTime } from '../MiniGameTypes'
 
-export type DifficultyChangeCallback = (config: DifficultyConfig, previousPhase: DifficultyPhase) => void
+export type DifficultyChangeCallback = (
+    config: DifficultyConfig,
+    previousPhase: DifficultyPhase
+) => void
 
 export class DifficultyManager {
     private currentConfig: DifficultyConfig

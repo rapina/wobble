@@ -656,7 +656,9 @@ export class WobblediverIntro {
         this.nextButton.addChild(btnBg)
 
         const btnText = new Text({
-            text: isLastStep ? i18n.t('wobblediver.buttons.start') : i18n.t('wobblediver.buttons.next'),
+            text: isLastStep
+                ? i18n.t('wobblediver.buttons.start')
+                : i18n.t('wobblediver.buttons.next'),
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 14,

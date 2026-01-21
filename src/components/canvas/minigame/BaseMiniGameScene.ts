@@ -111,14 +111,11 @@ export abstract class BaseMiniGameScene {
         this.resultScreen.onExit = () => this.callbacks.onExit?.()
         this.resultScreen.onContinueWithAd = this.callbacks.onContinueWithAd
             ? (onSuccess, onFail) => {
-                this.callbacks.onContinueWithAd!(
-                    () => {
-                        onSuccess()
-                        this.handleContinue()
-                    },
-                    onFail
-                )
-            }
+                  this.callbacks.onContinueWithAd!(() => {
+                      onSuccess()
+                      this.handleContinue()
+                  }, onFail)
+              }
             : undefined
         this.container.addChild(this.resultScreen.screenContainer)
 
@@ -435,7 +432,10 @@ export abstract class BaseMiniGameScene {
     protected abstract setupGame(): void
     protected abstract updateGame(deltaSeconds: number): void
     protected abstract animate(ticker: Ticker): void
-    protected abstract onDifficultyChange(config: DifficultyConfig, previousPhase: DifficultyPhase): void
+    protected abstract onDifficultyChange(
+        config: DifficultyConfig,
+        previousPhase: DifficultyPhase
+    ): void
 
     // Optional lifecycle methods
     protected onGameStart(): void {
