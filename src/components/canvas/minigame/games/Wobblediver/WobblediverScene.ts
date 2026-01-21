@@ -4325,6 +4325,28 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.transitionContainer.visible = false
     }
 
+    /**
+     * Handle continue after ad revival - restore full lives and restart current stage
+     */
+    protected onGameContinue(): void {
+        // Reset lives to full (base class only restores 1 life)
+        this.lifeSystem.reset()
+
+        // Update custom HUD
+        this.customHudLives = this.lifeSystem.lives
+        this.hud.updateLives(this.lifeSystem.lives, this.lifeSystem.maxLives)
+
+        // Reset drowning state
+        this.isDrowningActive = false
+        this.drowningBubbles = []
+        this.surfaceRipples = []
+        this.abyssBloodLevel = 0
+        this.abyssSplashEffects = []
+
+        // Restart from current stage (not increment round)
+        this.restartCurrentStage()
+    }
+
     public destroy(): void {
         // Cleanup wobble
         if (this.wobble) {

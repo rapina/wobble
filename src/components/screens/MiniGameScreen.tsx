@@ -199,19 +199,6 @@ export function MiniGameScreen({ gameId, onBack }: MiniGameScreenProps) {
                                 RESUME
                             </button>
                             <button
-                                onClick={handleRetry}
-                                className="px-8 py-3 rounded-lg font-bold transition-all active:scale-95"
-                                style={{
-                                    background: '#c9a227',
-                                    color: '#0d1117',
-                                    border: '2px solid #ddb832',
-                                    boxShadow:
-                                        '0 4px 0 #9b7f1e, 0 6px 15px rgba(201, 162, 39, 0.3)',
-                                }}
-                            >
-                                RETRY
-                            </button>
-                            <button
                                 onClick={handleExit}
                                 className="px-8 py-3 rounded-lg font-bold transition-all active:scale-95"
                                 style={{
