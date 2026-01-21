@@ -6,6 +6,7 @@
  */
 
 import { Container, Graphics } from 'pixi.js'
+import { PortalOrientation } from './StageConfig'
 
 export interface WormholeConfig {
     x: number
@@ -15,6 +16,7 @@ export interface WormholeConfig {
     isFinish?: boolean
     portalColor?: 'purple' | 'teal' | 'red' | 'gold'
     widthScale?: number // Horizontal stretch factor (1.0 = normal, 2.0 = double width)
+    orientation?: PortalOrientation // 'horizontal' (default) or 'vertical'
 }
 
 // Particle falling into the funnel
@@ -58,6 +60,7 @@ export class Wormhole {
     public perfectRadius: number
     public isFinish: boolean
     public widthScale: number // Horizontal stretch (1.0 = circle, 2.0 = wide ellipse)
+    public orientation: PortalOrientation // 'horizontal' or 'vertical'
 
     // Animation state
     private time = 0
@@ -101,6 +104,7 @@ export class Wormhole {
         this.perfectRadius = config.perfectRadius ?? config.radius * 0.4
         this.isFinish = config.isFinish ?? true
         this.widthScale = config.widthScale ?? 1.0
+        this.orientation = config.orientation ?? 'horizontal'
 
         this.colors = this.getColorTheme(config.portalColor ?? (this.isFinish ? 'teal' : 'purple'))
 
@@ -211,11 +215,176 @@ export class Wormhole {
     }
 
     private draw(): void {
-        this.drawGlow()
-        this.drawFunnel()
-        this.drawParticles()
-        this.drawBase()
-        this.drawBeams()
+        if (this.orientation === 'vertical') {
+            // Vertical portal: Diablo/Portal game style doorway
+            this.drawVerticalPortal()
+        } else {
+            // Horizontal portal: Funnel/gravity well style
+            this.drawGlow()
+            this.drawFunnel()
+            this.drawParticles()
+            this.drawBase()
+            this.drawBeams()
+        }
+    }
+
+    /**
+     * Draw vertical portal - Diablo/Portal game inspired standing doorway
+     */
+    private drawVerticalPortal(): void {
+        const g = this.glowGraphics
+        const fg = this.funnelGraphics
+        const pg = this.particleGraphics
+        const bg = this.baseGraphics
+        const beamG = this.beamGraphics
+
+        g.clear()
+        fg.clear()
+        pg.clear()
+        bg.clear()
+        beamG.clear()
+
+        // Vertical portal dimensions (tall oval)
+        const rx = this.radius * 0.6 * this.widthScale // Width
+        const ry = this.radius * 1.2 // Height (taller than wide)
+        const pulse = 1 + Math.sin(this.pulsePhase) * 0.08
+        const intensityBoost = 1 + this.proximityIntensity * 0.4
+
+        // === OUTER GLOW (on glowGraphics) ===
+        const glowLayers = 5
+        for (let i = glowLayers; i >= 0; i--) {
+            const scale = 1 + i * 0.15
+            const alpha = (0.08 - i * 0.012) * intensityBoost
+            g.ellipse(0, 0, rx * scale * pulse, ry * scale * pulse)
+            g.fill({ color: this.colors.glow, alpha: Math.max(0, alpha) })
+        }
+
+        // Hit flash
+        if (this.hitFlashTimer > 0) {
+            const flashAlpha = (this.hitFlashTimer / 0.3) * 0.5
+            g.ellipse(0, 0, rx * 1.4, ry * 1.4)
+            g.fill({ color: 0xffffff, alpha: flashAlpha })
+        }
+
+        // === PORTAL INTERIOR (on funnelGraphics) ===
+        // Dark void center with gradient layers
+        const voidLayers = 8
+        for (let i = 0; i < voidLayers; i++) {
+            const t = i / voidLayers
+            const layerRx = rx * (1 - t * 0.85)
+            const layerRy = ry * (1 - t * 0.85)
+            const alpha = 0.3 + t * 0.5
+
+            fg.ellipse(0, 0, layerRx, layerRy)
+            fg.fill({ color: this.colors.dark, alpha })
+        }
+
+        // Swirling energy rings inside
+        const ringCount = 6
+        for (let i = 0; i < ringCount; i++) {
+            const t = (i + 1) / (ringCount + 1)
+            const ringRx = rx * (1 - t * 0.7)
+            const ringRy = ry * (1 - t * 0.7)
+            const waveOffset = Math.sin(this.time * 2 + i * 0.8) * 3
+            const alpha = (0.25 - t * 0.15) * intensityBoost
+
+            fg.ellipse(waveOffset * (1 - t), 0, ringRx, ringRy)
+            fg.stroke({ color: this.colors.secondary, width: 2, alpha })
+        }
+
+        // Center singularity/void
+        const centerPulse = 0.7 + Math.sin(this.pulsePhase * 1.5) * 0.3
+        fg.ellipse(0, 0, rx * 0.15 * centerPulse, ry * 0.15 * centerPulse)
+        fg.fill({ color: this.colors.glow, alpha: 0.4 })
+        fg.ellipse(0, 0, rx * 0.08 * centerPulse, ry * 0.08 * centerPulse)
+        fg.fill({ color: 0xffffff, alpha: 0.6 })
+
+        // === SWIRLING PARTICLES (on particleGraphics) ===
+        for (const particle of this.funnelParticles) {
+            // Orbit around the portal edge
+            const orbitRx = rx * (0.7 + particle.depth * 0.4)
+            const orbitRy = ry * (0.7 + particle.depth * 0.4)
+            const px = Math.cos(particle.angle) * orbitRx
+            const py = Math.sin(particle.angle) * orbitRy
+
+            // Particle with trail
+            const trailCount = 4
+            for (let t = trailCount - 1; t >= 0; t--) {
+                const trailAngle = particle.angle - t * 0.2
+                const tx = Math.cos(trailAngle) * orbitRx
+                const ty = Math.sin(trailAngle) * orbitRy
+                const trailAlpha = particle.alpha * (1 - t / trailCount) * 0.5
+                const trailSize = particle.size * (1 - (t / trailCount) * 0.4)
+
+                pg.circle(tx, ty, trailSize)
+                pg.fill({ color: this.colors.beam, alpha: trailAlpha })
+            }
+
+            // Main particle
+            pg.circle(px, py, particle.size)
+            pg.fill({ color: this.colors.beam, alpha: particle.alpha })
+
+            // Bright core
+            pg.circle(px, py, particle.size * 0.4)
+            pg.fill({ color: 0xffffff, alpha: particle.alpha * 0.8 })
+        }
+
+        // === PORTAL FRAME/EDGE (on baseGraphics) ===
+        // Outer glowing ring
+        bg.ellipse(0, 0, rx * pulse, ry * pulse)
+        bg.stroke({
+            color: this.colors.primary,
+            width: 4,
+            alpha: Math.min(1, 0.9 * intensityBoost),
+        })
+
+        // Inner ring
+        bg.ellipse(0, 0, rx * 0.92 * pulse, ry * 0.92 * pulse)
+        bg.stroke({
+            color: this.colors.secondary,
+            width: 2,
+            alpha: Math.min(1, 0.7 * intensityBoost),
+        })
+
+        // Animated edge sparks
+        const sparkCount = 16
+        for (let i = 0; i < sparkCount; i++) {
+            const angle = (Math.PI * 2 * i) / sparkCount + this.rotationAngle
+            const sparkPulse = 0.5 + Math.sin(this.time * 4 + i * 0.7) * 0.5
+            const sparkX = Math.cos(angle) * rx * 1.02
+            const sparkY = Math.sin(angle) * ry * 1.02
+            const sparkSize = 2 + sparkPulse * 2
+
+            bg.circle(sparkX, sparkY, sparkSize)
+            bg.fill({ color: this.colors.beam, alpha: 0.4 * sparkPulse * intensityBoost })
+        }
+
+        // === ENERGY WISPS (on beamGraphics) ===
+        const wispCount = 4
+        for (let i = 0; i < wispCount; i++) {
+            const baseAngle = (Math.PI * 2 * i) / wispCount + this.time * 0.5
+            const wispPhase = this.time * 2 + i * 1.5
+            const wispLength = 15 + Math.sin(wispPhase) * 10
+            const wispAlpha = 0.3 + Math.sin(wispPhase + 1) * 0.2
+
+            // Wisp emanates from edge
+            const startX = Math.cos(baseAngle) * rx * 0.95
+            const startY = Math.sin(baseAngle) * ry * 0.95
+            const endX = Math.cos(baseAngle) * (rx + wispLength)
+            const endY = Math.sin(baseAngle) * (ry * 0.8 + wispLength * 0.6)
+
+            beamG.moveTo(startX, startY)
+            beamG.lineTo(endX, endY)
+            beamG.stroke({
+                color: this.colors.beam,
+                width: 3,
+                alpha: wispAlpha * intensityBoost,
+            })
+
+            // Wisp tip glow
+            beamG.circle(endX, endY, 3)
+            beamG.fill({ color: this.colors.beam, alpha: wispAlpha * 0.6 })
+        }
     }
 
     private drawGlow(): void {
@@ -474,17 +643,27 @@ export class Wormhole {
             }
         }
 
-        // Update funnel particles (spiral down into singularity)
+        // Update particles based on orientation
         const speedMultiplier = 1 + this.proximityIntensity * 0.5 + (this.isSucking ? 1 : 0)
         for (let i = this.funnelParticles.length - 1; i >= 0; i--) {
             const particle = this.funnelParticles[i]
-            particle.depth += particle.speed * deltaSeconds * speedMultiplier
-            particle.angle += particle.rotationSpeed * deltaSeconds * (1 + particle.depth) // Faster rotation as it goes deeper
 
-            // Respawn when reached singularity
-            if (particle.depth >= 1) {
-                this.funnelParticles.splice(i, 1)
-                this.spawnFunnelParticle()
+            if (this.orientation === 'vertical') {
+                // Vertical portal: particles orbit around the edge
+                particle.angle += particle.rotationSpeed * deltaSeconds * speedMultiplier
+                // Slowly vary depth to create layered orbits
+                particle.depth += Math.sin(this.time + particle.angle) * deltaSeconds * 0.1
+                particle.depth = Math.max(0, Math.min(1, particle.depth))
+            } else {
+                // Horizontal portal: spiral down into singularity
+                particle.depth += particle.speed * deltaSeconds * speedMultiplier
+                particle.angle += particle.rotationSpeed * deltaSeconds * (1 + particle.depth)
+
+                // Respawn when reached singularity
+                if (particle.depth >= 1) {
+                    this.funnelParticles.splice(i, 1)
+                    this.spawnFunnelParticle()
+                }
             }
         }
 
@@ -520,14 +699,27 @@ export class Wormhole {
         const dx = px - this.x
         const dy = py - this.y
 
+        // Get radii based on orientation
+        let rx: number, ry: number, perfectRx: number, perfectRy: number
+
+        if (this.orientation === 'vertical') {
+            // Vertical portal: tall oval (narrower width, taller height)
+            rx = this.radius * 0.6 * this.widthScale
+            ry = this.radius * 1.2
+            perfectRx = this.perfectRadius * 0.6 * this.widthScale
+            perfectRy = this.perfectRadius * 1.2
+        } else {
+            // Horizontal portal: flat ellipse
+            rx = this.radius * this.widthScale
+            ry = this.radius * this.ellipseRatio
+            perfectRx = this.perfectRadius * this.widthScale
+            perfectRy = this.perfectRadius * this.ellipseRatio
+        }
+
         // Elliptical hit detection: normalize by radii
-        const rx = this.radius * this.widthScale
-        const ry = this.radius * this.ellipseRatio
         const normalizedDist = Math.sqrt((dx / rx) ** 2 + (dy / ry) ** 2)
 
         // Perfect zone also elliptical
-        const perfectRx = this.perfectRadius * this.widthScale
-        const perfectRy = this.perfectRadius * this.ellipseRatio
         const perfectNormalizedDist = Math.sqrt((dx / perfectRx) ** 2 + (dy / perfectRy) ** 2)
 
         return {
@@ -574,6 +766,31 @@ export class Wormhole {
     setWidthScale(scale: number): void {
         this.widthScale = scale
         this.draw()
+    }
+
+    /**
+     * Set portal orientation
+     * - 'horizontal': Flat funnel style (looking down into it)
+     * - 'vertical': Standing doorway style (Diablo/Portal game style)
+     */
+    setOrientation(orientation: PortalOrientation): void {
+        this.orientation = orientation
+        // No rotation needed - we use completely different rendering per orientation
+        this.draw()
+    }
+
+    /**
+     * Get the exit velocity direction based on orientation
+     * Returns a unit vector for the exit direction
+     */
+    getExitDirection(): { x: number; y: number } {
+        if (this.orientation === 'vertical') {
+            // Vertical portal shoots left or right (random)
+            return { x: Math.random() > 0.5 ? 1 : -1, y: 0 }
+        } else {
+            // Horizontal portal shoots down
+            return { x: 0, y: 1 }
+        }
     }
 
     destroy(): void {

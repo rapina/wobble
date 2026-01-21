@@ -106,14 +106,14 @@
         "intro": {
             "title1": "Wobblediver",
             "message1": "...Where am I?\nSomething is watching me from below...",
-            "title2": "I Must Escape",
-            "message2": "Hanging from a pendulum, swinging...\nTap at the right moment to jump!",
-            "title3": "To the Safe Zone!",
-            "message3": "Land on the yellow point to survive!\nHigher accuracy = higher score.",
+            "title2": "A Strange Friend",
+            "message2": "A jellyfish is holding me with its tentacle!\nTap to make it pulse and swing me.",
+            "title3": "Escape to the Wormhole!",
+            "message3": "Land in the swirling wormhole to escape!\nHigher accuracy = higher score.",
             "title4": "Avoid the Abyss",
-            "message4": "Down there... eyes are waiting.\nFall in and... there's no return.",
-            "title5": "...I Must Survive",
-            "message5": "They are hungry."
+            "message4": "Down there... eyes and tentacles are waiting.\nFall in and... there's no return.",
+            "title5": "...I Must Go",
+            "message5": "My jellyfish friend will help.\nBefore they get hungry..."
         },
         "panic": {
             "phrase1": "Ahhhhh!",
@@ -135,15 +135,16 @@
             "tapToStart": "TAP TO START"
         },
         "hints": {
-            "wormholeShrinks": "Someone's squeezing the exit... (wormhole shrinks)",
-            "goalMoves": "The exit is running away... (wormhole moves)",
+            "wormholeShrinks": "The exit is getting narrower... (wormhole shrinks)",
+            "abyssTentacles": "Something's gripping the exit... (abyss tentacles)",
             "portalAppears": "A rift in space opens... (portal appears)",
             "obstacleAppears": "Something stirs in the walls... (tentacles emerge)",
             "moreObstacles": "More of them are waking... (more tentacles)",
             "maxObstacles": "They're everywhere... (max tentacles)",
             "trajectoryTimed": "Trust your instincts... (trajectory limited)",
             "trajectoryFlicker": "Something clouds your vision... (trajectory flickers)",
-            "trajectoryMinimal": "Can barely see anything... (trajectory faint)"
+            "trajectoryMinimal": "Can barely see anything... (trajectory faint)",
+            "waterPressure": "Water pressure rising... (increased gravity)"
         },
         "perfect": {
             "phrase1": "Perfect!",

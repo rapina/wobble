@@ -23,6 +23,9 @@ import { AnchorWobble } from './AnchorWobble'
 import { WobblediverIntro } from './WobblediverIntro'
 import { AbyssFluidFilter } from '@/components/canvas/filters/AbyssFluidFilter'
 import { BalatroFilter } from '@/components/canvas/filters/BalatroFilter'
+import { StageGenerator } from './StageGenerator'
+import { AbyssTentacle } from './AbyssTentacle'
+import { StageConfig, AnchorPersonalityConfig, ANCHOR_PERSONALITIES } from './StageConfig'
 import i18n from '@/i18n'
 
 // Balatro-style colors
@@ -140,6 +143,12 @@ export class WobblediverScene extends BaseMiniGameScene {
     declare private portalPairs: PortalPair[] // Teleportation portals
     declare private obstacles: ObstacleWobble[]
     declare private anchorWobble: AnchorWobble
+    declare private abyssTentacles: AbyssTentacle[] // Tentacles that pull the wormhole
+
+    // Stage generation
+    declare private stageGenerator: StageGenerator
+    private currentStageConfig: StageConfig | null = null
+    private gameSeed: number = 0
 
     // Visual elements
     declare private backgroundGraphics: Graphics
@@ -231,14 +240,9 @@ export class WobblediverScene extends BaseMiniGameScene {
     private resultEffectTime = 0
     private resultVignetteAlpha = 0
 
-    // Difficulty parameters
-    declare private goalMoves: boolean
-    declare private goalMoveSpeed: number
-    declare private goalMoveRange: number
-    declare private goalWidthScale: number // Wormhole horizontal width (starts large, shrinks)
-    private goalMoveTimer = 0 // Timer for periodic movement
-    private goalMoveDuration = 0 // How long current movement lasts
-    private goalMoveActive = false // Is goal currently moving?
+    // Difficulty parameters (wormhole movement now controlled by abyss tentacles)
+    declare private goalWidthScale: number // Wormhole target width (set from config)
+    private currentWormholeScale = 2.5 // Current wormhole scale (shrinks over time)
     declare private obstacleCount: number
     declare private minRopeLength: number
     declare private maxRopeLength: number
@@ -305,8 +309,14 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Use default 3 lives - death restarts current stage, game over when all lives lost
         // (LifeSystem uses LIFE_CONFIG defaults: 3 lives)
 
+        // Initialize stage generator with a new seed
+        this.stageGenerator = new StageGenerator()
+        this.gameSeed = this.stageGenerator.getSeed()
+        this.currentStageConfig = null
+
         // Initialize state
         this.obstacles = []
+        this.abyssTentacles = []
         this.wobble = null
         this.roundNumber = 0
         this.isWaitingForTap = false
@@ -320,10 +330,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.boundaryTop = 0 // Start from top
         this.boundaryBottom = this.height - 60 // Leave 60px for banner ad
 
-        // Difficulty defaults
-        this.goalMoves = false
-        this.goalMoveSpeed = 1
-        this.goalMoveRange = 40
+        // Difficulty defaults (wormhole movement now controlled by abyss tentacles)
         this.goalWidthScale = 2.5 // Start with wide wormhole
         this.obstacleCount = 0
         this.minRopeLength = 100
@@ -338,6 +345,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Create visuals
         this.setupBackground()
         this.setupAbyss()
+        this.updateDepthColors(1) // Initialize with depth 1 colors
         this.setupBoundary()
         this.setupAnchorWobble()
         this.setupGoal()
@@ -653,6 +661,116 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.surfaceRipples = []
 
         this.drawAbyss()
+    }
+
+    /**
+     * Update colors based on current depth
+     * Creates a gradual transition from teal shallows to crimson depths
+     */
+    private updateDepthColors(depth: number): void {
+        // Define color palettes for different depth ranges
+        // Each palette: [background colors, fluid colors]
+        // Background: color1 (primary), color2 (secondary), color3 (dark)
+        // Fluid: colorDeep, colorMid, colorSurface
+
+        // Calculate depth factor (0 = shallow, 1 = deepest)
+        const maxDepth = 15
+        const depthFactor = Math.min(1, (depth - 1) / (maxDepth - 1))
+
+        // Background colors transition: Teal -> Purple -> Crimson -> Near Black
+        // Using smooth interpolation through multiple color stops
+        let bgColor1: [number, number, number, number]
+        let bgColor2: [number, number, number, number]
+        let bgColor3: [number, number, number, number]
+
+        // Fluid colors transition similarly
+        let fluidDeep: [number, number, number, number]
+        let fluidMid: [number, number, number, number]
+        let fluidSurface: [number, number, number, number]
+
+        if (depthFactor < 0.25) {
+            // Depth 1-4: Teal/Cyan zone (relatively bright, inviting)
+            const t = depthFactor / 0.25
+            bgColor1 = [
+                0.05 + t * 0.03, // R: 0.05 -> 0.08
+                0.15 - t * 0.05, // G: 0.15 -> 0.10
+                0.2 - t * 0.02, // B: 0.20 -> 0.18
+                1.0,
+            ]
+            bgColor2 = [0.08 + t * 0.02, 0.18 - t * 0.06, 0.22 - t * 0.04, 1.0]
+            bgColor3 = [0.02, 0.04, 0.06, 1.0]
+
+            fluidDeep = [0.15, 0.25 - t * 0.05, 0.3, 1.0]
+            fluidMid = [0.2, 0.35 - t * 0.05, 0.4, 1.0]
+            fluidSurface = [0.3, 0.5 - t * 0.08, 0.55, 1.0]
+        } else if (depthFactor < 0.5) {
+            // Depth 5-8: Purple transition zone
+            const t = (depthFactor - 0.25) / 0.25
+            bgColor1 = [
+                0.08 + t * 0.04, // R: 0.08 -> 0.12
+                0.1 - t * 0.04, // G: 0.10 -> 0.06
+                0.18 - t * 0.03, // B: 0.18 -> 0.15
+                1.0,
+            ]
+            bgColor2 = [0.1 + t * 0.05, 0.12 - t * 0.05, 0.18 - t * 0.02, 1.0]
+            bgColor3 = [0.02, 0.02 + t * 0.01, 0.05, 1.0]
+
+            fluidDeep = [0.24 + t * 0.06, 0.1, 0.31 - t * 0.05, 1.0]
+            fluidMid = [0.36 + t * 0.04, 0.15, 0.4 - t * 0.05, 1.0]
+            fluidSurface = [0.48 + t * 0.02, 0.22, 0.5 - t * 0.05, 1.0]
+        } else if (depthFactor < 0.75) {
+            // Depth 9-12: Dark violet/maroon zone
+            const t = (depthFactor - 0.5) / 0.25
+            bgColor1 = [
+                0.12 + t * 0.06, // R: 0.12 -> 0.18
+                0.06 - t * 0.03, // G: 0.06 -> 0.03
+                0.15 - t * 0.08, // B: 0.15 -> 0.07
+                1.0,
+            ]
+            bgColor2 = [0.15 + t * 0.08, 0.07 - t * 0.04, 0.16 - t * 0.1, 1.0]
+            bgColor3 = [0.03, 0.02, 0.04, 1.0]
+
+            fluidDeep = [0.3 + t * 0.08, 0.08, 0.2 - t * 0.1, 1.0]
+            fluidMid = [0.4 + t * 0.1, 0.12, 0.28 - t * 0.12, 1.0]
+            fluidSurface = [0.5 + t * 0.1, 0.18, 0.35 - t * 0.15, 1.0]
+        } else {
+            // Depth 13+: Near-black crimson abyss
+            const t = (depthFactor - 0.75) / 0.25
+            bgColor1 = [
+                0.18 - t * 0.08, // R: darker
+                0.03 - t * 0.02,
+                0.07 - t * 0.04,
+                1.0,
+            ]
+            bgColor2 = [0.23 - t * 0.1, 0.03 - t * 0.02, 0.06 - t * 0.03, 1.0]
+            bgColor3 = [0.02 - t * 0.01, 0.01, 0.02, 1.0]
+
+            fluidDeep = [0.38 - t * 0.15, 0.06, 0.1, 1.0]
+            fluidMid = [0.5 - t * 0.15, 0.1, 0.15, 1.0]
+            fluidSurface = [0.6 - t * 0.15, 0.15, 0.2, 1.0]
+        }
+
+        // Apply background colors to Balatro filter
+        if (this.abyssBackgroundFilter) {
+            this.abyssBackgroundFilter.resources.balatroUniforms.uniforms.uColor1.set(bgColor1)
+            this.abyssBackgroundFilter.resources.balatroUniforms.uniforms.uColor2.set(bgColor2)
+            this.abyssBackgroundFilter.resources.balatroUniforms.uniforms.uColor3.set(bgColor3)
+
+            // Also adjust lighting - darker as we go deeper
+            const lighting = 0.15 - depthFactor * 0.08
+            this.abyssBackgroundFilter.resources.balatroUniforms.uniforms.uLighting = lighting
+
+            // Slower, more oppressive spin in deeper areas
+            const spinSpeed = 3.0 - depthFactor * 1.5
+            this.abyssBackgroundFilter.resources.balatroUniforms.uniforms.uSpinSpeed = spinSpeed
+        }
+
+        // Apply fluid colors
+        if (this.abyssFluidFilter) {
+            this.abyssFluidFilter.uniforms.uColorDeep.set(fluidDeep)
+            this.abyssFluidFilter.uniforms.uColorMid.set(fluidMid)
+            this.abyssFluidFilter.uniforms.uColorSurface.set(fluidSurface)
+        }
     }
 
     private createAbyssBubble(): AbyssBubble {
@@ -2157,50 +2275,50 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     /**
-     * Generate difficulty hint messages based on the current stage
-     * Explains what changes at this depth to help players understand progression
+     * Generate difficulty hint messages based on activated factors
+     * Shows hints for ALL active gimmicks in this stage
      */
-    private getDifficultyHints(stageNumber: number): string[] {
+    private getDifficultyHints(_stageNumber: number): string[] {
         const hints: string[] = []
 
-        // Wormhole shrinks (rounds 2-15: shrinks by 0.1 per round from 2.5 to 1.0)
-        if (stageNumber >= 2 && stageNumber <= 15) {
+        if (!this.currentStageConfig) return hints
+
+        const factors = this.currentStageConfig.activatedFactors
+
+        // Wormhole shrinks during stage
+        if (factors.wormholeShrinkActivated) {
             hints.push(i18n.t('wobblediver.hints.wormholeShrinks'))
         }
 
-        // Goal starts moving at round 5
-        if (stageNumber === 5) {
-            hints.push(i18n.t('wobblediver.hints.goalMoves'))
+        // Abyss tentacles pulling wormhole
+        if (factors.abyssTentacleCount > 0) {
+            hints.push(i18n.t('wobblediver.hints.abyssTentacles'))
         }
 
-        // Portals appear at round 5, then more every 3 rounds (max 2)
-        if (stageNumber === 5 || stageNumber === 8) {
+        // Portal appears
+        if (factors.portalPairCount > 0) {
             hints.push(i18n.t('wobblediver.hints.portalAppears'))
         }
 
-        // Obstacle count changes based on difficulty phase
-        // Medium phase starts typically around stage 3-5
-        if (stageNumber === 3) {
-            hints.push(i18n.t('wobblediver.hints.obstacleAppears'))
-        }
-        // Hard phase adds more obstacles
-        if (stageNumber === 6) {
-            hints.push(i18n.t('wobblediver.hints.moreObstacles'))
-        }
-        // Insane phase
-        if (stageNumber === 10) {
+        // Wall tentacle obstacles - show different hints based on count
+        if (factors.wallTentacleCount >= 3) {
             hints.push(i18n.t('wobblediver.hints.maxObstacles'))
+        } else if (factors.wallTentacleCount >= 2) {
+            hints.push(i18n.t('wobblediver.hints.moreObstacles'))
+        } else if (factors.wallTentacleCount >= 1) {
+            hints.push(i18n.t('wobblediver.hints.obstacleAppears'))
         }
 
         // Trajectory visibility changes
-        if (stageNumber === 3) {
+        if (factors.trajectoryFlickerActivated) {
+            hints.push(i18n.t('wobblediver.hints.trajectoryFlicker'))
+        } else if (factors.trajectoryTimedActivated) {
             hints.push(i18n.t('wobblediver.hints.trajectoryTimed'))
         }
-        if (stageNumber === 6) {
-            hints.push(i18n.t('wobblediver.hints.trajectoryFlicker'))
-        }
-        if (stageNumber === 10) {
-            hints.push(i18n.t('wobblediver.hints.trajectoryMinimal'))
+
+        // Water pressure (increased gravity)
+        if (factors.waterLevelRiseAmount > 0) {
+            hints.push(i18n.t('wobblediver.hints.waterPressure'))
         }
 
         return hints
@@ -2916,6 +3034,19 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.roundTransitionTime = 0
         this.roundStartTime = Date.now() / 1000 // Track start time for scoring
 
+        // Update background and water colors based on depth
+        this.updateDepthColors(this.roundNumber)
+
+        // Generate stage configuration using seeded generator
+        this.currentStageConfig = this.stageGenerator.generate(
+            this.roundNumber,
+            this.width,
+            this.height
+        )
+
+        // Apply stage configuration
+        this.applyStageConfig(this.currentStageConfig)
+
         // Start stage transition effect (skip for first round as intro handles it)
         if (this.roundNumber > 1) {
             this.startStageTransition(this.roundNumber)
@@ -2931,14 +3062,24 @@ export class WobblediverScene extends BaseMiniGameScene {
             this.wobble = null
         }
 
-        // Generate new positions
+        // Generate new positions using stage config
         const anchorX = this.getAnchorX() // Always center
-        const ropeLength = this.getRandomRopeLength()
-        const startAngle = this.getRandomStartAngle()
+        const config = this.currentStageConfig
+        const ropeLength =
+            config.ropeLength.min + Math.random() * (config.ropeLength.max - config.ropeLength.min)
+        const startAngle =
+            config.startAngle.min + Math.random() * (config.startAngle.max - config.startAngle.min)
+        const startAngleSigned = Math.random() > 0.5 ? startAngle : -startAngle
 
         // Create new wobble (anchor Y matches AnchorWobble position)
-        this.wobble = new SwingingWobble(anchorX, this.boundaryTop + 60, ropeLength, startAngle)
+        this.wobble = new SwingingWobble(
+            anchorX,
+            this.boundaryTop + 60,
+            ropeLength,
+            startAngleSigned
+        )
         this.wobble.resetHp() // Ensure full HP for new round
+        this.wobble.setTentacleColor(this.anchorWobble.getColor()) // Sync tentacle color with jellyfish
         this.gameContainer.addChild(this.wobble.container)
 
         // Add abyss front container AFTER wobble so it renders on top
@@ -2954,15 +3095,21 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.surfaceRipples = []
         this.abyssSplashEffects = []
 
-        // Apply trajectory visibility based on current difficulty
-        this.wobble.setTrajectoryMode(this.trajectoryMode, {
-            duration: this.trajectoryDuration,
-            flickerInterval: this.trajectoryFlickerInterval,
-            flickerOnRatio: this.trajectoryFlickerOnRatio,
+        // Apply trajectory visibility from stage config
+        this.wobble.setTrajectoryMode(config.trajectoryMode, {
+            duration: config.trajectoryDuration,
+            flickerInterval: config.trajectoryFlickerInterval,
+            flickerOnRatio: config.trajectoryFlickerOnRatio,
         })
 
-        // Position goal (before setting wobble's goal reference)
-        this.positionGoal()
+        // Apply water pressure effect (increases gravity, making landing harder)
+        // Higher water level = more pressure = stronger gravity pull
+        // gravityMultiplier: 1.0 (no rise) to 2.0 (max rise)
+        const gravityMultiplier = 1.0 + config.waterLevelRise
+        this.wobble.setGravityMultiplier(gravityMultiplier)
+
+        // Position goal using stage config
+        this.positionGoalFromConfig(config)
 
         // Tell wobble where goal is for expression tracking
         this.wobble.setGoalPosition(this.wormhole.x, this.wormhole.y)
@@ -2970,14 +3117,240 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Update HUD stage display
         this.hud.updateStage(this.roundNumber)
 
-        // Update obstacles
-        this.updateObstacles()
+        // Update obstacles using stage config
+        this.updateObstaclesFromConfig(config)
+
+        // Update abyss tentacles
+        this.updateAbyssTentacles(config)
 
         // Ready for tap
         this.isWaitingForTap = true
 
         // Show instruction with fade
         this.instructionText.alpha = 1
+    }
+
+    /**
+     * Apply stage configuration settings
+     */
+    private applyStageConfig(config: StageConfig): void {
+        // Apply anchor personality
+        this.anchorWobble.setPersonality(config.anchorPersonality)
+
+        // Update local difficulty parameters for compatibility
+        this.goalWidthScale = config.wormhole.widthScale
+        this.obstacleCount = config.wallTentacles.length
+        this.minRopeLength = config.ropeLength.min
+        this.maxRopeLength = config.ropeLength.max
+        this.trajectoryMode = config.trajectoryMode
+        this.trajectoryDuration = config.trajectoryDuration
+        this.trajectoryFlickerInterval = config.trajectoryFlickerInterval
+        this.trajectoryFlickerOnRatio = config.trajectoryFlickerOnRatio
+    }
+
+    /**
+     * Position goal (wormhole) using stage config
+     */
+    private positionGoalFromConfig(config: StageConfig): void {
+        const { wormhole } = config
+
+        this.goal.moveTo(wormhole.x, wormhole.y)
+        this.goal.setRadius(wormhole.radius)
+
+        // Position wormhole at same location
+        // Always start at full size - shrinking happens during gameplay
+        this.currentWormholeScale = 2.5
+        this.wormhole.moveTo(wormhole.x, wormhole.y)
+        this.wormhole.setRadius(wormhole.radius)
+        this.wormhole.setWidthScale(this.currentWormholeScale)
+        this.wormhole.setOrientation(wormhole.orientation)
+
+        // Spawn portal pairs from config
+        this.spawnPortalPairsFromConfig(config)
+    }
+
+    /**
+     * Spawn portal pairs from stage config
+     */
+    private spawnPortalPairsFromConfig(config: StageConfig): void {
+        // Clear existing portals
+        for (const portal of this.portalPairs) {
+            this.gameContainer.removeChild(portal.container)
+            portal.destroy()
+        }
+        this.portalPairs = []
+
+        // Create portals from config
+        for (const portalConfig of config.portalPairs) {
+            const portalPair = new PortalPair({
+                entrance: {
+                    x: portalConfig.entrance.x,
+                    y: portalConfig.entrance.y,
+                    radius: portalConfig.entrance.radius,
+                    orientation: portalConfig.entrance.orientation,
+                },
+                exit: {
+                    x: portalConfig.exit.x,
+                    y: portalConfig.exit.y,
+                    radius: portalConfig.exit.radius,
+                    orientation: portalConfig.exit.orientation,
+                },
+                color: portalConfig.color,
+            })
+
+            this.portalPairs.push(portalPair)
+            this.gameContainer.addChild(portalPair.container)
+        }
+    }
+
+    /**
+     * Update obstacles from stage config
+     */
+    private updateObstaclesFromConfig(config: StageConfig): void {
+        // Remove all existing obstacles
+        for (const obstacle of this.obstacles) {
+            this.gameContainer.removeChild(obstacle.container)
+            obstacle.destroy()
+        }
+        this.obstacles = []
+
+        // Create obstacles from config
+        for (const tentacleConfig of config.wallTentacles) {
+            const x = tentacleConfig.side === 'left' ? this.boundaryLeft : this.boundaryRight
+            const obstacle = new ObstacleWobble({
+                x,
+                y: tentacleConfig.y,
+                radius: 18,
+                movement: tentacleConfig.movement,
+                speed: tentacleConfig.speed,
+                range: tentacleConfig.range,
+                tentacleLength: tentacleConfig.length,
+                side: tentacleConfig.side,
+                attackRange: tentacleConfig.attackRange,
+            })
+            this.obstacles.push(obstacle)
+            this.gameContainer.addChild(obstacle.container)
+        }
+    }
+
+    /**
+     * Update abyss tentacles from stage config
+     */
+    private updateAbyssTentacles(config: StageConfig): void {
+        // Clear existing tentacles
+        for (const tentacle of this.abyssTentacles) {
+            this.gameContainer.removeChild(tentacle.container)
+            tentacle.destroy()
+        }
+        this.abyssTentacles = []
+
+        // Calculate water surface level based on waterLevelRise
+        // Base water level is at boundaryBottom - 80
+        // Maximum rise is 150 pixels (toward the wormhole)
+        const baseWaterLevel = this.boundaryBottom - 80
+        const maxRise = 150
+        const waterSurfaceY = baseWaterLevel - config.waterLevelRise * maxRise
+
+        // Create tentacles from config
+        for (const tentacleConfig of config.abyssTentacles) {
+            const tentacle = new AbyssTentacle(tentacleConfig, waterSurfaceY)
+            tentacle.setWormholePosition(config.wormhole.x, config.wormhole.y)
+            tentacle.setWaterLevel(waterSurfaceY, this.height)
+            this.abyssTentacles.push(tentacle)
+            this.gameContainer.addChild(tentacle.container)
+        }
+    }
+
+    /**
+     * Update abyss tentacle animation and apply displacement to wormhole
+     * Tentacles pull the wormhole based on water level
+     */
+    private updateAbyssTentacleAnimation(deltaSeconds: number): void {
+        if (this.abyssTentacles.length === 0 || !this.currentStageConfig) return
+
+        // Calculate current water surface level
+        const baseWaterLevel = this.boundaryBottom - 80
+        const maxRise = 150
+        const waterSurfaceY = baseWaterLevel - this.currentStageConfig.waterLevelRise * maxRise
+
+        // Update wormhole position and water level for tentacles
+        for (const tentacle of this.abyssTentacles) {
+            tentacle.setWormholePosition(this.wormhole.x, this.wormhole.y)
+            tentacle.setWaterLevel(waterSurfaceY, this.height)
+            tentacle.update(deltaSeconds)
+        }
+
+        // Calculate total displacement from all tentacles
+        let totalDisplacementX = 0
+        let totalDisplacementY = 0
+        for (const tentacle of this.abyssTentacles) {
+            const displacement = tentacle.getDisplacement()
+            totalDisplacementX += displacement.x
+            totalDisplacementY += displacement.y
+        }
+
+        const baseX = this.currentStageConfig.wormhole.x
+        const baseY = this.currentStageConfig.wormhole.y
+
+        // Max displacement - much larger range for dramatic movement
+        // X: 100-180 pixels, Y: 50-100 pixels based on water level
+        const maxDisplacementX = 100 + this.currentStageConfig.waterLevelRise * 80
+        const maxDisplacementY = 50 + this.currentStageConfig.waterLevelRise * 50
+
+        // Clamp displacement
+        totalDisplacementX = Math.max(
+            -maxDisplacementX,
+            Math.min(maxDisplacementX, totalDisplacementX)
+        )
+        totalDisplacementY = Math.max(
+            -maxDisplacementY,
+            Math.min(maxDisplacementY, totalDisplacementY)
+        )
+
+        // Apply displacement
+        const newX = baseX + totalDisplacementX
+        const newY = baseY + totalDisplacementY
+
+        // Ensure wormhole stays within bounds
+        const padding = 60
+        const clampedX = Math.max(padding, Math.min(this.width - padding, newX))
+        // Don't let the wormhole go too close to the water
+        const minWormholeY = this.boundaryTop + 100
+        const maxWormholeY = waterSurfaceY - 50 // Keep above water
+        const clampedY = Math.max(minWormholeY, Math.min(maxWormholeY, newY))
+
+        this.wormhole.moveTo(clampedX, clampedY)
+        this.goal.moveTo(clampedX, clampedY)
+
+        // Update wobble's goal position for trajectory
+        if (this.wobble) {
+            this.wobble.setGoalPosition(clampedX, clampedY)
+        }
+    }
+
+    /**
+     * Update wormhole shrinking animation
+     * The wormhole gradually shrinks during gameplay based on shrinkRate
+     */
+    private updateWormholeShrinking(deltaSeconds: number): void {
+        if (!this.currentStageConfig) return
+
+        const { wormholeShrinkRate, wormholeMinWidthScale } = this.currentStageConfig
+
+        // Only shrink if there's a shrink rate
+        if (wormholeShrinkRate <= 0) return
+
+        // Shrink the wormhole over time
+        const previousScale = this.currentWormholeScale
+        this.currentWormholeScale -= wormholeShrinkRate * deltaSeconds
+
+        // Clamp to minimum scale
+        this.currentWormholeScale = Math.max(wormholeMinWidthScale, this.currentWormholeScale)
+
+        // Only update visual if scale changed
+        if (this.currentWormholeScale !== previousScale) {
+            this.wormhole.setWidthScale(this.currentWormholeScale)
+        }
     }
 
     /**
@@ -3007,6 +3380,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Create new wobble
         this.wobble = new SwingingWobble(anchorX, this.boundaryTop + 60, ropeLength, startAngle)
         this.wobble.resetHp()
+        this.wobble.setTentacleColor(this.anchorWobble.getColor()) // Sync tentacle color with jellyfish
         this.gameContainer.addChild(this.wobble.container)
 
         // Add abyss front container AFTER wobble so it renders on top
@@ -3028,6 +3402,13 @@ export class WobblediverScene extends BaseMiniGameScene {
             flickerInterval: this.trajectoryFlickerInterval,
             flickerOnRatio: this.trajectoryFlickerOnRatio,
         })
+
+        // Reset wormhole to original position (abyss tentacles may have displaced it)
+        if (this.currentStageConfig) {
+            const { wormhole } = this.currentStageConfig
+            this.wormhole.moveTo(wormhole.x, wormhole.y)
+            this.goal.moveTo(wormhole.x, wormhole.y)
+        }
 
         // Position goal (keep same position for retry)
         this.wobble.setGoalPosition(this.wormhole.x, this.wormhole.y)
@@ -3072,25 +3453,14 @@ export class WobblediverScene extends BaseMiniGameScene {
             Math.random() * (this.boundaryRight - this.boundaryLeft - padding * 2)
         const y = minY + Math.random() * (maxY - minY)
 
-        // Fixed vertical radius, but horizontal width shrinks over rounds
+        // Fixed vertical radius, horizontal width may shrink during gameplay
         const baseRadius = 35 // Vertical size stays constant
 
-        // Width scale: starts at 2.5 (wide), shrinks to 1.0 (circular) over ~15 rounds
-        this.goalWidthScale = Math.max(1.0, 2.5 - this.roundNumber * 0.1)
+        // Wormhole always starts at full size - shrinking happens during gameplay
+        this.currentWormholeScale = 2.5
+        this.goalWidthScale = 2.5
 
-        // Enable periodic movement after round 5
-        if (this.roundNumber >= 5) {
-            this.goalMoves = true
-            this.goalMoveSpeed = 0.8 + Math.min(this.roundNumber - 5, 10) * 0.1
-            this.goalMoveRange = 30 + Math.min(this.roundNumber - 5, 10) * 3
-        } else {
-            this.goalMoves = false
-        }
-
-        // Reset movement timer for periodic movement
-        this.goalMoveTimer = 3 + Math.random() * 2 // Wait 3-5 seconds before moving
-        this.goalMoveDuration = 0
-        this.goalMoveActive = false
+        // Wormhole movement is now controlled by abyss tentacles, not periodic oscillation
 
         this.goal.moveTo(x, y)
         this.goal.setRadius(baseRadius)
@@ -3098,7 +3468,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Position wormhole at same location with width scale
         this.wormhole.moveTo(x, y)
         this.wormhole.setRadius(baseRadius)
-        this.wormhole.setWidthScale(this.goalWidthScale)
+        this.wormhole.setWidthScale(this.currentWormholeScale)
 
         // Clear and spawn portal pairs based on difficulty
         this.spawnPortalPairs()
@@ -3245,6 +3615,12 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Update abyss animation
         this.updateAbyss(deltaSeconds)
 
+        // Update abyss tentacles and apply displacement to wormhole
+        this.updateAbyssTentacleAnimation(deltaSeconds)
+
+        // Update wormhole shrinking animation
+        this.updateWormholeShrinking(deltaSeconds)
+
         // Update wobble
         if (this.wobble) {
             this.wobble.update(deltaSeconds)
@@ -3383,15 +3759,6 @@ export class WobblediverScene extends BaseMiniGameScene {
             portalPair.update(deltaSeconds)
         }
 
-        // Move goal if enabled and update wobble's goal tracking
-        if (this.goalMoves) {
-            this.updateGoalMovement(deltaSeconds)
-            // Update wobble's goal position for expression tracking
-            if (this.wobble) {
-                this.wobble.setGoalPosition(this.wormhole.x, this.wormhole.y)
-            }
-        }
-
         // Update obstacles and check proximity for attack
         for (const obstacle of this.obstacles) {
             obstacle.update(deltaSeconds)
@@ -3420,36 +3787,6 @@ export class WobblediverScene extends BaseMiniGameScene {
         }
     }
 
-    private updateGoalMovement(deltaSeconds: number): void {
-        // Periodic movement: wait, then move for a duration, then stop
-        if (!this.goalMoveActive) {
-            // Waiting phase
-            this.goalMoveTimer -= deltaSeconds
-            if (this.goalMoveTimer <= 0) {
-                // Start moving
-                this.goalMoveActive = true
-                this.goalMoveDuration = 2.5 + Math.random() * 1.5 // Move for 2.5-4 seconds
-            }
-        } else {
-            // Moving phase
-            this.goalMoveDuration -= deltaSeconds
-
-            // Smooth oscillation while moving
-            const time = Date.now() / 1000
-            const baseX = (this.boundaryLeft + this.boundaryRight) / 2
-            const newX = baseX + Math.sin(time * this.goalMoveSpeed) * this.goalMoveRange
-
-            this.goal.moveTo(newX, this.goal.y)
-            this.wormhole.moveTo(newX, this.wormhole.y)
-
-            if (this.goalMoveDuration <= 0) {
-                // Stop moving, wait again
-                this.goalMoveActive = false
-                this.goalMoveTimer = 4 + Math.random() * 3 // Wait 4-7 seconds
-            }
-        }
-    }
-
     private checkCollisions(): void {
         if (!this.wobble || this.wobble.state !== 'released') return
 
@@ -3460,6 +3797,9 @@ export class WobblediverScene extends BaseMiniGameScene {
         if (wormholeHit.hit && !this.pendingResult) {
             this.wobble.markSuccess()
             this.wormhole.showHit(wormholeHit.perfect)
+
+            // Jellyfish friend celebrates
+            this.anchorWobble.speakOnSuccess()
 
             // Show relief/success speech bubble
             if (wormholeHit.perfect) {
@@ -3699,6 +4039,9 @@ export class WobblediverScene extends BaseMiniGameScene {
      * Handle player death - reduce life, then retry or game over
      */
     private handleDeath(): void {
+        // Jellyfish friend mourns
+        this.anchorWobble.speakOnDeath()
+
         // Reduce life (no visual feedback - the drowning/death animation is enough)
         this.scoreSystem.recordMiss()
         this.lifeSystem.loseLife()
@@ -3764,7 +4107,7 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     protected onDifficultyChange(config: DifficultyConfig, previousPhase: DifficultyPhase): void {
-        // Note: goalMoves and goalWidthScale are now controlled by round number in positionGoal()
+        // Note: goalWidthScale is now controlled by StageGenerator, wormhole movement by abyss tentacles
         switch (config.phase) {
             case 'easy':
                 // Full trajectory visibility
@@ -3834,6 +4177,24 @@ export class WobblediverScene extends BaseMiniGameScene {
         }
         this.obstacles = []
 
+        // Clear abyss tentacles
+        for (const tentacle of this.abyssTentacles) {
+            this.gameContainer.removeChild(tentacle.container)
+            tentacle.destroy()
+        }
+        this.abyssTentacles = []
+
+        // Clear portal pairs
+        for (const portal of this.portalPairs) {
+            this.gameContainer.removeChild(portal.container)
+            portal.destroy()
+        }
+        this.portalPairs = []
+
+        // Generate new seed for new game
+        this.gameSeed = this.stageGenerator.newGame()
+        this.currentStageConfig = null
+
         // Reset state
         this.roundNumber = 0
         this.isWaitingForTap = false
@@ -3842,19 +4203,19 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.roundStartTime = 0
 
         // Reset difficulty params
-        this.goalMoves = false
         this.goalWidthScale = 2.5
-        this.goalMoveTimer = 0
-        this.goalMoveDuration = 0
-        this.goalMoveActive = false
         this.obstacleCount = 0
         this.minRopeLength = 100
         this.maxRopeLength = 200
+
+        // Reset anchor wobble to default personality
+        this.anchorWobble.setPersonality(ANCHOR_PERSONALITIES.steady)
 
         // Reset goal position
         this.goal.moveTo(this.width / 2, this.height - 200)
         this.goal.setRadius(35)
         this.wormhole.setWidthScale(2.5)
+        this.wormhole.setOrientation('horizontal')
 
         // Hide instruction and HP bar
         this.instructionText.alpha = 0
@@ -3885,6 +4246,11 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Cleanup obstacles
         for (const obstacle of this.obstacles) {
             obstacle.destroy()
+        }
+
+        // Cleanup abyss tentacles
+        for (const tentacle of this.abyssTentacles) {
+            tentacle.destroy()
         }
 
         // Cleanup goal

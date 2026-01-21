@@ -2,22 +2,26 @@
  * PortalPair.ts - Connected wormhole portals for teleportation
  *
  * Manages a pair of portals (entrance and exit) with visual connection
- * and teleportation logic
+ * and teleportation logic. Supports different orientations for entrance
+ * and exit portals.
  */
 
 import { Container, Graphics } from 'pixi.js'
 import { Wormhole } from './Wormhole'
+import { PortalOrientation } from './StageConfig'
 
 export interface PortalPairConfig {
     entrance: {
         x: number
         y: number
         radius: number
+        orientation?: PortalOrientation
     }
     exit: {
         x: number
         y: number
         radius: number
+        orientation?: PortalOrientation
     }
     color: 'purple' | 'teal' | 'red' | 'gold'
 }
@@ -51,23 +55,25 @@ export class PortalPair {
     constructor(config: PortalPairConfig) {
         this.container = new Container()
 
-        // Create entrance portal
+        // Create entrance portal (horizontal - flat on ground, you fall into it)
         this.entrance = new Wormhole({
             x: config.entrance.x,
             y: config.entrance.y,
             radius: config.entrance.radius,
             isFinish: false,
             portalColor: config.color,
+            orientation: config.entrance.orientation ?? 'horizontal',
         })
         this.container.addChild(this.entrance.container)
 
-        // Create exit portal
+        // Create exit portal (vertical - standing doorway, Diablo/Portal style)
         this.exit = new Wormhole({
             x: config.exit.x,
             y: config.exit.y,
             radius: config.exit.radius,
             isFinish: false,
             portalColor: config.color,
+            orientation: config.exit.orientation ?? 'vertical',
         })
         this.container.addChild(this.exit.container)
 
@@ -168,13 +174,19 @@ export class PortalPair {
 
     /**
      * Check if an object should teleport
-     * Returns exit position if teleport occurs, null otherwise
+     * Returns exit position and velocity direction if teleport occurs, null otherwise
      */
     checkTeleport(
         object: any,
         objectX: number,
-        objectY: number
-    ): { teleported: boolean; exitX: number; exitY: number } | null {
+        objectY: number,
+        currentVelocity?: { x: number; y: number }
+    ): {
+        teleported: boolean
+        exitX: number
+        exitY: number
+        exitVelocity?: { x: number; y: number }
+    } | null {
         // Check cooldown
         if (this.cooldownMap.has(object)) {
             return null
@@ -192,10 +204,24 @@ export class PortalPair {
                 this.exit.showHit(false)
             }, 100)
 
+            // Calculate exit velocity based on exit portal orientation
+            let exitVelocity: { x: number; y: number } | undefined
+            if (currentVelocity) {
+                const speed = Math.sqrt(
+                    currentVelocity.x * currentVelocity.x + currentVelocity.y * currentVelocity.y
+                )
+                const exitDir = this.exit.getExitDirection()
+                exitVelocity = {
+                    x: exitDir.x * speed,
+                    y: exitDir.y * speed,
+                }
+            }
+
             return {
                 teleported: true,
                 exitX: this.exit.x,
                 exitY: this.exit.y,
+                exitVelocity,
             }
         }
 

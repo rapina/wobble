@@ -43,6 +43,9 @@ export class SwingingWobble {
     private flickerInterval = 0.3 // Flicker on/off interval
     private flickerOnRatio = 0.5 // Ratio of time visible during flicker
 
+    // Water pressure effect (increases gravity for harder landing)
+    private gravityMultiplier = 1.0 // 1.0 = normal, higher = stronger gravity
+
     // Game state
     public state: SwingState = 'swinging'
     private stateTime = 0
@@ -308,6 +311,15 @@ export class SwingingWobble {
     }
 
     /**
+     * Set gravity multiplier based on water pressure
+     * Higher pressure = stronger gravity = harder to reach wormhole
+     * @param multiplier - 1.0 = normal gravity, higher = stronger
+     */
+    setGravityMultiplier(multiplier: number): void {
+        this.gravityMultiplier = Math.max(1.0, multiplier)
+    }
+
+    /**
      * Set goal position for distance-based expressions
      */
     setGoalPosition(x: number, y: number): void {
@@ -536,8 +548,9 @@ export class SwingingWobble {
     }
 
     private updateReleased(deltaSeconds: number): void {
-        // Simple projectile motion (use class constant for consistency with preview)
-        this.releaseVy += this.projectileGravity * deltaSeconds
+        // Simple projectile motion with gravity multiplier from water pressure
+        const effectiveGravity = this.projectileGravity * this.gravityMultiplier
+        this.releaseVy += effectiveGravity * deltaSeconds
         this.releaseX += this.releaseVx * deltaSeconds
         this.releaseY += this.releaseVy * deltaSeconds
 
@@ -638,6 +651,16 @@ export class SwingingWobble {
         this.blob.setPosition(x, y)
     }
 
+    // Tentacle color (set by jellyfish friend)
+    private tentacleColor = 0x9b59b6
+
+    /**
+     * Set tentacle color to match the jellyfish friend
+     */
+    setTentacleColor(color: number): void {
+        this.tentacleColor = color
+    }
+
     private drawRope(): void {
         if (this.state !== 'swinging') {
             this.ropeGraphics.clear()
@@ -648,16 +671,70 @@ export class SwingingWobble {
         g.clear()
 
         const wobblePos = this.getPosition()
+        const anchorX = this.physics.anchorX
+        const anchorY = this.physics.anchorY
 
-        // Draw rope
-        g.moveTo(this.physics.anchorX, this.physics.anchorY)
-        g.lineTo(wobblePos.x, wobblePos.y)
-        g.stroke({ color: 0x8b4513, width: 4 })
+        // Draw tentacle as a wavy bezier curve
+        const dx = wobblePos.x - anchorX
+        const dy = wobblePos.y - anchorY
+        const dist = Math.sqrt(dx * dx + dy * dy)
 
-        // Draw anchor point
-        g.circle(this.physics.anchorX, this.physics.anchorY, 6)
-        g.fill({ color: 0x5d4e37 })
-        g.stroke({ color: 0x3d2e17, width: 2 })
+        // Perpendicular direction for wave offset
+        const perpX = -dy / dist
+        const perpY = dx / dist
+
+        // Wave animation based on time and swing
+        const waveTime = this.stateTime * 3
+        const swingInfluence = this.physics.angularVelocity * 0.3
+
+        // Control points with organic waviness
+        const wave1 = Math.sin(waveTime) * 8 + swingInfluence * 10
+        const wave2 = Math.sin(waveTime + 1.5) * 10 + swingInfluence * 15
+        const wave3 = Math.sin(waveTime + 3) * 6 + swingInfluence * 8
+
+        const cp1x = anchorX + dx * 0.25 + perpX * wave1
+        const cp1y = anchorY + dy * 0.25 + perpY * wave1
+        const cp2x = anchorX + dx * 0.5 + perpX * wave2
+        const cp2y = anchorY + dy * 0.5 + perpY * wave2
+        const cp3x = anchorX + dx * 0.75 + perpX * wave3
+        const cp3y = anchorY + dy * 0.75 + perpY * wave3
+
+        // Outer glow
+        g.moveTo(anchorX, anchorY)
+        g.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, wobblePos.x, wobblePos.y)
+        g.stroke({ color: this.tentacleColor, width: 10, alpha: 0.2 })
+
+        // Main tentacle body
+        g.moveTo(anchorX, anchorY)
+        g.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, wobblePos.x, wobblePos.y)
+        g.stroke({ color: this.tentacleColor, width: 6, alpha: 0.7 })
+
+        // Inner glow (lighter core)
+        g.moveTo(anchorX, anchorY)
+        g.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, wobblePos.x, wobblePos.y)
+        g.stroke({ color: 0xffffff, width: 2, alpha: 0.3 })
+
+        // Glowing nodes along tentacle
+        const nodeCount = 4
+        for (let i = 1; i < nodeCount; i++) {
+            const t = i / nodeCount
+            // Approximate position on bezier
+            const nx = anchorX * (1 - t) ** 2 + 2 * cp2x * (1 - t) * t + wobblePos.x * t ** 2
+            const ny = anchorY * (1 - t) ** 2 + 2 * cp2y * (1 - t) * t + wobblePos.y * t ** 2
+
+            const nodeAlpha = 0.4 + Math.sin(waveTime * 2 + i) * 0.2
+            const nodeSize = 3 + Math.sin(waveTime * 1.5 + i * 0.7) * 1
+
+            g.circle(nx, ny, nodeSize)
+            g.fill({ color: 0xffffff, alpha: nodeAlpha })
+        }
+
+        // Connection point at wobble (where tentacle attaches)
+        const glowPulse = 0.5 + Math.sin(waveTime * 2) * 0.2
+        g.circle(wobblePos.x, wobblePos.y - 15, 6)
+        g.fill({ color: this.tentacleColor, alpha: glowPulse })
+        g.circle(wobblePos.x, wobblePos.y - 15, 3)
+        g.fill({ color: 0xffffff, alpha: 0.5 })
     }
 
     /**
@@ -685,19 +762,20 @@ export class SwingingWobble {
         const speed = Math.sqrt(vx * vx + vy * vy)
         if (speed < 30) return
 
-        // Simulate projectile motion and draw dots
+        // Simulate projectile motion and draw dots with gravity multiplier
         let x = startX
         let y = startY
         const dt = 0.05 // Time step for simulation
         const numPoints = 12 // Number of preview points
         const maxTime = 0.8 // Max preview time
+        const effectiveGravity = this.projectileGravity * this.gravityMultiplier
 
         for (let i = 0; i < numPoints; i++) {
             const t = (i + 1) * (maxTime / numPoints)
 
-            // Projectile motion equations
+            // Projectile motion equations with water pressure gravity
             x = startX + vx * t
-            y = startY + vy * t + 0.5 * this.projectileGravity * t * t
+            y = startY + vy * t + 0.5 * effectiveGravity * t * t
 
             // Fade out dots over distance
             const alpha = 0.6 * (1 - i / numPoints)
