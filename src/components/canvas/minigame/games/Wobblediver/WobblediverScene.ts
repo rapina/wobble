@@ -415,7 +415,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.timeText.position.set(24, 36)
         this.customHudContainer.addChild(this.timeText)
 
-        // Score text (top-right corner)
+        // Score text (top-left corner, below time)
         this.cornerScoreText = new Text({
             text: '0',
             style: new TextStyle({
@@ -425,8 +425,8 @@ export class WobblediverScene extends BaseMiniGameScene {
                 fill: ABYSS.gold,
             }),
         })
-        this.cornerScoreText.anchor.set(1, 0)  // Right-aligned
-        this.cornerScoreText.position.set(this.width - 24, 20)
+        this.cornerScoreText.anchor.set(0, 0)  // Left-aligned
+        this.cornerScoreText.position.set(24, 50)
         this.customHudContainer.addChild(this.cornerScoreText)
 
         // Initialize lives tracking

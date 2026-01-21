@@ -133,28 +133,73 @@ export function MiniGameScreen({ gameId, onBack }: MiniGameScreenProps) {
             {isPaused && (
                 <div
                     className="absolute inset-0 z-30 flex flex-col items-center justify-center"
-                    style={{ background: 'rgba(0,0,0,0.8)' }}
+                    style={{ background: 'rgba(0,0,0,0.85)' }}
                 >
-                    <h2 className="text-white text-2xl font-bold mb-8">PAUSED</h2>
-                    <div className="flex flex-col gap-4">
-                        <button
-                            onClick={handleResume}
-                            className="px-8 py-3 rounded-lg bg-blue-500 text-white font-bold transition-all active:scale-95"
+                    {/* Balatro-style pause card */}
+                    <div
+                        className="relative rounded-xl p-8"
+                        style={{
+                            background: '#1a1a2e',
+                            border: '3px solid #2d2d44',
+                            boxShadow: '0 8px 0 #0d1117, 0 12px 40px rgba(0,0,0,0.7)',
+                        }}
+                    >
+                        {/* Glowing accent line */}
+                        <div
+                            className="absolute top-0 left-8 right-8 h-1 rounded-full"
+                            style={{
+                                background: 'linear-gradient(90deg, transparent, #c9a227, transparent)',
+                                boxShadow: '0 0 20px rgba(201, 162, 39, 0.5)',
+                            }}
+                        />
+
+                        <h2
+                            className="text-2xl font-bold mb-8 text-center"
+                            style={{ color: '#c9a227', textShadow: '0 0 20px rgba(201, 162, 39, 0.3)' }}
                         >
-                            RESUME
-                        </button>
-                        <button
-                            onClick={handleRetry}
-                            className="px-8 py-3 rounded-lg bg-yellow-500 text-black font-bold transition-all active:scale-95"
-                        >
-                            RETRY
-                        </button>
-                        <button
-                            onClick={handleExit}
-                            className="px-8 py-3 rounded-lg bg-red-500 text-white font-bold transition-all active:scale-95"
-                        >
-                            EXIT
-                        </button>
+                            PAUSED
+                        </h2>
+
+                        <div className="flex flex-col gap-3 min-w-[200px]">
+                            <button
+                                onClick={handleResume}
+                                className="px-8 py-3 rounded-lg font-bold transition-all active:scale-95"
+                                style={{
+                                    background: '#4ecdc4',
+                                    color: '#0d1117',
+                                    border: '2px solid #6ee7de',
+                                    boxShadow: '0 4px 0 #2d9990, 0 6px 15px rgba(78, 205, 196, 0.3)',
+                                }}
+                            >
+                                <Play className="inline-block w-4 h-4 mr-2 mb-0.5" />
+                                RESUME
+                            </button>
+                            <button
+                                onClick={handleRetry}
+                                className="px-8 py-3 rounded-lg font-bold transition-all active:scale-95"
+                                style={{
+                                    background: '#c9a227',
+                                    color: '#0d1117',
+                                    border: '2px solid #ddb832',
+                                    boxShadow: '0 4px 0 #9b7f1e, 0 6px 15px rgba(201, 162, 39, 0.3)',
+                                }}
+                            >
+                                RETRY
+                            </button>
+                            <button
+                                onClick={handleExit}
+                                className="px-8 py-3 rounded-lg font-bold transition-all active:scale-95"
+                                style={{
+                                    background: '#e85d4c',
+                                    color: '#ffffff',
+                                    border: '2px solid #f07366',
+                                    boxShadow: '0 4px 0 #b8463a, 0 6px 15px rgba(232, 93, 76, 0.3)',
+                                }}
+                            >
+                                <X className="inline-block w-4 h-4 mr-2 mb-0.5" />
+                                EXIT
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
