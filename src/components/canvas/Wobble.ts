@@ -28,6 +28,7 @@ export type WobbleExpression =
  * - 'diamond': Gem (젬) - 귀하고 우아한 목표 지향적 성격
  * - 'pentagon': Penta (펜타) - 믿음직하고 든든한 보호자
  * - 'shadow': Shadow (섀도우) - 어둡고 적대적인 적 캐릭터
+ * - 'einstein': Albert (알버트) - 천재적이고 호기심 가득한 과학자
  */
 export type WobbleShape =
     | 'circle'
@@ -37,6 +38,7 @@ export type WobbleShape =
     | 'diamond'
     | 'pentagon'
     | 'shadow'
+    | 'einstein'
 
 /** Shape별 역할 정의 (씬에서 참조용) */
 export const SHAPE_ROLES = {
@@ -47,6 +49,7 @@ export const SHAPE_ROLES = {
     diamond: 'goal', // 목표, 수집 대상
     pentagon: 'defender', // 방어자, 지지자
     shadow: 'enemy', // 적, 법칙 파괴자
+    einstein: 'scientist', // 과학자, 지식 전달자
 } as const
 
 /** 워블 캐릭터 정보 인터페이스 */
@@ -137,6 +140,17 @@ export const WOBBLE_CHARACTERS: Record<WobbleShape, WobbleCharacter> = {
         role: 'enemy',
         color: 0x1a1a1a,
     },
+    einstein: {
+        shape: 'einstein',
+        name: { ko: '알버트', en: 'Albert', ja: 'アルバート' },
+        personality: {
+            ko: '천재적이고 호기심 가득한 과학자',
+            en: 'Genius scientist full of curiosity',
+            ja: '天才的で好奇心旺盛な科学者',
+        },
+        role: 'scientist',
+        color: 0xf0e6d3, // Warm beige/cream color
+    },
 }
 
 /** 공식별 등장 워블 매핑 */
@@ -160,7 +174,7 @@ export const FORMULA_WOBBLES: Record<string, WobbleShape[]> = {
     snell: ['circle'],
     reflection: ['circle'],
     lens: ['circle'],
-    'de-broglie': ['circle', 'diamond'],
+    'de-broglie': ['einstein', 'circle', 'diamond'],
 
     // Gravity
     gravity: ['circle', 'diamond'],
@@ -181,9 +195,17 @@ export const FORMULA_WOBBLES: Record<string, WobbleShape[]> = {
     capacitor: ['circle', 'square'],
     lorentz: ['circle', 'triangle'],
 
-    // Special
-    'time-dilation': ['circle'],
-    photoelectric: ['circle', 'star'],
+    // Special (Einstein's theories)
+    'time-dilation': ['einstein', 'circle'],
+    photoelectric: ['einstein', 'star'],
+    'mass-energy': ['einstein'], // E = mc²
+
+    // Quantum Mechanics (Einstein contributed to foundations)
+    uncertainty: ['einstein', 'circle'],
+    'infinite-well': ['einstein', 'circle'],
+    tunneling: ['einstein', 'circle'],
+    bohr: ['einstein', 'circle'],
+    'radioactive-decay': ['einstein', 'circle'],
 
     // New shape-featured formulas
     pressure: ['triangle'], // Spike pressing down
@@ -415,6 +437,7 @@ export class Wobble extends Container {
             diamond: 1.2,
             pentagon: 1.15,
             shadow: 1.1,
+            einstein: 1.1,
         }
         const scaledSize = size * (shapeScale[shape] || 1)
 
@@ -437,6 +460,9 @@ export class Wobble extends Container {
                 break
             case 'shadow':
                 this.drawShadowBody(g, scaledSize, gulpScaleX, gulpScaleY, wobblePhase)
+                break
+            case 'einstein':
+                this.drawEinsteinBody(g, scaledSize, gulpScaleX, gulpScaleY, wobblePhase)
                 break
             default:
                 // 원형 워블 (기본)
@@ -778,8 +804,117 @@ export class Wobble extends Container {
         g.closePath()
     }
 
+    /**
+     * 아인슈타인 워블 - Albert (알버트)
+     * 덥수룩한 흰 머리카락이 특징인 과학자 캐릭터
+     */
+    private drawEinsteinBody(
+        g: Graphics,
+        size: number,
+        scaleX: number,
+        scaleY: number,
+        wobblePhase: number
+    ): void {
+        const r = size / 2
+        const wobbleAmount = size * 0.03
+
+        const getWobble = (angle: number) => {
+            return Math.sin(wobblePhase * 2.5 + angle * 3) * wobbleAmount
+        }
+
+        // Draw wild hair first (behind the face area)
+        const hairColor = 0xe8e8e8 // White/gray hair
+        const hairSegments = 20
+        const hairStartAngle = -Math.PI * 0.85 // Start from upper left
+        const hairEndAngle = -Math.PI * 0.15 // End at upper right
+
+        // Hair puffs - multiple layers of wild, frizzy hair
+        for (let layer = 0; layer < 3; layer++) {
+            const layerOffset = layer * size * 0.08
+            const puffSize = size * (0.15 - layer * 0.03)
+
+            for (let i = 0; i <= hairSegments; i++) {
+                const t = i / hairSegments
+                const angle = hairStartAngle + (hairEndAngle - hairStartAngle) * t
+                const hairWobble = Math.sin(wobblePhase * 4 + i * 0.8 + layer) * size * 0.04
+
+                // Hair extends outward from the head
+                const baseRadius = r * 0.95 + layerOffset
+                const cx = Math.cos(angle) * baseRadius * scaleX
+                const cy = Math.sin(angle) * baseRadius * scaleY + hairWobble
+
+                // Draw individual hair puff
+                const puffWobble = Math.sin(wobblePhase * 3 + i * 1.2) * puffSize * 0.3
+                g.circle(cx, cy, puffSize + puffWobble)
+            }
+        }
+        g.fill(hairColor)
+        g.stroke({ color: 0xcccccc, width: 1.5 })
+
+        // Draw side hair tufts (Einstein's signature messy side hair)
+        ;[-1, 1].forEach((side) => {
+            const sideHairX = side * r * 0.75 * scaleX
+            const sideHairY = -size * 0.1
+
+            for (let i = 0; i < 4; i++) {
+                const tuftAngle = side * (Math.PI * 0.3 + i * 0.15)
+                const tuftLength = size * (0.2 + Math.random() * 0.1)
+                const tuftWobble = Math.sin(wobblePhase * 3 + i) * size * 0.03
+
+                const tuftX = sideHairX + Math.cos(tuftAngle) * tuftLength
+                const tuftY = sideHairY + Math.sin(tuftAngle) * tuftLength * 0.5 + tuftWobble
+
+                g.circle(tuftX, tuftY, size * 0.08)
+            }
+        })
+        g.fill(hairColor)
+        g.stroke({ color: 0xcccccc, width: 1 })
+
+        // Draw main body (egg-shaped, slightly taller)
+        const segments = 16
+        const points: { x: number; y: number }[] = []
+
+        for (let i = 0; i < segments; i++) {
+            const angle = (i / segments) * Math.PI * 2 - Math.PI / 2
+            const wobble = getWobble(angle)
+
+            // Egg shape - wider at bottom, narrower at top where hair is
+            const topSquash = angle < 0 ? 0.9 : 1.0 // Slightly narrower at top
+            const baseX = Math.cos(angle) * r * scaleX * topSquash
+            const baseY = Math.sin(angle) * r * scaleY * 0.95
+
+            const nx = Math.cos(angle)
+            const ny = Math.sin(angle)
+
+            points.push({
+                x: baseX + nx * wobble,
+                y: baseY + ny * wobble,
+            })
+        }
+
+        // Draw smooth curve through points
+        g.moveTo(points[0].x, points[0].y)
+
+        for (let i = 0; i < segments; i++) {
+            const p0 = points[(i - 1 + segments) % segments]
+            const p1 = points[i]
+            const p2 = points[(i + 1) % segments]
+            const p3 = points[(i + 2) % segments]
+
+            const tension = 0.35
+            const cp1x = p1.x + (p2.x - p0.x) * tension
+            const cp1y = p1.y + (p2.y - p0.y) * tension
+            const cp2x = p2.x - (p3.x - p1.x) * tension
+            const cp2y = p2.y - (p3.y - p1.y) * tension
+
+            g.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y)
+        }
+
+        g.closePath()
+    }
+
     private drawFace(): void {
-        const { size, expression, scaleX, scaleY, lookDirection } = this.options
+        const { size, expression, scaleX, scaleY, lookDirection, shape } = this.options
         const g = this.faceGraphics
         g.clear()
 
@@ -796,6 +931,11 @@ export class Wobble extends Container {
         // Draw eyes
         this.drawLocoRocoEyes(g, expression, eyeSpacing, eyeSize, eyeY, lookX, lookY)
 
+        // Draw Einstein's iconic mustache (before mouth so mouth can overlap if needed)
+        if (shape === 'einstein' && expression !== 'eating') {
+            this.drawEinsteinMustache(g, mouthY, eyeSpacing, eyeSize)
+        }
+
         // Draw mouth
         this.drawLocoRocoMouth(g, expression, mouthY, eyeSpacing, eyeSize)
 
@@ -806,6 +946,46 @@ export class Wobble extends Container {
             g.ellipse(eyeSpacing + eyeSize * 0.3, cheekY, eyeSize * 0.55, eyeSize * 0.4)
             g.fill({ color: LOCOROCO_CHEEK, alpha: 0.5 })
         }
+    }
+
+    /**
+     * Draw Einstein's iconic bushy mustache
+     */
+    private drawEinsteinMustache(
+        g: Graphics,
+        mouthY: number,
+        eyeSpacing: number,
+        eyeSize: number
+    ): void {
+        const mustacheY = mouthY - eyeSize * 0.8
+        const mustacheWidth = eyeSpacing * 1.4
+        const mustacheHeight = eyeSize * 0.7
+        const mustacheColor = 0xd0d0d0 // Light gray mustache
+
+        // Draw bushy mustache with multiple overlapping ellipses
+        // Center part
+        g.ellipse(0, mustacheY, mustacheWidth * 0.4, mustacheHeight * 0.6)
+        g.fill(mustacheColor)
+
+        // Left side - droopy
+        g.ellipse(-mustacheWidth * 0.35, mustacheY + eyeSize * 0.15, mustacheWidth * 0.35, mustacheHeight * 0.5)
+        g.fill(mustacheColor)
+
+        // Right side - droopy
+        g.ellipse(mustacheWidth * 0.35, mustacheY + eyeSize * 0.15, mustacheWidth * 0.35, mustacheHeight * 0.5)
+        g.fill(mustacheColor)
+
+        // Add some texture/detail with smaller circles
+        ;[-1, 0, 1].forEach((pos) => {
+            g.ellipse(pos * mustacheWidth * 0.25, mustacheY - eyeSize * 0.1, eyeSize * 0.3, eyeSize * 0.2)
+        })
+        g.fill({ color: 0xe0e0e0, alpha: 0.7 })
+
+        // Outline for definition
+        g.moveTo(-mustacheWidth * 0.6, mustacheY + eyeSize * 0.3)
+        g.quadraticCurveTo(-mustacheWidth * 0.3, mustacheY - eyeSize * 0.2, 0, mustacheY - eyeSize * 0.1)
+        g.quadraticCurveTo(mustacheWidth * 0.3, mustacheY - eyeSize * 0.2, mustacheWidth * 0.6, mustacheY + eyeSize * 0.3)
+        g.stroke({ color: 0xaaaaaa, width: 1.5, cap: 'round' })
     }
 
     private drawLocoRocoEyes(

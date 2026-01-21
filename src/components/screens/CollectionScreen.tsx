@@ -34,6 +34,7 @@ const ALL_SHAPES: WobbleShape[] = [
     'diamond',
     'pentagon',
     'shadow',
+    'einstein',
 ]
 
 // Balatro theme - HomeScreen과 동일
@@ -95,7 +96,9 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
         const expressions: WobbleExpression[] =
             selectedWobble === 'shadow'
                 ? ['angry', 'worried', 'effort', 'angry', 'struggle']
-                : ['happy', 'excited', 'surprised', 'worried', 'sleepy']
+                : selectedWobble === 'einstein'
+                  ? ['happy', 'surprised', 'excited', 'effort', 'happy'] // Scientist expressions
+                  : ['happy', 'excited', 'surprised', 'worried', 'sleepy']
         let index = 0
         setDemoExpression(expressions[0])
 

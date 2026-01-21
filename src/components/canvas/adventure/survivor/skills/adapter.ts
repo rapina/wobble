@@ -292,6 +292,10 @@ export const CHARACTER_SKILLS: Record<WobbleShape, CharacterSkillConfig> = {
         startingSkills: [],
         passive: '',
     },
+    einstein: {
+        startingSkills: [],
+        passive: 'genius-insight', // Einstein's special passive
+    },
 }
 
 // ============================================

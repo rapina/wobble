@@ -376,6 +376,7 @@ export abstract class AdventureScene {
             diamond: 0xbb8fce,
             pentagon: 0x82e0aa,
             shadow: 0x1a1a1a,
+            einstein: 0xf0e6d3,
         }
         return colors[shape] || 0xf5b041
     }

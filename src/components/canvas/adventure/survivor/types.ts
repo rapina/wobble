@@ -165,6 +165,13 @@ export const WOBBLE_STATS: Record<WobbleShape, WobbleStats> = {
         moveSpeedMultiplier: 1.0,
         knockbackMultiplier: 1.0,
     },
+    einstein: {
+        healthMultiplier: 0.9,
+        damageMultiplier: 1.2,
+        fireRateMultiplier: 1.0,
+        moveSpeedMultiplier: 0.95,
+        knockbackMultiplier: 1.1,
+    },
 }
 
 // Playable characters (all Wobble shapes available)
@@ -176,6 +183,7 @@ export const PLAYABLE_CHARACTERS: WobbleShape[] = [
     'diamond',
     'pentagon',
     'shadow',
+    'einstein',
 ]
 
 // Rank system for result screen
