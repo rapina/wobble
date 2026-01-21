@@ -26,6 +26,7 @@ import { BalatroFilter } from '@/components/canvas/filters/BalatroFilter'
 import { StageGenerator } from './StageGenerator'
 import { AbyssTentacle } from './AbyssTentacle'
 import { StageConfig, AnchorPersonalityConfig, ANCHOR_PERSONALITIES } from './StageConfig'
+import { musicManager, AudioBands } from '@/services/MusicManager'
 import i18n from '@/i18n'
 
 // Balatro-style colors
@@ -153,6 +154,7 @@ export class WobblediverScene extends BaseMiniGameScene {
     // Visual elements
     declare private backgroundGraphics: Graphics
     declare private boundaryGraphics: Graphics
+    declare private spikesGraphics: Graphics // Separate layer for audio-reactive spikes
     declare private instructionText: Text
     declare private outText: Text
 
@@ -1521,7 +1523,107 @@ export class WobblediverScene extends BaseMiniGameScene {
     private setupBoundary(): void {
         this.boundaryGraphics = new Graphics()
         this.gameContainer.addChild(this.boundaryGraphics)
+
+        // Separate layer for audio-reactive spikes
+        this.spikesGraphics = new Graphics()
+        this.gameContainer.addChild(this.spikesGraphics)
+
         this.drawBoundary()
+        this.drawSpikes({ bass: 0, mid: 0, high: 0, overall: 0 }) // Initial draw
+    }
+
+    /**
+     * Draw audio-reactive wall spikes (equalizer effect)
+     */
+    private drawSpikes(audioBands: AudioBands): void {
+        const g = this.spikesGraphics
+        g.clear()
+
+        const left = this.boundaryLeft
+        const top = this.boundaryTop
+        const right = this.boundaryRight
+        const bottom = this.boundaryBottom - 80
+        const wallHeight = bottom - top
+
+        const spikeSpacing = 30
+        const spikeCount = Math.floor(wallHeight / spikeSpacing)
+
+        // Left wall spikes (pointing right)
+        for (let i = 0; i < spikeCount; i++) {
+            const spikeY = top + 20 + i * spikeSpacing
+
+            // Distribute audio bands across spikes (equalizer style)
+            // Bottom spikes = bass, middle = mid, top = high
+            const normalizedPos = i / spikeCount
+            let audioLevel: number
+            if (normalizedPos < 0.33) {
+                audioLevel = audioBands.bass // Bottom = bass
+            } else if (normalizedPos < 0.66) {
+                audioLevel = audioBands.mid // Middle = mid
+            } else {
+                audioLevel = audioBands.high // Top = high
+            }
+
+            // Base spike size + audio boost
+            const baseWidth = 14 + (i % 3) * 3
+            const audioBoost = audioLevel * 20 // Up to 20px extra from audio
+            const spikeWidth = baseWidth + audioBoost
+            const spikeHeight = 8 + (i % 2) * 2 + audioLevel * 4 // Slightly thicker too
+
+            // Glow intensity based on audio
+            const glowAlpha = 0.12 + audioLevel * 0.25
+
+            // Spike glow/shadow (draw first, behind)
+            g.moveTo(left, spikeY - spikeHeight / 2 - 1)
+            g.lineTo(left + spikeWidth + 3, spikeY)
+            g.lineTo(left, spikeY + spikeHeight / 2 + 1)
+            g.closePath()
+            g.fill({ color: BALATRO.red, alpha: glowAlpha })
+
+            // Main spike shape
+            g.moveTo(left, spikeY - spikeHeight / 2)
+            g.lineTo(left + spikeWidth, spikeY)
+            g.lineTo(left, spikeY + spikeHeight / 2)
+            g.closePath()
+            g.fill({ color: BALATRO.red, alpha: 0.55 + audioLevel * 0.3 })
+        }
+
+        // Right wall spikes (pointing left)
+        for (let i = 0; i < spikeCount; i++) {
+            const spikeY = top + 35 + i * spikeSpacing
+
+            // Distribute audio bands (inverted for right side visual variety)
+            const normalizedPos = i / spikeCount
+            let audioLevel: number
+            if (normalizedPos < 0.33) {
+                audioLevel = audioBands.high // Bottom = high (inverted)
+            } else if (normalizedPos < 0.66) {
+                audioLevel = audioBands.mid // Middle = mid
+            } else {
+                audioLevel = audioBands.bass // Top = bass (inverted)
+            }
+
+            const baseWidth = 14 + ((i + 1) % 3) * 3
+            const audioBoost = audioLevel * 20
+            const spikeWidth = baseWidth + audioBoost
+            const spikeHeight = 8 + ((i + 1) % 2) * 2 + audioLevel * 4
+
+            const glowAlpha = 0.12 + audioLevel * 0.25
+
+            // Spike glow/shadow
+            g.moveTo(right, spikeY - spikeHeight / 2 - 1)
+            g.lineTo(right - spikeWidth - 3, spikeY)
+            g.lineTo(right, spikeY + spikeHeight / 2 + 1)
+            g.closePath()
+            g.fill({ color: BALATRO.red, alpha: glowAlpha })
+
+            // Main spike shape
+            g.moveTo(right, spikeY - spikeHeight / 2)
+            g.lineTo(right - spikeWidth, spikeY)
+            g.lineTo(right, spikeY + spikeHeight / 2)
+            g.closePath()
+            g.fill({ color: BALATRO.red, alpha: 0.55 + audioLevel * 0.3 })
+        }
     }
 
     private drawBoundary(): void {
@@ -1549,29 +1651,6 @@ export class WobblediverScene extends BaseMiniGameScene {
             g.fill({ color: BALATRO.red, alpha })
         }
 
-        // Left wall horizontal spikes/thorns (pointing right)
-        const spikeSpacing = 30
-        const spikeCount = Math.floor(wallHeight / spikeSpacing)
-        for (let i = 0; i < spikeCount; i++) {
-            const spikeY = top + 20 + i * spikeSpacing
-            const spikeWidth = 14 + (i % 3) * 3 // Horizontal length (pointing inward)
-            const spikeHeight = 8 + (i % 2) * 2 // Vertical thickness
-
-            // Main spike shape (horizontal triangle pointing right)
-            g.moveTo(left, spikeY - spikeHeight / 2)
-            g.lineTo(left + spikeWidth, spikeY)
-            g.lineTo(left, spikeY + spikeHeight / 2)
-            g.closePath()
-            g.fill({ color: BALATRO.red, alpha: 0.55 })
-
-            // Spike glow/shadow
-            g.moveTo(left, spikeY - spikeHeight / 2 - 1)
-            g.lineTo(left + spikeWidth + 3, spikeY)
-            g.lineTo(left, spikeY + spikeHeight / 2 + 1)
-            g.closePath()
-            g.fill({ color: BALATRO.red, alpha: 0.12 })
-        }
-
         // === RIGHT WALL - Dangerous gradient zone ===
         // Dark inner gradient
         for (let i = 0; i < dangerWidth; i++) {
@@ -1584,27 +1663,6 @@ export class WobblediverScene extends BaseMiniGameScene {
             const alpha = 0.12 * (1 - i / 6)
             g.rect(right - i - 1, top, 1, wallHeight)
             g.fill({ color: BALATRO.red, alpha })
-        }
-
-        // Right wall horizontal spikes/thorns (pointing left)
-        for (let i = 0; i < spikeCount; i++) {
-            const spikeY = top + 35 + i * spikeSpacing // Offset from left wall
-            const spikeWidth = 14 + ((i + 1) % 3) * 3
-            const spikeHeight = 8 + ((i + 1) % 2) * 2
-
-            // Main spike shape (horizontal triangle pointing left)
-            g.moveTo(right, spikeY - spikeHeight / 2)
-            g.lineTo(right - spikeWidth, spikeY)
-            g.lineTo(right, spikeY + spikeHeight / 2)
-            g.closePath()
-            g.fill({ color: BALATRO.red, alpha: 0.55 })
-
-            // Spike glow/shadow
-            g.moveTo(right, spikeY - spikeHeight / 2 - 1)
-            g.lineTo(right - spikeWidth - 3, spikeY)
-            g.lineTo(right, spikeY + spikeHeight / 2 + 1)
-            g.closePath()
-            g.fill({ color: BALATRO.red, alpha: 0.12 })
         }
 
         // === TOP BOUNDARY ===
@@ -2227,7 +2285,7 @@ export class WobblediverScene extends BaseMiniGameScene {
             }),
         })
         this.transitionStageText.anchor.set(0.5)
-        this.transitionStageText.position.set(this.width / 2, this.height * 0.22)
+        this.transitionStageText.position.set(this.width / 2, this.height * 0.28)
         this.transitionContainer.addChild(this.transitionStageText)
 
         // Sub text - ominous message (optimized for mobile 9:16)
@@ -2241,7 +2299,7 @@ export class WobblediverScene extends BaseMiniGameScene {
             }),
         })
         this.transitionSubText.anchor.set(0.5)
-        this.transitionSubText.position.set(this.width / 2, this.height * 0.22 + 50)
+        this.transitionSubText.position.set(this.width / 2, this.height * 0.28 + 50)
         this.transitionContainer.addChild(this.transitionSubText)
 
         // Hint text - difficulty change messages (loading-style)
@@ -2256,7 +2314,7 @@ export class WobblediverScene extends BaseMiniGameScene {
             }),
         })
         this.transitionHintText.anchor.set(0.5, 0) // Anchor top-center for multi-line
-        this.transitionHintText.position.set(this.width / 2, this.height * 0.22 + 90)
+        this.transitionHintText.position.set(this.width / 2, this.height * 0.28 + 90)
         this.transitionContainer.addChild(this.transitionHintText)
 
         // Tap to start prompt
@@ -2610,7 +2668,7 @@ export class WobblediverScene extends BaseMiniGameScene {
 
             // Shake effect
             const shake = Math.sin(animT * 30) * 3 * (1 - textProgress)
-            this.transitionStageText.position.set(this.width / 2 + shake, this.height * 0.22)
+            this.transitionStageText.position.set(this.width / 2 + shake, this.height * 0.28)
 
             // Sub text (slightly delayed)
             const subProgress = Math.min(1, (t - closePhaseEnd - 0.2) / 0.3)
@@ -3014,6 +3072,9 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     private onTap(): void {
+        // Initialize audio analyser on first tap (requires user interaction)
+        musicManager.initializeAnalyser()
+
         // Handle tap during transition
         if (this.isTransitioning) {
             this.onTransitionTap()
@@ -3273,9 +3334,14 @@ export class WobblediverScene extends BaseMiniGameScene {
         const maxRise = 150
         const waterSurfaceY = baseWaterLevel - this.currentStageConfig.waterLevelRise * maxRise
 
+        // Use BASE wormhole position for tentacle targeting (not current position!)
+        // This prevents feedback loop where tentacles chase the displaced wormhole
+        const baseX = this.currentStageConfig.wormhole.x
+        const baseY = this.currentStageConfig.wormhole.y
+
         // Update wormhole position and water level for tentacles
         for (const tentacle of this.abyssTentacles) {
-            tentacle.setWormholePosition(this.wormhole.x, this.wormhole.y)
+            tentacle.setWormholePosition(baseX, baseY) // Use base position, not current!
             tentacle.setWaterLevel(waterSurfaceY, this.height)
             tentacle.update(deltaSeconds)
         }
@@ -3288,9 +3354,6 @@ export class WobblediverScene extends BaseMiniGameScene {
             totalDisplacementX += displacement.x
             totalDisplacementY += displacement.y
         }
-
-        const baseX = this.currentStageConfig.wormhole.x
-        const baseY = this.currentStageConfig.wormhole.y
 
         // Max displacement - much larger range for dramatic movement
         // X: 100-180 pixels, Y: 50-100 pixels based on water level
@@ -3759,9 +3822,37 @@ export class WobblediverScene extends BaseMiniGameScene {
             portalPair.update(deltaSeconds)
         }
 
-        // Update obstacles and check proximity for attack
-        for (const obstacle of this.obstacles) {
+        // Get audio bands for equalizer effect
+        const audioBands = musicManager.getAudioBands()
+
+        // Update wall spikes with audio reactivity
+        this.drawSpikes(audioBands)
+
+        // Update obstacles with audio reactivity (equalizer effect)
+        for (let i = 0; i < this.obstacles.length; i++) {
+            const obstacle = this.obstacles[i]
+
+            // Distribute audio bands across obstacles for equalizer effect
+            // Alternate between bass, mid, high based on position
+            let audioLevel: number
+            if (this.obstacles.length <= 2) {
+                // Few obstacles: use overall level
+                audioLevel = audioBands.overall
+            } else {
+                // Multiple obstacles: distribute bands like an equalizer
+                const bandIndex = i % 3
+                if (bandIndex === 0) {
+                    audioLevel = audioBands.bass
+                } else if (bandIndex === 1) {
+                    audioLevel = audioBands.mid
+                } else {
+                    audioLevel = audioBands.high
+                }
+            }
+
+            obstacle.setAudioLevel(audioLevel)
             obstacle.update(deltaSeconds)
+
             // Check if player is near - triggers attack behavior
             if (this.wobble && this.wobble.state === 'released') {
                 const pos = this.wobble.getPosition()
@@ -4283,6 +4374,13 @@ export class WobblediverScene extends BaseMiniGameScene {
             rank: this.resultGrade.letter,
             isPerfect: this.resultGrade.letter === 'S',
         }
+    }
+
+    /**
+     * Check if intro is currently showing
+     */
+    public isIntroShowing(): boolean {
+        return this.intro?.visible ?? false
     }
 
     protected onResize(): void {

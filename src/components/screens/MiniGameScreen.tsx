@@ -24,6 +24,7 @@ export function MiniGameScreen({ gameId, onBack }: MiniGameScreenProps) {
     const { t } = useTranslation()
     const [mounted, setMounted] = useState(false)
     const [isPaused, setIsPaused] = useState(false)
+    const [isIntroShowing, setIsIntroShowing] = useState(true)
 
     const canvasRef = useRef<MiniGameCanvasHandle>(null)
     const { showRewardAd, webSimulationActive, completeWebSimulation, cancelWebSimulation } =
@@ -36,6 +37,17 @@ export function MiniGameScreen({ gameId, onBack }: MiniGameScreenProps) {
             setMounted(true)
         }, 50)
         return () => clearTimeout(timer)
+    }, [])
+
+    // Poll intro state to control pause button visibility
+    useEffect(() => {
+        const checkIntroState = () => {
+            if (canvasRef.current) {
+                setIsIntroShowing(canvasRef.current.isIntroShowing())
+            }
+        }
+        const interval = setInterval(checkIntroState, 100)
+        return () => clearInterval(interval)
     }, [])
 
     const handlePause = () => {
@@ -120,19 +132,21 @@ export function MiniGameScreen({ gameId, onBack }: MiniGameScreenProps) {
                 />
             </div>
 
-            {/* Pause Button */}
-            <button
-                onClick={handlePause}
-                className="absolute z-20 h-10 w-10 rounded-lg flex items-center justify-center transition-all active:scale-95"
-                style={{
-                    top: 'calc(max(env(safe-area-inset-top, 0px), 12px) + 8px)',
-                    right: 'calc(max(env(safe-area-inset-right, 0px), 12px) + 8px)',
-                    background: 'rgba(0,0,0,0.5)',
-                    border: `2px solid rgba(255,255,255,0.2)`,
-                }}
-            >
-                <Pause className="h-5 w-5 text-white" />
-            </button>
+            {/* Pause Button - Hidden during intro */}
+            {!isIntroShowing && (
+                <button
+                    onClick={handlePause}
+                    className="absolute z-20 h-10 w-10 rounded-lg flex items-center justify-center transition-all active:scale-95"
+                    style={{
+                        top: 'calc(max(env(safe-area-inset-top, 0px), 12px) + 8px)',
+                        right: 'calc(max(env(safe-area-inset-right, 0px), 12px) + 8px)',
+                        background: 'rgba(0,0,0,0.5)',
+                        border: `2px solid rgba(255,255,255,0.2)`,
+                    }}
+                >
+                    <Pause className="h-5 w-5 text-white" />
+                </button>
+            )}
 
             {/* Pause Overlay */}
             {isPaused && (

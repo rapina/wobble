@@ -23,6 +23,7 @@ export interface MiniGameCanvasHandle {
     resume: () => void
     reset: () => void
     getPhase: () => MiniGamePhase | null
+    isIntroShowing: () => boolean
 }
 
 function createMiniGameScene(
@@ -104,6 +105,12 @@ export const MiniGameCanvas = forwardRef<MiniGameCanvasHandle, MiniGameCanvasPro
                         return (sceneRef.current as any).gamePhase
                     }
                     return null
+                },
+                isIntroShowing: () => {
+                    if (sceneRef.current && 'isIntroShowing' in sceneRef.current) {
+                        return (sceneRef.current as any).isIntroShowing()
+                    }
+                    return false
                 },
             }),
             []

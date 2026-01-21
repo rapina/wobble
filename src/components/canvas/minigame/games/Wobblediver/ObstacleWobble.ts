@@ -70,6 +70,11 @@ export class ObstacleWobble {
     private isAgitated = false
     private agitationTimer = 0
 
+    // Audio reactivity
+    private audioLevel = 0 // 0-1, from music
+    private audioSmoothed = 0 // Smoothed for animation
+    private readonly AUDIO_SMOOTHING = 0.15 // How fast to follow audio
+
     // Colors - darker, more menacing
     private readonly baseColor = 0x2a0a35
     private readonly tipColor = 0x4a1a55
@@ -202,19 +207,20 @@ export class ObstacleWobble {
         const pulseIntensity = 0.25 + Math.sin(this.pulseTime * 2.5) * 0.12
         const attackGlow = this.isAttacking ? 0.35 : 0
         const agitationGlow = this.isAgitated ? 0.25 : 0
+        const audioGlow = this.audioSmoothed * 0.4 // Audio adds up to 0.4 extra glow
 
-        // Draw eerie glow
+        // Draw eerie glow (boosted by audio)
         for (let i = 0; i < this.segments.length - 1; i++) {
             const seg = this.segments[i]
             const nextSeg = this.segments[i + 1]
-            const glowWidth = seg.width + 20
+            const glowWidth = seg.width + 20 + this.audioSmoothed * 15 // Wider glow with audio
 
             glow.moveTo(seg.x, seg.y)
             glow.lineTo(nextSeg.x, nextSeg.y)
             glow.stroke({
                 color: this.glowColor,
                 width: glowWidth,
-                alpha: (pulseIntensity + attackGlow + agitationGlow) * 0.15,
+                alpha: (pulseIntensity + attackGlow + agitationGlow + audioGlow) * 0.15,
                 cap: 'round',
             })
         }
@@ -322,6 +328,9 @@ export class ObstacleWobble {
         this.time += deltaSeconds
         this.pulseTime += deltaSeconds
 
+        // Smooth audio level for animation
+        this.audioSmoothed += (this.audioLevel - this.audioSmoothed) * this.AUDIO_SMOOTHING
+
         // Update attack state
         if (this.isAttacking) {
             this.attackTimer += deltaSeconds
@@ -329,6 +338,13 @@ export class ObstacleWobble {
                 this.isAttacking = false
                 this.targetLength = this.IDLE_LENGTH
             }
+        }
+
+        // Audio-reactive idle length (equalizer effect)
+        // When not attacking, pulse with the music
+        if (!this.isAttacking) {
+            const audioBoost = this.audioSmoothed * 40 // Max 40px extra length from audio
+            this.targetLength = this.IDLE_LENGTH + audioBoost
         }
 
         // Smoothly extend/retract tentacle
@@ -354,6 +370,13 @@ export class ObstacleWobble {
 
         this.updateSegments()
         this.draw()
+    }
+
+    /**
+     * Set audio level for reactive visualization (0-1)
+     */
+    setAudioLevel(level: number): void {
+        this.audioLevel = Math.max(0, Math.min(1, level))
     }
 
     /**
