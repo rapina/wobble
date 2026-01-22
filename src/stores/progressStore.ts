@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { useAchievementStore } from './achievementStore'
+import { useLevelChallengeStore } from './levelChallengeStore'
 
 // Game statistics for survivor mode
 export interface GameStats {
@@ -65,9 +66,9 @@ export const useProgressStore = create<ProgressState>()(
                     return { studiedFormulas: newSet }
                 })
 
-                // Check learning achievements
+                // Check level challenge progress
                 const count = get().studiedFormulas.size
-                useAchievementStore.getState().checkLearningAchievements(count)
+                useLevelChallengeStore.getState().checkAndUpdateLevel('formula-discovery', count)
             },
 
             hasStudied: (formulaId: string) => {

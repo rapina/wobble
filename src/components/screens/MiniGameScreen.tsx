@@ -4,6 +4,7 @@ import {
     MiniGameCanvas,
     MiniGameCanvasHandle,
     MiniGameId,
+    MiniGameMode,
 } from '@/components/canvas/MiniGameCanvas'
 import { Pause, Play, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -17,10 +18,11 @@ const theme = {
 
 interface MiniGameScreenProps {
     gameId: MiniGameId
+    mode?: MiniGameMode
     onBack: () => void
 }
 
-export function MiniGameScreen({ gameId, onBack }: MiniGameScreenProps) {
+export function MiniGameScreen({ gameId, mode = 'endless', onBack }: MiniGameScreenProps) {
     const { t } = useTranslation()
     const [mounted, setMounted] = useState(false)
     const [isPaused, setIsPaused] = useState(false)
@@ -126,6 +128,7 @@ export function MiniGameScreen({ gameId, onBack }: MiniGameScreenProps) {
                 <MiniGameCanvas
                     ref={canvasRef}
                     gameId={gameId}
+                    mode={mode}
                     onRetry={handleRetry}
                     onExit={handleExit}
                     onContinueWithAd={handleContinueWithAd}

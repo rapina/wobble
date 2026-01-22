@@ -7,8 +7,11 @@ import { useMinigameRecordStore } from '@/stores/minigameRecordStore'
 
 export type MiniGameId = 'wobblediver'
 
+export type MiniGameMode = 'endless' | 'run'
+
 interface MiniGameCanvasProps {
     gameId: MiniGameId
+    mode?: MiniGameMode
     onGameOver?: () => void
     onRetry?: () => void
     onExit?: () => void
@@ -29,11 +32,18 @@ export interface MiniGameCanvasHandle {
 function createMiniGameScene(
     gameId: MiniGameId,
     app: import('pixi.js').Application,
-    callbacks: MiniGameCallbacks
+    callbacks: MiniGameCallbacks,
+    mode: MiniGameMode = 'endless'
 ): BaseMiniGameScene | null {
     switch (gameId) {
-        case 'wobblediver':
-            return new WobblediverScene(app, callbacks)
+        case 'wobblediver': {
+            const scene = new WobblediverScene(app, callbacks)
+            // Enable run mode if specified
+            if (mode === 'run') {
+                scene.setRunMode(true)
+            }
+            return scene
+        }
         default:
             console.error(`Unknown minigame: ${gameId}`)
             return null
@@ -42,7 +52,7 @@ function createMiniGameScene(
 
 export const MiniGameCanvas = forwardRef<MiniGameCanvasHandle, MiniGameCanvasProps>(
     function MiniGameCanvas(
-        { gameId, onGameOver, onRetry, onExit, onContinueWithAd, width = '100%', height = '100%' },
+        { gameId, mode = 'endless', onGameOver, onRetry, onExit, onContinueWithAd, width = '100%', height = '100%' },
         ref
     ) {
         const containerRef = useRef<HTMLDivElement>(null)
@@ -163,7 +173,7 @@ export const MiniGameCanvas = forwardRef<MiniGameCanvasHandle, MiniGameCanvasPro
                         : undefined,
                 }
 
-                const scene = createMiniGameScene(gameId, app, callbacks)
+                const scene = createMiniGameScene(gameId, app, callbacks, mode)
 
                 if (scene) {
                     app.stage.addChild(scene.container)
@@ -172,7 +182,12 @@ export const MiniGameCanvas = forwardRef<MiniGameCanvasHandle, MiniGameCanvasPro
 
                     // Auto-start after a short delay
                     setTimeout(() => {
-                        scene.start()
+                        // For run mode, initialize the run first then show map
+                        if (mode === 'run' && gameId === 'wobblediver') {
+                            ;(scene as WobblediverScene).initializeRunMode()
+                        } else {
+                            scene.start()
+                        }
                     }, 100)
                 }
             } catch (e) {
@@ -192,7 +207,7 @@ export const MiniGameCanvas = forwardRef<MiniGameCanvasHandle, MiniGameCanvasPro
                     }
                 }
             }
-        }, [isReady, app, gameId, sceneRetryCount])
+        }, [isReady, app, gameId, mode, sceneRetryCount])
 
         // Handle resize
         useEffect(() => {

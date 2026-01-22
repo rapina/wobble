@@ -7,11 +7,39 @@
         "collectionDesc": "キャラ、学習、記録",
         "game": "ゲーム",
         "gameDesc": "ミニゲームに挑戦しよう！",
+        "lab": "研究所",
+        "labDesc": "ワブルたちが物理を研究！",
         "shop": "ショップ",
         "shopDesc": "広告削除＆特別アイテム",
         "soon": "SOON",
         "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
         "disclaimer": "Wobbleは物理を楽しく探索するゲームです。\n実際の計算とは異なる場合があります。"
+    },
+    "lab": {
+        "title": "物理研究所",
+        "workers": "研究員",
+        "tapStation": "施設をタップして配置",
+        "upgrades": "強化",
+        "appliedStats": "適用ステータス",
+        "perLevel": "レベルごと",
+        "stations": {
+            "gravityLab": "重力研究所",
+            "accelerator": "加速器",
+            "collisionLab": "衝突実験室",
+            "insulationResearch": "絶縁体研究"
+        },
+        "stat": {
+            "hp": "HP",
+            "speed": "スピード",
+            "damage": "攻撃力",
+            "defense": "防御力"
+        },
+        "resources": {
+            "mass": "質量",
+            "velocity": "速度",
+            "force": "力",
+            "resistance": "抵抗"
+        }
     },
     "simulation": {
         "loading": "読み込み中...",

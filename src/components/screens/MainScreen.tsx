@@ -5,9 +5,10 @@ import { HomeScreen, GameMode } from './HomeScreen'
 import { SandboxScreen } from './SandboxScreen.tsx'
 import { CollectionScreen } from './CollectionScreen'
 import { GameScreen } from './GameScreen.tsx'
-import { GameSelectScreen } from './GameSelectScreen.tsx'
+import { GameSelectScreen, GameMode as MiniGameMode } from './GameSelectScreen.tsx'
 import { MiniGameScreen } from './MiniGameScreen.tsx'
 import { ShopScreen } from './ShopScreen'
+import { LabScreen } from './LabScreen'
 import { IntroScreen, IntroScene } from './IntroScreen'
 import { formulaList } from '../../formulas/registry'
 import { Formula } from '../../formulas/types'
@@ -27,6 +28,7 @@ type ScreenState =
     | 'minigame'
     | 'learning'
     | 'shop'
+    | 'lab'
 
 export function MainScreen() {
     // Check if intro has been seen, show intro first if not
@@ -35,6 +37,7 @@ export function MainScreen() {
     )
     const [selectedFormula, setSelectedFormula] = useState<Formula | null>(null)
     const [selectedMiniGame, setSelectedMiniGame] = useState<MiniGameId | null>(null)
+    const [selectedMiniGameMode, setSelectedMiniGameMode] = useState<MiniGameMode>('endless')
     const [isTransitioning, setIsTransitioning] = useState(false)
     const { isMusicEnabled, switchTrack, markUserInteracted } = useMusic()
     const { restorePurchases } = useInAppPurchase()
@@ -60,16 +63,9 @@ export function MainScreen() {
     const hasInteractedRef = useRef(false)
 
     useEffect(() => {
-        console.log('[MainScreen] useEffect - registering interaction listener')
-
         const handleInteraction = () => {
-            if (hasInteractedRef.current) {
-                console.log('[MainScreen] handleInteraction - already interacted, skipping')
-                return
-            }
+            if (hasInteractedRef.current) return
             hasInteractedRef.current = true
-
-            console.log('[MainScreen] handleInteraction - first click detected')
             markUserInteracted()
         }
 
@@ -77,7 +73,6 @@ export function MainScreen() {
         document.addEventListener('touchstart', handleInteraction, true)
 
         return () => {
-            console.log('[MainScreen] useEffect cleanup - removing listener')
             document.removeEventListener('click', handleInteraction, true)
             document.removeEventListener('touchstart', handleInteraction, true)
         }
@@ -142,10 +137,16 @@ export function MainScreen() {
                 setScreenState('shop')
                 setIsTransitioning(false)
             }, 150)
+        } else if (mode === 'lab') {
+            setIsTransitioning(true)
+            setTimeout(() => {
+                setScreenState('lab')
+                setIsTransitioning(false)
+            }, 150)
         }
     }
 
-    const handleSelectAdventure = (adventureId: string) => {
+    const handleSelectAdventure = (adventureId: string, mode?: MiniGameMode) => {
         if (adventureId === 'wobble-survivor') {
             setIsTransitioning(true)
             setTimeout(() => {
@@ -156,6 +157,7 @@ export function MainScreen() {
             setIsTransitioning(true)
             setTimeout(() => {
                 setSelectedMiniGame('wobblediver')
+                setSelectedMiniGameMode(mode || 'endless')
                 setScreenState('minigame')
                 setIsTransitioning(false)
             }, 150)
@@ -217,10 +219,13 @@ export function MainScreen() {
                 ) : screenState === 'minigame' && selectedMiniGame ? (
                     <MiniGameScreen
                         gameId={selectedMiniGame}
+                        mode={selectedMiniGameMode}
                         onBack={handleBackToAdventureSelect}
                     />
                 ) : screenState === 'shop' ? (
                     <ShopScreen onBack={handleBackToHome} />
+                ) : screenState === 'lab' ? (
+                    <LabScreen onBack={handleBackToHome} />
                 ) : null}
             </div>
         </div>

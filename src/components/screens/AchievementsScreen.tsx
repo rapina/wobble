@@ -1,10 +1,21 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Check, Star, Zap, Target, Crown } from 'lucide-react'
+import { ArrowLeft, Check } from 'lucide-react'
 import Balatro from '@/components/Balatro'
 import { achievementsPreset } from '@/config/backgroundPresets'
 import { useAchievementStore, AchievementProgress } from '@/stores/achievementStore'
-import { ACHIEVEMENTS, CATEGORY_INFO, AchievementCategory, Achievement } from '@/data/achievements'
+import { useProgressStore } from '@/stores/progressStore'
+import { useChallengeStore } from '@/stores/challengeStore'
+import {
+    ACHIEVEMENTS,
+    CATEGORY_INFO,
+    SUBCATEGORY_INFO,
+    AchievementCategory,
+    AchievementSubcategory,
+    Achievement,
+    getAchievementsBySubcategory,
+} from '@/data/achievements'
+import { LEVEL_CHALLENGES, calculateLevel, LevelChallengeId } from '@/data/levelChallenges'
 import { t } from '@/utils/localization'
 import { cn } from '@/lib/utils'
 
@@ -22,14 +33,6 @@ const theme = {
     purple: '#9b59b6',
 }
 
-// Category icons
-const CATEGORY_ICONS: Record<AchievementCategory, React.ReactNode> = {
-    learning: <Star className="w-5 h-5" />,
-    combat: <Zap className="w-5 h-5" />,
-    collection: <Target className="w-5 h-5" />,
-    mastery: <Crown className="w-5 h-5" />,
-}
-
 interface AchievementsScreenProps {
     onBack: () => void
 }
@@ -37,16 +40,37 @@ interface AchievementsScreenProps {
 export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
     const { i18n } = useTranslation()
     const lang = i18n.language
+    const isKorean = lang === 'ko'
     const { isUnlocked, getProgress, getAchievementProgress } = useAchievementStore()
+    const { studiedFormulas } = useProgressStore()
+    const { totalSolved } = useChallengeStore()
     const progress = getProgress()
     const [mounted, setMounted] = useState(false)
+    const [activeCategory, setActiveCategory] = useState<AchievementCategory>('sandbox')
 
     useEffect(() => {
         const timer = setTimeout(() => setMounted(true), 100)
         return () => clearTimeout(timer)
     }, [])
 
-    const categories: AchievementCategory[] = ['learning', 'combat', 'collection', 'mastery']
+    // Level challenge values
+    const levelChallengeValues: Record<LevelChallengeId, number> = {
+        'formula-discovery': studiedFormulas.size,
+        'challenge-solver': totalSolved,
+    }
+
+    // Get subcategories for each main category
+    // Note: 'survivor' is hidden until the mode is released
+    const sandboxSubcategories: AchievementSubcategory[] = ['collection']
+    const gameSubcategories: AchievementSubcategory[] = ['wobblediver']
+
+    const subcategories =
+        activeCategory === 'sandbox' ? sandboxSubcategories : gameSubcategories
+
+    // Calculate visible achievements progress (excluding survivor)
+    const visibleAchievements = ACHIEVEMENTS.filter((a) => a.subcategory !== 'survivor')
+    const visibleUnlockedCount = visibleAchievements.filter((a) => isUnlocked(a.id)).length
+    const visibleTotalCount = visibleAchievements.length
 
     return (
         <div className="relative w-full h-full overflow-hidden" style={{ background: theme.felt }}>
@@ -140,7 +164,7 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
                 {/* Overall Progress Card */}
                 <div
                     className={cn(
-                        'mb-5 p-4 rounded-xl relative overflow-hidden',
+                        'mb-4 p-4 rounded-xl relative overflow-hidden',
                         'transition-all duration-500',
                         mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
                     )}
@@ -175,7 +199,7 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
                             }}
                         >
                             <span className="text-sm font-black text-black">
-                                {progress.unlocked} / {progress.total}
+                                {visibleUnlockedCount} / {visibleTotalCount}
                             </span>
                         </div>
                     </div>
@@ -190,7 +214,7 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
                         <div
                             className="h-full rounded transition-all duration-700"
                             style={{
-                                width: `${(progress.unlocked / progress.total) * 100}%`,
+                                width: `${(visibleUnlockedCount / visibleTotalCount) * 100}%`,
                                 background: `linear-gradient(90deg, ${theme.gold}, #e6b84a)`,
                                 boxShadow: '0 1px 0 rgba(255,255,255,0.3)',
                             }}
@@ -198,36 +222,228 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
                     </div>
                 </div>
 
-                {/* Categories */}
-                <div className="space-y-4">
-                    {categories.map((category, catIndex) => {
+                {/* Level Challenges Section */}
+                <div
+                    className={cn(
+                        'mb-4',
+                        'transition-all duration-500 delay-100',
+                        mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                    )}
+                >
+                    <div
+                        className="rounded-xl p-4 relative overflow-hidden"
+                        style={{
+                            background: theme.bgPanel,
+                            border: `3px solid ${theme.border}`,
+                            boxShadow: `0 4px 0 ${theme.border}`,
+                        }}
+                    >
+                        {/* Section Header */}
+                        <div className="flex items-center gap-2 mb-4">
+                            <span className="text-lg">📈</span>
+                            <h3
+                                className="font-black tracking-wide"
+                                style={{
+                                    color: theme.gold,
+                                    textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                                }}
+                            >
+                                {isKorean ? '도전 과제' : 'Challenges'}
+                            </h3>
+                        </div>
+
+                        {/* Level Challenge Cards */}
+                        <div className="space-y-3">
+                            {LEVEL_CHALLENGES.map((challenge) => {
+                                const currentValue = levelChallengeValues[challenge.id]
+                                const { level, currentTitle, nextLevel, progress } = calculateLevel(
+                                    challenge,
+                                    currentValue
+                                )
+                                const isMaxLevel = level >= challenge.levels.length
+
+                                return (
+                                    <div
+                                        key={challenge.id}
+                                        className="p-3 rounded-xl relative overflow-hidden"
+                                        style={{
+                                            background: `${challenge.color}15`,
+                                            border: `2px solid ${challenge.color}`,
+                                            boxShadow: `0 2px 0 ${theme.border}`,
+                                        }}
+                                    >
+                                        {/* Shine effect */}
+                                        <div
+                                            className="absolute inset-0 opacity-10"
+                                            style={{
+                                                background: `linear-gradient(135deg, ${challenge.color} 0%, transparent 50%, transparent 100%)`,
+                                            }}
+                                        />
+
+                                        <div className="relative">
+                                            {/* Header Row */}
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xl">{challenge.icon}</span>
+                                                    <span
+                                                        className="font-black"
+                                                        style={{ color: challenge.color }}
+                                                    >
+                                                        {t(challenge.name, lang)}
+                                                    </span>
+                                                </div>
+                                                <div
+                                                    className="px-2 py-0.5 rounded-md"
+                                                    style={{
+                                                        background: challenge.color,
+                                                        border: `2px solid ${theme.border}`,
+                                                    }}
+                                                >
+                                                    <span className="text-xs font-black text-white">
+                                                        Lv.{level}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Title */}
+                                            <p
+                                                className="text-sm font-bold mb-2"
+                                                style={{ color: 'rgba(255,255,255,0.8)' }}
+                                            >
+                                                {t(currentTitle, lang)}
+                                            </p>
+
+                                            {/* Progress Bar */}
+                                            {!isMaxLevel && nextLevel && (
+                                                <>
+                                                    <div
+                                                        className="h-3 rounded-md overflow-hidden mb-1"
+                                                        style={{
+                                                            background: theme.bgPanelLight,
+                                                            border: `2px solid ${theme.border}`,
+                                                        }}
+                                                    >
+                                                        <div
+                                                            className="h-full rounded transition-all duration-500"
+                                                            style={{
+                                                                width: `${progress}%`,
+                                                                background: `linear-gradient(90deg, ${challenge.color}80, ${challenge.color})`,
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="flex justify-between text-xs">
+                                                        <span style={{ color: 'rgba(255,255,255,0.5)' }}>
+                                                            {currentValue} / {nextLevel.requirement}
+                                                        </span>
+                                                        <span style={{ color: 'rgba(255,255,255,0.4)' }}>
+                                                            {isKorean
+                                                                ? `다음: ${t(nextLevel.title, lang)}`
+                                                                : `Next: ${t(nextLevel.title, lang)}`}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            )}
+                                            {isMaxLevel && (
+                                                <p
+                                                    className="text-xs font-bold"
+                                                    style={{ color: theme.gold }}
+                                                >
+                                                    {isKorean ? '🎉 최고 레벨 달성!' : '🎉 Max Level!'}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Category Tabs (Sandbox / Game) */}
+                <div
+                    className={cn(
+                        'flex gap-2 mb-4',
+                        'transition-all duration-500 delay-200',
+                        mounted ? 'opacity-100' : 'opacity-0'
+                    )}
+                >
+                    {(['sandbox', 'game'] as AchievementCategory[]).map((category) => {
+                        const isActive = activeCategory === category
                         const categoryInfo = CATEGORY_INFO[category]
+                        // Exclude survivor achievements from count (hidden until released)
                         const categoryAchievements = ACHIEVEMENTS.filter(
-                            (a) => a.category === category
+                            (a) => a.category === category && a.subcategory !== 'survivor'
                         )
                         const unlockedCount = categoryAchievements.filter((a) =>
                             isUnlocked(a.id)
                         ).length
-                        const allUnlocked = unlockedCount === categoryAchievements.length
+
+                        return (
+                            <button
+                                key={category}
+                                onClick={() => setActiveCategory(category)}
+                                className="flex-1 py-2.5 px-3 rounded-lg transition-all active:scale-[0.98]"
+                                style={{
+                                    background: isActive ? categoryInfo.color : theme.bgPanel,
+                                    border: `2px solid ${theme.border}`,
+                                    boxShadow: `0 2px 0 ${theme.border}`,
+                                }}
+                            >
+                                <div className="flex items-center justify-center gap-2">
+                                    <span className="text-lg">
+                                        {category === 'sandbox' ? '🧪' : '🎮'}
+                                    </span>
+                                    <span
+                                        className="text-sm font-black"
+                                        style={{
+                                            color: isActive ? 'white' : 'rgba(255,255,255,0.6)',
+                                        }}
+                                    >
+                                        {t(categoryInfo.name, lang)}
+                                    </span>
+                                    <span
+                                        className="text-xs font-bold px-1.5 py-0.5 rounded"
+                                        style={{
+                                            background: isActive
+                                                ? 'rgba(0,0,0,0.2)'
+                                                : 'rgba(255,255,255,0.1)',
+                                            color: isActive ? 'white' : 'rgba(255,255,255,0.5)',
+                                        }}
+                                    >
+                                        {unlockedCount}/{categoryAchievements.length}
+                                    </span>
+                                </div>
+                            </button>
+                        )
+                    })}
+                </div>
+
+                {/* Subcategories */}
+                <div className="space-y-4">
+                    {subcategories.map((subcategory, subIndex) => {
+                        const subcategoryInfo = SUBCATEGORY_INFO[subcategory]
+                        const subcategoryAchievements = getAchievementsBySubcategory(subcategory)
+                        const unlockedCount = subcategoryAchievements.filter((a) =>
+                            isUnlocked(a.id)
+                        ).length
+                        const allUnlocked = unlockedCount === subcategoryAchievements.length
 
                         return (
                             <div
-                                key={category}
+                                key={subcategory}
                                 className={cn(
                                     'transition-all duration-300',
-                                    mounted
-                                        ? 'opacity-100 translate-y-0'
-                                        : 'opacity-0 translate-y-4'
+                                    mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                                 )}
-                                style={{ transitionDelay: `${catIndex * 80 + 100}ms` }}
+                                style={{ transitionDelay: `${subIndex * 80 + 300}ms` }}
                             >
                                 <div
                                     className="rounded-xl p-4 relative overflow-hidden"
                                     style={{
                                         background: theme.bgPanel,
-                                        border: `3px solid ${allUnlocked ? categoryInfo.color : theme.border}`,
+                                        border: `3px solid ${allUnlocked ? subcategoryInfo.color : theme.border}`,
                                         boxShadow: allUnlocked
-                                            ? `0 4px 0 ${theme.border}, 0 0 12px ${categoryInfo.color}40`
+                                            ? `0 4px 0 ${theme.border}, 0 0 12px ${subcategoryInfo.color}40`
                                             : `0 4px 0 ${theme.border}`,
                                     }}
                                 >
@@ -236,52 +452,42 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
                                         <div
                                             className="absolute inset-0 opacity-10"
                                             style={{
-                                                background: `linear-gradient(135deg, ${categoryInfo.color} 0%, transparent 50%, transparent 100%)`,
+                                                background: `linear-gradient(135deg, ${subcategoryInfo.color} 0%, transparent 50%, transparent 100%)`,
                                             }}
                                         />
                                     )}
 
-                                    {/* Category Header */}
+                                    {/* Subcategory Header */}
                                     <div className="relative flex items-center justify-between mb-4">
                                         <div className="flex items-center gap-3">
-                                            <div
-                                                className="w-10 h-10 rounded-lg flex items-center justify-center"
-                                                style={{
-                                                    background: categoryInfo.color,
-                                                    border: `2px solid ${theme.border}`,
-                                                    boxShadow: `0 2px 0 ${theme.border}`,
-                                                    color: 'white',
-                                                }}
-                                            >
-                                                {CATEGORY_ICONS[category]}
-                                            </div>
+                                            <span className="text-xl">{subcategoryInfo.icon}</span>
                                             <h3
                                                 className="font-black tracking-wide"
                                                 style={{
-                                                    color: categoryInfo.color,
+                                                    color: subcategoryInfo.color,
                                                     textShadow: '0 1px 2px rgba(0,0,0,0.3)',
                                                 }}
                                             >
-                                                {t(categoryInfo.name, lang)}
+                                                {t(subcategoryInfo.name, lang)}
                                             </h3>
                                         </div>
                                         <div
                                             className="px-2.5 py-1 rounded-md"
                                             style={{
-                                                background: categoryInfo.color,
+                                                background: subcategoryInfo.color,
                                                 border: `2px solid ${theme.border}`,
                                                 boxShadow: `0 2px 0 ${theme.border}`,
                                             }}
                                         >
                                             <span className="text-xs font-black text-white">
-                                                {unlockedCount}/{categoryAchievements.length}
+                                                {unlockedCount}/{subcategoryAchievements.length}
                                             </span>
                                         </div>
                                     </div>
 
                                     {/* Achievement List */}
                                     <div className="space-y-2">
-                                        {categoryAchievements.map((achievement) => {
+                                        {subcategoryAchievements.map((achievement) => {
                                             const unlocked = isUnlocked(achievement.id)
                                             const achievementProg = getAchievementProgress(
                                                 achievement.id
@@ -290,11 +496,10 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
                                             return (
                                                 <AchievementItem
                                                     key={achievement.id}
-                                                    category={category}
                                                     achievement={achievement}
                                                     unlocked={unlocked}
                                                     progress={achievementProg}
-                                                    categoryColor={categoryInfo.color}
+                                                    subcategoryColor={subcategoryInfo.color}
                                                     lang={lang}
                                                 />
                                             )
@@ -307,7 +512,7 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
                 </div>
 
                 {/* Encouragement */}
-                {progress.unlocked < progress.total && (
+                {visibleUnlockedCount < visibleTotalCount && (
                     <p
                         className={cn(
                             'text-center text-white/35 text-xs font-medium mt-6',
@@ -329,28 +534,26 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
 
 // Individual Achievement Item Component
 function AchievementItem({
-    category,
     achievement,
     unlocked,
     progress,
-    categoryColor,
+    subcategoryColor,
     lang,
 }: {
-    category: AchievementCategory
     achievement: Achievement
     unlocked: boolean
     progress: AchievementProgress | null
-    categoryColor: string
+    subcategoryColor: string
     lang: string
 }) {
     return (
         <div
             className="p-3 rounded-xl transition-all relative overflow-hidden"
             style={{
-                background: unlocked ? `${categoryColor}15` : theme.bgPanelLight,
-                border: `2px solid ${unlocked ? categoryColor : theme.border}`,
+                background: unlocked ? `${subcategoryColor}15` : theme.bgPanelLight,
+                border: `2px solid ${unlocked ? subcategoryColor : theme.border}`,
                 boxShadow: unlocked
-                    ? `0 2px 0 ${theme.border}, 0 0 8px ${categoryColor}30`
+                    ? `0 2px 0 ${theme.border}, 0 0 8px ${subcategoryColor}30`
                     : `0 2px 0 ${theme.border}`,
             }}
         >
@@ -359,7 +562,7 @@ function AchievementItem({
                 <div
                     className="absolute inset-0 opacity-20"
                     style={{
-                        background: `linear-gradient(135deg, ${categoryColor} 0%, transparent 50%, transparent 100%)`,
+                        background: `linear-gradient(135deg, ${subcategoryColor} 0%, transparent 50%, transparent 100%)`,
                     }}
                 />
             )}
@@ -369,16 +572,15 @@ function AchievementItem({
                 <div
                     className="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{
-                        background: unlocked ? categoryColor : theme.bgPanel,
+                        background: unlocked ? subcategoryColor : theme.bgPanel,
                         border: `2px solid ${theme.border}`,
                         boxShadow: `0 2px 0 ${theme.border}`,
-                        color: unlocked ? 'white' : 'rgba(255,255,255,0.3)',
                     }}
                 >
                     {unlocked ? (
-                        CATEGORY_ICONS[category]
+                        <span className="text-xl">{achievement.icon}</span>
                     ) : (
-                        <span className="text-lg font-bold">?</span>
+                        <span className="text-lg font-bold text-white/30">?</span>
                     )}
                 </div>
 
@@ -408,7 +610,7 @@ function AchievementItem({
                     <div
                         className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                         style={{
-                            background: categoryColor,
+                            background: subcategoryColor,
                             border: `2px solid ${theme.border}`,
                             boxShadow: `0 2px 0 ${theme.border}`,
                         }}
@@ -445,7 +647,7 @@ function AchievementItem({
                         className="h-full rounded transition-all duration-500"
                         style={{
                             width: `${progress.percentage}%`,
-                            background: `linear-gradient(90deg, ${categoryColor}80, ${categoryColor})`,
+                            background: `linear-gradient(90deg, ${subcategoryColor}80, ${subcategoryColor})`,
                         }}
                     />
                 </div>

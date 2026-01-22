@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import { ACHIEVEMENTS, getAchievement, meetsRankRequirement } from '@/data/achievements'
 import { useProgressStore } from './progressStore'
 import { useCollectionStore } from './collectionStore'
+import { useMinigameRecordStore } from './minigameRecordStore'
 
 export interface AchievementProgress {
     current: number
@@ -39,9 +40,21 @@ interface AchievementState {
     reset: () => void
 
     // Check functions - called by other stores
-    checkLearningAchievements: (formulaCount: number) => void
     checkCombatAchievements: (totalKills: number, bestTime: number, bestRank: string) => void
     checkCollectionAchievements: (wobbleCount: number) => void
+    checkWobblediverAchievements: (
+        totalGames: number,
+        bestDepth: number,
+        highScore: number,
+        bestRank: string
+    ) => void
+    checkWobblediverRunAchievements: (
+        completedRuns: number,
+        longestUnlockedRun: number,
+        perfectRunCount: number,
+        totalElitesDefeated: number,
+        totalEventsTriggered: number
+    ) => void
 
     // Progress tracking
     getAchievementProgress: (id: string) => AchievementProgress | null
@@ -99,17 +112,7 @@ export const useAchievementStore = create<AchievementState>()(
                 })
             },
 
-            // Check learning achievements based on formula count
-            checkLearningAchievements: (formulaCount: number) => {
-                const { unlock } = get()
-
-                if (formulaCount >= 1) unlock('first-formula')
-                if (formulaCount >= 5) unlock('curious-mind')
-                if (formulaCount >= 15) unlock('scholar')
-                if (formulaCount >= 35) unlock('physicist')
-            },
-
-            // Check combat achievements based on game stats
+            // Check combat achievements based on game stats (Survivor mode)
             checkCombatAchievements: (totalKills: number, bestTime: number, bestRank: string) => {
                 const { unlock } = get()
 
@@ -136,23 +139,74 @@ export const useAchievementStore = create<AchievementState>()(
                 if (wobbleCount >= 7) unlock('curator')
             },
 
+            // Check Wobblediver achievements
+            checkWobblediverAchievements: (
+                totalGames: number,
+                bestDepth: number,
+                highScore: number,
+                bestRank: string
+            ) => {
+                const { unlock } = get()
+
+                // Game count achievements
+                if (totalGames >= 1) unlock('first-dive')
+                if (totalGames >= 10) unlock('veteran-diver')
+
+                // Depth achievements
+                if (bestDepth >= 10) unlock('deep-diver')
+                if (bestDepth >= 20) unlock('abyss-explorer')
+
+                // Score achievements
+                if (highScore >= 5000) unlock('score-hunter')
+                if (highScore >= 10000) unlock('high-scorer')
+
+                // Rank achievements
+                if (meetsRankRequirement(bestRank, 'A')) unlock('diver-rank-a')
+                if (meetsRankRequirement(bestRank, 'S')) unlock('perfect-escape')
+            },
+
+            // Check Wobblediver run achievements
+            checkWobblediverRunAchievements: (
+                completedRuns: number,
+                longestUnlockedRun: number,
+                perfectRunCount: number,
+                totalElitesDefeated: number,
+                totalEventsTriggered: number
+            ) => {
+                const { unlock } = get()
+
+                // Run completion achievements
+                if (completedRuns >= 1) unlock('first-descent')
+                if (longestUnlockedRun >= 20) unlock('deep-explorer')
+                if (longestUnlockedRun >= 30) unlock('abyssal-conqueror')
+                if (longestUnlockedRun >= 40) unlock('void-walker')
+                if (longestUnlockedRun >= 50) unlock('master-of-abyss')
+
+                // Perfect run achievements
+                if (perfectRunCount >= 1) unlock('flawless-dive')
+
+                // Elite/event achievements
+                if (totalElitesDefeated >= 10) unlock('elite-hunter')
+                if (totalEventsTriggered >= 20) unlock('event-seeker')
+            },
+
             // Get progress for a specific achievement
             getAchievementProgress: (id: string): AchievementProgress | null => {
                 const achievement = getAchievement(id)
                 if (!achievement) return null
 
                 // Rank achievements don't have numeric progress
-                if (achievement.condition.type === 'rank') return null
+                if (
+                    achievement.condition.type === 'rank' ||
+                    achievement.condition.type === 'wobblediverRank'
+                ) {
+                    return null
+                }
 
                 const target = achievement.condition.value as number
                 let current = 0
 
                 switch (achievement.condition.type) {
-                    case 'formulas': {
-                        const { studiedFormulas } = useProgressStore.getState()
-                        current = studiedFormulas.size
-                        break
-                    }
                     case 'kills': {
                         const { gameStats } = useProgressStore.getState()
                         current = gameStats.totalKills
@@ -166,6 +220,21 @@ export const useAchievementStore = create<AchievementState>()(
                     case 'wobbles': {
                         const { unlockedWobbles } = useCollectionStore.getState()
                         current = unlockedWobbles.length
+                        break
+                    }
+                    case 'wobblediverDepth': {
+                        const record = useMinigameRecordStore.getState().getWobblediverRecord()
+                        current = record.bestDepth
+                        break
+                    }
+                    case 'wobblediverScore': {
+                        const record = useMinigameRecordStore.getState().getWobblediverRecord()
+                        current = record.highScore
+                        break
+                    }
+                    case 'wobblediverGames': {
+                        const record = useMinigameRecordStore.getState().getWobblediverRecord()
+                        current = record.totalGames
                         break
                     }
                 }

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { Formula, Variable } from '../formulas/types'
+import { useLevelChallengeStore } from './levelChallengeStore'
 
 export type ChallengeType = 'target' | 'range' | 'condition'
 
@@ -31,6 +31,9 @@ interface ChallengeState {
     solved: number
     failed: number
 
+    // Total solved (persistent)
+    totalSolved: number
+
     // Last earned score (for toast display)
     lastEarnedScore: number
 
@@ -58,12 +61,14 @@ export const useChallengeStore = create<ChallengeState>()(
             maxCombo: 0,
             solved: 0,
             failed: 0,
+            totalSolved: 0,
             lastEarnedScore: 0,
 
             setChallenge: (challenge) => set({ currentChallenge: challenge }),
 
             solveChallenge: () => {
-                const { currentChallenge, score, highScore, combo, maxCombo, solved } = get()
+                const { currentChallenge, score, highScore, combo, maxCombo, solved, totalSolved } =
+                    get()
                 if (!currentChallenge) return 0
 
                 const baseScore = BASE_SCORES[currentChallenge.difficulty]
@@ -71,6 +76,7 @@ export const useChallengeStore = create<ChallengeState>()(
                 const earnedScore = Math.round(baseScore * comboMultiplier)
                 const newScore = score + earnedScore
                 const newCombo = combo + 1
+                const newTotalSolved = totalSolved + 1
 
                 set({
                     score: newScore,
@@ -78,9 +84,13 @@ export const useChallengeStore = create<ChallengeState>()(
                     combo: newCombo,
                     maxCombo: Math.max(maxCombo, newCombo),
                     solved: solved + 1,
+                    totalSolved: newTotalSolved,
                     currentChallenge: null,
                     lastEarnedScore: earnedScore,
                 })
+
+                // Check level challenge progress
+                useLevelChallengeStore.getState().checkAndUpdateLevel('challenge-solver', newTotalSolved)
 
                 return earnedScore
             },
@@ -109,6 +119,7 @@ export const useChallengeStore = create<ChallengeState>()(
             partialize: (state) => ({
                 highScore: state.highScore,
                 maxCombo: state.maxCombo,
+                totalSolved: state.totalSolved,
             }),
         }
     )

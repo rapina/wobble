@@ -7,11 +7,39 @@
         "collectionDesc": "캐릭터, 학습, 게임 기록",
         "game": "게임",
         "gameDesc": "미니게임에 도전하세요!",
+        "lab": "연구소",
+        "labDesc": "워블들이 물리를 연구해요!",
         "shop": "상점",
         "shopDesc": "광고 제거 및 특별 아이템",
         "soon": "SOON",
         "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
         "disclaimer": "Wobble은 물리를 재미있게 탐험하는 게임입니다.\n실제 계산과는 차이가 있을 수 있습니다."
+    },
+    "lab": {
+        "title": "물리 연구소",
+        "workers": "연구원",
+        "tapStation": "시설을 탭하여 배치",
+        "upgrades": "강화",
+        "appliedStats": "적용 스탯",
+        "perLevel": "레벨당",
+        "stations": {
+            "gravityLab": "중력 연구소",
+            "accelerator": "가속기",
+            "collisionLab": "충돌 실험실",
+            "insulationResearch": "절연체 연구"
+        },
+        "stat": {
+            "hp": "체력",
+            "speed": "속도",
+            "damage": "공격력",
+            "defense": "방어력"
+        },
+        "resources": {
+            "mass": "질량",
+            "velocity": "속도",
+            "force": "힘",
+            "resistance": "저항"
+        }
     },
     "simulation": {
         "loading": "로딩 중...",

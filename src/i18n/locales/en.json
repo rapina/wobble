@@ -7,11 +7,39 @@
         "collectionDesc": "Characters, Study, Records",
         "game": "Game",
         "gameDesc": "Challenge the minigames!",
+        "lab": "Lab",
+        "labDesc": "Wobbles research physics!",
         "shop": "Shop",
         "shopDesc": "Remove ads & special items",
         "soon": "SOON",
         "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
         "disclaimer": "Wobble is a game for exploring physics in a fun way.\nResults may differ from actual calculations."
+    },
+    "lab": {
+        "title": "Physics Lab",
+        "workers": "Workers",
+        "tapStation": "Tap a station to assign",
+        "upgrades": "Upgrades",
+        "appliedStats": "Applied Stats",
+        "perLevel": "per level",
+        "stations": {
+            "gravityLab": "Gravity Lab",
+            "accelerator": "Accelerator",
+            "collisionLab": "Collision Lab",
+            "insulationResearch": "Insulation Research"
+        },
+        "stat": {
+            "hp": "HP",
+            "speed": "Speed",
+            "damage": "Damage",
+            "defense": "Defense"
+        },
+        "resources": {
+            "mass": "Mass",
+            "velocity": "Velocity",
+            "force": "Force",
+            "resistance": "Resistance"
+        }
     },
     "simulation": {
         "loading": "Loading...",

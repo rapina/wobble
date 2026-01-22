@@ -188,3 +188,124 @@ Notable scene implementations:
 - **IdealGasScene**: Volume visualization with scale bar, piston, flash effects on changes
 - **CentripetalScene**: Circular motion with force arrow visualization
 - **GravityScene**: Orbital motion between two masses
+
+## Physics Lab System (Idle Factory)
+
+Rimworld-style idle factory where Wobble workers research physics properties. Resources are used to upgrade stats that apply to all mini-games.
+
+### Core Game Loop
+
+```
+Worker Assignment → Resource Production (idle) → Stat Upgrades → Mini-game Performance Boost
+       ↑                                                                    ↓
+       └──────────────── Unlock more Wobbles ←─────────────────────────────┘
+```
+
+### File Structure
+
+| File | Purpose |
+|------|---------|
+| `src/types/lab.ts` | Type definitions for lab system |
+| `src/config/labConfig.ts` | Station configs, simulation params, upgrade costs |
+| `src/stores/labStore.ts` | Zustand store with persistence + offline calculation |
+| `src/components/screens/LabScreen.tsx` | Main React screen with UI |
+| `src/components/canvas/lab/LabScene.ts` | PixiJS scene controller |
+| `src/components/canvas/lab/WorkStation.ts` | Station with physics simulation |
+| `src/components/canvas/lab/LabWorkerSprite.ts` | Worker Wobble with AI behavior |
+| `src/components/canvas/lab/ResourcePopup.ts` | +N popup effect |
+
+### Physics Properties
+
+Each property maps to a research station with a mini physics simulation:
+
+| Property | Symbol | Station | Simulation | Effect |
+|----------|--------|---------|------------|--------|
+| `gravity` | G | Gravity Lab | Orbital (planets) | HP/Mass multiplier |
+| `momentum` | p | Accelerator | Particle ring | Speed multiplier |
+| `elasticity` | e | Collision Lab | Bouncing balls | Damage multiplier |
+| `thermodynamics` | Q | Thermo Lab | Heat particles | Damage reduction |
+
+### Applying Stats in Mini-games
+
+```typescript
+import { useLabStore } from '@/stores/labStore'
+
+// Get applied stats (multipliers already calculated from levels)
+const labStats = useLabStore.getState().getAppliedStats()
+
+// labStats contains:
+// {
+//   gravityMultiplier: number,      // 1.0 + (level × 0.05)
+//   momentumMultiplier: number,     // 1.0 + (level × 0.03)
+//   elasticityMultiplier: number,   // 1.0 + (level × 0.04)
+//   thermodynamicsMultiplier: number // 1.0 + (level × 0.02)
+// }
+
+// Example usage in a mini-game:
+const finalHP = baseHP * labStats.gravityMultiplier
+const finalSpeed = baseSpeed * labStats.momentumMultiplier
+const finalDamage = baseDamage * labStats.elasticityMultiplier
+const damageReduction = labStats.thermodynamicsMultiplier - 1  // Convert to reduction %
+```
+
+### Current Implementations
+
+**PhysicsSurvivorScene** (`src/components/canvas/adventure/PhysicsSurvivorScene.ts`):
+```typescript
+const labStats = useLabStore.getState().getAppliedStats()
+this.stats.damageMultiplier = wobbleStats.damageMultiplier * labStats.elasticityMultiplier
+this.stats.moveSpeedMultiplier = wobbleStats.moveSpeedMultiplier * labStats.momentumMultiplier
+this.labDamageReduction = labStats.thermodynamicsMultiplier - 1
+this.maxPlayerHealth = baseMaxHealth * healthMultiplier * labStats.gravityMultiplier
+```
+
+**Wobblediver RunStore** (`src/stores/runStore.ts`):
+```typescript
+const labStats = useLabStore.getState().getAppliedStats()
+const startingHP = Math.round(DEFAULT_RUN_HP.startingHP * labStats.gravityMultiplier)
+const maxHP = Math.round(DEFAULT_RUN_HP.maxHP * labStats.gravityMultiplier)
+```
+
+### Character Specialization Bonuses
+
+Certain Wobble shapes get +100% production bonus at specific stations:
+
+| Shape | Bonus Resource | Rationale |
+|-------|---------------|-----------|
+| circle (Newton) | gravity | Gravity expert |
+| einstein | momentum | Relativity |
+| diamond (Maxwell) | thermodynamics | Thermodynamics |
+| triangle (Spike) | elasticity | Collision expert |
+
+### Upgrade System
+
+Each physics property can be upgraded using its corresponding resource:
+
+```typescript
+// From labConfig.ts
+export const UPGRADES: Record<PhysicsProperty, UpgradeConfig> = {
+    gravity: { baseCost: 1000, costMultiplier: 1.35, effectPerLevel: 0.05, maxLevel: 100 },
+    momentum: { baseCost: 1000, costMultiplier: 1.35, effectPerLevel: 0.03, maxLevel: 100 },
+    elasticity: { baseCost: 1000, costMultiplier: 1.35, effectPerLevel: 0.04, maxLevel: 100 },
+    thermodynamics: { baseCost: 1000, costMultiplier: 1.35, effectPerLevel: 0.02, maxLevel: 100 },
+}
+
+// Cost formula: baseCost × (costMultiplier ^ currentLevel)
+// Effect formula: level × effectPerLevel (additive)
+```
+
+### Offline Production
+
+The lab store automatically calculates offline production when the app reopens:
+
+```typescript
+// In labStore.ts
+syncOfflineProgress(): void {
+    const now = Date.now()
+    const elapsed = (now - this.lastSyncAt) / 1000  // seconds
+    // Calculate production for each assigned worker during elapsed time
+    // Add to resources
+}
+```
+
+Call `useSyncLabOnMount()` in LabScreen to trigger sync on mount.

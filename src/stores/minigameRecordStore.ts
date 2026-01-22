@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { useAchievementStore } from './achievementStore'
 
 /**
  * Minigame Record Store
@@ -22,6 +23,15 @@ export interface WobblediverRecord extends BaseGameRecord {
     totalScore: number // Sum of all scores (for stats)
     perfectEscapes: number // Number of perfect (S-rank) escapes
     bestRank: string // Best rank achieved ('S' | 'A' | 'B' | 'C' | 'D')
+
+    // Run mode stats
+    completedRuns: number // Total runs finished successfully
+    deepestRunDepth: number // Best depth reached in any run
+    bestRunScore: number // Best total score in a single run
+    perfectRunCount: number // Runs completed without dying (full HP)
+    longestUnlockedRun: 10 | 20 | 30 | 40 | 50 // Longest run length unlocked
+    totalElitesDefeated: number // Elites defeated across all runs
+    totalEventsTriggered: number // Events triggered across all runs
 }
 
 // Collision scene records (physics simulation)
@@ -52,6 +62,14 @@ const DEFAULT_WOBBLEDIVER_RECORD: WobblediverRecord = {
     totalScore: 0,
     perfectEscapes: 0,
     bestRank: 'D',
+    // Run mode defaults
+    completedRuns: 0,
+    deepestRunDepth: 0,
+    bestRunScore: 0,
+    perfectRunCount: 0,
+    longestUnlockedRun: 10,
+    totalElitesDefeated: 0,
+    totalEventsTriggered: 0,
 }
 
 const DEFAULT_COLLISION_RECORD: CollisionRecord = {
@@ -73,6 +91,16 @@ interface MinigameRecordState {
         score: number
         rank: string
         isPerfect?: boolean
+    }) => void
+
+    // Record a Wobblediver run completion
+    recordWobblediverRun: (result: {
+        depth: number
+        score: number
+        runLength: 10 | 20 | 30 | 40 | 50
+        isPerfect: boolean // Completed at full HP
+        elitesDefeated: number
+        eventsTriggered: number
     }) => void
 
     // Record a Collision simulation
@@ -128,6 +156,7 @@ export const useMinigameRecordStore = create<MinigameRecordState>()(
                             : current.bestRank
 
                     const newRecord: WobblediverRecord = {
+                        ...current, // Preserve run stats
                         totalGames: current.totalGames + 1,
                         lastPlayedAt: Date.now(),
                         bestDepth: Math.max(current.bestDepth, result.depth),
@@ -145,6 +174,63 @@ export const useMinigameRecordStore = create<MinigameRecordState>()(
                         },
                     }
                 })
+
+                // Check Wobblediver achievements after updating state
+                const updatedRecord = get().records.wobblediver as WobblediverRecord
+                useAchievementStore
+                    .getState()
+                    .checkWobblediverAchievements(
+                        updatedRecord.totalGames,
+                        updatedRecord.bestDepth,
+                        updatedRecord.highScore,
+                        updatedRecord.bestRank
+                    )
+            },
+
+            recordWobblediverRun: (result) => {
+                set((state) => {
+                    const current = (state.records.wobblediver as WobblediverRecord) || {
+                        ...DEFAULT_WOBBLEDIVER_RECORD,
+                    }
+
+                    // Determine longest unlocked run
+                    const newLongestUnlocked =
+                        result.runLength > current.longestUnlockedRun
+                            ? result.runLength
+                            : current.longestUnlockedRun
+
+                    const newRecord: WobblediverRecord = {
+                        ...current,
+                        lastPlayedAt: Date.now(),
+                        // Update run-specific stats
+                        completedRuns: current.completedRuns + 1,
+                        deepestRunDepth: Math.max(current.deepestRunDepth, result.depth),
+                        bestRunScore: Math.max(current.bestRunScore, result.score),
+                        perfectRunCount: current.perfectRunCount + (result.isPerfect ? 1 : 0),
+                        longestUnlockedRun: newLongestUnlocked,
+                        totalElitesDefeated: current.totalElitesDefeated + result.elitesDefeated,
+                        totalEventsTriggered: current.totalEventsTriggered + result.eventsTriggered,
+                    }
+
+                    return {
+                        records: {
+                            ...state.records,
+                            wobblediver: newRecord,
+                        },
+                    }
+                })
+
+                // Check run-specific achievements after updating state
+                const updatedRecord = get().records.wobblediver as WobblediverRecord
+                useAchievementStore
+                    .getState()
+                    .checkWobblediverRunAchievements(
+                        updatedRecord.completedRuns,
+                        updatedRecord.longestUnlockedRun,
+                        updatedRecord.perfectRunCount,
+                        updatedRecord.totalElitesDefeated,
+                        updatedRecord.totalEventsTriggered
+                    )
             },
 
             recordCollisionSimulation: () => {

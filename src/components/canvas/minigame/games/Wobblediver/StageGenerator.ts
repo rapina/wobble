@@ -21,6 +21,7 @@ import {
     getFactorProbability,
     getPersonalityWeights,
 } from './StageConfig'
+import { RunNodeType } from './run/RunMapTypes'
 
 /**
  * Tracks which features have appeared at least once this game
@@ -549,5 +550,19 @@ export class StageGenerator {
                     trajectoryFlickerOnRatio: 0,
                 }
         }
+    }
+
+    /**
+     * Generate a stage for a specific run node type
+     * In linear mode, all stages are the same - just generate based on depth
+     */
+    generateForRunNode(
+        _nodeType: RunNodeType,
+        depth: number,
+        width: number,
+        height: number,
+        _stageSeed?: number
+    ): StageConfig | null {
+        return this.generate(depth, width, height)
     }
 }

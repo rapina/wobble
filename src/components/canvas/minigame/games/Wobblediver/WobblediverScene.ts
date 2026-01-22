@@ -28,6 +28,9 @@ import { AbyssTentacle } from './AbyssTentacle'
 import { StageConfig, AnchorPersonalityConfig, ANCHOR_PERSONALITIES } from './StageConfig'
 import { musicManager, AudioBands } from '@/services/MusicManager'
 import i18n from '@/i18n'
+import { useRunStore } from '@/stores/runStore'
+import { MapNode, RunNodeType } from './run/RunMapTypes'
+import { RunMapDisplay } from './run/RunMapDisplay'
 
 // Balatro-style colors
 const BALATRO = {
@@ -150,6 +153,14 @@ export class WobblediverScene extends BaseMiniGameScene {
     declare private stageGenerator: StageGenerator
     private currentStageConfig: StageConfig | null = null
     private gameSeed: number = 0
+
+    // Run mode state
+    private runMode: boolean = false
+    private runNodeId: string | null = null
+    private runNodeType: RunNodeType | null = null
+    private runMapDisplay: RunMapDisplay | null = null
+    private isShowingRunMap: boolean = false
+    private runHpLostThisStage: number = 0
 
     // Visual elements
     declare private backgroundGraphics: Graphics
@@ -3873,9 +3884,18 @@ export class WobblediverScene extends BaseMiniGameScene {
         if (this.roundTransitionTime > 0) {
             this.roundTransitionTime -= deltaSeconds
             if (this.roundTransitionTime <= 0) {
-                this.startNewRound()
+                // In run mode, complete the node and show map instead of starting new round
+                if (this.runMode && this.runNodeId) {
+                    const rank = this.resultGrade.letter as 'S' | 'A' | 'B' | 'C' | 'D'
+                    const stageScore = this.resultCountTarget?.total || 0
+                    this.completeRunNode(rank, stageScore)
+                } else {
+                    this.startNewRound()
+                }
             }
         }
+
+        // Note: Run mode UI updates moved to animate() so they work even before game starts
     }
 
     private checkCollisions(): void {
@@ -4137,6 +4157,15 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.scoreSystem.recordMiss()
         this.lifeSystem.loseLife()
 
+        // Track HP loss in run mode (each death = significant HP loss)
+        if (this.runMode) {
+            const runState = useRunStore.getState()
+            if (runState.activeRun) {
+                // Lose 20 HP per death
+                runState.damageHP(20)
+            }
+        }
+
         // Check if we have lives remaining (after losing one)
         if (this.lifeSystem.lives > 0) {
             // Set flag to prevent handleRoundEnd from triggering startNewRound
@@ -4194,6 +4223,14 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Update intro if showing
         if (this.isShowingIntro && this.intro) {
             this.intro.update(deltaSeconds)
+        }
+
+        // Update run mode UI (always runs, even when game is not in 'playing' phase)
+        // This ensures the map displays correctly at run start before any stage is selected
+        if (this.runMode) {
+            if (this.runMapDisplay && this.isShowingRunMap) {
+                this.runMapDisplay.update(deltaSeconds)
+            }
         }
     }
 
@@ -4395,6 +4432,311 @@ export class WobblediverScene extends BaseMiniGameScene {
             depth: this.roundNumber,
             rank: this.resultGrade.letter,
             isPerfect: this.resultGrade.letter === 'S',
+            // Run mode data
+            runMode: this.runMode,
+            runNodeId: this.runNodeId,
+        }
+    }
+
+    // ============ RUN MODE METHODS ============
+
+    /**
+     * Enable run mode and setup run-specific UI
+     * Should be called before start() when playing a run
+     */
+    public setRunMode(enabled: boolean): void {
+        this.runMode = enabled
+
+        if (enabled) {
+            this.setupRunModeUI()
+        } else {
+            this.cleanupRunModeUI()
+        }
+    }
+
+    /**
+     * Initialize run mode - start a new run and show the map
+     * Called from MiniGameCanvas when mode='run'
+     */
+    public initializeRunMode(): void {
+        if (!this.runMode) {
+            this.setRunMode(true)
+        }
+
+        const runState = useRunStore.getState()
+
+        // Always start a fresh run for now (TODO: add resume option in UI)
+        // Abandon any existing run
+        if (runState.activeRun) {
+            runState.abandonRun()
+        }
+
+        // Start a new run
+        runState.startNewRun()
+        // Show the map for node selection
+        this.showRunMap()
+    }
+
+    /**
+     * Setup run mode UI components
+     */
+    private setupRunModeUI(): void {
+        // Create run map display
+        if (!this.runMapDisplay) {
+            this.runMapDisplay = new RunMapDisplay(this.width, this.height)
+            this.runMapDisplay.container.visible = false
+            // onNodeSelected is called when transition STARTS (for sound effects)
+            this.runMapDisplay.onNodeSelected = (_nodeId) => {
+                // Could play selection sound here
+            }
+            // onTransitionComplete is called when transition FINISHES (start the stage)
+            this.runMapDisplay.onTransitionComplete = (nodeId) => this.onRunNodeSelected(nodeId)
+            this.uiContainer.addChild(this.runMapDisplay.container)
+        }
+    }
+
+    /**
+     * Cleanup run mode UI components
+     */
+    private cleanupRunModeUI(): void {
+        if (this.runMapDisplay) {
+            this.uiContainer.removeChild(this.runMapDisplay.container)
+            this.runMapDisplay.destroy()
+            this.runMapDisplay = null
+        }
+    }
+
+    /**
+     * Show the run map for node selection
+     */
+    public showRunMap(): void {
+        if (!this.runMode || !this.runMapDisplay) return
+
+        const runState = useRunStore.getState()
+        if (!runState.activeRun) return
+
+        const { map, currentNodeId, completedNodeIds } = runState.activeRun
+        const availableNodes = runState.getAvailableNodes()
+        const availableNodeIds = availableNodes.map((n) => n.id)
+
+        // Pause game while showing map to prevent input conflicts
+        this.gamePhase = 'paused'
+
+        // Hide game elements that might interfere
+        this.gameContainer.visible = false
+
+        this.runMapDisplay.setMap(map, currentNodeId, completedNodeIds, availableNodeIds)
+        this.runMapDisplay.setVisible(true)
+        this.isShowingRunMap = true
+    }
+
+    /**
+     * Hide the run map
+     */
+    public hideRunMap(): void {
+        if (this.runMapDisplay) {
+            this.runMapDisplay.setVisible(false)
+        }
+        this.isShowingRunMap = false
+
+        // Show game elements again
+        this.gameContainer.visible = true
+    }
+
+    /**
+     * Handle node selection from run map (linear progression - all stages are the same)
+     */
+    private onRunNodeSelected(nodeId: string): void {
+        const runState = useRunStore.getState()
+
+        // Validate and select the node
+        if (!runState.selectNode(nodeId)) {
+            console.warn(`Failed to select node: ${nodeId}`)
+            return
+        }
+
+        this.hideRunMap()
+
+        // Get the selected node
+        const node = runState.getCurrentNode()
+        if (!node) return
+
+        this.runNodeId = node.id
+        this.runNodeType = node.type
+
+        // Start the stage (all nodes are dive stages in linear mode)
+        this.startRunStage(node)
+    }
+
+    /**
+     * Start a run stage based on node
+     */
+    private startRunStage(node: MapNode): void {
+        const runState = useRunStore.getState()
+        if (!runState.activeRun) return
+
+        // Reset HP tracking for this stage
+        this.runHpLostThisStage = 0
+
+        // Generate stage config based on node type
+        this.stageGenerator.setSeed(node.stageSeed)
+        const config = this.stageGenerator.generateForRunNode(
+            node.type,
+            node.depth,
+            this.width,
+            this.height,
+            node.stageSeed
+        )
+
+        if (config) {
+            this.currentStageConfig = config
+            this.roundNumber = node.depth
+
+            // Apply the config and start round
+            this.applyStageConfig(config)
+            this.startStageFromConfig(config)
+        }
+    }
+
+    /**
+     * Apply a stage config and start the stage
+     * Used by run mode to start stages with pre-generated configs
+     */
+    private startStageFromConfig(config: StageConfig): void {
+        // Update background colors
+        this.updateDepthColors(config.depth)
+
+        // Clear old wobble
+        if (this.wobble) {
+            this.gameContainer.removeChild(this.wobble.container)
+            this.wobble.destroy()
+            this.wobble = null
+        }
+
+        // Generate new positions using stage config
+        const anchorX = this.getAnchorX()
+        const ropeLength =
+            config.ropeLength.min + Math.random() * (config.ropeLength.max - config.ropeLength.min)
+        const startAngle =
+            config.startAngle.min + Math.random() * (config.startAngle.max - config.startAngle.min)
+        const startAngleSigned = Math.random() > 0.5 ? startAngle : -startAngle
+
+        // Create new wobble
+        this.wobble = new SwingingWobble(
+            anchorX,
+            this.boundaryTop + 60,
+            ropeLength,
+            startAngleSigned
+        )
+        this.wobble.resetHp()
+        this.wobble.setTentacleColor(this.anchorWobble.getColor())
+        this.gameContainer.addChild(this.wobble.container)
+
+        // Add abyss front container AFTER wobble
+        if (this.abyssFrontContainer.parent) {
+            this.gameContainer.removeChild(this.abyssFrontContainer)
+        }
+        this.gameContainer.addChild(this.abyssFrontContainer)
+
+        // Reset abyss effects
+        this.abyssBloodLevel = 0
+        this.isDrowningActive = false
+        this.drowningBubbles = []
+        this.surfaceRipples = []
+        this.abyssSplashEffects = []
+
+        // Apply trajectory visibility
+        this.wobble.setTrajectoryMode(config.trajectoryMode, {
+            duration: config.trajectoryDuration,
+            flickerInterval: config.trajectoryFlickerInterval,
+            flickerOnRatio: config.trajectoryFlickerOnRatio,
+        })
+
+        // Apply gravity multiplier
+        const gravityMultiplier = 1.0 + config.waterLevelRise
+        this.wobble.setGravityMultiplier(gravityMultiplier)
+
+        // Position goal
+        this.positionGoalFromConfig(config)
+        this.wobble.setGoalPosition(this.wormhole.x, this.wormhole.y)
+
+        // Update HUD
+        this.hud.updateStage(config.depth)
+
+        // Update obstacles
+        this.updateObstaclesFromConfig(config)
+
+        // Update abyss tentacles
+        this.updateAbyssTentacles(config)
+
+        // Ready for tap
+        this.isWaitingForTap = true
+        this.instructionText.alpha = 1
+        this.roundStartTime = Date.now() / 1000
+
+        // Ensure game phase is 'playing' so the game loop runs
+        this.gamePhase = 'playing'
+    }
+
+    /**
+     * Complete the current run node
+     */
+    public completeRunNode(rank: 'S' | 'A' | 'B' | 'C' | 'D', stageScore: number): void {
+        const runState = useRunStore.getState()
+
+        // HP loss is already tracked via damageHP calls during the stage
+        // Complete the node in run state (hpLost = 0 since it's already applied)
+        runState.completeNode(rank, stageScore, 0)
+
+        // Reset node tracking
+        this.runNodeId = null
+        this.runNodeType = null
+
+        // Check if run is complete
+        if (runState.isRunComplete()) {
+            if (runState.isPlayerAlive()) {
+                // Victory! Show run completion
+                this.handleRunComplete(true)
+            } else {
+                // Death - run failed
+                this.handleRunComplete(false)
+            }
+        } else {
+            // Show map for next node selection
+            this.showRunMap()
+        }
+    }
+
+    /**
+     * Handle run completion (victory or defeat)
+     */
+    private handleRunComplete(victory: boolean): void {
+        const runState = useRunStore.getState()
+        if (!runState.activeRun) return
+
+        // Record the run via minigameRecordStore
+        // Note: The store is already imported via useMinigameRecordStore in MiniGameCanvas
+        // We'll call the callback and let the parent handle recording
+
+        // Show appropriate end screen
+        if (victory) {
+            // TODO: Show victory screen with run stats
+            this.callbacks.onGameOver?.(this.getCurrentState())
+        } else {
+            // Game over
+            this.callbacks.onGameOver?.(this.getCurrentState())
+        }
+
+        // Clear run state
+        runState.abandonRun()
+    }
+
+    /**
+     * Override to track HP loss in run mode
+     */
+    private trackRunHpLoss(amount: number): void {
+        if (this.runMode) {
+            this.runHpLostThisStage += amount
         }
     }
 

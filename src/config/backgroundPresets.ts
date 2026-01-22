@@ -215,3 +215,24 @@ export const introPreset: BackgroundPreset = {
     noiseScale: 0.0,
     rippleStrength: 0.0,
 }
+
+// Lab Screen - Industrial orange/brown factory theme
+export const labPreset: BackgroundPreset = {
+    color1: '#8a5a2d',
+    color2: '#6b3d1a',
+    color3: '#351a0d',
+    spinSpeed: 0.6,
+    spinRotation: -0.3,
+    contrast: 2.4,
+    lighting: 0.28,
+    spinAmount: 0.08,
+    pixelFilter: 650,
+    isRotate: true,
+    patternScale: 1.1,
+    warpIntensity: 0.15,
+    symmetry: 1.0,
+    flowSpeed: 0.6,
+    vortexStrength: 0.1,
+    noiseScale: 0.08,
+    rippleStrength: 0.0,
+}

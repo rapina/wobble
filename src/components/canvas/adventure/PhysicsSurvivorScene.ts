@@ -13,6 +13,7 @@ import { t } from '@/utils/localization'
 import { WobbleWorldFilter } from '../filters/WobbleWorldFilter'
 import { useCollectionStore } from '@/stores/collectionStore'
 import { useProgressStore } from '@/stores/progressStore'
+import { useLabStore } from '@/stores/labStore'
 import {
     GameState,
     PlayerStats,
@@ -248,6 +249,7 @@ export class PhysicsSurvivorScene extends AdventureScene {
     private recoilDecay = 0.9
     private readonly playerBaseSpeed = 4
     private readonly baseMaxHealth = 100
+    private labDamageReduction = 0
 
     // Selected character
     private selectedCharacter: WobbleShape = 'circle'
@@ -825,9 +827,16 @@ export class PhysicsSurvivorScene extends AdventureScene {
         this.stats = { ...DEFAULT_PLAYER_STATS }
 
         const wobbleStats = WOBBLE_STATS[this.selectedCharacter]
-        this.stats.damageMultiplier = wobbleStats.damageMultiplier
+        const labStats = useLabStore.getState().getAppliedStats()
+
+        // Apply character stats with lab physics bonuses
+        // elasticity affects damage (collision impact), momentum affects speed
+        this.stats.damageMultiplier = wobbleStats.damageMultiplier * labStats.elasticityMultiplier
         this.stats.fireRateMultiplier = 1 / wobbleStats.fireRateMultiplier
-        this.stats.moveSpeedMultiplier = wobbleStats.moveSpeedMultiplier
+        this.stats.moveSpeedMultiplier = wobbleStats.moveSpeedMultiplier * labStats.momentumMultiplier
+
+        // thermodynamics affects resistance (damage reduction = multiplier - 1)
+        this.labDamageReduction = labStats.thermodynamicsMultiplier - 1
 
         const skillStats = calculateCombinedSkillStats(this.playerSkills)
 
@@ -1286,8 +1295,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
             const minDist = this.playerSize + enemy.size / 2
 
             if (dist < minDist) {
-                // Take damage from any enemy contact
-                this.playerHealth -= 1
+                // Take damage from any enemy contact (apply lab damage reduction)
+                const reducedDamage = 1 * (1 - this.labDamageReduction)
+                this.playerHealth -= reducedDamage
 
                 // Push enemy back
                 const nx = dx / (dist || 1)
@@ -1306,7 +1316,9 @@ export class PhysicsSurvivorScene extends AdventureScene {
      * Apply damage to player (from black hole or other sources)
      */
     private takeDamage(damage: number): void {
-        this.playerHealth -= damage
+        // Apply lab damage reduction
+        const reducedDamage = damage * (1 - this.labDamageReduction)
+        this.playerHealth -= reducedDamage
 
         if (this.playerHealth <= 0) {
             this.playerHealth = 0
@@ -5048,7 +5060,12 @@ export class PhysicsSurvivorScene extends AdventureScene {
 
     private applyCharacterStats(): void {
         const wobbleStats = WOBBLE_STATS[this.selectedCharacter]
-        this.maxPlayerHealth = Math.round(this.baseMaxHealth * wobbleStats.healthMultiplier)
+        const labStats = useLabStore.getState().getAppliedStats()
+
+        // Apply character health multiplier and lab gravity multiplier (gravity/mass affects HP)
+        this.maxPlayerHealth = Math.round(
+            this.baseMaxHealth * wobbleStats.healthMultiplier * labStats.gravityMultiplier
+        )
         this.playerHealth = this.maxPlayerHealth
         this.recalculateStats()
     }

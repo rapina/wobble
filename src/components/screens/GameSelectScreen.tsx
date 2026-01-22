@@ -63,15 +63,18 @@ const ADVENTURES: Adventure[] = [
     },
 ]
 
+export type GameMode = 'endless' | 'run'
+
 interface GameSelectScreenProps {
     onBack: () => void
-    onSelectAdventure: (adventureId: string) => void
+    onSelectAdventure: (adventureId: string, mode?: GameMode) => void
 }
 
 // Wobblediver themed card component
 function WobblediverCard({
     adventure,
-    onSelect,
+    onSelectEndless,
+    onSelectRun,
     mounted,
     delay,
     t,
@@ -79,7 +82,8 @@ function WobblediverCard({
     highScore,
 }: {
     adventure: Adventure
-    onSelect: () => void
+    onSelectEndless: () => void
+    onSelectRun: () => void
     mounted: boolean
     delay: number
     t: (key: string) => string
@@ -95,9 +99,8 @@ function WobblediverCard({
             )}
             style={{ transitionDelay: `${delay}ms` }}
         >
-            <button
-                onClick={onSelect}
-                className="w-full rounded-2xl overflow-hidden transition-all active:scale-[0.98] hover:scale-[1.01]"
+            <div
+                className="w-full rounded-2xl overflow-hidden"
                 style={{
                     background: abyssTheme.bgGradient,
                     border: `3px solid ${abyssTheme.accent}50`,
@@ -242,17 +245,6 @@ function WobblediverCard({
                         </div>
                     )}
 
-                    {/* Play button */}
-                    <div
-                        className="absolute right-3 bottom-3 w-14 h-14 rounded-xl flex items-center justify-center transition-transform hover:scale-110"
-                        style={{
-                            background: `linear-gradient(135deg, ${abyssTheme.teal} 0%, ${abyssTheme.accent} 100%)`,
-                            border: `3px solid ${theme.border}`,
-                            boxShadow: `0 4px 0 ${theme.border}, 0 0 15px ${abyssTheme.teal}50`,
-                        }}
-                    >
-                        <Play className="w-7 h-7 text-white ml-0.5" fill="white" />
-                    </div>
                 </div>
 
                 {/* Info area */}
@@ -263,7 +255,7 @@ function WobblediverCard({
                         borderTop: `2px solid ${abyssTheme.accent}30`,
                     }}
                 >
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                             <h3
                                 className="text-xl font-black tracking-tight"
@@ -321,8 +313,38 @@ function WobblediverCard({
                             </div>
                         )}
                     </div>
+
+                    {/* Mode selection buttons */}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={onSelectEndless}
+                            className="flex-1 py-2.5 rounded-lg font-bold text-sm transition-all active:scale-[0.98]"
+                            style={{
+                                background: `linear-gradient(135deg, ${abyssTheme.teal} 0%, ${abyssTheme.accent} 100%)`,
+                                border: `2px solid ${theme.border}`,
+                                boxShadow: `0 3px 0 ${theme.border}`,
+                                color: '#fff',
+                            }}
+                        >
+                            <Play className="w-4 h-4 inline-block mr-1.5 mb-0.5" fill="white" />
+                            Endless
+                        </button>
+                        <button
+                            onClick={onSelectRun}
+                            className="flex-1 py-2.5 rounded-lg font-bold text-sm transition-all active:scale-[0.98]"
+                            style={{
+                                background: `linear-gradient(135deg, ${theme.gold} 0%, #b8860b 100%)`,
+                                border: `2px solid ${theme.border}`,
+                                boxShadow: `0 3px 0 ${theme.border}`,
+                                color: '#fff',
+                            }}
+                        >
+                            <Target className="w-4 h-4 inline-block mr-1.5 mb-0.5" />
+                            Run
+                        </button>
+                    </div>
                 </div>
-            </button>
+            </div>
         </div>
     )
 }
@@ -416,7 +438,8 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreen
                     <WobblediverCard
                         key={adventure.id}
                         adventure={adventure}
-                        onSelect={() => onSelectAdventure(adventure.id)}
+                        onSelectEndless={() => onSelectAdventure(adventure.id, 'endless')}
+                        onSelectRun={() => onSelectAdventure(adventure.id, 'run')}
                         mounted={mounted}
                         delay={index * 150}
                         t={t}

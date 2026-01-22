@@ -6,7 +6,7 @@ import { WobbleShape, WobbleExpression } from '@/components/canvas/Wobble'
 import { GameMode } from '@/components/screens/HomeScreen'
 import Balatro from '@/components/Balatro'
 import { BackgroundPreset } from '@/config/backgroundPresets'
-import { sandboxPreset, gameSelectPreset, collectionPreset, shopPreset } from '@/config/backgroundPresets'
+import { sandboxPreset, gameSelectPreset, collectionPreset, shopPreset, labPreset } from '@/config/backgroundPresets'
 import { cn } from '@/lib/utils'
 
 // Theme colors (matching HomeScreen)
@@ -72,6 +72,14 @@ const modeConfigs: Record<GameMode, ModeConfig> = {
         wobbleShape: 'circle',
         wobbleExpression: 'happy',
         backgroundPreset: sandboxPreset,
+    },
+    lab: {
+        titleKey: 'home.lab',
+        descriptionKey: 'home.labDesc',
+        color: '#ff8c42',
+        wobbleShape: 'square',
+        wobbleExpression: 'effort',
+        backgroundPreset: labPreset,
     },
 }
 
