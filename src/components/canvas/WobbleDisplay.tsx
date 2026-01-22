@@ -108,29 +108,44 @@ export function WobbleDisplay({
             mountedRef.current = false
 
             const currentApp = appRef.current
+            const currentWobble = wobbleRef.current
+            const currentTickerCallback = tickerCallbackRef.current
+
+            // Clear refs immediately to prevent further use
+            appRef.current = null
+            wobbleRef.current = null
+            tickerCallbackRef.current = null
+
             if (currentApp) {
+                // Stop ticker immediately
                 try {
                     currentApp.ticker.stop()
-                    if (tickerCallbackRef.current) {
-                        currentApp.ticker.remove(tickerCallbackRef.current)
+                    if (currentTickerCallback) {
+                        currentApp.ticker.remove(currentTickerCallback)
                     }
-
-                    if (wobbleRef.current && wobbleRef.current.parent) {
-                        wobbleRef.current.parent.removeChild(wobbleRef.current)
-                    }
-
-                    currentApp.stage.removeChildren()
-                    currentApp.destroy(true, {
-                        children: true,
-                        texture: false,
-                        textureSource: false,
-                    })
                 } catch {
-                    // Ignore cleanup errors
+                    // Ignore ticker errors
                 }
-                appRef.current = null
-                wobbleRef.current = null
-                tickerCallbackRef.current = null
+
+                // Delay destruction to avoid TexturePool race condition
+                // This gives PixiJS time to finish any pending render operations
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        try {
+                            if (currentWobble) {
+                                currentWobble.destroy({ children: true })
+                            }
+                            currentApp.stage.removeChildren()
+                            currentApp.destroy(true, {
+                                children: true,
+                                texture: false,
+                                textureSource: false,
+                            })
+                        } catch {
+                            // Ignore cleanup errors - TexturePool may already be cleared
+                        }
+                    }, 0)
+                })
             }
         }
     }, [size]) // Only recreate on size change

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Trophy } from 'lucide-react'
 import { onAchievementUnlock } from '@/stores/achievementStore'
@@ -10,12 +10,29 @@ interface ToastItem {
     id: string
     achievement: Achievement
     timestamp: number
+    isExiting?: boolean
 }
+
+const TOAST_DURATION = 3000
+const EXIT_ANIMATION_DURATION = 300
 
 export function AchievementToast() {
     const { i18n } = useTranslation()
     const lang = i18n.language
     const [toasts, setToasts] = useState<ToastItem[]>([])
+    const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+
+    const removeToast = useCallback((id: string) => {
+        // Start exit animation
+        setToasts((prev) =>
+            prev.map((t) => (t.id === id ? { ...t, isExiting: true } : t))
+        )
+
+        // Remove after exit animation completes
+        setTimeout(() => {
+            setToasts((prev) => prev.filter((t) => t.id !== id))
+        }, EXIT_ANIMATION_DURATION)
+    }, [])
 
     const addToast = useCallback((achievementId: string) => {
         const achievement = getAchievement(achievementId)
@@ -25,14 +42,26 @@ export function AchievementToast() {
             id: `${achievementId}-${Date.now()}`,
             achievement,
             timestamp: Date.now(),
+            isExiting: false,
         }
 
         setToasts((prev) => [...prev, newToast])
 
-        // Auto-remove after 3 seconds
-        setTimeout(() => {
-            setToasts((prev) => prev.filter((t) => t.id !== newToast.id))
-        }, 3000)
+        // Schedule removal after duration
+        const timer = setTimeout(() => {
+            removeToast(newToast.id)
+            timersRef.current.delete(newToast.id)
+        }, TOAST_DURATION)
+
+        timersRef.current.set(newToast.id, timer)
+    }, [removeToast])
+
+    // Cleanup timers on unmount
+    useEffect(() => {
+        return () => {
+            timersRef.current.forEach((timer) => clearTimeout(timer))
+            timersRef.current.clear()
+        }
     }, [])
 
     useEffect(() => {
@@ -58,15 +87,18 @@ export function AchievementToast() {
                     key={toast.id}
                     className={cn(
                         'pointer-events-auto',
-                        'animate-in slide-in-from-top-4 fade-in duration-300',
                         'flex items-center gap-3 px-4 py-3 rounded-xl',
-                        'border-2'
+                        'border-2',
+                        'transition-all duration-300 ease-out',
+                        toast.isExiting
+                            ? 'opacity-0 -translate-y-2 scale-95'
+                            : 'opacity-100 translate-y-0 scale-100 animate-in slide-in-from-top-4 fade-in'
                     )}
                     style={{
                         background: 'linear-gradient(135deg, #2a2a4a 0%, #1a1a2e 100%)',
                         borderColor: '#F5B041',
                         boxShadow: '0 0 20px rgba(245, 176, 65, 0.4), 0 4px 12px rgba(0,0,0,0.4)',
-                        animationDelay: `${index * 100}ms`,
+                        animationDelay: toast.isExiting ? '0ms' : `${index * 100}ms`,
                     }}
                 >
                     {/* Icon */}
