@@ -151,11 +151,38 @@ export function SandboxScreen({
 
         // Small delay to let DOM update
         const timer = setTimeout(() => {
+            // Handle welcome step (no target, show centered message)
+            if (tutorial.currentTargetSymbol === '__welcome__') {
+                setTargetRect(null)
+                setSliderRect(null)
+                return
+            }
+
             // Handle formula selection tutorial step
             if (tutorial.currentTargetSymbol === '__formula_first__') {
                 const formulaEl = document.querySelector('[data-tutorial-formula-first]')
                 if (formulaEl) {
                     setTargetRect(formulaEl.getBoundingClientRect())
+                }
+                setSliderRect(null)
+                return
+            }
+
+            // Handle canvas tutorial step
+            if (tutorial.currentTargetSymbol === '__canvas__') {
+                const canvasEl = document.querySelector('[data-tutorial-canvas]')
+                if (canvasEl) {
+                    setTargetRect(canvasEl.getBoundingClientRect())
+                }
+                setSliderRect(null)
+                return
+            }
+
+            // Handle challenge banner tutorial step
+            if (tutorial.currentTargetSymbol === '__challenge__') {
+                const challengeEl = document.querySelector('[data-tutorial-challenge]')
+                if (challengeEl) {
+                    setTargetRect(challengeEl.getBoundingClientRect())
                 }
                 setSliderRect(null)
                 return
@@ -242,21 +269,26 @@ export function SandboxScreen({
         }
     }, [tutorial.isActive, tutorial.currentTargetSymbol, showInfoPopup, tutorial])
 
-    // Auto-start tutorial for first-time users
+    // Auto-start simulation tutorial for first-time users
     useEffect(() => {
-        // Don't start if tutorial already completed globally, active, or shown this session
-        if (
-            !formula ||
-            tutorial.hasCompletedTutorial ||
-            tutorial.isActive ||
-            tutorialShownThisSession
-        )
-            return
+        console.log('[Tutorial Debug] SandboxScreen auto-start check:', {
+            hasFormula: !!formula,
+            hasCompletedTutorial: tutorial.hasCompletedTutorial,
+            isActive: tutorial.isActive,
+            tutorialShownThisSession,
+        })
 
+        // Don't start if no formula, tutorial completed, active, or shown this session
+        if (!formula || tutorial.hasCompletedTutorial || tutorial.isActive || tutorialShownThisSession) {
+            console.log('[Tutorial Debug] Skipping auto-start')
+            return
+        }
+
+        console.log('[Tutorial Debug] Starting simulation tutorial in 500ms...')
         const timer = setTimeout(() => {
-            // Start tutorial from formula selection phase
-            setWelcomePhase('select')
-            tutorial.startTutorial()
+            console.log('[Tutorial Debug] Calling startTutorial() for simulation phase')
+            tutorial.startTutorial(false, 'simulation')
+            setTutorialShownThisSession(true)
         }, 500)
         return () => clearTimeout(timer)
     }, [
@@ -264,6 +296,7 @@ export function SandboxScreen({
         tutorial.hasCompletedTutorial,
         tutorial.isActive,
         tutorialShownThisSession,
+        tutorial.startTutorial,
     ])
 
     // Get unique categories from formulas
@@ -615,18 +648,37 @@ export function SandboxScreen({
                         paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)',
                     }}
                 >
-                    {/* Back Button */}
-                    <button
-                        onClick={onBack}
-                        className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95 mb-4"
-                        style={{
-                            background: theme.bgPanel,
-                            border: `2px solid ${theme.border}`,
-                            boxShadow: `0 3px 0 ${theme.border}`,
-                        }}
-                    >
-                        <ArrowLeft className="h-5 w-5 text-white" />
-                    </button>
+                    {/* Header Row with Back Button and Tutorial Button */}
+                    <div className="flex items-center justify-between mb-4">
+                        <button
+                            onClick={onBack}
+                            className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95"
+                            style={{
+                                background: theme.bgPanel,
+                                border: `2px solid ${theme.border}`,
+                                boxShadow: `0 3px 0 ${theme.border}`,
+                            }}
+                        >
+                            <ArrowLeft className="h-5 w-5 text-white" />
+                        </button>
+
+                        {/* Tutorial Help Button */}
+                        <button
+                            onClick={() => {
+                                console.log('[Tutorial Debug] Manual start clicked')
+                                setTutorialShownThisSession(false)
+                                tutorial.startTutorial(true) // forceRestart = true
+                            }}
+                            className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95"
+                            style={{
+                                background: '#9b59b6',
+                                border: `2px solid ${theme.border}`,
+                                boxShadow: `0 3px 0 ${theme.border}`,
+                            }}
+                        >
+                            <HelpCircle className="h-5 w-5 text-white" />
+                        </button>
+                    </div>
 
                     {/* Section Title */}
                     <div className="flex items-center gap-2 mb-3 px-2">
@@ -840,6 +892,7 @@ export function SandboxScreen({
 
             {/* Centered Canvas Area */}
             <div
+                data-tutorial-canvas
                 className="absolute z-10 rounded-xl overflow-hidden"
                 style={{
                     top: 'calc(max(env(safe-area-inset-top, 0px), 12px) + 128px)', // Fixed: always account for challenge banner
@@ -1069,6 +1122,7 @@ export function SandboxScreen({
             {/* Challenge Banner (infinite random missions) - Hidden when locked */}
             {currentChallenge && !isCurrentFormulaLocked && (
                 <div
+                    data-tutorial-challenge
                     className="absolute left-0 right-0 z-20"
                     style={{
                         top: 'calc(max(env(safe-area-inset-top, 0px), 12px) + 88px)',
@@ -1106,6 +1160,7 @@ export function SandboxScreen({
                         </div>
                         {/* Submit button */}
                         <button
+                            data-tutorial-challenge-submit
                             onClick={(e) => {
                                 e.stopPropagation()
                                 handleSubmitChallenge()

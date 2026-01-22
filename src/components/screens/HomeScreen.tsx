@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Settings, Bug, ChevronDown, ArrowLeft, Lock } from 'lucide-react'
+import { Settings, Bug, ChevronDown, ArrowLeft, Lock, HelpCircle } from 'lucide-react'
+import { TutorialOverlay, TutorialStep } from '@/components/tutorial/TutorialOverlay'
 import { useAdMob } from '@/hooks/useAdMob'
 import { usePurchaseStore } from '@/stores/purchaseStore'
 import Balatro from '@/components/Balatro'
@@ -96,6 +97,107 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
     const collectionProgress = getProgress()
     const achievementProgress = getAchievementProgress()
     const unseenFormulaCount = formulaList.length - studiedFormulas.size
+
+    // Tutorial state for formula selection (separate from simulation tutorial)
+    const FORMULA_SELECT_TUTORIAL_KEY = 'wobble-tutorial-formula-select-completed'
+    const [tutorialActive, setTutorialActive] = useState(false)
+    const [tutorialStep, setTutorialStep] = useState(0)
+    const [tutorialTargetRect, setTutorialTargetRect] = useState<DOMRect | null>(null)
+    const [hasCompletedFormulaSelectTutorial, setHasCompletedFormulaSelectTutorial] = useState(() => {
+        return localStorage.getItem(FORMULA_SELECT_TUTORIAL_KEY) === 'true'
+    })
+
+    // Language helper for tutorial messages
+    const isKo = i18n.language === 'ko' || i18n.language.startsWith('ko')
+    const isJa = i18n.language === 'ja' || i18n.language.startsWith('ja')
+
+    // Tutorial steps for formula selection phase
+    const tutorialSteps: TutorialStep[] = useMemo(() => [
+        {
+            targetSymbol: '__welcome__',
+            targetType: 'welcome' as const,
+            title: isKo ? '물리 샌드박스에 오신 것을 환영해요!' : isJa ? '物理サンドボックスへようこそ！' : 'Welcome to Physics Sandbox!',
+            message: isKo
+                ? '여기서 물리 공식을 직접 만져보며 배울 수 있어요. 변수를 조절하면 결과가 어떻게 바뀌는지 눈으로 확인해보세요!'
+                : isJa
+                ? 'ここで物理公式を直接触りながら学べます。変数を調整すると結果がどう変わるか、目で確認してみてください！'
+                : 'Here you can learn physics formulas by interacting with them. Adjust variables and see how the results change in real-time!',
+            wobbleExpression: 'happy',
+        },
+        {
+            targetSymbol: '__formula_first__',
+            targetType: 'formula-list' as const,
+            title: isKo ? '공식을 선택해보세요' : isJa ? '公式を選んでみてください' : 'Select a Formula',
+            message: isKo
+                ? '다양한 물리 공식이 준비되어 있어요. 원하는 공식을 탭해서 시뮬레이션을 시작해보세요!'
+                : isJa
+                ? '様々な物理公式が用意されています。好きな公式をタップしてシミュレーションを始めてみてください！'
+                : 'Various physics formulas are ready for you. Tap any formula to start the simulation!',
+            wobbleExpression: 'excited',
+        },
+    ], [isKo, isJa])
+
+    // Tutorial functions
+    const startTutorial = useCallback((forceRestart = false) => {
+        if (forceRestart) {
+            localStorage.removeItem(FORMULA_SELECT_TUTORIAL_KEY)
+            setHasCompletedFormulaSelectTutorial(false)
+        }
+        setTutorialStep(0)
+        setTutorialActive(true)
+    }, [])
+
+    const nextTutorialStep = useCallback(() => {
+        if (tutorialStep < tutorialSteps.length - 1) {
+            setTutorialStep(prev => prev + 1)
+        }
+    }, [tutorialStep, tutorialSteps.length])
+
+    const completeTutorial = useCallback(() => {
+        localStorage.setItem(FORMULA_SELECT_TUTORIAL_KEY, 'true')
+        setHasCompletedFormulaSelectTutorial(true)
+        setTutorialActive(false)
+        setTutorialStep(0)
+    }, [])
+
+    const skipTutorial = useCallback(() => {
+        completeTutorial()
+    }, [completeTutorial])
+
+    // Auto-start tutorial when formula select is shown for first-time users
+    useEffect(() => {
+        if (showFormulaSelect && !hasCompletedFormulaSelectTutorial && !tutorialActive) {
+            console.log('[Tutorial Debug] Auto-starting formula select tutorial')
+            const timer = setTimeout(() => {
+                startTutorial()
+            }, 500)
+            return () => clearTimeout(timer)
+        }
+    }, [showFormulaSelect, hasCompletedFormulaSelectTutorial, tutorialActive, startTutorial])
+
+    // Update target rect when tutorial step changes
+    useEffect(() => {
+        if (!tutorialActive) {
+            setTutorialTargetRect(null)
+            return
+        }
+
+        const currentStep = tutorialSteps[tutorialStep]
+        if (!currentStep) return
+
+        const timer = setTimeout(() => {
+            if (currentStep.targetSymbol === '__welcome__') {
+                setTutorialTargetRect(null)
+            } else if (currentStep.targetSymbol === '__formula_first__') {
+                const el = document.querySelector('[data-tutorial-formula-first]')
+                if (el) {
+                    setTutorialTargetRect(el.getBoundingClientRect())
+                }
+            }
+        }, 100)
+
+        return () => clearTimeout(timer)
+    }, [tutorialActive, tutorialStep, tutorialSteps])
 
     // Get current active mode card and background preset
     const activeCard = modeCards[activeSlideIndex] || modeCards[0]
@@ -653,18 +755,36 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                             paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)',
                         }}
                     >
-                        {/* Back Button */}
-                        <button
-                            onClick={handleBackFromFormulaSelect}
-                            className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95 mb-4"
-                            style={{
-                                background: theme.bgPanel,
-                                border: `2px solid ${theme.border}`,
-                                boxShadow: `0 3px 0 ${theme.border}`,
-                            }}
-                        >
-                            <ArrowLeft className="h-5 w-5 text-white" />
-                        </button>
+                        {/* Header Row with Back Button and Tutorial Button */}
+                        <div className="flex items-center justify-between mb-4">
+                            <button
+                                onClick={handleBackFromFormulaSelect}
+                                className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95"
+                                style={{
+                                    background: theme.bgPanel,
+                                    border: `2px solid ${theme.border}`,
+                                    boxShadow: `0 3px 0 ${theme.border}`,
+                                }}
+                            >
+                                <ArrowLeft className="h-5 w-5 text-white" />
+                            </button>
+
+                            {/* Tutorial Help Button */}
+                            <button
+                                onClick={() => {
+                                    console.log('[Tutorial Debug] Manual start clicked in HomeScreen')
+                                    startTutorial(true)
+                                }}
+                                className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95"
+                                style={{
+                                    background: theme.purple,
+                                    border: `2px solid ${theme.border}`,
+                                    boxShadow: `0 3px 0 ${theme.border}`,
+                                }}
+                            >
+                                <HelpCircle className="h-5 w-5 text-white" />
+                            </button>
+                        </div>
 
                         {/* Section Title */}
                         <div className="flex items-center gap-2 mb-3 px-2">
@@ -724,15 +844,17 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                         {/* Formula Grid */}
                         <div className="flex-1 overflow-y-auto px-2 pb-2">
                             <div className="grid grid-cols-2 gap-3">
-                                {filteredFormulas.map((f) => {
+                                {filteredFormulas.map((f, index) => {
                                     const fColor = categoryColors[f.category]
                                     const fName = localizeText(f.name, i18n.language)
                                     const isNew = !seenFormulas.has(f.id)
                                     const isLocked = !isAdFree && !isUnlocked(f.id)
+                                    const isFirstFormula = index === 0
                                     return (
                                         <div key={f.id} className="relative">
                                             <button
                                                 onClick={() => handleFormulaSelect(f)}
+                                                data-tutorial-formula-first={isFirstFormula ? 'true' : undefined}
                                                 className="relative w-full text-left px-4 py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                                                 style={{
                                                     background: isLocked ? '#2a2a2a' : theme.bgPanelLight,
@@ -787,6 +909,19 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                             )}
                         </div>
                     </div>
+
+                    {/* Tutorial Overlay for formula selection */}
+                    {tutorialActive && (
+                        <TutorialOverlay
+                            steps={tutorialSteps}
+                            currentStep={tutorialStep}
+                            onNext={nextTutorialStep}
+                            onSkip={skipTutorial}
+                            onComplete={completeTutorial}
+                            targetRect={tutorialTargetRect}
+                            sliderRect={null}
+                        />
+                    )}
                 </div>
             )}
         </div>
