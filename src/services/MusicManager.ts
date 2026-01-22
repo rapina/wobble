@@ -58,9 +58,31 @@ class MusicManager {
 
     /**
      * Mark that user has interacted (required for autoplay)
+     * Also starts playing if a track is set but paused
      */
     markUserInteracted(): void {
+        console.log('[Music] markUserInteracted called', {
+            alreadyInteracted: this.hasUserInteracted,
+            isEnabled: this.isEnabled,
+            currentTrack: this.currentTrack,
+        })
+
+        if (this.hasUserInteracted) return // Already marked
+
         this.hasUserInteracted = true
+
+        // Start playing current track if enabled but paused
+        if (this.isEnabled && this.currentTrack) {
+            const audio = this.audioElements.get(this.currentTrack)
+            console.log('[Music] markUserInteracted - checking audio', {
+                hasAudio: !!audio,
+                paused: audio?.paused,
+            })
+            if (audio && audio.paused) {
+                console.log('[Music] markUserInteracted - starting fadeIn')
+                this.fadeIn(this.currentTrack)
+            }
+        }
     }
 
     /**
@@ -83,6 +105,11 @@ class MusicManager {
      * Enable or disable music
      */
     setEnabled(enabled: boolean): void {
+        console.log('[Music] setEnabled called', {
+            enabled,
+            currentTrack: this.currentTrack,
+            hasUserInteracted: this.hasUserInteracted,
+        })
         this.isEnabled = enabled
 
         if (!enabled) {
@@ -94,7 +121,8 @@ class MusicManager {
         } else if (this.currentTrack && this.hasUserInteracted) {
             // Resume current track
             const audio = this.audioElements.get(this.currentTrack)
-            audio?.play().catch(() => {})
+            console.log('[Music] setEnabled - resuming', { paused: audio?.paused })
+            audio?.play().catch((e) => console.log('[Music] setEnabled - play failed', e))
         }
     }
 
@@ -102,7 +130,29 @@ class MusicManager {
      * Switch to a different track with crossfade
      */
     async switchTrack(track: MusicTrack): Promise<void> {
-        if (track === this.currentTrack) return
+        console.log('[Music] switchTrack called', {
+            track,
+            currentTrack: this.currentTrack,
+            isEnabled: this.isEnabled,
+            hasUserInteracted: this.hasUserInteracted,
+        })
+
+        // Same track but not playing? Start it
+        if (track === this.currentTrack) {
+            console.log('[Music] switchTrack - same track')
+            if (this.isEnabled && this.hasUserInteracted) {
+                const audio = this.audioElements.get(track)
+                console.log('[Music] switchTrack - same track check', {
+                    hasAudio: !!audio,
+                    paused: audio?.paused,
+                })
+                if (audio && audio.paused) {
+                    console.log('[Music] switchTrack - starting fadeIn for same track')
+                    await this.fadeIn(track)
+                }
+            }
+            return
+        }
 
         const previousTrack = this.currentTrack
         this.currentTrack = track
@@ -127,9 +177,13 @@ class MusicManager {
      * Fade in a track
      */
     private async fadeIn(track: MusicTrack): Promise<void> {
+        console.log('[Music] fadeIn called', { track })
         const audio = this.audioElements.get(track)
         const config = TRACKS[track]
-        if (!audio) return
+        if (!audio) {
+            console.log('[Music] fadeIn - no audio element')
+            return
+        }
 
         // Clear any existing fade for this track
         this.clearFade(track)
@@ -137,10 +191,13 @@ class MusicManager {
         const targetVolume = this.masterVolume * config.volumeScale
         audio.volume = 0
 
+        console.log('[Music] fadeIn - attempting play', { targetVolume })
         try {
             await audio.play()
-        } catch {
+            console.log('[Music] fadeIn - play succeeded')
+        } catch (e) {
             // Autoplay blocked, will retry on next user interaction
+            console.log('[Music] fadeIn - play FAILED', e)
             return
         }
 

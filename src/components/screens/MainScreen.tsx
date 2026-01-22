@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { App } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
 import { HomeScreen, GameMode } from './HomeScreen'
@@ -56,22 +56,32 @@ export function MainScreen() {
     }, [screenState, selectedFormula])
 
     // Handle first user interaction for autoplay
+    // Use ref to track if already interacted (avoid dependency issues)
+    const hasInteractedRef = useRef(false)
+
     useEffect(() => {
+        console.log('[MainScreen] useEffect - registering interaction listener')
+
         const handleInteraction = () => {
-            markUserInteracted()
-            // Start with main track after first interaction
-            if (isMusicEnabled) {
-                const isSurvivorMode = screenState === 'game' || screenState === 'minigame'
-                switchTrack(isSurvivorMode ? 'survivor' : 'main')
+            if (hasInteractedRef.current) {
+                console.log('[MainScreen] handleInteraction - already interacted, skipping')
+                return
             }
-            document.removeEventListener('click', handleInteraction)
+            hasInteractedRef.current = true
+
+            console.log('[MainScreen] handleInteraction - first click detected')
+            markUserInteracted()
         }
-        document.addEventListener('click', handleInteraction)
+
+        document.addEventListener('click', handleInteraction, true)
+        document.addEventListener('touchstart', handleInteraction, true)
 
         return () => {
-            document.removeEventListener('click', handleInteraction)
+            console.log('[MainScreen] useEffect cleanup - removing listener')
+            document.removeEventListener('click', handleInteraction, true)
+            document.removeEventListener('touchstart', handleInteraction, true)
         }
-    }, [isMusicEnabled, markUserInteracted, switchTrack, screenState])
+    }, [markUserInteracted])
 
     // Handle app state changes (background/foreground)
     useEffect(() => {
