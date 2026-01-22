@@ -40,6 +40,7 @@
     },
     "tutorial": {
         "stepMessage": "Tap the {{symbol}} card to adjust {{name}}. Use the slider to see how it affects the simulation!",
+        "infoButtonMessage": "💡 Tap the info button to see real-world applications of this formula!",
         "next": "Next",
         "skip": "Skip",
         "done": "Got it!",

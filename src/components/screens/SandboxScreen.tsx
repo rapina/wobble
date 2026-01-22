@@ -108,8 +108,8 @@ export function SandboxScreen({
         const saved = localStorage.getItem('wobble-seen-formulas')
         return saved ? new Set(JSON.parse(saved)) : new Set()
     })
-    const [dontShowInfoFormulas, setDontShowInfoFormulas] = useState<Set<string>>(() => {
-        const saved = localStorage.getItem('wobble-dont-show-info-formulas')
+    const [readInfoFormulas, setReadInfoFormulas] = useState<Set<string>>(() => {
+        const saved = localStorage.getItem('wobble-read-info-formulas')
         return saved ? new Set(JSON.parse(saved)) : new Set()
     })
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null)
@@ -138,6 +138,7 @@ export function SandboxScreen({
     const tutorial = useTutorial({
         formulaId,
         variables: formula?.variables ?? [],
+        formula,
         onSelectCard: setSelectedCard,
     })
 
@@ -151,6 +152,17 @@ export function SandboxScreen({
 
         // Small delay to let DOM update
         const timer = setTimeout(() => {
+            // Handle info button tutorial step
+            if (tutorial.currentTargetSymbol === '__info__') {
+                const infoButtonEl = document.querySelector('[data-tutorial-info-button]')
+                if (infoButtonEl) {
+                    setTargetRect(infoButtonEl.getBoundingClientRect())
+                }
+                setSliderRect(null)
+                return
+            }
+
+            // Handle variable card tutorial step
             const cardEl = document.querySelector(
                 `[data-tutorial-symbol="${tutorial.currentTargetSymbol}"]`
             )
@@ -189,21 +201,6 @@ export function SandboxScreen({
         return () => clearInterval(timer)
     }, [webSimulationActive])
 
-    // Track if info popup was shown for this formula
-    const [infoPopupShownOnce, setInfoPopupShownOnce] = useState(false)
-
-    // Reset info popup tracking when formula changes
-    useEffect(() => {
-        setInfoPopupShownOnce(false)
-    }, [formulaId])
-
-    // Track when info popup is shown
-    useEffect(() => {
-        if (showInfoPopup) {
-            setInfoPopupShownOnce(true)
-        }
-    }, [showInfoPopup])
-
     // Track when tutorial becomes active (to prevent auto-restart)
     useEffect(() => {
         if (tutorial.isActive) {
@@ -211,14 +208,23 @@ export function SandboxScreen({
         }
     }, [tutorial.isActive])
 
-    // Auto-start tutorial for first-time users (after info popup is closed)
+    // Complete tutorial when info popup is opened during info button tutorial step
     useEffect(() => {
-        // Check if info popup needs to be shown for this formula
-        const needsInfoPopup =
-            formula?.applications &&
-            Object.keys(formula.applications).length > 0 &&
-            !dontShowInfoFormulas.has(formulaId)
+        if (
+            tutorial.isActive &&
+            tutorial.currentTargetSymbol === '__info__' &&
+            showInfoPopup
+        ) {
+            // Wait a bit then complete tutorial
+            const timer = setTimeout(() => {
+                tutorial.completeTutorial()
+            }, 500)
+            return () => clearTimeout(timer)
+        }
+    }, [tutorial.isActive, tutorial.currentTargetSymbol, showInfoPopup, tutorial])
 
+    // Auto-start tutorial for first-time users
+    useEffect(() => {
         // Don't start if tutorial already completed globally, active, or shown this session
         if (
             !formula ||
@@ -228,22 +234,12 @@ export function SandboxScreen({
         )
             return
 
-        // Don't start if info popup is currently showing
-        if (showInfoPopup) return
-
-        // If info popup was needed but hasn't been shown yet, wait
-        if (needsInfoPopup && !infoPopupShownOnce) return
-
         const timer = setTimeout(() => {
             tutorial.startTutorial()
         }, 500)
         return () => clearTimeout(timer)
     }, [
         formula,
-        formulaId,
-        showInfoPopup,
-        infoPopupShownOnce,
-        dontShowInfoFormulas,
         tutorial.hasCompletedTutorial,
         tutorial.isActive,
         tutorialShownThisSession,
@@ -487,18 +483,8 @@ export function SandboxScreen({
         // Don't show if no pending wobbles or already shown
         if (pendingNewWobbles.length === 0 || discoveryShownThisSession) return
 
-        // Don't show if info popup is currently showing
-        if (showInfoPopup) return
-
         // Don't show if tutorial is active
         if (tutorial.isActive) return
-
-        // Check if info popup needs to be shown
-        const needsInfoPopup =
-            formula?.applications &&
-            Object.keys(formula.applications).length > 0 &&
-            !dontShowInfoFormulas.has(formulaId)
-        if (needsInfoPopup && !infoPopupShownOnce) return
 
         // Check if tutorial has been handled (either completed globally or shown this session)
         const tutorialHandled = tutorial.hasCompletedTutorial || tutorialShownThisSession
@@ -518,34 +504,11 @@ export function SandboxScreen({
     }, [
         pendingNewWobbles,
         discoveryShownThisSession,
-        showInfoPopup,
         tutorial.isActive,
         tutorial.hasCompletedTutorial,
         tutorialShownThisSession,
-        infoPopupShownOnce,
-        dontShowInfoFormulas,
-        formulaId,
-        formula?.applications,
         i18n.language,
     ])
-
-    // Auto-show info popup for formulas where user hasn't clicked "don't show again" (not for locked formulas)
-    useEffect(() => {
-        // 잠긴 공식이면 팝업 닫기
-        if (isCurrentFormulaLocked) {
-            setShowInfoPopup(false)
-            return
-        }
-
-        if (
-            formula?.applications &&
-            Object.keys(formula.applications).length > 0 &&
-            !dontShowInfoFormulas.has(formulaId)
-        ) {
-            const timer = setTimeout(() => setShowInfoPopup(true), 300)
-            return () => clearTimeout(timer)
-        }
-    }, [formula, formulaId, dontShowInfoFormulas, isCurrentFormulaLocked])
 
     // Mark formula as seen and studied when viewed
     useEffect(() => {
@@ -567,12 +530,12 @@ export function SandboxScreen({
         localStorage.setItem('wobble-seen-formulas', JSON.stringify([...newSeen]))
     }
 
-    // Mark formula as "don't show info popup again"
-    const markAsDontShowInfo = (id: string) => {
-        const newSet = new Set(dontShowInfoFormulas)
+    // Mark formula info as read
+    const markAsReadInfo = (id: string) => {
+        const newSet = new Set(readInfoFormulas)
         newSet.add(id)
-        setDontShowInfoFormulas(newSet)
-        localStorage.setItem('wobble-dont-show-info-formulas', JSON.stringify([...newSet]))
+        setReadInfoFormulas(newSet)
+        localStorage.setItem('wobble-read-info-formulas', JSON.stringify([...newSet]))
     }
 
     // Handle formula selection from select screen
@@ -1180,8 +1143,12 @@ export function SandboxScreen({
                             Object.keys(formula.applications).length > 0 &&
                             !isCurrentFormulaLocked && (
                                 <button
+                                    data-tutorial-info-button
                                     onClick={() => setShowInfoPopup(true)}
-                                    className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95"
+                                    className={cn(
+                                        'h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95',
+                                        !readInfoFormulas.has(formulaId) && 'hologram-button'
+                                    )}
                                     style={{
                                         background: theme.blue,
                                         border: `2px solid ${theme.border}`,
@@ -1775,7 +1742,10 @@ export function SandboxScreen({
             {showInfoPopup && formula.applications && (
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center p-4"
-                    onClick={() => setShowInfoPopup(false)}
+                    onClick={() => {
+                        setShowInfoPopup(false)
+                        markAsReadInfo(formulaId)
+                    }}
                 >
                     {/* Backdrop */}
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
@@ -1805,7 +1775,10 @@ export function SandboxScreen({
                                 </span>
                             </div>
                             <button
-                                onClick={() => setShowInfoPopup(false)}
+                                onClick={() => {
+                                    setShowInfoPopup(false)
+                                    markAsReadInfo(formulaId)
+                                }}
                                 className="h-8 w-8 rounded-lg flex items-center justify-center transition-all active:scale-95"
                                 style={{
                                     background: theme.red,
@@ -1867,31 +1840,6 @@ export function SandboxScreen({
                                 ))}
                             </ul>
                         </div>
-
-                        {/* Don't show again option */}
-                        {!dontShowInfoFormulas.has(formulaId) && (
-                            <div
-                                className="px-5 py-3"
-                                style={{
-                                    borderTop: `2px solid ${theme.border}`,
-                                    background: 'rgba(0,0,0,0.2)',
-                                }}
-                            >
-                                <button
-                                    onClick={() => {
-                                        markAsDontShowInfo(formulaId)
-                                        setShowInfoPopup(false)
-                                    }}
-                                    className="w-full py-2 rounded-lg text-white/50 text-xs transition-all active:scale-95 hover:text-white/70"
-                                    style={{
-                                        background: theme.bgPanelLight,
-                                        border: `2px solid ${theme.border}`,
-                                    }}
-                                >
-                                    {t('simulation.info.dontShowAgain')}
-                                </button>
-                            </div>
-                        )}
                     </div>
                 </div>
             )}
