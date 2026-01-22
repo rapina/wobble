@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Variable } from '../formulas/types'
+import { Variable, Formula } from '../formulas/types'
 import { TutorialStep } from '../components/tutorial/TutorialOverlay'
 import { useLocalizedVariables } from './useLocalizedFormula'
 
@@ -9,6 +9,7 @@ const TUTORIAL_COMPLETED_KEY = 'wobble-tutorial-completed'
 interface UseTutorialOptions {
     formulaId: string
     variables: Variable[]
+    formula: Formula | null
     onSelectCard: (symbol: string | null) => void
 }
 
@@ -27,6 +28,7 @@ interface UseTutorialReturn {
 export function useTutorial({
     formulaId,
     variables,
+    formula,
     onSelectCard,
 }: UseTutorialOptions): UseTutorialReturn {
     const { t } = useTranslation()
@@ -42,12 +44,17 @@ export function useTutorial({
     // Get input variables only (not output)
     const inputVariables = variables.filter((v) => v.role === 'input')
 
-    // Generate tutorial steps for each input variable
+    // Check if formula has info to show
+    const hasInfo =
+        formula?.applications && Object.keys(formula.applications).length > 0
+
+    // Generate tutorial steps for each input variable + info button step
     const steps: TutorialStep[] = useMemo(() => {
-        return inputVariables.map((variable, index) => {
+        const variableSteps = inputVariables.map((variable, index) => {
             const localizedVar = localizedVariables.find((v) => v.symbol === variable.symbol)
             return {
                 targetSymbol: variable.symbol,
+                targetType: 'variable' as const,
                 message: t('tutorial.stepMessage', {
                     symbol: variable.symbol,
                     name: localizedVar?.localizedName ?? variable.name,
@@ -56,7 +63,21 @@ export function useTutorial({
                 }),
             }
         })
-    }, [inputVariables, localizedVariables, t])
+
+        // Add info button step if formula has applications
+        if (hasInfo) {
+            variableSteps.push({
+                targetSymbol: '__info__',
+                targetType: 'info-button' as const,
+                message: t('tutorial.infoButtonMessage', {
+                    defaultValue:
+                        '정보 버튼을 눌러 이 공식의 실생활 활용 사례를 확인해보세요!',
+                }),
+            })
+        }
+
+        return variableSteps
+    }, [inputVariables, localizedVariables, hasInfo, t])
 
     // Current target symbol based on step
     const currentTargetSymbol =

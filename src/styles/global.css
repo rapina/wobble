@@ -30,3 +30,101 @@ body,
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
+
+/* Holographic button effect (Balatro-inspired) */
+@keyframes hologram-rotate {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@keyframes hologram-pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+}
+
+@keyframes hologram-glow {
+    0%, 100% {
+        filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.6))
+                drop-shadow(0 0 8px rgba(255, 215, 0, 0.4))
+                drop-shadow(0 0 15px rgba(255, 215, 0, 0.3));
+    }
+    50% {
+        filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.8))
+                drop-shadow(0 0 12px rgba(255, 215, 0, 0.6))
+                drop-shadow(0 0 20px rgba(255, 215, 0, 0.4));
+    }
+}
+
+@keyframes hologram-shine {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 200%;
+    }
+}
+
+.hologram-button {
+    position: relative;
+    animation: hologram-pulse 2s ease-in-out infinite, hologram-glow 2s ease-in-out infinite;
+    overflow: hidden;
+}
+
+.hologram-button::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    padding: 3px;
+    background: linear-gradient(
+        90deg,
+        #ffd700 0%,
+        #ffed4e 10%,
+        #ffffff 20%,
+        #ffed4e 30%,
+        #ffd700 40%,
+        #ff69b4 50%,
+        #00ffff 60%,
+        #ff69b4 70%,
+        #ffd700 80%,
+        #ffed4e 90%,
+        #ffd700 100%
+    );
+    background-size: 300% 100%;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: hologram-rotate 3s linear infinite;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.hologram-button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.3) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    animation: hologram-shine 3s ease-in-out infinite;
+    pointer-events: none;
+}
