@@ -12,7 +12,7 @@ const theme = {
 export interface TutorialStep {
     targetSymbol: string
     message: string
-    targetType?: 'variable' | 'info-button' | 'formula-list'
+    targetType?: 'variable' | 'info-button' | 'formula-list' | 'challenge-submit'
 }
 
 interface TutorialOverlayProps {

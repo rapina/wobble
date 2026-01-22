@@ -117,8 +117,7 @@ export function SandboxScreen({
     const [pendingNewWobbles, setPendingNewWobbles] = useState<WobbleShape[]>([])
     const [tutorialShownThisSession, setTutorialShownThisSession] = useState(false)
     const [discoveryShownThisSession, setDiscoveryShownThisSession] = useState(false)
-    const [welcomePhase, setWelcomePhase] = useState<'opening' | 'select' | 'simulation'>('opening')
-    const [openingMounted, setOpeningMounted] = useState(false)
+    const [welcomePhase, setWelcomePhase] = useState<'select' | 'simulation'>('simulation')
     const [challengeToast, setChallengeToast] = useState<
         | { type: 'success'; score: number; combo: number; insight?: string }
         | { type: 'wrong'; hint: string }
@@ -152,11 +151,31 @@ export function SandboxScreen({
 
         // Small delay to let DOM update
         const timer = setTimeout(() => {
+            // Handle formula selection tutorial step
+            if (tutorial.currentTargetSymbol === '__formula_first__') {
+                const formulaEl = document.querySelector('[data-tutorial-formula-first]')
+                if (formulaEl) {
+                    setTargetRect(formulaEl.getBoundingClientRect())
+                }
+                setSliderRect(null)
+                return
+            }
+
             // Handle info button tutorial step
             if (tutorial.currentTargetSymbol === '__info__') {
                 const infoButtonEl = document.querySelector('[data-tutorial-info-button]')
                 if (infoButtonEl) {
                     setTargetRect(infoButtonEl.getBoundingClientRect())
+                }
+                setSliderRect(null)
+                return
+            }
+
+            // Handle challenge submit button tutorial step
+            if (tutorial.currentTargetSymbol === '__challenge_submit__') {
+                const challengeSubmitEl = document.querySelector('[data-tutorial-challenge-submit]')
+                if (challengeSubmitEl) {
+                    setTargetRect(challengeSubmitEl.getBoundingClientRect())
                 }
                 setSliderRect(null)
                 return
@@ -179,7 +198,7 @@ export function SandboxScreen({
         }, 100)
 
         return () => clearTimeout(timer)
-    }, [tutorial.isActive, tutorial.currentTargetSymbol, selectedCard])
+    }, [tutorial.isActive, tutorial.currentTargetSymbol, selectedCard, welcomePhase])
 
     // Web ad simulation countdown
     useEffect(() => {
@@ -235,6 +254,8 @@ export function SandboxScreen({
             return
 
         const timer = setTimeout(() => {
+            // Start tutorial from formula selection phase
+            setWelcomePhase('select')
             tutorial.startTutorial()
         }, 500)
         return () => clearTimeout(timer)
@@ -458,15 +479,6 @@ export function SandboxScreen({
         return () => clearTimeout(timer)
     }, [formulaId])
 
-    // Opening screen mount animation
-    useEffect(() => {
-        if (welcomePhase === 'opening') {
-            setOpeningMounted(false)
-            const timer = setTimeout(() => setOpeningMounted(true), 100)
-            return () => clearTimeout(timer)
-        }
-    }, [welcomePhase])
-
     // Check for new wobbles and unlock when formula is used
     useEffect(() => {
         if (formulaId) {
@@ -542,6 +554,14 @@ export function SandboxScreen({
     const handleSelectFromWelcome = (selectedFormula: Formula) => {
         onFormulaChange(selectedFormula)
         setWelcomePhase('simulation')
+
+        // If tutorial is active in formula-select phase, advance to simulation phase
+        if (tutorial.isActive && tutorial.tutorialPhase === 'formula-select') {
+            // Small delay to let the simulation screen render
+            setTimeout(() => {
+                tutorial.advanceToSimulation()
+            }, 300)
+        }
     }
 
     // 보상형 광고를 통한 공식 잠금 해제
@@ -568,221 +588,6 @@ export function SandboxScreen({
                 style={{ background: theme.bg }}
             >
                 <div className="animate-pulse text-white/50">{t('simulation.loading')}</div>
-            </div>
-        )
-    }
-
-    // Opening intro screen - shown first on every entry
-    if (welcomePhase === 'opening') {
-        // Floating formula symbols for background effect
-        const floatingSymbols = ['F=ma', 'E=mc²', 'λ', 'Σ', 'π', 'θ', 'ω', 'Δ', '∫', '∞']
-
-        return (
-            <div
-                className="relative w-full h-full overflow-hidden cursor-pointer"
-                style={{ background: '#0a0a12' }}
-                onClick={() => setWelcomePhase('select')}
-            >
-                {/* Balatro Background */}
-                {balatroBackground}
-
-                {/* Floating Formula Symbols */}
-                <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                    {floatingSymbols.map((symbol, i) => (
-                        <div
-                            key={i}
-                            className={cn(
-                                'absolute text-2xl font-bold transition-all duration-1000',
-                                openingMounted ? 'opacity-20' : 'opacity-0'
-                            )}
-                            style={{
-                                color: theme.gold,
-                                left: `${10 + (i % 5) * 20}%`,
-                                top: `${15 + Math.floor(i / 5) * 60}%`,
-                                transform: `rotate(${-15 + i * 7}deg)`,
-                                transitionDelay: `${300 + i * 100}ms`,
-                                animation: openingMounted
-                                    ? `float-${i % 3} ${3 + (i % 2)}s ease-in-out infinite`
-                                    : 'none',
-                            }}
-                        >
-                            {symbol}
-                        </div>
-                    ))}
-                </div>
-
-                {/* Vignette overlay */}
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)] pointer-events-none" />
-
-                {/* Opening Content */}
-                <div
-                    className="relative z-10 h-full flex flex-col items-center justify-center"
-                    style={{
-                        paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)',
-                        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)',
-                    }}
-                >
-                    {/* Back Button */}
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            onBack()
-                        }}
-                        className="absolute top-0 left-0 h-10 w-10 rounded-lg flex items-center justify-center transition-all active:scale-95"
-                        style={{
-                            top: 'max(env(safe-area-inset-top, 0px), 12px)',
-                            left: 'max(env(safe-area-inset-left, 0px), 12px)',
-                            background: theme.bgPanel,
-                            border: `2px solid ${theme.border}`,
-                            boxShadow: `0 3px 0 ${theme.border}`,
-                        }}
-                    >
-                        <ArrowLeft className="h-5 w-5 text-white" />
-                    </button>
-
-                    {/* Wobble Character with enhanced entrance */}
-                    <div
-                        className={cn(
-                            'mb-8 transition-all duration-700',
-                            openingMounted
-                                ? 'opacity-100 scale-100 translate-y-0'
-                                : 'opacity-0 scale-0 translate-y-10'
-                        )}
-                        style={{
-                            transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)', // spring effect
-                        }}
-                    >
-                        <div
-                            className="relative"
-                            style={{
-                                animation: openingMounted
-                                    ? 'wobble-float 2s ease-in-out infinite'
-                                    : 'none',
-                            }}
-                        >
-                            <WobbleDisplay
-                                size={70}
-                                color={theme.gold}
-                                shape="circle"
-                                expression="happy"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Description with staged animation - each line appears separately */}
-                    <div className="text-center mb-10 px-8 space-y-3">
-                        {t('simulation.welcome.openingDesc')
-                            .split('\n')
-                            .map((line, i) => (
-                                <p
-                                    key={i}
-                                    className={cn(
-                                        'text-lg leading-relaxed transition-all duration-600',
-                                        openingMounted
-                                            ? 'opacity-100 translate-y-0 scale-100'
-                                            : 'opacity-0 translate-y-6 scale-95'
-                                    )}
-                                    style={{
-                                        color: 'rgba(255,255,255,0.85)',
-                                        transitionDelay: `${600 + i * 400}ms`, // 더 긴 간격으로 단계적 등장
-                                        transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
-                                    }}
-                                >
-                                    {line}
-                                </p>
-                            ))}
-                    </div>
-
-                    {/* Tap to Start with bounce effect */}
-                    <div
-                        className={cn(
-                            'flex flex-col items-center gap-2 transition-all duration-500',
-                            openingMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                        )}
-                        style={{ transitionDelay: '1800ms' }} // 설명 3줄 다 나온 후 (600 + 400*3)
-                    >
-                        {/* Animated arrow */}
-                        <div
-                            className="text-white/30"
-                            style={{
-                                animation: 'bounce-arrow 1s ease-in-out infinite',
-                            }}
-                        >
-                            <ChevronDown className="h-6 w-6" />
-                        </div>
-                        <p className="text-white/50 text-sm font-medium">
-                            {t('simulation.welcome.tapToStart')}
-                        </p>
-                    </div>
-                </div>
-
-                {/* CSS Animations */}
-                <style>{`
-                    @keyframes wobble-float {
-                        0%, 100% { transform: translateY(0); }
-                        50% { transform: translateY(-8px); }
-                    }
-                    @keyframes bounce-arrow {
-                        0%, 100% { transform: translateY(0); opacity: 0.3; }
-                        50% { transform: translateY(4px); opacity: 0.6; }
-                    }
-                    @keyframes float-0 {
-                        0%, 100% { transform: translateY(0) rotate(-15deg); }
-                        50% { transform: translateY(-10px) rotate(-10deg); }
-                    }
-                    @keyframes float-1 {
-                        0%, 100% { transform: translateY(0) rotate(5deg); }
-                        50% { transform: translateY(-15px) rotate(10deg); }
-                    }
-                    @keyframes float-2 {
-                        0%, 100% { transform: translateY(0) rotate(-5deg); }
-                        50% { transform: translateY(-8px) rotate(0deg); }
-                    }
-                    @keyframes discovery-bounce {
-                        0% { transform: scale(0) translateY(20px); opacity: 0; }
-                        50% { transform: scale(1.1) translateY(-10px); }
-                        100% { transform: scale(1) translateY(0); opacity: 1; }
-                    }
-                    @keyframes challenge-pulse {
-                        0%, 100% { transform: scale(1); }
-                        50% { transform: scale(1.02); }
-                    }
-                    @keyframes challenge-glow {
-                        0%, 100% { opacity: 0.4; }
-                        50% { opacity: 0.7; }
-                    }
-                    @keyframes marquee-scroll {
-                        0% { transform: translateX(0); }
-                        100% { transform: translateX(-50%); }
-                    }
-                    @keyframes toast-bounce-in {
-                        0% {
-                            opacity: 0;
-                            transform: translateX(-50%) translateY(-20px) scale(0.8);
-                        }
-                        50% {
-                            opacity: 1;
-                            transform: translateX(-50%) translateY(4px) scale(1.05);
-                        }
-                        70% {
-                            transform: translateX(-50%) translateY(-2px) scale(0.98);
-                        }
-                        100% {
-                            opacity: 1;
-                            transform: translateX(-50%) translateY(0) scale(1);
-                        }
-                    }
-                    @keyframes toast-bounce-out {
-                        0% {
-                            opacity: 1;
-                            transform: translateX(-50%) translateY(0) scale(1);
-                        }
-                        100% {
-                            opacity: 0;
-                            transform: translateX(-50%) translateY(-10px) scale(0.9);
-                        }
-                    }
-                `}</style>
             </div>
         )
     }
@@ -881,16 +686,20 @@ export function SandboxScreen({
                     {/* Formula Grid */}
                     <div className="flex-1 overflow-y-auto px-2 pb-2">
                         <div className="grid grid-cols-2 gap-3">
-                            {filteredFormulas.map((f) => {
+                            {filteredFormulas.map((f, index) => {
                                 const fColor = categoryColors[f.category]
                                 const isSelected = f.id === formulaId
                                 const fName = localizeText(f.name, i18n.language)
                                 const isNew = !seenFormulas.has(f.id)
                                 const isLocked = !isAdFree && !isUnlocked(f.id)
+                                const isFirstFormula = index === 0
                                 return (
                                     <div key={f.id} className="relative">
                                         <button
                                             onClick={() => handleSelectFromWelcome(f)}
+                                            data-tutorial-formula-first={
+                                                isFirstFormula ? 'true' : undefined
+                                            }
                                             className="relative w-full text-left px-4 py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                                             style={{
                                                 background: isSelected
@@ -997,6 +806,19 @@ export function SandboxScreen({
                         )}
                     </div>
                 </div>
+
+                {/* Tutorial Overlay for formula selection phase */}
+                {tutorial.isActive && tutorial.tutorialPhase === 'formula-select' && (
+                    <TutorialOverlay
+                        steps={tutorial.steps}
+                        currentStep={tutorial.currentStep}
+                        onNext={tutorial.nextStep}
+                        onSkip={tutorial.skipTutorial}
+                        onComplete={tutorial.completeTutorial}
+                        targetRect={targetRect}
+                        sliderRect={sliderRect}
+                    />
+                )}
             </div>
         )
     }
@@ -1844,8 +1666,8 @@ export function SandboxScreen({
                 </div>
             )}
 
-            {/* Tutorial Overlay */}
-            {tutorial.isActive && (
+            {/* Tutorial Overlay for simulation phase */}
+            {tutorial.isActive && tutorial.tutorialPhase === 'simulation' && (
                 <TutorialOverlay
                     steps={tutorial.steps}
                     currentStep={tutorial.currentStep}

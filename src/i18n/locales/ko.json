@@ -6,7 +6,7 @@
         "collection": "콜렉션",
         "collectionDesc": "캐릭터, 학습, 게임 기록",
         "game": "게임",
-        "gameDesc": "새 에피소드 상영 중!",
+        "gameDesc": "미니게임에 도전하세요!",
         "soon": "SOON",
         "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
         "disclaimer": "Wobble은 물리를 재미있게 탐험하는 게임입니다.\n실제 계산과는 차이가 있을 수 있습니다."
@@ -62,7 +62,7 @@
         "title": "게임",
         "selectAdventure": "게임 선택",
         "wobbleAdventure": "워블 서바이버",
-        "wobbleAdventureEpisode": "EP.1",
+        "wobbleAdventureTag": "SURVIVOR",
         "wobbleAdventureDesc": "세계의 규칙이 사라지고 있다! 워비는 섀도우의 침공에서 살아남아 워블 행성의 질서를 되찾아야 한다!",
         "pendulumFrenzy": "진자 광란",
         "pendulumFrenzyDesc": "적절한 타이밍에 줄을 끊어라! 진자 물리를 마스터해서 타겟을 맞추세요.",

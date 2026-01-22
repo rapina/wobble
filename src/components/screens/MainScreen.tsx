@@ -94,8 +94,18 @@ export function MainScreen() {
         switchTrack(isSurvivorMode ? 'survivor' : 'main')
     }, [screenState, switchTrack])
 
+    const handleSelectSandboxFormula = (formula: Formula) => {
+        setIsTransitioning(true)
+        setTimeout(() => {
+            setScreenState('sandbox')
+            setSelectedFormula(formula)
+            setIsTransitioning(false)
+        }, 150)
+    }
+
     const handleSelectMode = (mode: GameMode) => {
         if (mode === 'sandbox') {
+            // This path is no longer used for sandbox - use handleSelectSandboxFormula instead
             setIsTransitioning(true)
             setTimeout(() => {
                 setScreenState('sandbox')
@@ -174,7 +184,10 @@ export function MainScreen() {
                 {screenState === 'intro' ? (
                     <IntroScreen onComplete={() => setScreenState('home')} />
                 ) : screenState === 'home' ? (
-                    <HomeScreen onSelectMode={handleSelectMode} />
+                    <HomeScreen
+                        onSelectMode={handleSelectMode}
+                        onSelectSandboxFormula={handleSelectSandboxFormula}
+                    />
                 ) : screenState === 'sandbox' && selectedFormula ? (
                     <SandboxScreen
                         formulaId={selectedFormula.id}

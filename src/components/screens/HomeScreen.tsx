@@ -1,21 +1,33 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Settings, ShoppingBag, Bug, BookOpen } from 'lucide-react'
+import { Settings, Bug, ChevronDown, ArrowLeft, Lock } from 'lucide-react'
 import { useAdMob } from '@/hooks/useAdMob'
 import { usePurchaseStore } from '@/stores/purchaseStore'
 import Balatro from '@/components/Balatro'
-import { homePreset } from '@/config/backgroundPresets'
+import {
+    homePreset,
+    sandboxPreset,
+    gameSelectPreset,
+    collectionPreset,
+    shopPreset,
+    BackgroundPreset,
+} from '@/config/backgroundPresets'
 import ShuffleText from '@/components/ShuffleText'
 import { RotatingText } from '@/components/RotatingText'
-import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
 import { LanguageToggle } from '@/components/LanguageToggle'
 import { SettingsModal } from '@/components/ui/SettingsModal'
 import { DevOptionsModal } from '@/components/ui/DevOptionsModal'
+import { ModeCarousel, modeCards } from '@/components/ui/ModeCarousel'
+import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
+import { JellyfishDisplay } from '@/components/ui/JellyfishDisplay'
+import { WOBBLE_CHARACTERS } from '@/components/canvas/Wobble'
 import { useCollectionStore } from '@/stores/collectionStore'
 import { useProgressStore } from '@/stores/progressStore'
 import { useAchievementStore } from '@/stores/achievementStore'
-import { WOBBLE_CHARACTERS } from '@/components/canvas/Wobble'
+import { useFormulaUnlockStore } from '@/stores/formulaUnlockStore'
 import { formulaList } from '@/formulas/registry'
+import { Formula, FormulaCategory } from '@/formulas/types'
+import { t as localizeText } from '@/utils/localization'
 import { cn } from '@/lib/utils'
 
 // 개발 빌드 여부
@@ -37,32 +49,102 @@ const theme = {
 
 export type GameMode = 'sandbox' | 'collection' | 'game' | 'learning' | 'shop'
 
-interface HomeScreenProps {
-    onSelectMode: (mode: GameMode) => void
+// Category colors for formula cards (matching SandboxScreen)
+const categoryColors: Record<FormulaCategory, string> = {
+    mechanics: '#f8b862',
+    wave: '#6ecff6',
+    gravity: '#c792ea',
+    thermodynamics: '#ff6b6b',
+    electricity: '#69f0ae',
+    special: '#ffd700',
+    quantum: '#e040fb',
+    chemistry: '#4fc3f7',
 }
 
-export function HomeScreen({ onSelectMode }: HomeScreenProps) {
-    const { t } = useTranslation()
+// Mode-specific background presets
+const modeBackgrounds: Record<GameMode, BackgroundPreset> = {
+    sandbox: sandboxPreset,
+    game: gameSelectPreset,
+    collection: collectionPreset,
+    shop: shopPreset,
+    learning: sandboxPreset,
+}
+
+interface HomeScreenProps {
+    onSelectMode: (mode: GameMode) => void
+    onSelectSandboxFormula?: (formula: Formula) => void
+}
+
+export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenProps) {
+    const { t, i18n } = useTranslation()
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
     const [isDevOpen, setIsDevOpen] = useState(false)
-    const { getProgress, unlockedWobbles } = useCollectionStore()
+    const [showFormulaSelect, setShowFormulaSelect] = useState(false)
+    const [selectedCategory, setSelectedCategory] = useState<FormulaCategory | 'all'>('all')
+    const [activeSlideIndex, setActiveSlideIndex] = useState(0)
+    const [isSlideAnimating, setIsSlideAnimating] = useState(false)
+    const [seenFormulas] = useState<Set<string>>(() => {
+        const saved = localStorage.getItem('wobble-seen-formulas')
+        return saved ? new Set(JSON.parse(saved)) : new Set()
+    })
+    const { getProgress } = useCollectionStore()
     const { studiedFormulas } = useProgressStore()
     const { getProgress: getAchievementProgress } = useAchievementStore()
     const { isAdFree } = usePurchaseStore()
+    const { isUnlocked } = useFormulaUnlockStore()
     const { isInitialized, isBannerVisible, showBanner, isNative } = useAdMob()
     const collectionProgress = getProgress()
     const achievementProgress = getAchievementProgress()
     const unseenFormulaCount = formulaList.length - studiedFormulas.size
 
-    // Select a random wobble from unlocked collection (or default to circle)
-    const randomWobble = useMemo(() => {
-        if (unlockedWobbles.length === 0) {
-            return { shape: 'circle' as const, color: WOBBLE_CHARACTERS.circle.color }
+    // Get current active mode card and background preset
+    const activeCard = modeCards[activeSlideIndex] || modeCards[0]
+    const activeBackground = modeBackgrounds[activeCard.id] || homePreset
+
+    // Get unique categories from formulas
+    const categories = Array.from(new Set(formulaList.map((f) => f.category))) as FormulaCategory[]
+
+    // Filter formulas by selected category
+    const filteredFormulas =
+        selectedCategory === 'all'
+            ? formulaList
+            : formulaList.filter((f) => f.category === selectedCategory)
+
+    // Handle slide change - animate description area
+    const handleSlideChange = (_mode: GameMode, index: number) => {
+        setIsSlideAnimating(true)
+        setTimeout(() => {
+            setActiveSlideIndex(index)
+            setTimeout(() => setIsSlideAnimating(false), 50)
+        }, 150)
+    }
+
+    // Handle mode selection - go directly to mode
+    const handleModeSelect = (mode: GameMode) => {
+        if (mode === 'sandbox') {
+            // Show formula select screen for sandbox
+            setShowFormulaSelect(true)
+        } else {
+            // Go directly to mode without intro
+            onSelectMode(mode)
         }
-        const randomIndex = Math.floor(Math.random() * unlockedWobbles.length)
-        const shape = unlockedWobbles[randomIndex]
-        return { shape, color: WOBBLE_CHARACTERS[shape].color }
-    }, [unlockedWobbles])
+    }
+
+    // Handle formula selection in sandbox mode
+    const handleFormulaSelect = (formula: Formula) => {
+        const isLocked = !isAdFree && !isUnlocked(formula.id)
+        if (isLocked) return
+
+        setShowFormulaSelect(false)
+        if (onSelectSandboxFormula) {
+            onSelectSandboxFormula(formula)
+        }
+    }
+
+    // Handle back from formula select
+    const handleBackFromFormulaSelect = () => {
+        setShowFormulaSelect(false)
+    }
 
     // Show AdMob banner when initialized (unless ad-free)
     useEffect(() => {
@@ -73,19 +155,22 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
 
     return (
         <div className="relative w-full h-full overflow-hidden" style={{ background: theme.felt }}>
-            {/* Balatro Background */}
-            <div className="absolute inset-0 opacity-40">
+            {/* Dynamic Balatro Background - changes with mode */}
+            <div
+                className="absolute inset-0 opacity-40 transition-all duration-700"
+                key={activeCard.id}
+            >
                 <Balatro
-                    color1={homePreset.color1}
-                    color2={homePreset.color2}
-                    color3={homePreset.color3}
-                    spinSpeed={homePreset.spinSpeed}
-                    spinRotation={homePreset.spinRotation}
-                    contrast={homePreset.contrast}
-                    lighting={homePreset.lighting}
-                    spinAmount={homePreset.spinAmount}
-                    pixelFilter={homePreset.pixelFilter}
-                    isRotate={homePreset.isRotate}
+                    color1={activeBackground.color1}
+                    color2={activeBackground.color2}
+                    color3={activeBackground.color3}
+                    spinSpeed={activeBackground.spinSpeed}
+                    spinRotation={activeBackground.spinRotation}
+                    contrast={activeBackground.contrast}
+                    lighting={activeBackground.lighting}
+                    spinAmount={activeBackground.spinAmount}
+                    pixelFilter={activeBackground.pixelFilter}
+                    isRotate={activeBackground.isRotate}
                     mouseInteraction={false}
                 />
             </div>
@@ -101,6 +186,38 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
 
             {/* Vignette overlay */}
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)] pointer-events-none" />
+
+            {/* Subtle diagonal accent lines - static, not animated */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {/* Static diagonal stripes */}
+                {[...Array(5)].map((_, i) => (
+                    <div
+                        key={`stripe-${activeCard.id}-${i}`}
+                        className="absolute transition-all duration-700"
+                        style={{
+                            background: `linear-gradient(90deg, transparent 0%, ${activeCard.color}15 50%, transparent 100%)`,
+                            height: '1px',
+                            width: '150%',
+                            left: '-25%',
+                            top: `${15 + i * 18}%`,
+                            transform: 'rotate(-12deg)',
+                        }}
+                    />
+                ))}
+                {/* Corner accent glow */}
+                <div
+                    className="absolute -top-20 -right-20 w-80 h-80 rounded-full transition-all duration-700"
+                    style={{
+                        background: `radial-gradient(circle, ${activeCard.color}10 0%, transparent 70%)`,
+                    }}
+                />
+                <div
+                    className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full transition-all duration-700"
+                    style={{
+                        background: `radial-gradient(circle, ${activeCard.color}08 0%, transparent 60%)`,
+                    }}
+                />
+            </div>
 
             {/* DEV Button - Top Left (dev build only) */}
             {IS_DEV && (
@@ -158,152 +275,289 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
                     paddingRight: 'max(env(safe-area-inset-right, 0px), 40px)',
                 }}
             >
-                {/* Logo */}
-                <div className="text-center">
-                    <div
-                        className="inline-block px-8 py-3 rounded-xl"
-                        style={{
-                            background: theme.bgPanel,
-                            border: `4px solid ${theme.border}`,
-                            boxShadow: `0 6px 0 ${theme.border}`,
-                        }}
-                    >
-                        <h1
-                            className="text-5xl font-black tracking-wider"
+                {/* Persona-style Logo */}
+                <div className="text-center relative">
+                    {/* Angled background shape */}
+                    <div className="relative inline-block">
+                        {/* Shadow layer */}
+                        <div
+                            className="absolute inset-0 translate-x-2 translate-y-2"
                             style={{
-                                color: theme.gold,
-                                textShadow: '0 2px 0 #8a6d1a',
-                                fontFamily: 'system-ui, -apple-system, sans-serif',
+                                background: theme.border,
+                                transform: 'skewX(-5deg) translateX(8px) translateY(8px)',
+                            }}
+                        />
+                        {/* Main container */}
+                        <div
+                            className="relative px-10 py-4"
+                            style={{
+                                background: `linear-gradient(135deg, ${theme.bgPanel} 0%, #2a3234 100%)`,
+                                border: `4px solid ${theme.border}`,
+                                transform: 'skewX(-5deg)',
+                                clipPath: 'polygon(8% 0%, 100% 0%, 92% 100%, 0% 100%)',
                             }}
                         >
-                            <ShuffleText
-                                duration={1200}
-                                trigger="mount"
-                                loop={true}
-                                loopDelay={5000}
+                            <h1
+                                className="text-5xl font-black tracking-wider"
+                                style={{
+                                    color: theme.gold,
+                                    textShadow: `3px 3px 0 ${theme.border}, -1px -1px 0 ${theme.border}`,
+                                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                                    transform: 'skewX(5deg)',
+                                    animation: 'persona-title-pulse 3s ease-in-out infinite',
+                                }}
                             >
-                                {t('home.title')}
-                            </ShuffleText>
-                        </h1>
+                                <ShuffleText
+                                    duration={1200}
+                                    trigger="mount"
+                                    loop={true}
+                                    loopDelay={5000}
+                                >
+                                    {t('home.title')}
+                                </ShuffleText>
+                            </h1>
+                        </div>
+                        {/* Accent line */}
+                        <div
+                            className="absolute -bottom-1 left-0 right-0 h-1"
+                            style={{
+                                background: theme.gold,
+                                transform: 'skewX(-5deg)',
+                                animation: 'persona-line-glow 2s ease-in-out infinite',
+                            }}
+                        />
                     </div>
-                    <p
-                        className="text-sm tracking-[0.15em] mt-4 font-bold"
+                    {/* Subtitle with persona style */}
+                    <div
+                        className="mt-5 inline-block px-6 py-1"
                         style={{
-                            color: 'rgba(255,255,255,0.7)',
+                            background: 'rgba(0,0,0,0.5)',
+                            transform: 'skewX(-8deg)',
+                            borderLeft: `3px solid ${theme.gold}`,
                         }}
                     >
-                        PHYSICS{' '}
-                        <RotatingText
-                            texts={t('home.modes', { returnObjects: true }) as string[]}
-                            interval={2500}
-                        />
-                    </p>
+                        <p
+                            className="text-sm tracking-[0.2em] font-black uppercase"
+                            style={{
+                                color: 'rgba(255,255,255,0.9)',
+                                transform: 'skewX(8deg)',
+                            }}
+                        >
+                            PHYSICS{' '}
+                            <span style={{ color: theme.gold }}>
+                                <RotatingText
+                                    texts={t('home.modes', { returnObjects: true }) as string[]}
+                                    interval={2500}
+                                />
+                            </span>
+                        </p>
+                    </div>
                 </div>
 
-                {/* Center Wobble - Random from collection */}
-                <div className="flex-1 flex items-center justify-center min-h-[80px]">
-                    <WobbleDisplay
-                        size={80}
-                        shape={randomWobble.shape}
-                        color={randomWobble.color}
-                        expression="happy"
+                {/* Persona-style Mode Description Area */}
+                <div className="flex-1 flex flex-col items-center justify-center px-4">
+                    {/* Wobble Character with dynamic entrance */}
+                    <div
+                        className={cn(
+                            'mb-2 transition-all duration-500',
+                            isSlideAnimating
+                                ? 'opacity-0 scale-50 rotate-12'
+                                : 'opacity-100 scale-100 rotate-0'
+                        )}
+                        style={{
+                            transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        }}
+                    >
+                        <div
+                            className="relative"
+                            style={{
+                                animation: 'persona-character-bounce 2s ease-in-out infinite',
+                            }}
+                        >
+                            {/* Character glow effect */}
+                            <div
+                                className="absolute inset-0 rounded-full blur-xl opacity-30"
+                                style={{
+                                    background: activeCard.color,
+                                    transform: 'scale(1.5)',
+                                }}
+                            />
+                            {activeCard.id === 'game' ? (
+                                <JellyfishDisplay
+                                    size={80}
+                                    color={activeCard.color}
+                                    animated={true}
+                                />
+                            ) : (
+                                <WobbleDisplay
+                                    size={80}
+                                    shape={activeCard.wobbleShape}
+                                    color={WOBBLE_CHARACTERS[activeCard.wobbleShape].color}
+                                    expression={activeCard.wobbleExpression}
+                                />
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Persona-style Speech Bubble */}
+                    <div
+                        className={cn(
+                            'relative transition-all duration-500',
+                            isSlideAnimating
+                                ? 'opacity-0 scale-90 translate-x-10'
+                                : 'opacity-100 scale-100 translate-x-0'
+                        )}
+                        style={{
+                            transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+                            transitionDelay: '100ms',
+                        }}
+                    >
+                        {/* Speech bubble tail */}
+                        <div
+                            className="absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0"
+                            style={{
+                                borderLeft: '12px solid transparent',
+                                borderRight: '12px solid transparent',
+                                borderBottom: `12px solid ${activeCard.color}`,
+                            }}
+                        />
+                        {/* Main bubble */}
+                        <div
+                            className="relative px-6 py-4 max-w-[300px]"
+                            style={{
+                                background: activeCard.color,
+                                transform: 'skewX(-3deg)',
+                                clipPath: 'polygon(3% 0%, 97% 0%, 100% 100%, 0% 100%)',
+                                boxShadow: `4px 4px 0 ${theme.border}`,
+                            }}
+                        >
+                            <p
+                                className="text-base font-bold leading-relaxed text-center"
+                                style={{
+                                    color: theme.border,
+                                    transform: 'skewX(3deg)',
+                                }}
+                            >
+                                {t(activeCard.descriptionKey, '')}
+                            </p>
+                        </div>
+                        {/* Decorative corner accent */}
+                        <div
+                            className="absolute -bottom-1 -right-1 w-3 h-3"
+                            style={{
+                                background: theme.border,
+                                transform: 'rotate(45deg)',
+                            }}
+                        />
+                    </div>
+
+                    {/* Animated Tap hint */}
+                    <div
+                        className={cn(
+                            'mt-6 flex flex-col items-center gap-1 transition-all duration-300',
+                            isSlideAnimating ? 'opacity-0' : 'opacity-100'
+                        )}
+                    >
+                        <div
+                            className="flex items-center gap-2 px-4 py-2"
+                            style={{
+                                background: 'rgba(0,0,0,0.4)',
+                                transform: 'skewX(-5deg)',
+                                animation: 'persona-tap-pulse 1.5s ease-in-out infinite',
+                            }}
+                        >
+                            <ChevronDown
+                                className="w-4 h-4"
+                                style={{
+                                    color: theme.gold,
+                                    transform: 'skewX(5deg)',
+                                    animation: 'bounce-home-arrow 0.8s ease-in-out infinite',
+                                }}
+                            />
+                            <p
+                                className="text-xs font-bold uppercase tracking-wider"
+                                style={{
+                                    color: theme.gold,
+                                    transform: 'skewX(5deg)',
+                                }}
+                            >
+                                {t('home.tapToStart', 'Tap to start')}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Mode Carousel */}
+                <div className="shrink-0 pb-2">
+                    <ModeCarousel
+                        onSelectMode={handleModeSelect}
+                        onSlideChange={handleSlideChange}
+                        collectionProgress={collectionProgress}
+                        achievementProgress={achievementProgress}
+                        unseenFormulaCount={unseenFormulaCount}
                     />
                 </div>
 
-                {/* Menu Cards */}
-                <div className="space-y-2.5 mx-auto w-full" style={{ maxWidth: 320 }}>
-                    {/* Sandbox - Main Card */}
-                    <button
-                        onClick={() => onSelectMode('sandbox')}
-                        className="w-full relative overflow-hidden rounded-xl transition-all active:scale-[0.97]"
-                        style={{
-                            background: theme.gold,
-                            border: `3px solid ${theme.border}`,
-                            boxShadow: `0 4px 0 ${theme.border}`,
-                        }}
-                    >
-                        <div className="px-5 py-3 flex items-center justify-center">
-                            <span className="text-base font-black text-black tracking-wide uppercase">
-                                {t('home.sandbox')}
-                            </span>
-                            {unseenFormulaCount > 0 && (
-                                <span
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 text-[10px] font-black rounded-md"
-                                    style={{
-                                        background: theme.red,
-                                        color: 'white',
-                                        border: `2px solid ${theme.border}`,
-                                    }}
-                                >
-                                    NEW
-                                </span>
-                            )}
-                        </div>
-                    </button>
-
-                    {/* Minigame Mode Card */}
-                    <button
-                        onClick={() => onSelectMode('game')}
-                        className="w-full relative overflow-hidden rounded-xl transition-all active:scale-[0.97]"
-                        style={{
-                            background: theme.red,
-                            border: `3px solid ${theme.border}`,
-                            boxShadow: `0 4px 0 ${theme.border}`,
-                        }}
-                    >
-                        <div className="px-5 py-3 flex items-center justify-center">
-                            <span className="text-base font-black text-white tracking-wide uppercase">
-                                {t('home.game')}
-                            </span>
-                        </div>
-                    </button>
-
-                    {/* Collection Card (도감) */}
-                    <button
-                        onClick={() => onSelectMode('collection')}
-                        className="w-full relative overflow-hidden rounded-xl transition-all active:scale-[0.97]"
-                        style={{
-                            background: theme.blue,
-                            border: `3px solid ${theme.border}`,
-                            boxShadow: `0 4px 0 ${theme.border}`,
-                        }}
-                    >
-                        <div className="px-5 py-3 flex items-center justify-center">
-                            <BookOpen className="w-4 h-4 mr-2 text-white" />
-                            <span className="text-base font-black text-white tracking-wide uppercase">
-                                {t('home.collection')}
-                            </span>
-                            <span
-                                className="ml-3 px-2 py-0.5 text-xs font-bold rounded-md"
-                                style={{
-                                    background: 'rgba(0,0,0,0.3)',
-                                    color: 'white',
-                                }}
-                            >
-                                {collectionProgress.unlocked + achievementProgress.unlocked}/
-                                {collectionProgress.total + achievementProgress.total}
-                            </span>
-                        </div>
-                    </button>
-
-                    {/* Shop Card */}
-                    <button
-                        onClick={() => onSelectMode('shop')}
-                        className="w-full relative overflow-hidden rounded-xl transition-all active:scale-[0.97]"
-                        style={{
-                            background: theme.purple,
-                            border: `3px solid ${theme.border}`,
-                            boxShadow: `0 4px 0 ${theme.border}`,
-                        }}
-                    >
-                        <div className="px-5 py-3 flex items-center justify-center">
-                            <ShoppingBag className="w-4 h-4 mr-2 text-white" />
-                            <span className="text-base font-black text-white tracking-wide uppercase">
-                                {t('home.shop', 'Shop')}
-                            </span>
-                        </div>
-                    </button>
-                </div>
+                {/* Persona-style CSS Animations */}
+                <style>{`
+                    @keyframes speed-line-move {
+                        0% { transform: rotate(-15deg) translateX(-100%); }
+                        100% { transform: rotate(-15deg) translateX(100%); }
+                    }
+                    @keyframes speed-line-move-reverse {
+                        0% { transform: rotate(15deg) translateX(100%); }
+                        100% { transform: rotate(15deg) translateX(-100%); }
+                    }
+                    @keyframes persona-title-pulse {
+                        0%, 100% {
+                            filter: brightness(1);
+                            transform: skewX(5deg) scale(1);
+                        }
+                        50% {
+                            filter: brightness(1.1);
+                            transform: skewX(5deg) scale(1.02);
+                        }
+                    }
+                    @keyframes persona-line-glow {
+                        0%, 100% {
+                            opacity: 1;
+                            box-shadow: 0 0 10px ${theme.gold}40;
+                        }
+                        50% {
+                            opacity: 0.8;
+                            box-shadow: 0 0 20px ${theme.gold}80;
+                        }
+                    }
+                    @keyframes persona-character-bounce {
+                        0%, 100% {
+                            transform: translateY(0) rotate(0deg);
+                        }
+                        25% {
+                            transform: translateY(-8px) rotate(-3deg);
+                        }
+                        75% {
+                            transform: translateY(-4px) rotate(3deg);
+                        }
+                    }
+                    @keyframes persona-tap-pulse {
+                        0%, 100% {
+                            transform: skewX(-5deg) scale(1);
+                            opacity: 0.8;
+                        }
+                        50% {
+                            transform: skewX(-5deg) scale(1.05);
+                            opacity: 1;
+                        }
+                    }
+                    @keyframes bounce-home-arrow {
+                        0%, 100% { transform: skewX(5deg) translateY(0); }
+                        50% { transform: skewX(5deg) translateY(4px); }
+                    }
+                    @keyframes persona-card-float {
+                        0%, 100% { transform: translateY(0) rotate(0deg); }
+                        50% { transform: translateY(-3px) rotate(1deg); }
+                    }
+                `}</style>
             </div>
 
             {/* Disclaimer */}
@@ -351,6 +605,179 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
 
             {/* Dev Options Modal */}
             {IS_DEV && <DevOptionsModal isOpen={isDevOpen} onClose={() => setIsDevOpen(false)} />}
+
+            {/* Formula Select Screen for Sandbox */}
+            {showFormulaSelect && (
+                <div
+                    className="fixed inset-0 z-50 animate-in fade-in duration-300"
+                    style={{ background: '#0a0a12' }}
+                >
+                    {/* Balatro Background */}
+                    <div className="absolute inset-0 opacity-40">
+                        <Balatro
+                            color1={sandboxPreset.color1}
+                            color2={sandboxPreset.color2}
+                            color3={sandboxPreset.color3}
+                            spinSpeed={sandboxPreset.spinSpeed}
+                            spinRotation={sandboxPreset.spinRotation}
+                            contrast={sandboxPreset.contrast}
+                            lighting={sandboxPreset.lighting}
+                            spinAmount={sandboxPreset.spinAmount}
+                            pixelFilter={sandboxPreset.pixelFilter}
+                            isRotate={sandboxPreset.isRotate}
+                            mouseInteraction={false}
+                        />
+                    </div>
+
+                    {/* Vignette overlay */}
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.5)_100%)] pointer-events-none" />
+
+                    {/* Content */}
+                    <div
+                        className="relative z-10 h-full flex flex-col"
+                        style={{
+                            paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)',
+                            paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
+                            paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
+                            paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)',
+                        }}
+                    >
+                        {/* Back Button */}
+                        <button
+                            onClick={handleBackFromFormulaSelect}
+                            className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95 mb-4"
+                            style={{
+                                background: theme.bgPanel,
+                                border: `2px solid ${theme.border}`,
+                                boxShadow: `0 3px 0 ${theme.border}`,
+                            }}
+                        >
+                            <ArrowLeft className="h-5 w-5 text-white" />
+                        </button>
+
+                        {/* Section Title */}
+                        <div className="flex items-center gap-2 mb-3 px-2">
+                            <div
+                                className="h-[2px] flex-1"
+                                style={{
+                                    background: `linear-gradient(90deg, transparent, ${theme.gold}40)`,
+                                }}
+                            />
+                            <span className="text-xs font-bold text-white/50 uppercase tracking-wider">
+                                {t('simulation.welcome.selectFormula')}
+                            </span>
+                            <div
+                                className="h-[2px] flex-1"
+                                style={{
+                                    background: `linear-gradient(90deg, ${theme.gold}40, transparent)`,
+                                }}
+                            />
+                        </div>
+
+                        {/* Category Tabs */}
+                        <div className="flex gap-2 px-2 py-2 overflow-x-auto scrollbar-hide mb-3">
+                            <button
+                                onClick={() => setSelectedCategory('all')}
+                                className="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-bold transition-all active:scale-95"
+                                style={{
+                                    background:
+                                        selectedCategory === 'all' ? theme.gold : theme.bgPanelLight,
+                                    color: selectedCategory === 'all' ? '#000' : '#fff',
+                                    border: `2px solid ${theme.border}`,
+                                    boxShadow: `0 2px 0 ${theme.border}`,
+                                }}
+                            >
+                                {t('simulation.categories.all')}
+                            </button>
+                            {categories.map((cat) => {
+                                const color = categoryColors[cat]
+                                const isActive = selectedCategory === cat
+                                return (
+                                    <button
+                                        key={cat}
+                                        onClick={() => setSelectedCategory(cat)}
+                                        className="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-bold transition-all active:scale-95"
+                                        style={{
+                                            background: isActive ? color : theme.bgPanelLight,
+                                            color: isActive ? '#000' : '#fff',
+                                            border: `2px solid ${theme.border}`,
+                                            boxShadow: `0 2px 0 ${theme.border}`,
+                                        }}
+                                    >
+                                        {t(`simulation.categories.${cat}`)}
+                                    </button>
+                                )
+                            })}
+                        </div>
+
+                        {/* Formula Grid */}
+                        <div className="flex-1 overflow-y-auto px-2 pb-2">
+                            <div className="grid grid-cols-2 gap-3">
+                                {filteredFormulas.map((f) => {
+                                    const fColor = categoryColors[f.category]
+                                    const fName = localizeText(f.name, i18n.language)
+                                    const isNew = !seenFormulas.has(f.id)
+                                    const isLocked = !isAdFree && !isUnlocked(f.id)
+                                    return (
+                                        <div key={f.id} className="relative">
+                                            <button
+                                                onClick={() => handleFormulaSelect(f)}
+                                                className="relative w-full text-left px-4 py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                                style={{
+                                                    background: isLocked ? '#2a2a2a' : theme.bgPanelLight,
+                                                    border: `2px solid ${theme.border}`,
+                                                    boxShadow: `0 3px 0 ${theme.border}`,
+                                                    opacity: isLocked ? 0.7 : 1,
+                                                }}
+                                            >
+                                                {/* NEW badge for unseen formulas */}
+                                                {isNew && !isLocked && (
+                                                    <span
+                                                        className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 text-[10px] font-black rounded-md"
+                                                        style={{
+                                                            background: '#ff6b6b',
+                                                            color: 'white',
+                                                            border: `1.5px solid ${theme.border}`,
+                                                            boxShadow: `0 1px 0 ${theme.border}`,
+                                                        }}
+                                                    >
+                                                        NEW
+                                                    </span>
+                                                )}
+                                                <div className="flex items-center gap-2">
+                                                    {isLocked ? (
+                                                        <Lock className="w-3 h-3 text-white/50 flex-shrink-0" />
+                                                    ) : (
+                                                        <span
+                                                            className="w-2 h-2 rounded-full flex-shrink-0"
+                                                            style={{ background: fColor }}
+                                                        />
+                                                    )}
+                                                    <span
+                                                        className="block text-sm font-bold truncate"
+                                                        style={{
+                                                            color: isLocked ? '#888' : 'white',
+                                                        }}
+                                                    >
+                                                        {fName}
+                                                    </span>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+
+                            {/* Empty state */}
+                            {filteredFormulas.length === 0 && (
+                                <div className="text-center py-8 text-white/50 text-sm">
+                                    {t('simulation.emptyCategory')}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

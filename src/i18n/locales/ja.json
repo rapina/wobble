@@ -6,7 +6,7 @@
         "collection": "コレクション",
         "collectionDesc": "キャラ、学習、記録",
         "game": "ゲーム",
-        "gameDesc": "新エピソード公開中！",
+        "gameDesc": "ミニゲームに挑戦しよう！",
         "soon": "SOON",
         "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
         "disclaimer": "Wobbleは物理を楽しく探索するゲームです。\n実際の計算とは異なる場合があります。"
@@ -62,7 +62,7 @@
         "title": "ゲーム",
         "selectAdventure": "ゲームを選択",
         "wobbleAdventure": "ワブルサバイバー",
-        "wobbleAdventureEpisode": "EP.1",
+        "wobbleAdventureTag": "SURVIVOR",
         "wobbleAdventureDesc": "世界のルールが消えていく！ワビはシャドウの侵攻を生き延び、ワブル星の秩序を取り戻さなければならない！",
         "pendulumFrenzy": "振り子フレンジー",
         "pendulumFrenzyDesc": "絶妙なタイミングでロープを切れ！振り子の物理をマスターしてターゲットを狙え。",

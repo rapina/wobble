@@ -6,6 +6,8 @@ import { useLocalizedVariables } from './useLocalizedFormula'
 
 const TUTORIAL_COMPLETED_KEY = 'wobble-tutorial-completed'
 
+export type TutorialPhase = 'formula-select' | 'simulation'
+
 interface UseTutorialOptions {
     formulaId: string
     variables: Variable[]
@@ -18,10 +20,12 @@ interface UseTutorialReturn {
     currentStep: number
     steps: TutorialStep[]
     currentTargetSymbol: string | null
+    tutorialPhase: TutorialPhase
     startTutorial: () => void
     nextStep: () => void
     skipTutorial: () => void
     completeTutorial: () => void
+    advanceToSimulation: () => void
     hasCompletedTutorial: boolean
 }
 
@@ -34,6 +38,7 @@ export function useTutorial({
     const { t } = useTranslation()
     const [isActive, setIsActive] = useState(false)
     const [currentStep, setCurrentStep] = useState(0)
+    const [tutorialPhase, setTutorialPhase] = useState<TutorialPhase>('formula-select')
     const [hasCompletedTutorial, setHasCompletedTutorial] = useState(() => {
         return localStorage.getItem(TUTORIAL_COMPLETED_KEY) === 'true'
     })
@@ -48,9 +53,23 @@ export function useTutorial({
     const hasInfo =
         formula?.applications && Object.keys(formula.applications).length > 0
 
-    // Generate tutorial steps for each input variable + info button step
+    // Generate tutorial steps based on current phase
     const steps: TutorialStep[] = useMemo(() => {
-        const variableSteps = inputVariables.map((variable, index) => {
+        if (tutorialPhase === 'formula-select') {
+            return [
+                {
+                    targetSymbol: '__formula_first__',
+                    targetType: 'formula-list' as const,
+                    message: t('tutorial.formulaSelectMessage', {
+                        defaultValue:
+                            '먼저 공식을 선택해보세요! 첫 번째 공식을 탭해서 시작합니다.',
+                    }),
+                },
+            ]
+        }
+
+        // Simulation phase steps
+        const variableSteps: TutorialStep[] = inputVariables.map((variable, index) => {
             const localizedVar = localizedVariables.find((v) => v.symbol === variable.symbol)
             return {
                 targetSymbol: variable.symbol,
@@ -68,7 +87,7 @@ export function useTutorial({
         if (hasInfo) {
             variableSteps.push({
                 targetSymbol: '__info__',
-                targetType: 'info-button' as const,
+                targetType: 'info-button',
                 message: t('tutorial.infoButtonMessage', {
                     defaultValue:
                         '정보 버튼을 눌러 이 공식의 실생활 활용 사례를 확인해보세요!',
@@ -76,8 +95,18 @@ export function useTutorial({
             })
         }
 
+        // Add challenge submit button step
+        variableSteps.push({
+            targetSymbol: '__challenge_submit__',
+            targetType: 'challenge-submit',
+            message: t('tutorial.challengeSubmitMessage', {
+                defaultValue:
+                    '변수를 조절해서 정답을 맞춰보세요! 제출 버튼을 눌러 도전해보세요!',
+            }),
+        })
+
         return variableSteps
-    }, [inputVariables, localizedVariables, hasInfo, t])
+    }, [tutorialPhase, inputVariables, localizedVariables, hasInfo, t])
 
     // Current target symbol based on step
     const currentTargetSymbol =
@@ -92,7 +121,13 @@ export function useTutorial({
 
     const startTutorial = useCallback(() => {
         setCurrentStep(0)
+        setTutorialPhase('formula-select')
         setIsActive(true)
+    }, [])
+
+    const advanceToSimulation = useCallback(() => {
+        setTutorialPhase('simulation')
+        setCurrentStep(0)
     }, [])
 
     const nextStep = useCallback(() => {
@@ -125,10 +160,12 @@ export function useTutorial({
         currentStep,
         steps,
         currentTargetSymbol,
+        tutorialPhase,
         startTutorial,
         nextStep,
         skipTutorial,
         completeTutorial,
+        advanceToSimulation,
         hasCompletedTutorial,
     }
 }
