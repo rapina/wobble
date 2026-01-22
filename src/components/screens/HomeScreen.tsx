@@ -156,10 +156,7 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
     return (
         <div className="relative w-full h-full overflow-hidden" style={{ background: theme.felt }}>
             {/* Dynamic Balatro Background - changes with mode */}
-            <div
-                className="absolute inset-0 opacity-40 transition-all duration-700"
-                key={activeCard.id}
-            >
+            <div className="absolute inset-0 opacity-40">
                 <Balatro
                     color1={activeBackground.color1}
                     color2={activeBackground.color2}
@@ -172,6 +169,13 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                     pixelFilter={activeBackground.pixelFilter}
                     isRotate={activeBackground.isRotate}
                     mouseInteraction={false}
+                    patternScale={activeBackground.patternScale}
+                    warpIntensity={activeBackground.warpIntensity}
+                    symmetry={activeBackground.symmetry}
+                    flowSpeed={activeBackground.flowSpeed}
+                    vortexStrength={activeBackground.vortexStrength}
+                    noiseScale={activeBackground.noiseScale}
+                    rippleStrength={activeBackground.rippleStrength}
                 />
             </div>
 
@@ -626,6 +630,13 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                             pixelFilter={sandboxPreset.pixelFilter}
                             isRotate={sandboxPreset.isRotate}
                             mouseInteraction={false}
+                            patternScale={sandboxPreset.patternScale}
+                            warpIntensity={sandboxPreset.warpIntensity}
+                            symmetry={sandboxPreset.symmetry}
+                            flowSpeed={sandboxPreset.flowSpeed}
+                            vortexStrength={sandboxPreset.vortexStrength}
+                            noiseScale={sandboxPreset.noiseScale}
+                            rippleStrength={sandboxPreset.rippleStrength}
                         />
                     </div>
 

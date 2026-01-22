@@ -142,6 +142,7 @@ class MiniJellyfishDisplay extends Container {
 
     // Swing config
     private readonly ropeLength = 70
+    private readonly maxSwingAngle = Math.PI / 10 // Limit swing to prevent overflow
 
     // Speech bubble
     private speechText = ''
@@ -170,6 +171,17 @@ class MiniJellyfishDisplay extends Container {
         bg.stroke({ color: 0x2dd4bf, width: 1, alpha: 0.3 })
         this.addChild(bg)
 
+        // Create mask to clip content within bounds
+        const maskGraphics = new Graphics()
+        maskGraphics.roundRect(0, 0, this.displayWidth, this.displayHeight, 12)
+        maskGraphics.fill({ color: 0xffffff })
+        this.addChild(maskGraphics)
+
+        // Content container with mask
+        const contentContainer = new Container()
+        contentContainer.mask = maskGraphics
+        this.addChild(contentContainer)
+
         // Bioluminescent particles
         for (let i = 0; i < 8; i++) {
             const particle = new Graphics()
@@ -177,14 +189,14 @@ class MiniJellyfishDisplay extends Container {
             const y = 20 + Math.random() * (this.displayHeight - 40)
             particle.circle(x, y, 1 + Math.random() * 1.5)
             particle.fill({ color: 0x2dd4bf, alpha: 0.2 + Math.random() * 0.2 })
-            this.addChild(particle)
+            contentContainer.addChild(particle)
         }
 
-        this.addChild(this.graphics)
-        this.addChild(this.wobble)
+        contentContainer.addChild(this.graphics)
+        contentContainer.addChild(this.wobble)
 
-        // Initial swing
-        this.swingAngle = Math.PI / 5
+        // Initial swing (small angle to keep within bounds)
+        this.swingAngle = Math.PI / 12
 
         // Initial speech
         this.triggerSpeech("Iä~")
@@ -202,8 +214,8 @@ class MiniJellyfishDisplay extends Container {
         // Periodic pulse (like pressing the jellyfish)
         const pulseCycle = 2.5 // seconds between pulses
         if (Math.floor(this.pulsePhase / pulseCycle) > Math.floor((this.pulsePhase - delta) / pulseCycle)) {
-            // Apply energy boost
-            this.angularVelocity += (this.swingAngle >= 0 ? -1 : 1) * 1.5
+            // Apply smaller energy boost to keep swing within bounds
+            this.angularVelocity += (this.swingAngle >= 0 ? -1 : 1) * 0.8
             this.triggerSpeech(["Iä~", "Ph'nglui...", "Fhtagn~"][Math.floor(Math.random() * 3)])
         }
 
@@ -211,8 +223,11 @@ class MiniJellyfishDisplay extends Container {
         const gravity = 9.8
         const angularAccel = (-gravity / this.ropeLength) * Math.sin(this.swingAngle)
         this.angularVelocity += angularAccel * delta * 15
-        this.angularVelocity *= 0.995
+        this.angularVelocity *= 0.98 // Stronger damping to prevent overflow
         this.swingAngle += this.angularVelocity * delta
+
+        // Clamp swing angle to prevent overflow
+        this.swingAngle = Math.max(-this.maxSwingAngle, Math.min(this.maxSwingAngle, this.swingAngle))
 
         // Calculate wobble position
         const wobbleX = this.jellyfishX + Math.sin(this.swingAngle) * this.ropeLength
@@ -247,8 +262,71 @@ class MiniJellyfishDisplay extends Container {
         const pulseScale = isPulsing ? 1 - Math.sin(pulseInCycle / 0.15 * Math.PI) * 0.15 : 1
         const bellWidth = 28 * pulseScale
         const bellHeight = 18 * (2 - pulseScale)
+        const tentacleStartY = jy + bellHeight * 0.5
 
-        // Glow effect
+        // Tentacle rope connecting to wobble (draw first, behind jellyfish)
+        const wobbleX = this.wobble.x
+        const wobbleY = this.wobble.y
+
+        // Draw wavy tentacle rope (reduced wave amplitude to stay within bounds)
+        const segments = 12
+        const waveAmp = 2 + Math.sin(this.time * 2) * 1
+        const baseWidth = 4
+
+        // Calculate all segment points first
+        const segmentPoints: { x1: number; y1: number; x2: number; y2: number; width: number }[] = []
+        for (let i = 0; i < segments; i++) {
+            const t1 = i / segments
+            const t2 = (i + 1) / segments
+
+            const x1 = jx + (wobbleX - jx) * t1 + Math.sin(t1 * Math.PI * 3 + this.time * 4) * waveAmp * (1 - t1)
+            const y1 = tentacleStartY + (wobbleY - tentacleStartY) * t1
+            const x2 = jx + (wobbleX - jx) * t2 + Math.sin(t2 * Math.PI * 3 + this.time * 4) * waveAmp * (1 - t2)
+            const y2 = tentacleStartY + (wobbleY - tentacleStartY) * t2
+
+            segmentPoints.push({ x1, y1, x2, y2, width: baseWidth * (1 - t1 * 0.5) })
+        }
+
+        // Draw all glow segments as one path
+        for (const seg of segmentPoints) {
+            g.moveTo(seg.x1, seg.y1)
+            g.lineTo(seg.x2, seg.y2)
+        }
+        g.stroke({ color: this.glowColor, width: baseWidth + 3, alpha: 0.15 })
+
+        // Draw all main tentacle segments as one path
+        for (const seg of segmentPoints) {
+            g.moveTo(seg.x1, seg.y1)
+            g.lineTo(seg.x2, seg.y2)
+        }
+        g.stroke({ color: this.jellyfishColor, width: baseWidth, alpha: 0.9 })
+
+        // Glow nodes on tentacle
+        for (let i = 1; i < 4; i++) {
+            const t = i / 4
+            const nx = jx + (wobbleX - jx) * t + Math.sin(t * Math.PI * 3 + this.time * 4) * waveAmp * (1 - t)
+            const ny = tentacleStartY + (wobbleY - tentacleStartY) * t
+            const pulse = 0.5 + Math.sin(this.time * 3 + i) * 0.5
+            g.circle(nx, ny, 2 + pulse)
+            g.fill({ color: this.glowColor, alpha: 0.4 * pulse })
+        }
+
+        // Decorative side tentacles (not connected to wobble) - kept small
+        const sideTentacles = [-1, 1]
+        for (const side of sideTentacles) {
+            const startX = jx + side * bellWidth * 0.5
+            const startY = tentacleStartY - 3
+            const endX = startX + side * 10 + Math.sin(this.time * 2.5 + side) * 3
+            const endY = startY + 15 + Math.sin(this.time * 3) * 2
+            const ctrlX = startX + side * 5
+            const ctrlY = startY + 8
+
+            g.moveTo(startX, startY)
+            g.quadraticCurveTo(ctrlX, ctrlY, endX, endY)
+        }
+        g.stroke({ color: this.jellyfishColor, width: 2, alpha: 0.5 })
+
+        // Glow effect (draw on top of tentacles)
         for (let i = 3; i >= 0; i--) {
             const glowScale = 1 + i * 0.2
             const alpha = 0.08 - i * 0.015
@@ -278,74 +356,29 @@ class MiniJellyfishDisplay extends Container {
         g.circle(jx + eyeSpacing + 1, eyeY, 2)
         g.fill({ color: 0x2c3e50, alpha: 0.9 })
 
-        // Smile (when pulsing, show happy expression)
+        // Smile (when pulsing, show happy expression) - draw as circle arc to avoid path issues
         if (isPulsing) {
-            g.arc(jx, eyeY + 6, 5, 0, Math.PI, false)
+            // Draw smile using a semi-circle approach
+            const smileCx = jx
+            const smileCy = eyeY + 6
+            const smileR = 5
+            // Draw multiple small line segments to form the arc
+            for (let angle = 0; angle < Math.PI; angle += Math.PI / 8) {
+                const x1 = smileCx + Math.cos(angle) * smileR
+                const y1 = smileCy + Math.sin(angle) * smileR
+                const x2 = smileCx + Math.cos(angle + Math.PI / 8) * smileR
+                const y2 = smileCy + Math.sin(angle + Math.PI / 8) * smileR
+                g.moveTo(x1, y1)
+                g.lineTo(x2, y2)
+            }
             g.stroke({ color: 0x2c3e50, width: 1.5, alpha: 0.7 })
-        }
-
-        // Tentacle rope connecting to wobble
-        const wobbleX = this.wobble.x
-        const wobbleY = this.wobble.y
-        const tentacleStartY = jy + bellHeight * 0.5
-
-        // Draw wavy tentacle rope
-        const segments = 12
-        const waveAmp = 3 + Math.sin(this.time * 2) * 1.5
-        const baseWidth = 4
-
-        for (let i = 0; i < segments; i++) {
-            const t1 = i / segments
-            const t2 = (i + 1) / segments
-
-            const x1 = jx + (wobbleX - jx) * t1 + Math.sin(t1 * Math.PI * 3 + this.time * 4) * waveAmp * (1 - t1)
-            const y1 = tentacleStartY + (wobbleY - tentacleStartY) * t1
-            const x2 = jx + (wobbleX - jx) * t2 + Math.sin(t2 * Math.PI * 3 + this.time * 4) * waveAmp * (1 - t2)
-            const y2 = tentacleStartY + (wobbleY - tentacleStartY) * t2
-
-            const width = baseWidth * (1 - t1 * 0.5)
-
-            // Glow
-            g.moveTo(x1, y1)
-            g.lineTo(x2, y2)
-            g.stroke({ color: this.glowColor, width: width + 3, alpha: 0.15 })
-
-            // Main tentacle
-            g.moveTo(x1, y1)
-            g.lineTo(x2, y2)
-            g.stroke({ color: this.jellyfishColor, width: width, alpha: 0.9 })
-        }
-
-        // Glow nodes on tentacle
-        for (let i = 1; i < 4; i++) {
-            const t = i / 4
-            const nx = jx + (wobbleX - jx) * t + Math.sin(t * Math.PI * 3 + this.time * 4) * waveAmp * (1 - t)
-            const ny = tentacleStartY + (wobbleY - tentacleStartY) * t
-            const pulse = 0.5 + Math.sin(this.time * 3 + i) * 0.5
-            g.circle(nx, ny, 2 + pulse)
-            g.fill({ color: this.glowColor, alpha: 0.4 * pulse })
-        }
-
-        // Decorative side tentacles (not connected to wobble)
-        const sideTentacles = [-1, 1]
-        for (const side of sideTentacles) {
-            const startX = jx + side * bellWidth * 0.6
-            const startY = tentacleStartY - 3
-
-            g.moveTo(startX, startY)
-            const endX = startX + side * 15 + Math.sin(this.time * 2.5 + side) * 5
-            const endY = startY + 20 + Math.sin(this.time * 3) * 3
-            const ctrlX = startX + side * 8
-            const ctrlY = startY + 12
-            g.quadraticCurveTo(ctrlX, ctrlY, endX, endY)
-            g.stroke({ color: this.jellyfishColor, width: 2.5, alpha: 0.6 })
         }
 
         // Telepathic speech effect (below jellyfish)
         if (this.speechAlpha > 0) {
             const speechY = jy + bellHeight + 8
 
-            // Wave rings
+            // Wave rings - draw all at once
             for (let i = 0; i < 2; i++) {
                 const phase = (this.time * 2 + i * 0.5) % 1
                 const radius = 8 + phase * 12
@@ -354,8 +387,7 @@ class MiniJellyfishDisplay extends Container {
                 g.stroke({ color: this.jellyfishColor, width: 1, alpha })
             }
 
-            // Text (using simple graphics since Text would be complex here)
-            // Just draw a small glow to indicate speech
+            // Speech glow
             g.ellipse(jx, speechY, 15, 5)
             g.fill({ color: this.jellyfishColor, alpha: 0.3 * this.speechAlpha })
         }
