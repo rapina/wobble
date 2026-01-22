@@ -7,6 +7,8 @@
         "collectionDesc": "キャラ、学習、記録",
         "game": "ゲーム",
         "gameDesc": "ミニゲームに挑戦しよう！",
+        "shop": "ショップ",
+        "shopDesc": "広告削除＆特別アイテム",
         "soon": "SOON",
         "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
         "disclaimer": "Wobbleは物理を楽しく探索するゲームです。\n実際の計算とは異なる場合があります。"

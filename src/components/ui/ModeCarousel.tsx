@@ -46,7 +46,7 @@ export const modeCards: ModeCard[] = [
         descriptionKey: 'home.sandboxDesc',
         color: theme.gold,
         icon: <FlaskConical className="w-5 h-5" />,
-        wobbleShape: 'circle',
+        wobbleShape: 'einstein',
         wobbleExpression: 'happy',
     },
     {

@@ -7,6 +7,8 @@
         "collectionDesc": "Characters, Study, Records",
         "game": "Game",
         "gameDesc": "Challenge the minigames!",
+        "shop": "Shop",
+        "shopDesc": "Remove ads & special items",
         "soon": "SOON",
         "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
         "disclaimer": "Wobble is a game for exploring physics in a fun way.\nResults may differ from actual calculations."

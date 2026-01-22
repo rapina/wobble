@@ -7,6 +7,8 @@
         "collectionDesc": "캐릭터, 학습, 게임 기록",
         "game": "게임",
         "gameDesc": "미니게임에 도전하세요!",
+        "shop": "상점",
+        "shopDesc": "광고 제거 및 특별 아이템",
         "soon": "SOON",
         "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
         "disclaimer": "Wobble은 물리를 재미있게 탐험하는 게임입니다.\n실제 계산과는 차이가 있을 수 있습니다."
