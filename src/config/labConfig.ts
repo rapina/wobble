@@ -25,7 +25,7 @@ export const STATIONS: StationConfig[] = [
         resource: 'gravity',
         productionTime: 3,
         productionAmount: 150,
-        position: { x: 0.2, y: 0.3 },
+        position: { x: 0.33, y: 0.28 }, // Upper left area
         color: 0x9b59b6, // Purple - space/gravity theme
         simulation: 'orbital',
         formulaSymbol: 'G',
@@ -37,7 +37,7 @@ export const STATIONS: StationConfig[] = [
         resource: 'momentum',
         productionTime: 2.5,
         productionAmount: 200,
-        position: { x: 0.8, y: 0.3 },
+        position: { x: 0.72, y: 0.36 }, // Upper right, slightly lower
         color: 0x3498db, // Blue - energy/speed theme
         simulation: 'particle-accelerator',
         formulaSymbol: 'p',
@@ -49,7 +49,7 @@ export const STATIONS: StationConfig[] = [
         resource: 'elasticity',
         productionTime: 4,
         productionAmount: 100,
-        position: { x: 0.2, y: 0.7 },
+        position: { x: 0.45, y: 0.56 }, // Lower middle
         color: 0xe74c3c, // Red - collision/impact theme
         simulation: 'collision',
         formulaSymbol: 'e',
@@ -61,7 +61,7 @@ export const STATIONS: StationConfig[] = [
         resource: 'thermodynamics',
         productionTime: 3.5,
         productionAmount: 120,
-        position: { x: 0.8, y: 0.7 },
+        position: { x: 0.78, y: 0.62 }, // Lower right
         color: 0xe67e22, // Orange - heat theme
         simulation: 'heat-transfer',
         formulaSymbol: 'Q',

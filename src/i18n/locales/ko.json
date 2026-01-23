@@ -121,6 +121,13 @@
             "pendulumMotion": "진자 운동",
             "gravity": "중력",
             "momentum": "운동량"
+        },
+        "abyss": {
+            "notWorthy": "자격 없음",
+            "proveYourself": "심연이 너를 인정하지 않는다.\n끝없는 어둠 속에서 네 가치를 증명하라.",
+            "currentDepth": "현재 심도",
+            "required": "필요 심도",
+            "hint": "Endless 모드에서 Depth {{depth}}까지 도달하세요"
         }
     },
     "share": {

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Play, Lock, Gamepad2, Trophy, Target } from 'lucide-react'
+import { ArrowLeft, Play, Lock, Gamepad2, Trophy, Target, X } from 'lucide-react'
 import Balatro from '@/components/Balatro'
 import { gameSelectPreset } from '@/config/backgroundPresets'
 import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
 import { cn } from '@/lib/utils'
-import { useMinigameRecordStore } from '@/stores/minigameRecordStore'
+import { useMinigameRecordStore, RUN_UNLOCK_DEPTH } from '@/stores/minigameRecordStore'
 
 // Balatro theme (matching HomeScreen)
 const theme = {
@@ -70,25 +70,272 @@ interface GameSelectScreenProps {
     onSelectAdventure: (adventureId: string, mode?: GameMode) => void
 }
 
+// Abyss-themed locked modal component - Cthulhu style (subtle version)
+function AbyssLockedModal({
+    isOpen,
+    onClose,
+    currentDepth,
+    requiredDepth,
+    t,
+}: {
+    isOpen: boolean
+    onClose: () => void
+    currentDepth: number
+    requiredDepth: number
+    t: (key: string, options?: Record<string, unknown>) => string
+}) {
+    const [mounted, setMounted] = useState(false)
+    const [eyePositions] = useState(() =>
+        Array.from({ length: 5 }, (_, i) => ({
+            x: 10 + Math.random() * 80,
+            y: 10 + Math.random() * 80,
+            size: 8 + Math.random() * 12,
+            delay: i * 0.3,
+            duration: 4 + Math.random() * 2,
+        }))
+    )
+
+    useEffect(() => {
+        if (isOpen) {
+            setMounted(false)
+            const timer = setTimeout(() => setMounted(true), 50)
+            return () => clearTimeout(timer)
+        }
+    }, [isOpen])
+
+    if (!isOpen) return null
+
+    return (
+        <div
+            className={cn(
+                'fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-500',
+                mounted ? 'opacity-100' : 'opacity-0'
+            )}
+            style={{ background: 'rgba(5, 2, 10, 0.95)' }}
+            onClick={onClose}
+        >
+            {/* Subtle floating eyes in background */}
+            {eyePositions.map((eye, i) => (
+                <div
+                    key={i}
+                    className="absolute transition-all"
+                    style={{
+                        left: `${eye.x}%`,
+                        top: `${eye.y}%`,
+                        opacity: mounted ? 0.25 : 0,
+                        transition: `opacity 1s ease-out ${eye.delay}s`,
+                    }}
+                >
+                    <div
+                        className="rounded-full"
+                        style={{
+                            width: eye.size,
+                            height: eye.size * 0.5,
+                            background: 'radial-gradient(ellipse, #301520 0%, transparent 70%)',
+                            border: '1px solid #40202a',
+                        }}
+                    >
+                        <div
+                            className="absolute rounded-full"
+                            style={{
+                                width: eye.size * 0.3,
+                                height: eye.size * 0.3,
+                                left: '50%',
+                                top: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                background: 'radial-gradient(circle, #802030 0%, #400015 100%)',
+                                animation: `subtlePulse ${eye.duration}s ease-in-out infinite`,
+                            }}
+                        />
+                    </div>
+                </div>
+            ))}
+
+            {/* Modal card */}
+            <div
+                className={cn(
+                    'relative max-w-sm w-full rounded-2xl overflow-hidden transition-all duration-500',
+                    mounted ? 'scale-100 translate-y-0 opacity-100' : 'scale-95 translate-y-4 opacity-0'
+                )}
+                style={{
+                    background: 'linear-gradient(180deg, #18081a 0%, #0a0510 100%)',
+                    border: '2px solid #3a1a40',
+                    boxShadow: '0 0 40px rgba(80, 30, 60, 0.4), 0 8px 0 #1a1a1a',
+                }}
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Close button */}
+                <button
+                    onClick={onClose}
+                    className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center z-10 transition-all active:scale-95"
+                    style={{
+                        background: 'rgba(60, 20, 40, 0.6)',
+                        border: '1px solid #4a2a3a',
+                    }}
+                >
+                    <X className="w-4 h-4 text-purple-300/70" />
+                </button>
+
+                {/* Content */}
+                <div className="p-6 pt-8 text-center relative">
+                    {/* Central eye - simplified */}
+                    <div
+                        className="mx-auto w-20 h-20 rounded-full flex items-center justify-center mb-5 relative"
+                        style={{
+                            background: 'radial-gradient(circle, #1a0a18 0%, #0a0508 100%)',
+                            border: '3px solid #4a2a4a',
+                            boxShadow: '0 0 20px rgba(100, 30, 60, 0.4)',
+                        }}
+                    >
+                        {/* Eye white */}
+                        <div
+                            className="w-12 h-7 rounded-full flex items-center justify-center relative overflow-hidden"
+                            style={{
+                                background: 'radial-gradient(ellipse, #d8ccc0 0%, #a89888 100%)',
+                                boxShadow: 'inset 0 0 10px rgba(0,0,0,0.4)',
+                            }}
+                        >
+                            {/* Iris */}
+                            <div
+                                className="w-6 h-6 rounded-full flex items-center justify-center"
+                                style={{
+                                    background: 'radial-gradient(circle, #982840 0%, #501020 70%, #200810 100%)',
+                                }}
+                            >
+                                {/* Pupil */}
+                                <div
+                                    className="w-3 h-3 rounded-full"
+                                    style={{
+                                        background: '#000',
+                                        animation: 'subtlePulse 4s ease-in-out infinite',
+                                    }}
+                                />
+                            </div>
+                            {/* Highlight */}
+                            <div className="absolute top-1 left-2 w-1.5 h-1.5 rounded-full bg-white/50" />
+                        </div>
+                    </div>
+
+                    {/* Title */}
+                    <h2
+                        className="text-xl font-black mb-3 tracking-wide"
+                        style={{
+                            color: '#c08090',
+                            textShadow: '0 0 15px rgba(180, 80, 100, 0.4)',
+                        }}
+                    >
+                        {t('game.abyss.notWorthy')}
+                    </h2>
+
+                    {/* Subtitle */}
+                    <p
+                        className="text-sm mb-6 leading-relaxed whitespace-pre-line"
+                        style={{ color: '#7a6080' }}
+                    >
+                        {t('game.abyss.proveYourself')}
+                    </p>
+
+                    {/* Progress indicator */}
+                    <div
+                        className="rounded-xl p-4 mb-4"
+                        style={{
+                            background: 'rgba(30, 15, 35, 0.6)',
+                            border: '1px solid #3a1a40',
+                        }}
+                    >
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs" style={{ color: '#6a5070' }}>
+                                {t('game.abyss.currentDepth')}
+                            </span>
+                            <span className="text-xs" style={{ color: '#6a5070' }}>
+                                {t('game.abyss.required')}
+                            </span>
+                        </div>
+
+                        {/* Progress bar */}
+                        <div
+                            className="h-3 rounded-full overflow-hidden mb-2"
+                            style={{ background: '#150a18' }}
+                        >
+                            <div
+                                className="h-full rounded-full transition-all duration-700"
+                                style={{
+                                    width: `${Math.min(100, (currentDepth / requiredDepth) * 100)}%`,
+                                    background: currentDepth >= requiredDepth
+                                        ? 'linear-gradient(90deg, #4a9a90 0%, #5a4a70 100%)'
+                                        : 'linear-gradient(90deg, #501030 0%, #803050 100%)',
+                                }}
+                            />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <span
+                                className="text-lg font-bold"
+                                style={{ color: currentDepth > 0 ? '#5a9a90' : '#4a4050' }}
+                            >
+                                {currentDepth}
+                            </span>
+                            <span
+                                className="text-lg font-bold"
+                                style={{ color: '#a08050' }}
+                            >
+                                {requiredDepth}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Hint text */}
+                    <p
+                        className="text-xs"
+                        style={{ color: '#504058' }}
+                    >
+                        {t('game.abyss.hint', { depth: requiredDepth })}
+                    </p>
+                </div>
+
+                {/* Subtle bottom accent */}
+                <div
+                    className="h-1"
+                    style={{
+                        background: 'linear-gradient(90deg, transparent, #502040, transparent)',
+                    }}
+                />
+            </div>
+
+            {/* CSS animations */}
+            <style>{`
+                @keyframes subtlePulse {
+                    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+                    50% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.8; }
+                }
+            `}</style>
+        </div>
+    )
+}
+
 // Wobblediver themed card component
 function WobblediverCard({
     adventure,
     onSelectEndless,
     onSelectRun,
+    onLockedClick,
     mounted,
     delay,
     t,
     bestDepth,
     highScore,
+    isRunUnlocked,
 }: {
     adventure: Adventure
     onSelectEndless: () => void
     onSelectRun: () => void
+    onLockedClick: () => void
     mounted: boolean
     delay: number
     t: (key: string) => string
     bestDepth: number
     highScore: number
+    isRunUnlocked: boolean
 }) {
     const hasRecords = bestDepth > 0 || highScore > 0
     return (
@@ -329,19 +576,35 @@ function WobblediverCard({
                             <Play className="w-4 h-4 inline-block mr-1.5 mb-0.5" fill="white" />
                             Endless
                         </button>
-                        <button
-                            onClick={onSelectRun}
-                            className="flex-1 py-2.5 rounded-lg font-bold text-sm transition-all active:scale-[0.98]"
-                            style={{
-                                background: `linear-gradient(135deg, ${theme.gold} 0%, #b8860b 100%)`,
-                                border: `2px solid ${theme.border}`,
-                                boxShadow: `0 3px 0 ${theme.border}`,
-                                color: '#fff',
-                            }}
-                        >
-                            <Target className="w-4 h-4 inline-block mr-1.5 mb-0.5" />
-                            Run
-                        </button>
+                        {isRunUnlocked ? (
+                            <button
+                                onClick={onSelectRun}
+                                className="flex-1 py-2.5 rounded-lg font-bold text-sm transition-all active:scale-[0.98]"
+                                style={{
+                                    background: `linear-gradient(135deg, ${theme.gold} 0%, #b8860b 100%)`,
+                                    border: `2px solid ${theme.border}`,
+                                    boxShadow: `0 3px 0 ${theme.border}`,
+                                    color: '#fff',
+                                }}
+                            >
+                                <Target className="w-4 h-4 inline-block mr-1.5 mb-0.5" />
+                                Run
+                            </button>
+                        ) : (
+                            <button
+                                onClick={onLockedClick}
+                                className="flex-1 py-2.5 rounded-lg font-bold text-sm transition-all active:scale-[0.98]"
+                                style={{
+                                    background: `linear-gradient(135deg, #3a2040 0%, #2a1530 100%)`,
+                                    border: `2px solid #4a2050`,
+                                    boxShadow: `0 3px 0 ${theme.border}`,
+                                    color: '#8a6a9a',
+                                }}
+                            >
+                                <Lock className="w-4 h-4 inline-block mr-1.5 mb-0.5" />
+                                <span className="text-xs">Depth {RUN_UNLOCK_DEPTH}</span>
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -411,7 +674,9 @@ function LockedCard({
 export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreenProps) {
     const { t } = useTranslation()
     const [mounted, setMounted] = useState(false)
+    const [showLockedModal, setShowLockedModal] = useState(false)
     const wobblediverRecord = useMinigameRecordStore((s) => s.getWobblediverRecord())
+    const isRunUnlocked = useMinigameRecordStore((s) => s.isRunModeUnlocked())
 
     useEffect(() => {
         const timer = setTimeout(() => setMounted(true), 100)
@@ -440,11 +705,13 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreen
                         adventure={adventure}
                         onSelectEndless={() => onSelectAdventure(adventure.id, 'endless')}
                         onSelectRun={() => onSelectAdventure(adventure.id, 'run')}
+                        onLockedClick={() => setShowLockedModal(true)}
                         mounted={mounted}
                         delay={index * 150}
                         t={t}
                         bestDepth={wobblediverRecord.bestDepth}
                         highScore={wobblediverRecord.highScore}
+                        isRunUnlocked={isRunUnlocked}
                     />
                 )
             default:
@@ -555,6 +822,15 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreen
                     </p>
                 </div>
             </div>
+
+            {/* Abyss Locked Modal */}
+            <AbyssLockedModal
+                isOpen={showLockedModal}
+                onClose={() => setShowLockedModal(false)}
+                currentDepth={wobblediverRecord.bestDepth}
+                requiredDepth={RUN_UNLOCK_DEPTH}
+                t={t}
+            />
         </div>
     )
 }

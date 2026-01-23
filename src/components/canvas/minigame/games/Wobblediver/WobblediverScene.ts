@@ -4277,7 +4277,13 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     protected onGameStart(): void {
-        // Always show intro before starting
+        // In run mode, initialize a new run instead of showing intro
+        if (this.runMode) {
+            this.initializeRunMode()
+            return
+        }
+
+        // Endless mode: show intro before starting
         if (this.intro) {
             this.isShowingIntro = true
             this.introContainer.visible = true
@@ -4360,6 +4366,13 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.isTransitioning = false
         this.transitionTime = 0
         this.transitionContainer.visible = false
+
+        // Reset run mode state (but preserve runMode flag itself)
+        // The run will be reinitialized in onGameStart() -> initializeRunMode()
+        this.runNodeId = null
+        this.runNodeType = null
+        this.runHpLostThisStage = 0
+        this.isShowingRunMap = false
     }
 
     /**

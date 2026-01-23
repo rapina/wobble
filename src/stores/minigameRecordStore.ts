@@ -81,6 +81,9 @@ const DEFAULT_COLLISION_RECORD: CollisionRecord = {
 // Rank priority for comparison
 const RANK_PRIORITY: Record<string, number> = { S: 5, A: 4, B: 3, C: 2, D: 1 }
 
+// RUN mode unlock requirement (reach this depth in Endless mode)
+export const RUN_UNLOCK_DEPTH = 7
+
 // Store state interface
 interface MinigameRecordState {
     records: Record<MinigameId, MinigameRecord>
@@ -127,6 +130,9 @@ interface MinigameRecordState {
 
     // Check if this is a new high score / best record
     isNewBest: (gameId: MinigameId, field: string, value: number) => boolean
+
+    // Check if RUN mode is unlocked (requires bestDepth >= RUN_UNLOCK_DEPTH)
+    isRunModeUnlocked: () => boolean
 
     // Reset records for a specific game
     resetGameRecord: (gameId: MinigameId) => void
@@ -312,6 +318,12 @@ export const useMinigameRecordStore = create<MinigameRecordState>()(
                 if (typeof currentValue !== 'number') return true
 
                 return value > currentValue
+            },
+
+            isRunModeUnlocked: () => {
+                const record = get().records.wobblediver as WobblediverRecord
+                if (!record) return false
+                return record.bestDepth >= RUN_UNLOCK_DEPTH
             },
 
             resetGameRecord: (gameId) => {

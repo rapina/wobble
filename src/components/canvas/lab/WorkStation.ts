@@ -1,25 +1,16 @@
 /**
  * WorkStation
  *
- * PixiJS graphics class representing a research station in the lab.
- * Each station displays a mini physics simulation:
- * - Gravity Lab: Orbital mechanics (planets orbiting)
- * - Accelerator: Particle ring (momentum)
- * - Collision Lab: Bouncing balls (elasticity)
- * - Thermodynamics Lab: Heat particles (temperature)
- *
- * Redesigned with larger simulation windows and better visual hierarchy.
+ * Floating holographic physics simulations.
+ * Each station displays ethereal, hovering equipment that looks natural floating:
+ * - Gravity Lab: Mini planets orbiting in an energy field
+ * - Accelerator: Particle ring with glowing particles
+ * - Collision Lab: Two energy spheres bouncing
+ * - Thermodynamics Lab: Heat containment field with particles
  */
 
 import { Container, Graphics, Text, TextStyle, Circle } from 'pixi.js'
-import type { StationConfig, PhysicsProperty, SimulationType } from '@/types/lab'
-import { SIMULATION_CONFIG, STATION_AFFORDANCES } from '@/config/labConfig'
-
-// Station dimensions
-const STATION_WIDTH = 110
-const STATION_HEIGHT = 90
-const SIM_WINDOW_WIDTH = 95
-const SIM_WINDOW_HEIGHT = 55
+import type { StationConfig, PhysicsProperty } from '@/types/lab'
 
 // Physics property symbols
 const PHYSICS_SYMBOLS: Record<PhysicsProperty, string> = {
@@ -29,213 +20,63 @@ const PHYSICS_SYMBOLS: Record<PhysicsProperty, string> = {
     thermodynamics: 'Q',
 }
 
-// Station short names
-const STATION_NAMES: Record<PhysicsProperty, string> = {
-    gravity: 'Gravity',
-    momentum: 'Momentum',
-    elasticity: 'Elasticity',
-    thermodynamics: 'Thermo',
-}
-
-// Simulation particle state
-interface SimParticle {
-    x: number
-    y: number
-    vx: number
-    vy: number
-    radius: number
-    color: number
-    angle?: number
-    orbitRadius?: number
-    orbitSpeed?: number
-    temperature?: number
-}
-
 export class WorkStation extends Container {
     private config: StationConfig
-    private platformGraphics: Graphics
+    private shadowGraphics: Graphics
+    private equipmentGraphics: Graphics
     private glowGraphics: Graphics
-    private simulationGraphics: Graphics
-    private overlayGraphics: Graphics
     private symbolText: Text
-    private nameText: Text
 
     private _isActive = false
     private _progress = 0
     private _glowIntensity = 0
-    private _pulsePhase = 0
-    private _simTime = 0
-
-    // Simulation state
-    private simParticles: SimParticle[] = []
+    private _animPhase = 0
+    private interactionPhase = 0
 
     constructor(config: StationConfig, label: string = '') {
         super()
         this.config = config
 
-        // Set hit area for click detection (PixiJS v8 style)
-        this.hitArea = new Circle(0, 0, 60)
+        // Set hit area for click detection
+        this.hitArea = new Circle(0, 0, 80)
 
-        // Create glow layer (behind everything)
+        // Create layers
         this.glowGraphics = new Graphics()
         this.addChild(this.glowGraphics)
 
-        // Create platform
-        this.platformGraphics = new Graphics()
-        this.addChild(this.platformGraphics)
+        this.shadowGraphics = new Graphics()
+        this.addChild(this.shadowGraphics)
 
-        // Create simulation layer
-        this.simulationGraphics = new Graphics()
-        this.addChild(this.simulationGraphics)
+        this.equipmentGraphics = new Graphics()
+        this.addChild(this.equipmentGraphics)
 
-        // Create overlay layer (for progress bar, etc)
-        this.overlayGraphics = new Graphics()
-        this.addChild(this.overlayGraphics)
-
-        // Create physics symbol (top left corner of station)
+        // Create physics symbol badge
         const symbolStyle = new TextStyle({
             fontFamily: 'Georgia, serif',
             fontSize: 20,
             fontWeight: 'bold',
             fontStyle: 'italic',
             fill: 0xffffff,
-            align: 'center',
+            dropShadow: {
+                color: 0x000000,
+                blur: 4,
+                distance: 0,
+            },
         })
         this.symbolText = new Text({
             text: config.formulaSymbol || PHYSICS_SYMBOLS[config.resource],
             style: symbolStyle,
         })
         this.symbolText.anchor.set(0.5, 0.5)
-        this.symbolText.x = -STATION_WIDTH / 2 + 15
-        this.symbolText.y = -STATION_HEIGHT / 2 + 15
+        this.symbolText.x = 0
+        this.symbolText.y = 55
         this.addChild(this.symbolText)
 
-        // Create station name (bottom)
-        const nameStyle = new TextStyle({
-            fontFamily: 'system-ui, -apple-system, sans-serif',
-            fontSize: 11,
-            fontWeight: 'bold',
-            fill: 0xaaaaaa,
-            align: 'center',
-        })
-        this.nameText = new Text({
-            text: label || STATION_NAMES[config.resource],
-            style: nameStyle,
-        })
-        this.nameText.anchor.set(0.5, 0)
-        this.nameText.y = STATION_HEIGHT / 2 + 8
-        this.addChild(this.nameText)
-
-        // Initialize simulation
-        this.initializeSimulation()
         this.draw()
-    }
-
-    /**
-     * Initialize simulation particles based on type
-     */
-    private initializeSimulation(): void {
-        this.simParticles = []
-
-        switch (this.config.simulation) {
-            case 'orbital':
-                this.initOrbitalSim()
-                break
-            case 'particle-accelerator':
-                this.initAcceleratorSim()
-                break
-            case 'collision':
-                this.initCollisionSim()
-                break
-            case 'heat-transfer':
-                this.initHeatTransferSim()
-                break
-        }
-    }
-
-    private initOrbitalSim(): void {
-        const cfg = SIMULATION_CONFIG.orbital
-        for (let i = 0; i < cfg.planetCount; i++) {
-            const orbitRadius =
-                cfg.orbitRadius.min +
-                ((cfg.orbitRadius.max - cfg.orbitRadius.min) * (i + 1)) / cfg.planetCount
-            this.simParticles.push({
-                x: 0,
-                y: 0,
-                vx: 0,
-                vy: 0,
-                radius: cfg.planetSize,
-                color: i === 0 ? 0x5dade2 : 0xe74c3c,
-                angle: (i * Math.PI * 2) / cfg.planetCount + Math.random() * 0.5,
-                orbitRadius,
-                orbitSpeed:
-                    cfg.orbitSpeed.min +
-                    Math.random() * (cfg.orbitSpeed.max - cfg.orbitSpeed.min),
-            })
-        }
-    }
-
-    private initAcceleratorSim(): void {
-        const cfg = SIMULATION_CONFIG.particleAccelerator
-        for (let i = 0; i < cfg.particleCount; i++) {
-            const angle = (i / cfg.particleCount) * Math.PI * 2
-            this.simParticles.push({
-                x: 0,
-                y: 0,
-                vx: 0,
-                vy: 0,
-                radius: cfg.particleSize,
-                color: 0x5dade2,
-                angle,
-                orbitRadius: cfg.ringRadius,
-                orbitSpeed: cfg.particleSpeed,
-            })
-        }
-    }
-
-    private initCollisionSim(): void {
-        const cfg = SIMULATION_CONFIG.collision
-        for (let i = 0; i < cfg.ballCount; i++) {
-            const angle = (i / cfg.ballCount) * Math.PI * 2
-            this.simParticles.push({
-                x: Math.cos(angle) * 20,
-                y: Math.sin(angle) * 10,
-                vx: Math.cos(angle + Math.PI) * cfg.initialSpeed,
-                vy: Math.sin(angle + Math.PI) * cfg.initialSpeed * 0.5,
-                radius: cfg.ballSize,
-                color: i === 0 ? 0xe74c3c : 0xf39c12,
-            })
-        }
-    }
-
-    private initHeatTransferSim(): void {
-        const cfg = SIMULATION_CONFIG.heatTransfer
-        for (let i = 0; i < cfg.particleCount; i++) {
-            const temperature = Math.random()
-            const speed = cfg.minSpeed + temperature * (cfg.maxSpeed - cfg.minSpeed)
-            const angle = Math.random() * Math.PI * 2
-            this.simParticles.push({
-                x: (Math.random() - 0.5) * cfg.areaSize,
-                y: (Math.random() - 0.5) * cfg.areaSize * 0.6,
-                vx: Math.cos(angle) * speed,
-                vy: Math.sin(angle) * speed,
-                radius: cfg.particleSize,
-                color: this.temperatureToColor(temperature),
-                temperature,
-            })
-        }
-    }
-
-    private temperatureToColor(t: number): number {
-        const r = Math.floor(255 * t)
-        const b = Math.floor(255 * (1 - t))
-        const g = Math.floor(80 * (1 - Math.abs(t - 0.5) * 2))
-        return (r << 16) | (g << 8) | b
     }
 
     set isActive(value: boolean) {
         this._isActive = value
-        this.draw()
     }
 
     get isActive(): boolean {
@@ -248,10 +89,6 @@ export class WorkStation extends Container {
 
     get progress(): number {
         return this._progress
-    }
-
-    setLabel(text: string): void {
-        this.nameText.text = text
     }
 
     get stationId(): string {
@@ -267,349 +104,339 @@ export class WorkStation extends Container {
     }
 
     update(deltaTime: number): void {
-        this._pulsePhase += deltaTime * 3
-        this._simTime += deltaTime
+        this._animPhase += deltaTime * 2
 
         if (this._isActive) {
             this._glowIntensity = Math.min(1, this._glowIntensity + deltaTime * 3)
+            this.interactionPhase += deltaTime * 3
         } else {
             this._glowIntensity = Math.max(0, this._glowIntensity - deltaTime * 2)
+            this.interactionPhase += deltaTime * 0.5
         }
 
-        const simSpeed = this._isActive ? 1.0 : 0.4
-        this.updateSimulation(deltaTime * simSpeed)
-
-        this.drawGlow()
-        this.drawSimulation()
-        this.drawOverlay()
-    }
-
-    private updateSimulation(deltaTime: number): void {
-        switch (this.config.simulation) {
-            case 'orbital':
-                this.updateOrbitalSim(deltaTime)
-                break
-            case 'particle-accelerator':
-                this.updateAcceleratorSim(deltaTime)
-                break
-            case 'collision':
-                this.updateCollisionSim(deltaTime)
-                break
-            case 'heat-transfer':
-                this.updateHeatTransferSim(deltaTime)
-                break
-        }
-    }
-
-    private updateOrbitalSim(deltaTime: number): void {
-        for (const p of this.simParticles) {
-            if (p.angle !== undefined && p.orbitRadius && p.orbitSpeed) {
-                p.angle += deltaTime * p.orbitSpeed
-                p.x = Math.cos(p.angle) * p.orbitRadius
-                p.y = Math.sin(p.angle) * p.orbitRadius * 0.5
-            }
-        }
-    }
-
-    private updateAcceleratorSim(deltaTime: number): void {
-        for (const p of this.simParticles) {
-            if (p.angle !== undefined && p.orbitRadius && p.orbitSpeed) {
-                p.angle += deltaTime * p.orbitSpeed
-                p.x = Math.cos(p.angle) * p.orbitRadius
-                p.y = Math.sin(p.angle) * p.orbitRadius * 0.45
-            }
-        }
-    }
-
-    private updateCollisionSim(deltaTime: number): void {
-        const cfg = SIMULATION_CONFIG.collision
-        const halfW = cfg.bounceArea.width / 2
-        const halfH = cfg.bounceArea.height / 2
-
-        for (const p of this.simParticles) {
-            p.x += p.vx * deltaTime * 30
-            p.y += p.vy * deltaTime * 30
-
-            if (p.x < -halfW || p.x > halfW) {
-                p.vx *= -1
-                p.x = Math.max(-halfW, Math.min(halfW, p.x))
-            }
-            if (p.y < -halfH || p.y > halfH) {
-                p.vy *= -1
-                p.y = Math.max(-halfH, Math.min(halfH, p.y))
-            }
-        }
-
-        if (this.simParticles.length >= 2) {
-            const p1 = this.simParticles[0]
-            const p2 = this.simParticles[1]
-            const dx = p2.x - p1.x
-            const dy = p2.y - p1.y
-            const dist = Math.sqrt(dx * dx + dy * dy)
-            const minDist = p1.radius + p2.radius
-
-            if (dist < minDist && dist > 0) {
-                const nx = dx / dist
-                const ny = dy / dist
-                const dvx = p1.vx - p2.vx
-                const dvy = p1.vy - p2.vy
-                const dvn = dvx * nx + dvy * ny
-
-                if (dvn > 0) {
-                    p1.vx -= dvn * nx
-                    p1.vy -= dvn * ny
-                    p2.vx += dvn * nx
-                    p2.vy += dvn * ny
-
-                    const overlap = minDist - dist
-                    p1.x -= (overlap / 2) * nx
-                    p1.y -= (overlap / 2) * ny
-                    p2.x += (overlap / 2) * nx
-                    p2.y += (overlap / 2) * ny
-                }
-            }
-        }
-    }
-
-    private updateHeatTransferSim(deltaTime: number): void {
-        const cfg = SIMULATION_CONFIG.heatTransfer
-        const halfW = cfg.areaSize / 2
-        const halfH = cfg.areaSize * 0.35
-
-        for (const p of this.simParticles) {
-            p.x += p.vx * deltaTime * 25
-            p.y += p.vy * deltaTime * 25
-
-            if (p.x < -halfW || p.x > halfW) {
-                p.vx *= -1
-                p.x = Math.max(-halfW, Math.min(halfW, p.x))
-            }
-            if (p.y < -halfH || p.y > halfH) {
-                p.vy *= -1
-                p.y = Math.max(-halfH, Math.min(halfH, p.y))
-            }
-
-            if (p.temperature !== undefined && Math.random() < 0.02) {
-                p.temperature = Math.max(0, Math.min(1, p.temperature + (Math.random() - 0.5) * 0.15))
-                p.color = this.temperatureToColor(p.temperature)
-                const speed = cfg.minSpeed + p.temperature * (cfg.maxSpeed - cfg.minSpeed)
-                const currentSpeed = Math.sqrt(p.vx * p.vx + p.vy * p.vy)
-                if (currentSpeed > 0) {
-                    const scale = speed / currentSpeed
-                    p.vx *= scale
-                    p.vy *= scale
-                }
-            }
-        }
+        this.draw()
     }
 
     private draw(): void {
-        this.drawPlatform()
-        this.drawSimulation()
+        this.drawShadow()
         this.drawGlow()
-        this.drawOverlay()
+        this.drawEquipment()
     }
 
-    private drawPlatform(): void {
-        const g = this.platformGraphics
+    private drawShadow(): void {
+        const g = this.shadowGraphics
         g.clear()
 
-        const halfW = STATION_WIDTH / 2
-        const halfH = STATION_HEIGHT / 2
-
-        // Shadow
-        g.ellipse(0, halfH + 8, halfW + 5, 12)
-        g.fill({ color: 0x000000, alpha: 0.35 })
-
-        // Main body background
-        g.roundRect(-halfW, -halfH, STATION_WIDTH, STATION_HEIGHT, 12)
-        const baseColor = this._isActive ? this.config.color : 0x2d2d44
-        g.fill({ color: baseColor, alpha: 0.85 })
-
-        // Border
-        g.roundRect(-halfW, -halfH, STATION_WIDTH, STATION_HEIGHT, 12)
-        g.stroke({
-            color: this._isActive ? 0xffffff : 0x4a4a6a,
-            width: 2,
-            alpha: this._isActive ? 0.8 : 0.4,
-        })
-
-        // Simulation window background (larger, centered)
-        const simX = -SIM_WINDOW_WIDTH / 2
-        const simY = -halfH + 8
-        g.roundRect(simX, simY, SIM_WINDOW_WIDTH, SIM_WINDOW_HEIGHT, 8)
-        g.fill({ color: 0x0d0d1a, alpha: 0.95 })
-
-        // Simulation window border
-        g.roundRect(simX, simY, SIM_WINDOW_WIDTH, SIM_WINDOW_HEIGHT, 8)
-        g.stroke({
-            color: this.config.color,
-            width: 2,
-            alpha: this._isActive ? 0.8 : 0.3,
-        })
-
-        // Inner glow on simulation window when active
-        if (this._isActive) {
-            g.roundRect(simX + 2, simY + 2, SIM_WINDOW_WIDTH - 4, SIM_WINDOW_HEIGHT - 4, 6)
-            g.stroke({ color: this.config.color, width: 1, alpha: 0.3 })
-        }
-
-        // Progress bar background (below simulation)
-        const progressY = simY + SIM_WINDOW_HEIGHT + 6
-        g.roundRect(-halfW + 10, progressY, STATION_WIDTH - 20, 8, 4)
-        g.fill({ color: 0x1a1a2e, alpha: 0.9 })
-
-        // Update symbol color based on active state
-        this.symbolText.style.fill = this._isActive ? 0xffffff : 0x888888
-        this.symbolText.alpha = this._isActive ? 1 : 0.6
-
-        // Update name color
-        this.nameText.style.fill = this._isActive ? this.config.color : 0x666666
+        // Floating shadow on ground - subtle ellipse
+        const shadowPulse = 1 + Math.sin(this._animPhase) * 0.05
+        g.ellipse(0, 45, 35 * shadowPulse, 15 * shadowPulse)
+        g.fill({ color: 0x000000, alpha: 0.3 })
     }
 
-    private drawSimulation(): void {
-        const g = this.simulationGraphics
+    private drawEquipment(): void {
+        const g = this.equipmentGraphics
         g.clear()
-
-        // Offset to center in simulation window
-        const offsetY = -STATION_HEIGHT / 2 + 8 + SIM_WINDOW_HEIGHT / 2
 
         switch (this.config.simulation) {
             case 'orbital':
-                this.drawOrbitalSim(g, 0, offsetY)
+                this.drawOrbitalField(g)
                 break
             case 'particle-accelerator':
-                this.drawAcceleratorSim(g, 0, offsetY)
+                this.drawParticleRing(g)
                 break
             case 'collision':
-                this.drawCollisionSim(g, 0, offsetY)
+                this.drawCollisionSpheres(g)
                 break
             case 'heat-transfer':
-                this.drawHeatTransferSim(g, 0, offsetY)
+                this.drawHeatField(g)
                 break
         }
     }
 
-    private drawOrbitalSim(g: Graphics, ox: number, oy: number): void {
-        const cfg = SIMULATION_CONFIG.orbital
+    /**
+     * Gravity Lab - Floating mini planets orbiting each other
+     */
+    private drawOrbitalField(g: Graphics): void {
+        const centerY = -10 // Floating position
+        const orbitSpeed = this._isActive ? 1.5 : 0.4
 
-        // Draw orbit paths
-        for (const p of this.simParticles) {
-            if (p.orbitRadius) {
-                g.ellipse(ox, oy, p.orbitRadius, p.orbitRadius * 0.5)
-                g.stroke({ color: 0x4a4a6a, width: 1, alpha: 0.25 })
+        // Outer energy field (faint circle)
+        const fieldPulse = 1 + Math.sin(this._animPhase * 1.5) * 0.05
+        g.circle(0, centerY, 50 * fieldPulse)
+        g.stroke({ color: this.config.color, width: 1, alpha: 0.2 })
+
+        // Central sun/star with glow
+        const sunPulse = 1 + Math.sin(this._animPhase * 2) * 0.15
+
+        // Sun glow layers
+        g.circle(0, centerY, 20 * sunPulse)
+        g.fill({ color: 0xffdd44, alpha: 0.15 })
+        g.circle(0, centerY, 14 * sunPulse)
+        g.fill({ color: 0xffdd44, alpha: 0.3 })
+        g.circle(0, centerY, 10 * sunPulse)
+        g.fill({ color: 0xffee66 })
+
+        // Sun highlight
+        g.circle(-3, centerY - 3, 3)
+        g.fill({ color: 0xffffff, alpha: 0.6 })
+
+        // Planet 1 - Blue (inner orbit)
+        const angle1 = this.interactionPhase * orbitSpeed
+        const radius1 = 28
+        const p1x = Math.cos(angle1) * radius1
+        const p1y = Math.sin(angle1) * radius1 * 0.4 + centerY // Squashed for perspective
+
+        // Planet 1 trail
+        for (let i = 1; i <= 4; i++) {
+            const trailAngle = angle1 - i * 0.15
+            const tx = Math.cos(trailAngle) * radius1
+            const ty = Math.sin(trailAngle) * radius1 * 0.4 + centerY
+            g.circle(tx, ty, 5 - i)
+            g.fill({ color: 0x5dade2, alpha: 0.15 - i * 0.03 })
+        }
+
+        // Planet 1 glow
+        g.circle(p1x, p1y, 10)
+        g.fill({ color: 0x5dade2, alpha: 0.3 })
+        g.circle(p1x, p1y, 7)
+        g.fill({ color: 0x5dade2 })
+        g.circle(p1x - 2, p1y - 2, 2)
+        g.fill({ color: 0xffffff, alpha: 0.6 })
+
+        // Planet 2 - Orange (outer orbit)
+        const angle2 = this.interactionPhase * orbitSpeed * 0.6 + Math.PI
+        const radius2 = 42
+        const p2x = Math.cos(angle2) * radius2
+        const p2y = Math.sin(angle2) * radius2 * 0.4 + centerY
+
+        // Planet 2 trail
+        for (let i = 1; i <= 4; i++) {
+            const trailAngle = angle2 - i * 0.12
+            const tx = Math.cos(trailAngle) * radius2
+            const ty = Math.sin(trailAngle) * radius2 * 0.4 + centerY
+            g.circle(tx, ty, 4 - i * 0.7)
+            g.fill({ color: 0xe67e22, alpha: 0.15 - i * 0.03 })
+        }
+
+        // Planet 2 glow
+        g.circle(p2x, p2y, 8)
+        g.fill({ color: 0xe67e22, alpha: 0.3 })
+        g.circle(p2x, p2y, 5)
+        g.fill({ color: 0xe67e22 })
+        g.circle(p2x - 1.5, p2y - 1.5, 1.5)
+        g.fill({ color: 0xffffff, alpha: 0.5 })
+
+        // Moon orbiting planet 1
+        const moonAngle = this.interactionPhase * orbitSpeed * 4
+        const moonX = p1x + Math.cos(moonAngle) * 12
+        const moonY = p1y + Math.sin(moonAngle) * 5
+        g.circle(moonX, moonY, 3)
+        g.fill({ color: 0xbdc3c7 })
+    }
+
+    /**
+     * Accelerator - Energy ring with circling particles
+     */
+    private drawParticleRing(g: Graphics): void {
+        const centerY = -10
+        const ringRadius = 40
+        const particleCount = 8
+        const speed = this._isActive ? 4 : 1
+
+        // Outer glow ring
+        g.circle(0, centerY, ringRadius + 8)
+        g.stroke({ color: this.config.color, width: 6, alpha: 0.1 })
+
+        // Main energy ring
+        g.circle(0, centerY, ringRadius)
+        g.stroke({ color: this.config.color, width: 3, alpha: 0.4 })
+
+        // Inner ring
+        g.circle(0, centerY, ringRadius - 6)
+        g.stroke({ color: this.config.color, width: 1, alpha: 0.3 })
+
+        // Particles circling the ring
+        for (let i = 0; i < particleCount; i++) {
+            const baseAngle = (i / particleCount) * Math.PI * 2
+            const angle = baseAngle + this.interactionPhase * speed
+
+            const px = Math.cos(angle) * ringRadius
+            const py = Math.sin(angle) * ringRadius * 0.35 + centerY // Ellipse for perspective
+
+            // Determine if particle is on "front" or "back" of ring
+            const isFront = Math.sin(angle) > 0
+            const particleAlpha = isFront ? 1 : 0.4
+
+            // Particle trail
+            for (let t = 1; t <= 5; t++) {
+                const trailAngle = angle - t * 0.08
+                const tx = Math.cos(trailAngle) * ringRadius
+                const ty = Math.sin(trailAngle) * ringRadius * 0.35 + centerY
+                const trailSize = 4 - t * 0.6
+                g.circle(tx, ty, trailSize)
+                g.fill({ color: 0x00ffff, alpha: (0.3 - t * 0.05) * particleAlpha })
+            }
+
+            // Particle glow
+            g.circle(px, py, 8)
+            g.fill({ color: 0x00ffff, alpha: 0.2 * particleAlpha })
+
+            // Particle core
+            g.circle(px, py, 4)
+            g.fill({ color: 0x00ffff, alpha: particleAlpha })
+
+            // Bright center
+            g.circle(px, py, 2)
+            g.fill({ color: 0xffffff, alpha: 0.8 * particleAlpha })
+        }
+
+        // Center energy core
+        const corePulse = 1 + Math.sin(this._animPhase * 3) * 0.2
+        g.circle(0, centerY, 12 * corePulse)
+        g.fill({ color: this.config.color, alpha: 0.2 })
+        g.circle(0, centerY, 6 * corePulse)
+        g.fill({ color: 0xffffff, alpha: 0.5 })
+    }
+
+    /**
+     * Collision Lab - Two energy spheres bouncing
+     */
+    private drawCollisionSpheres(g: Graphics): void {
+        const centerY = -5
+        const bounceSpeed = this._isActive ? 3 : 1
+
+        // Collision animation phase
+        const collisionPhase = (this.interactionPhase * bounceSpeed) % (Math.PI * 2)
+        const collisionPoint = Math.PI * 0.5 // Where collision happens
+
+        // Calculate sphere positions - they approach, collide, bounce back
+        let sphere1X: number, sphere2X: number
+        let squash1 = 1, squash2 = 1
+
+        if (collisionPhase < collisionPoint) {
+            // Approaching
+            const t = collisionPhase / collisionPoint
+            sphere1X = -35 + t * 30
+            sphere2X = 35 - t * 30
+        } else if (collisionPhase < collisionPoint + 0.3) {
+            // Collision moment - squash
+            const t = (collisionPhase - collisionPoint) / 0.3
+            sphere1X = -5
+            sphere2X = 5
+            squash1 = 1 - Math.sin(t * Math.PI) * 0.3
+            squash2 = 1 - Math.sin(t * Math.PI) * 0.3
+        } else {
+            // Bouncing back
+            const t = (collisionPhase - collisionPoint - 0.3) / (Math.PI * 2 - collisionPoint - 0.3)
+            sphere1X = -5 - t * 30
+            sphere2X = 5 + t * 30
+        }
+
+        // Energy field boundary
+        g.roundRect(-50, centerY - 30, 100, 55, 15)
+        g.stroke({ color: this.config.color, width: 1, alpha: 0.2 })
+
+        // Sphere 1 (left, red-orange)
+        const color1 = 0xff6b6b
+        // Glow
+        g.ellipse(sphere1X, centerY, 18 / squash1, 18 * squash1)
+        g.fill({ color: color1, alpha: 0.2 })
+        // Core
+        g.ellipse(sphere1X, centerY, 14 / squash1, 14 * squash1)
+        g.fill({ color: color1, alpha: 0.8 })
+        // Highlight
+        g.circle(sphere1X - 4, centerY - 4, 4)
+        g.fill({ color: 0xffffff, alpha: 0.5 })
+
+        // Sphere 2 (right, cyan)
+        const color2 = 0x4ecdc4
+        // Glow
+        g.ellipse(sphere2X, centerY, 18 / squash2, 18 * squash2)
+        g.fill({ color: color2, alpha: 0.2 })
+        // Core
+        g.ellipse(sphere2X, centerY, 14 / squash2, 14 * squash2)
+        g.fill({ color: color2, alpha: 0.8 })
+        // Highlight
+        g.circle(sphere2X - 4, centerY - 4, 4)
+        g.fill({ color: 0xffffff, alpha: 0.5 })
+
+        // Collision spark effect
+        if (collisionPhase >= collisionPoint && collisionPhase < collisionPoint + 0.4) {
+            const sparkIntensity = 1 - (collisionPhase - collisionPoint) / 0.4
+            const sparkCount = 6
+            for (let i = 0; i < sparkCount; i++) {
+                const angle = (i / sparkCount) * Math.PI * 2
+                const dist = 20 * (1 - sparkIntensity) + 5
+                const sx = Math.cos(angle) * dist
+                const sy = centerY + Math.sin(angle) * dist * 0.5
+                g.circle(sx, sy, 3 * sparkIntensity)
+                g.fill({ color: 0xffff00, alpha: sparkIntensity })
             }
         }
-
-        // Draw sun with glow
-        g.circle(ox, oy, cfg.sunSize + 4)
-        g.fill({ color: 0xffdd44, alpha: 0.2 })
-        g.circle(ox, oy, cfg.sunSize)
-        g.fill({ color: 0xffdd44, alpha: 1 })
-
-        // Draw planets with shadow
-        for (const p of this.simParticles) {
-            // Shadow
-            g.ellipse(ox + p.x + 2, oy + p.y + 2, p.radius, p.radius * 0.5)
-            g.fill({ color: 0x000000, alpha: 0.3 })
-            // Planet
-            g.circle(ox + p.x, oy + p.y, p.radius)
-            g.fill({ color: p.color, alpha: 1 })
-            // Highlight
-            g.circle(ox + p.x - p.radius * 0.3, oy + p.y - p.radius * 0.3, p.radius * 0.3)
-            g.fill({ color: 0xffffff, alpha: 0.4 })
-        }
     }
 
-    private drawAcceleratorSim(g: Graphics, ox: number, oy: number): void {
-        const cfg = SIMULATION_CONFIG.particleAccelerator
+    /**
+     * Thermodynamics Lab - Heat containment field with particles
+     */
+    private drawHeatField(g: Graphics): void {
+        const centerY = -8
+        const fieldRadius = 38
+        const particleCount = 12
 
-        // Draw ring with glow
-        g.ellipse(ox, oy, cfg.ringRadius + 3, cfg.ringRadius * 0.45 + 2)
-        g.stroke({ color: 0x3498db, width: 4, alpha: 0.15 })
-        g.ellipse(ox, oy, cfg.ringRadius, cfg.ringRadius * 0.45)
-        g.stroke({ color: 0x3498db, width: 2, alpha: 0.4 })
+        // Temperature oscillation for particle speed
+        const temp = this._isActive ? 0.8 + Math.sin(this._animPhase) * 0.2 : 0.3
 
-        // Draw particles with trails
-        for (const p of this.simParticles) {
-            if (p.angle !== undefined) {
-                // Trail
-                for (let i = 1; i <= cfg.trailLength; i++) {
-                    const trailAngle = p.angle - i * 0.12
-                    const tx = Math.cos(trailAngle) * (p.orbitRadius || cfg.ringRadius)
-                    const ty = Math.sin(trailAngle) * (p.orbitRadius || cfg.ringRadius) * 0.45
-                    const alpha = 0.4 * (1 - i / cfg.trailLength)
-                    g.circle(ox + tx, oy + ty, p.radius * 0.5)
-                    g.fill({ color: 0x5dade2, alpha })
-                }
-            }
+        // Outer containment field
+        g.circle(0, centerY, fieldRadius + 5)
+        g.stroke({ color: this.config.color, width: 2, alpha: 0.15 })
 
-            // Particle with glow
-            g.circle(ox + p.x, oy + p.y, p.radius + 2)
-            g.fill({ color: 0x5dade2, alpha: 0.4 })
-            g.circle(ox + p.x, oy + p.y, p.radius)
-            g.fill({ color: 0x85c1e9, alpha: 1 })
+        // Inner containment - glass-like sphere
+        g.circle(0, centerY, fieldRadius)
+        g.fill({ color: this.config.color, alpha: 0.05 })
+        g.circle(0, centerY, fieldRadius)
+        g.stroke({ color: this.config.color, width: 1.5, alpha: 0.3 })
+
+        // Heat gradient in center (warm glow)
+        const heatIntensity = this._isActive ? 0.3 : 0.1
+        g.circle(0, centerY, fieldRadius * 0.7)
+        g.fill({ color: 0xff6600, alpha: heatIntensity * 0.3 })
+        g.circle(0, centerY, fieldRadius * 0.4)
+        g.fill({ color: 0xff4400, alpha: heatIntensity * 0.4 })
+
+        // Hot particles bouncing inside
+        for (let i = 0; i < particleCount; i++) {
+            // Each particle has pseudo-random movement based on index
+            const seed = i * 1.7 + 0.3
+            const speedMult = 0.5 + (i % 3) * 0.3
+
+            const phase = this.interactionPhase * temp * speedMult + seed * 10
+
+            // Particle bounces in a pattern
+            const px = Math.sin(phase * 1.3 + seed) * (fieldRadius - 10) * 0.8
+            const py = Math.cos(phase * 1.7 + seed * 2) * (fieldRadius - 10) * 0.5 + centerY
+
+            // Particle size based on "temperature" (kinetic energy)
+            const size = 3 + temp * 2
+
+            // Color shifts from orange to red based on speed
+            const particleColor = temp > 0.5 ? 0xff4444 : 0xff8844
+
+            // Particle glow
+            g.circle(px, py, size + 3)
+            g.fill({ color: particleColor, alpha: 0.3 })
+
+            // Particle core
+            g.circle(px, py, size)
+            g.fill({ color: particleColor, alpha: 0.9 })
+
+            // Hot center
+            g.circle(px, py, size * 0.4)
+            g.fill({ color: 0xffff00, alpha: 0.6 })
         }
-    }
 
-    private drawCollisionSim(g: Graphics, ox: number, oy: number): void {
-        const cfg = SIMULATION_CONFIG.collision
-
-        // Draw boundary (subtle)
-        g.roundRect(
-            ox - cfg.bounceArea.width / 2,
-            oy - cfg.bounceArea.height / 2,
-            cfg.bounceArea.width,
-            cfg.bounceArea.height,
-            4
-        )
-        g.stroke({ color: 0x4a4a6a, width: 1, alpha: 0.2 })
-
-        // Draw balls
-        for (const p of this.simParticles) {
-            // Shadow
-            g.ellipse(ox + p.x + 2, oy + p.y + 3, p.radius * 0.9, p.radius * 0.4)
-            g.fill({ color: 0x000000, alpha: 0.3 })
-            // Ball
-            g.circle(ox + p.x, oy + p.y, p.radius)
-            g.fill({ color: p.color, alpha: 1 })
-            // Highlight
-            g.circle(ox + p.x - p.radius * 0.3, oy + p.y - p.radius * 0.3, p.radius * 0.35)
-            g.fill({ color: 0xffffff, alpha: 0.5 })
-        }
-    }
-
-    private drawHeatTransferSim(g: Graphics, ox: number, oy: number): void {
-        // Draw particles
-        for (const p of this.simParticles) {
-            // Glow based on temperature
-            if (p.temperature !== undefined && p.temperature > 0.4) {
-                g.circle(ox + p.x, oy + p.y, p.radius + 3)
-                g.fill({ color: p.color, alpha: (p.temperature - 0.4) * 0.5 })
-            }
-            // Particle
-            g.circle(ox + p.x, oy + p.y, p.radius)
-            g.fill({ color: p.color, alpha: 0.9 })
-        }
-    }
-
-    private drawOverlay(): void {
-        const g = this.overlayGraphics
-        g.clear()
-
-        if (this._progress > 0 && this._isActive) {
-            const halfW = STATION_WIDTH / 2
-            const progressY = -STATION_HEIGHT / 2 + 8 + SIM_WINDOW_HEIGHT + 6
-            const progressWidth = (STATION_WIDTH - 20) * this._progress
-
-            // Progress bar fill
-            g.roundRect(-halfW + 10, progressY, progressWidth, 8, 4)
-            g.fill({ color: this.config.color, alpha: 0.9 })
-
-            // Progress bar shine
-            g.roundRect(-halfW + 10, progressY, progressWidth, 4, 2)
-            g.fill({ color: 0xffffff, alpha: 0.2 })
-        }
+        // Sphere highlight (glass effect)
+        g.arc(0, centerY, fieldRadius - 2, -Math.PI * 0.7, -Math.PI * 0.3)
+        g.stroke({ color: 0xffffff, width: 2, alpha: 0.2 })
     }
 
     private drawGlow(): void {
@@ -618,34 +445,21 @@ export class WorkStation extends Container {
 
         if (this._glowIntensity <= 0) return
 
-        const pulse = 0.8 + Math.sin(this._pulsePhase) * 0.2
+        const pulse = 0.8 + Math.sin(this._animPhase * 2) * 0.2
 
-        // Outer glow
-        g.roundRect(
-            -STATION_WIDTH / 2 - 15,
-            -STATION_HEIGHT / 2 - 15,
-            STATION_WIDTH + 30,
-            STATION_HEIGHT + 30,
-            20
-        )
-        g.fill({ color: this.config.color, alpha: this._glowIntensity * 0.12 * pulse })
+        // Glow around the floating object
+        g.circle(0, -10, 55 * pulse)
+        g.fill({ color: this.config.color, alpha: this._glowIntensity * 0.15 })
 
-        // Inner glow
-        g.roundRect(
-            -STATION_WIDTH / 2 - 8,
-            -STATION_HEIGHT / 2 - 8,
-            STATION_WIDTH + 16,
-            STATION_HEIGHT + 16,
-            15
-        )
-        g.fill({ color: this.config.color, alpha: this._glowIntensity * 0.18 * pulse })
+        g.circle(0, -10, 40 * pulse)
+        g.fill({ color: this.config.color, alpha: this._glowIntensity * 0.1 })
     }
 
     getWorkerPosition(): { x: number; y: number } {
-        const affordance = STATION_AFFORDANCES[this.config.id]
+        // Worker stands below the floating equipment
         return {
-            x: this.x + (affordance?.workerOffset.x || 0),
-            y: this.y + (affordance?.workerOffset.y || 45),
+            x: this.x,
+            y: this.y + 70,
         }
     }
 }

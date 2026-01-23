@@ -68,6 +68,16 @@ export class LabWorkerSprite extends Container {
     private currentAffordance: AffordanceType | null = null
     private affordanceSpeed = 1.0
 
+    // Drag state
+    private isDragging = false
+    private dragStartPos: { x: number; y: number } | null = null
+    private dragThreshold = 10
+
+    // Drag callbacks
+    private onDragStartCallback?: (workerId: string, globalX: number, globalY: number) => void
+    private onDragMoveCallback?: (globalX: number, globalY: number) => void
+    private onDragEndCallback?: (globalX: number, globalY: number) => void
+
     constructor(workerId: string, shape: WobbleShape, size: number = 50) {
         super()
         this.workerId = workerId
@@ -89,13 +99,84 @@ export class LabWorkerSprite extends Container {
 
         this.addChild(this.wobble)
 
-        // Make interactive for selection
+        // Make interactive for selection and dragging
         this.eventMode = 'static'
         this.cursor = 'pointer'
+
+        // Setup drag events
+        this.on('pointerdown', this.handlePointerDown)
+        this.on('globalpointermove', this.handlePointerMove) // Global to track drag outside element
+        this.on('pointerup', this.handlePointerUp)
+        this.on('pointerupoutside', this.handlePointerUp)
 
         // Initialize AI timing
         this.scheduleNextIdleAction()
         this.resetWorkCycleCounter()
+    }
+
+    /**
+     * Set drag callbacks
+     */
+    setDragCallbacks(
+        onDragStart?: (workerId: string, globalX: number, globalY: number) => void,
+        onDragMove?: (globalX: number, globalY: number) => void,
+        onDragEnd?: (globalX: number, globalY: number) => void
+    ): void {
+        this.onDragStartCallback = onDragStart
+        this.onDragMoveCallback = onDragMove
+        this.onDragEndCallback = onDragEnd
+    }
+
+    private handlePointerDown = (e: any): void => {
+        const globalPos = e.global
+        this.dragStartPos = { x: globalPos.x, y: globalPos.y }
+    }
+
+    private handlePointerMove = (e: any): void => {
+        if (!this.dragStartPos) return
+
+        const globalPos = e.global
+        const dx = globalPos.x - this.dragStartPos.x
+        const dy = globalPos.y - this.dragStartPos.y
+        const distance = Math.sqrt(dx * dx + dy * dy)
+
+        // Check if we've passed the drag threshold
+        if (!this.isDragging && distance >= this.dragThreshold) {
+            this.isDragging = true
+            this.alpha = 0.3 // Dim the original sprite
+            this.onDragStartCallback?.(this.workerId, globalPos.x, globalPos.y)
+        }
+
+        if (this.isDragging) {
+            this.onDragMoveCallback?.(globalPos.x, globalPos.y)
+        }
+    }
+
+    private handlePointerUp = (e: any): void => {
+        if (this.isDragging) {
+            const globalPos = e.global
+            this.onDragEndCallback?.(globalPos.x, globalPos.y)
+        }
+
+        this.isDragging = false
+        this.dragStartPos = null
+        this.alpha = 1
+    }
+
+    /**
+     * Cancel drag externally
+     */
+    cancelDrag(): void {
+        this.isDragging = false
+        this.dragStartPos = null
+        this.alpha = 1
+    }
+
+    /**
+     * Check if currently being dragged
+     */
+    get dragging(): boolean {
+        return this.isDragging
     }
 
     /**
@@ -189,6 +270,24 @@ export class LabWorkerSprite extends Container {
         this.moveTo(this.stationPosition.x, this.stationPosition.y, () => {
             this.startWorking()
         })
+    }
+
+    /**
+     * Teleport to station and start working immediately (for drag-drop)
+     */
+    teleportToStation(stationX: number, stationY: number): void {
+        // Apply station offset from affordance
+        let offsetX = 0
+        let offsetY = 0
+        if (this._assignedStation) {
+            const affordance = STATION_AFFORDANCES[this._assignedStation]
+            offsetX = affordance.workerOffset.x
+            offsetY = affordance.workerOffset.y
+        }
+
+        this.stationPosition = { x: stationX + offsetX, y: stationY + offsetY }
+        this.setPosition(this.stationPosition.x, this.stationPosition.y)
+        this.startWorking()
     }
 
     /**
@@ -697,6 +796,10 @@ export class LabWorkerSprite extends Container {
      * Cleanup
      */
     destroy(): void {
+        this.off('pointerdown', this.handlePointerDown)
+        this.off('globalpointermove', this.handlePointerMove)
+        this.off('pointerup', this.handlePointerUp)
+        this.off('pointerupoutside', this.handlePointerUp)
         this.wobble.destroy()
         super.destroy()
     }

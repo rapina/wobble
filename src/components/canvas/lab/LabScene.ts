@@ -10,20 +10,24 @@
  * - Production generates large amounts for idle game feel
  */
 
-import { Application, Container, Graphics, Ticker } from 'pixi.js'
+import { Application, Container, Graphics, Ticker, Point } from 'pixi.js'
 import { WorkStation } from './WorkStation'
 import { LabWorkerSprite } from './LabWorkerSprite'
 import { ResourcePopupManager } from './ResourcePopup'
+import { WorkerToolbar, WorkerData } from './WorkerToolbar'
+import { Wobble, WOBBLE_CHARACTERS } from '../Wobble'
 import { STATIONS, getCharacterBonus, LAB_COLORS } from '@/config/labConfig'
 import { useLabStore } from '@/stores/labStore'
 import type { StationId } from '@/types/lab'
 import { formatNumber } from '@/utils/numberFormatter'
 
-// Grid animation settings
-const GRID_SIZE = 40
-const GRID_SPEED = 0.3
-const GRID_COLOR = 0x3d3d5c
-const GRID_ALPHA = 0.12
+// Isometric grid settings
+const ISO_TILE_SIZE = 50 // Size of each isometric tile
+const ISO_ANGLE = Math.PI / 6 // 30 degrees for isometric
+const GRID_COLOR = 0x4a4a6a
+const GRID_ALPHA = 0.15
+const GRID_DOT_COLOR = 0x6a6a8a
+const GRID_DOT_ALPHA = 0.25
 
 export class LabScene {
     private app: Application
@@ -38,18 +42,23 @@ export class LabScene {
     private stationLayer: Container
     private workerLayer: Container
     private uiLayer: Container
+    private dragLayer: Container
 
     // Scene objects
     private stations: Map<StationId, WorkStation> = new Map()
     private workerSprites: Map<string, LabWorkerSprite> = new Map()
     private popupManager: ResourcePopupManager
 
+    // Toolbar and drag state
+    private toolbar: WorkerToolbar | null = null
+    private dragGhost: Wobble | null = null
+    private draggedWorkerId: string | null = null
+    private dropTargetStation: StationId | null = null
+    private isAdFree = false
+    private dragPhase = 0 // Animation phase for drag ghost
+
     // Work progress tracking (per worker)
     private workProgress: Map<string, number> = new Map()
-
-    // Grid animation
-    private gridOffsetX = 0
-    private gridOffsetY = 0
 
     // Selection state
     private selectedWorkerId: string | null = null
@@ -74,6 +83,7 @@ export class LabScene {
         this.workerLayer = new Container()
         this.uiLayer = new Container()
         this.popupManager = new ResourcePopupManager()
+        this.dragLayer = new Container()
 
         // Add layers in z-order
         this.container.addChild(this.backgroundLayer)
@@ -82,6 +92,7 @@ export class LabScene {
         this.container.addChild(this.workerLayer)
         this.container.addChild(this.uiLayer)
         this.container.addChild(this.popupManager)
+        this.container.addChild(this.dragLayer) // Drag layer on top of everything
 
         // Make layers interactive
         this.workerLayer.eventMode = 'static'
@@ -90,7 +101,9 @@ export class LabScene {
 
         // Setup scene
         this.drawBackground()
+        this.drawGrid()
         this.createStations()
+        this.setupToolbar()
         this.syncWorkersFromStore()
 
         // Bind animation loop
@@ -142,39 +155,61 @@ export class LabScene {
         g.clear()
         g.rect(0, 0, this.width, this.height)
         g.fill(LAB_COLORS.background)
-
-        // Floor gradient
-        g.rect(0, this.height * 0.5, this.width, this.height * 0.5)
-        g.fill({ color: LAB_COLORS.floor, alpha: 0.3 })
     }
 
     private drawGrid(): void {
         const g = this.gridLayer
         g.clear()
 
-        const startX = -GRID_SIZE + (this.gridOffsetX % GRID_SIZE)
-        const startY = -GRID_SIZE + (this.gridOffsetY % GRID_SIZE)
+        // Isometric grid - diamond pattern
+        // Grid center point (where lines converge)
+        const centerX = this.width * 0.5
+        const centerY = this.height * 0.55
 
-        // Vertical lines
-        for (let x = startX; x <= this.width + GRID_SIZE; x += GRID_SIZE) {
-            g.moveTo(x, 0)
-            g.lineTo(x, this.height)
+        // Tile dimensions in isometric view
+        const tileWidth = ISO_TILE_SIZE * 2 * Math.cos(ISO_ANGLE)
+        const tileHeight = ISO_TILE_SIZE * Math.sin(ISO_ANGLE) * 2
+
+        // Calculate how many tiles we need to cover the screen
+        const tilesX = Math.ceil(this.width / tileWidth) + 4
+        const tilesY = Math.ceil(this.height / tileHeight) + 4
+
+        // Draw isometric lines going from top-left to bottom-right (/)
+        for (let i = -tilesY; i <= tilesY; i++) {
+            const startY = centerY + i * tileHeight
+            // Line goes from left edge to right edge at 30 degree angle
+            const lineLength = this.width * 1.5
+            const dx = Math.cos(ISO_ANGLE) * lineLength
+            const dy = Math.sin(ISO_ANGLE) * lineLength
+
+            g.moveTo(centerX - dx, startY - dy)
+            g.lineTo(centerX + dx, startY + dy)
         }
 
-        // Horizontal lines
-        for (let y = startY; y <= this.height + GRID_SIZE; y += GRID_SIZE) {
-            g.moveTo(0, y)
-            g.lineTo(this.width, y)
+        // Draw isometric lines going from top-right to bottom-left (\)
+        for (let i = -tilesX; i <= tilesX; i++) {
+            const offsetX = i * tileWidth
+            const lineLength = this.height * 1.5
+            const dx = Math.cos(ISO_ANGLE) * lineLength
+            const dy = Math.sin(ISO_ANGLE) * lineLength
+
+            g.moveTo(centerX + offsetX - dx, centerY + dy)
+            g.lineTo(centerX + offsetX + dx, centerY - dy)
         }
 
         g.stroke({ color: GRID_COLOR, width: 1, alpha: GRID_ALPHA })
 
-        // Corner dots
-        for (let x = startX; x <= this.width + GRID_SIZE; x += GRID_SIZE) {
-            for (let y = startY; y <= this.height + GRID_SIZE; y += GRID_SIZE) {
-                if (x > 0 && x < this.width && y > 0 && y < this.height) {
-                    g.circle(x, y, 1.5)
-                    g.fill({ color: 0x5a5a7c, alpha: 0.2 })
+        // Draw dots at intersections
+        for (let i = -tilesX; i <= tilesX; i++) {
+            for (let j = -tilesY; j <= tilesY; j++) {
+                // Convert grid coordinates to isometric screen coordinates
+                const isoX = centerX + (i - j) * (tileWidth / 2)
+                const isoY = centerY + (i + j) * (tileHeight / 2)
+
+                // Only draw if on screen (with some margin)
+                if (isoX > -20 && isoX < this.width + 20 && isoY > -20 && isoY < this.height + 20) {
+                    g.circle(isoX, isoY, 2)
+                    g.fill({ color: GRID_DOT_COLOR, alpha: GRID_DOT_ALPHA })
                 }
             }
         }
@@ -202,6 +237,253 @@ export class LabScene {
             this.stations.set(config.id, station)
             this.stationLayer.addChild(station)
         }
+    }
+
+    /**
+     * Setup the worker toolbar
+     */
+    private setupToolbar(): void {
+        this.toolbar = new WorkerToolbar({
+            screenWidth: this.width,
+            screenHeight: this.height,
+            isAdFree: this.isAdFree,
+            onDragStart: (workerId, globalX, globalY) => this.handleDragStart(workerId, globalX, globalY),
+            onDragMove: (globalX, globalY) => this.handleDragMove(globalX, globalY),
+            onDragEnd: (globalX, globalY) => this.handleDragEnd(globalX, globalY),
+        })
+        this.uiLayer.addChild(this.toolbar)
+    }
+
+    /**
+     * Set ad-free status (affects toolbar position)
+     */
+    setAdFreeStatus(isAdFree: boolean): void {
+        this.isAdFree = isAdFree
+        if (this.toolbar) {
+            this.toolbar.resize(this.width, this.height, isAdFree)
+        }
+    }
+
+    /**
+     * Handle drag start from toolbar
+     */
+    private handleDragStart(workerId: string, globalX: number, globalY: number): void {
+        const worker = useLabStore.getState().workers.find((w) => w.id === workerId)
+        if (!worker) return
+
+        this.draggedWorkerId = workerId
+        this.dragPhase = 0 // Reset animation phase
+
+        // Create drag ghost with panicked expression
+        const character = WOBBLE_CHARACTERS[worker.shape]
+        this.dragGhost = new Wobble({
+            size: 55,
+            color: character.color,
+            shape: worker.shape,
+            expression: 'surprised', // Panicked look!
+            showShadow: true,
+            showLegs: true, // Show legs for frantic animation
+        })
+
+        // Position at touch point
+        const localPos = this.container.toLocal(new Point(globalX, globalY))
+        this.dragGhost.x = localPos.x
+        this.dragGhost.y = localPos.y
+
+        this.dragLayer.addChild(this.dragGhost)
+
+        // Check for initial station highlight
+        this.updateDropTargetHighlight(globalX, globalY)
+    }
+
+    /**
+     * Handle drag move
+     */
+    private handleDragMove(globalX: number, globalY: number): void {
+        if (!this.dragGhost) return
+
+        // Update ghost position
+        const localPos = this.container.toLocal(new Point(globalX, globalY))
+        this.dragGhost.x = localPos.x
+        this.dragGhost.y = localPos.y
+
+        // Update drop target highlight
+        this.updateDropTargetHighlight(globalX, globalY)
+    }
+
+    /**
+     * Handle drag end (from toolbar)
+     */
+    private handleDragEnd(globalX: number, globalY: number): void {
+        if (!this.draggedWorkerId) return
+
+        // Find station at drop position
+        const stationId = this.findStationAtPosition(globalX, globalY)
+
+        // Get current worker assignment
+        const worker = useLabStore.getState().workers.find((w) => w.id === this.draggedWorkerId)
+        const currentStation = worker?.assignedStation
+
+        if (stationId) {
+            // Dropped on a station
+            if (stationId !== currentStation) {
+                // Assign to new station immediately (teleport, don't walk)
+                this.assignWorkerToStation(this.draggedWorkerId, stationId, true)
+            }
+            // If dropped on same station, do nothing
+        } else if (currentStation) {
+            // Dropped outside any station - unassign the worker
+            this.assignWorkerToStation(this.draggedWorkerId, null)
+        }
+
+        // Clean up drag state
+        this.cleanupDrag()
+    }
+
+    /**
+     * Handle drag start from worker sprite in scene
+     */
+    private handleWorkerSpriteDragStart(workerId: string, globalX: number, globalY: number): void {
+        const worker = useLabStore.getState().workers.find((w) => w.id === workerId)
+        if (!worker) return
+
+        this.draggedWorkerId = workerId
+        this.dragPhase = 0 // Reset animation phase
+
+        // Create drag ghost with panicked expression
+        const character = WOBBLE_CHARACTERS[worker.shape]
+        this.dragGhost = new Wobble({
+            size: 55,
+            color: character.color,
+            shape: worker.shape,
+            expression: 'surprised', // Panicked look!
+            showShadow: true,
+            showLegs: true, // Show legs for frantic animation
+        })
+
+        // Position at touch point
+        const localPos = this.container.toLocal(new Point(globalX, globalY))
+        this.dragGhost.x = localPos.x
+        this.dragGhost.y = localPos.y
+
+        this.dragLayer.addChild(this.dragGhost)
+
+        // Check for initial station highlight
+        this.updateDropTargetHighlight(globalX, globalY)
+    }
+
+    /**
+     * Handle drag end from worker sprite in scene
+     */
+    private handleWorkerSpriteDragEnd(globalX: number, globalY: number): void {
+        if (!this.draggedWorkerId) return
+
+        // Find station at drop position
+        const stationId = this.findStationAtPosition(globalX, globalY)
+
+        // Get current worker assignment
+        const worker = useLabStore.getState().workers.find((w) => w.id === this.draggedWorkerId)
+        const currentStation = worker?.assignedStation
+
+        if (stationId) {
+            // Dropped on a station
+            if (stationId !== currentStation) {
+                // Assign immediately (teleport, don't walk)
+                this.assignWorkerToStation(this.draggedWorkerId, stationId, true)
+            }
+        } else if (currentStation) {
+            // Dropped outside any station - unassign the worker
+            this.assignWorkerToStation(this.draggedWorkerId, null)
+        }
+
+        // Reset sprite visibility
+        const sprite = this.workerSprites.get(this.draggedWorkerId)
+        if (sprite) {
+            sprite.cancelDrag()
+        }
+
+        // Clean up drag ghost only (not toolbar visibility)
+        if (this.dragGhost) {
+            this.dragLayer.removeChild(this.dragGhost)
+            this.dragGhost.destroy()
+            this.dragGhost = null
+        }
+
+        this.dropTargetStation = null
+        this.draggedWorkerId = null
+    }
+
+    /**
+     * Find station at global position
+     */
+    private findStationAtPosition(globalX: number, globalY: number): StationId | null {
+        const hitRadius = 70 // Hit detection radius
+
+        for (const [stationId, station] of this.stations) {
+            // Convert global position to station's local position
+            const localPos = station.toLocal(new Point(globalX, globalY))
+            const distance = Math.sqrt(localPos.x * localPos.x + localPos.y * localPos.y)
+
+            if (distance <= hitRadius) {
+                return stationId
+            }
+        }
+
+        return null
+    }
+
+    /**
+     * Update drop target highlight
+     */
+    private updateDropTargetHighlight(globalX: number, globalY: number): void {
+        const newTarget = this.findStationAtPosition(globalX, globalY)
+
+        if (newTarget !== this.dropTargetStation) {
+            // Clear previous highlight
+            if (this.dropTargetStation) {
+                const prevStation = this.stations.get(this.dropTargetStation)
+                if (prevStation) {
+                    // Reset station visual (will be handled by update loop)
+                }
+            }
+
+            this.dropTargetStation = newTarget
+
+            // Apply new highlight
+            if (this.dropTargetStation) {
+                // Station highlight will be handled in the station's update
+            }
+        }
+
+        // Update drag ghost expression based on valid drop target
+        if (this.dragGhost) {
+            this.dragGhost.updateOptions({
+                expression: newTarget ? 'excited' : 'surprised', // Excited when over station, panicked otherwise
+                glowIntensity: newTarget ? 0.5 : 0,
+                glowColor: newTarget ? 0x2ecc71 : 0xffffff,
+            })
+        }
+    }
+
+    /**
+     * Clean up drag state
+     */
+    private cleanupDrag(): void {
+        // Remove drag ghost
+        if (this.dragGhost) {
+            this.dragLayer.removeChild(this.dragGhost)
+            this.dragGhost.destroy()
+            this.dragGhost = null
+        }
+
+        // Reset toolbar item visibility
+        if (this.draggedWorkerId && this.toolbar) {
+            this.toolbar.setWorkerDragVisibility(this.draggedWorkerId, true)
+        }
+
+        // Clear drop target
+        this.dropTargetStation = null
+        this.draggedWorkerId = null
     }
 
     /**
@@ -236,6 +518,13 @@ export class LabScene {
                 sprite.setSceneBounds(this.width, this.height)
                 sprite.setHomePosition(centerX, centerY)
 
+                // Setup drag callbacks for reassignment
+                sprite.setDragCallbacks(
+                    (workerId, globalX, globalY) => this.handleWorkerSpriteDragStart(workerId, globalX, globalY),
+                    (globalX, globalY) => this.handleDragMove(globalX, globalY),
+                    (globalX, globalY) => this.handleWorkerSpriteDragEnd(globalX, globalY)
+                )
+
                 // Position at center or at assigned station
                 if (worker.assignedStation) {
                     const station = this.stations.get(worker.assignedStation)
@@ -251,18 +540,6 @@ export class LabScene {
                         this.height * 0.35 + Math.random() * this.height * 0.3
                     )
                 }
-
-                // Make interactive
-                sprite.on('pointertap', () => {
-                    console.log('[LabScene] Worker tapped:', worker.id)
-                    this.selectedWorkerId = worker.id
-                    if (this.onWorkerSelect) {
-                        this.onWorkerSelect(worker.id)
-                    }
-                })
-                sprite.on('pointerdown', () => {
-                    console.log('[LabScene] Worker pointerdown:', worker.id)
-                })
 
                 this.workerSprites.set(worker.id, sprite)
                 this.workerLayer.addChild(sprite)
@@ -282,12 +559,31 @@ export class LabScene {
 
         // Update station active states
         this.updateStationStates()
+
+        // Sync toolbar
+        this.syncToolbar()
     }
 
     /**
-     * Assign worker to station with animation
+     * Sync toolbar with current workers
      */
-    assignWorkerToStation(workerId: string, stationId: StationId | null): void {
+    private syncToolbar(): void {
+        if (!this.toolbar) return
+
+        const storeWorkers = useLabStore.getState().workers
+        const workerData: WorkerData[] = storeWorkers.map((w) => ({
+            id: w.id,
+            shape: w.shape,
+            assignedStation: w.assignedStation,
+        }))
+        this.toolbar.syncWorkers(workerData)
+    }
+
+    /**
+     * Assign worker to station
+     * @param immediate If true, teleport to station and start working immediately (for drag-drop)
+     */
+    assignWorkerToStation(workerId: string, stationId: StationId | null, immediate = false): void {
         const sprite = this.workerSprites.get(workerId)
         if (!sprite) return
 
@@ -295,12 +591,18 @@ export class LabScene {
         useLabStore.getState().assignWorker(workerId, stationId)
 
         if (stationId) {
-            // Move to station using AI system
             const station = this.stations.get(stationId)
             if (station) {
                 const pos = station.getWorkerPosition()
                 sprite.assignedStation = stationId
-                sprite.goToStation(pos.x, pos.y)
+
+                if (immediate) {
+                    // Teleport and start working immediately (drag-drop)
+                    sprite.teleportToStation(pos.x, pos.y)
+                } else {
+                    // Walk to station (normal assignment)
+                    sprite.goToStation(pos.x, pos.y)
+                }
             }
         } else {
             // Unassign - sprite will return to idle wandering
@@ -311,6 +613,9 @@ export class LabScene {
         // Reset progress
         this.workProgress.set(workerId, 0)
         this.updateStationStates()
+
+        // Sync toolbar to update assigned state
+        this.syncToolbar()
     }
 
     private updateStationStates(): void {
@@ -330,13 +635,6 @@ export class LabScene {
 
     private animate(ticker: Ticker): void {
         const delta = ticker.deltaMS / 1000 // Convert to seconds
-
-        // Update grid animation
-        this.gridOffsetX += GRID_SPEED
-        this.gridOffsetY += GRID_SPEED
-        this.gridOffsetX %= GRID_SIZE
-        this.gridOffsetY %= GRID_SIZE
-        this.drawGrid()
 
         // Update stations
         for (const station of this.stations.values()) {
@@ -400,6 +698,41 @@ export class LabScene {
 
         // Update popups
         this.popupManager.update(delta)
+
+        // Update drag ghost animation (bouncy wobble effect)
+        if (this.dragGhost) {
+            this.dragPhase += delta * 12 // Fast wobble
+
+            // Bouncy squash and stretch
+            const bounce = Math.sin(this.dragPhase * 2) * 0.15
+            const wobble = Math.sin(this.dragPhase * 3) * 0.1
+
+            // Frantic leg movement
+            const legPhase = this.dragPhase * 8
+
+            // Slight rotation wobble
+            const rotation = Math.sin(this.dragPhase * 2.5) * 0.2
+
+            this.dragGhost.updateOptions({
+                scaleX: 1.2 + bounce,
+                scaleY: 1.2 - bounce * 0.7,
+                wobblePhase: this.dragPhase,
+                showLegs: true,
+                legPhase: legPhase,
+            })
+
+            // Apply rotation and vertical bounce
+            this.dragGhost.rotation = rotation
+
+            // Small vertical bounce offset
+            const yOffset = Math.abs(Math.sin(this.dragPhase * 4)) * 5
+            this.dragGhost.pivot.y = yOffset
+        }
+
+        // Update toolbar animations
+        if (this.toolbar) {
+            this.toolbar.update(delta)
+        }
     }
 
     /**
@@ -427,6 +760,17 @@ export class LabScene {
         for (const sprite of this.workerSprites.values()) {
             sprite.setSceneBounds(this.width, this.height)
             sprite.setHomePosition(centerX, centerY)
+        }
+
+        // Update toolbar
+        if (this.toolbar) {
+            this.toolbar.resize(this.width, this.height, this.isAdFree)
+        }
+
+        // Cancel any active drag on resize
+        this.cleanupDrag()
+        if (this.toolbar) {
+            this.toolbar.cancelAllDrags()
         }
     }
 
@@ -456,6 +800,18 @@ export class LabScene {
             station.destroy()
         }
         this.stations.clear()
+
+        // Cleanup toolbar
+        if (this.toolbar) {
+            this.toolbar.destroy()
+            this.toolbar = null
+        }
+
+        // Cleanup drag ghost
+        if (this.dragGhost) {
+            this.dragGhost.destroy()
+            this.dragGhost = null
+        }
 
         // Cleanup popup manager
         this.popupManager.clear()

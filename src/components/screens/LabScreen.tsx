@@ -14,22 +14,19 @@ import { Application } from 'pixi.js'
 import {
     ArrowLeft,
     FlaskConical,
-    Users,
     TrendingUp,
     Plus,
     X,
     ChevronUp,
 } from 'lucide-react'
 import Balatro from '@/components/Balatro'
-import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
 import { LabScene } from '@/components/canvas/lab/LabScene'
 import { useLabStore, useSyncLabOnMount } from '@/stores/labStore'
 import { usePurchaseStore } from '@/stores/purchaseStore'
 import { useAdMob } from '@/hooks/useAdMob'
-import { STATIONS, UPGRADES } from '@/config/labConfig'
+import { UPGRADES } from '@/config/labConfig'
 import { labPreset } from '@/config/backgroundPresets'
-import { WOBBLE_CHARACTERS } from '@/components/canvas/Wobble'
-import type { StationId, PhysicsProperty } from '@/types/lab'
+import type { PhysicsProperty } from '@/types/lab'
 import { cn } from '@/lib/utils'
 import { formatNumber } from '@/utils/numberFormatter'
 
@@ -152,6 +149,9 @@ export function LabScreen({ onBack }: LabScreenProps) {
             app.stage.addChild(scene.container)
             sceneRef.current = scene
 
+            // Set ad-free status for toolbar positioning
+            scene.setAdFreeStatus(isAdFree)
+
             scene.setOnWorkerSelect((workerId) => {
                 setSelectedWorkerId(workerId)
             })
@@ -206,12 +206,6 @@ export function LabScreen({ onBack }: LabScreenProps) {
         [upgradeStat]
     )
 
-    const handleWorkerClick = useCallback((workerId: string) => {
-        setSelectedWorkerId((prev) => (prev === workerId ? null : workerId))
-        if (sceneRef.current) {
-            sceneRef.current.selectWorker(workerId)
-        }
-    }, [])
 
     const physicsProperties: PhysicsProperty[] = ['gravity', 'momentum', 'elasticity', 'thermodynamics']
 
@@ -345,105 +339,6 @@ export function LabScreen({ onBack }: LabScreenProps) {
                             </div>
                         )
                     })}
-                </div>
-            </div>
-
-            {/* Worker Panel (bottom) */}
-            <div
-                className={cn(
-                    'absolute z-10 left-0 right-0 transition-all duration-500',
-                    mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-                )}
-                style={{
-                    bottom: `calc(max(env(safe-area-inset-bottom, 0px), 8px) + ${isAdFree ? 12 : 110}px)`,
-                    paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
-                    paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
-                }}
-            >
-                <div
-                    className="rounded-xl overflow-hidden"
-                    style={{
-                        background: `${theme.bgPanel}f0`,
-                        border: `2px solid ${theme.border}`,
-                        backdropFilter: 'blur(8px)',
-                    }}
-                >
-                    {/* Header */}
-                    <div
-                        className="px-3 py-2 flex items-center gap-2"
-                        style={{ background: `${theme.bgPanelLight}80` }}
-                    >
-                        <Users className="w-3.5 h-3.5 text-white/50" />
-                        <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider">
-                            {t('lab.workers', 'Researchers')}
-                        </span>
-                        <span className="text-[10px] text-white/30">
-                            {workers.length}/8
-                        </span>
-                        {selectedWorkerId && (
-                            <span className="ml-auto text-[10px] text-yellow-400 animate-pulse">
-                                {t('lab.tapStation', 'Tap station to assign')}
-                            </span>
-                        )}
-                    </div>
-
-                    {/* Worker list */}
-                    <div className="p-2 flex gap-2 overflow-x-auto">
-                        {workers.map((worker) => {
-                            const isSelected = selectedWorkerId === worker.id
-                            const isAssigned = !!worker.assignedStation
-                            const station = worker.assignedStation
-                                ? STATIONS.find((s) => s.id === worker.assignedStation)
-                                : null
-
-                            return (
-                                <button
-                                    key={worker.id}
-                                    onClick={() => handleWorkerClick(worker.id)}
-                                    className={cn(
-                                        'shrink-0 rounded-lg transition-all relative',
-                                        isSelected ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-transparent' : ''
-                                    )}
-                                    style={{
-                                        background: isAssigned
-                                            ? `linear-gradient(135deg, ${theme.bgPanelLight}, ${(station?.color ? `#${station.color.toString(16).padStart(6, '0')}` : theme.bgPanelLight)}40)`
-                                            : theme.bgPanelLight,
-                                        border: isSelected
-                                            ? '2px solid #fbbf24'
-                                            : `2px solid ${theme.border}`,
-                                        padding: '8px 12px',
-                                    }}
-                                >
-                                    <WobbleDisplay
-                                        size={40}
-                                        shape={worker.shape}
-                                        color={WOBBLE_CHARACTERS[worker.shape].color}
-                                        expression={isAssigned ? 'effort' : isSelected ? 'happy' : 'neutral'}
-                                    />
-                                    {/* Assignment indicator */}
-                                    {isAssigned && station && (
-                                        <div
-                                            className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[8px] font-bold text-white"
-                                            style={{ background: station.color ? `#${station.color.toString(16).padStart(6, '0')}` : theme.purple }}
-                                        >
-                                            {PHYSICS_SYMBOLS[station.resource]}
-                                        </div>
-                                    )}
-                                </button>
-                            )
-                        })}
-
-                        {/* Empty slots */}
-                        {Array.from({ length: Math.max(0, 4 - workers.length) }).map((_, i) => (
-                            <div
-                                key={`empty-${i}`}
-                                className="shrink-0 w-16 h-14 rounded-lg border-2 border-dashed flex items-center justify-center"
-                                style={{ borderColor: `${theme.bgPanelLight}`, background: `${theme.bg}40` }}
-                            >
-                                <Plus className="w-4 h-4 text-white/20" />
-                            </div>
-                        ))}
-                    </div>
                 </div>
             </div>
 

@@ -121,6 +121,13 @@
             "pendulumMotion": "Pendulum Motion",
             "gravity": "Gravity",
             "momentum": "Momentum"
+        },
+        "abyss": {
+            "notWorthy": "NOT WORTHY",
+            "proveYourself": "The Abyss does not recognize you.\nProve your worth in the endless depths.",
+            "currentDepth": "Your Depth",
+            "required": "Required",
+            "hint": "Reach Depth {{depth}} in Endless mode"
         }
     },
     "share": {
