@@ -1283,31 +1283,21 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         if (eyeOpenness < 0.1) return // Fully closed
 
-        // Eye glow
-        g.ellipse(eye.x, eye.y, eye.size + 4, (eye.size * 0.6 + 4) * eyeOpenness)
-        g.fill({ color: BALATRO.purple, alpha: 0.2 })
+        const size = eye.size
 
-        // White of eye (slightly yellowish for creepy effect)
-        g.ellipse(eye.x, eye.y, eye.size, eye.size * 0.6 * eyeOpenness)
-        g.fill({ color: 0xf5f5dc, alpha: 0.9 })
+        // Outer red glow
+        g.ellipse(eye.x, eye.y, size * 1.3, size * 0.6 * eyeOpenness)
+        g.fill({ color: 0xef4444, alpha: 0.3 })
 
-        // Iris
-        const irisSize = eye.size * 0.6
-        const pupilX = eye.x + Math.cos(eye.lookAngle) * eye.size * eye.pupilOffset * 0.5
-        const pupilY =
-            eye.y + Math.sin(eye.lookAngle) * eye.size * 0.3 * eye.pupilOffset * eyeOpenness
+        // Main eye (red ellipse)
+        g.ellipse(eye.x, eye.y, size, size * 0.45 * eyeOpenness)
+        g.fill({ color: 0xdc2626, alpha: 0.8 })
 
-        g.ellipse(pupilX, pupilY, irisSize, irisSize * 0.6 * eyeOpenness)
-        g.fill({ color: 0x8b0000, alpha: 0.95 }) // Dark red iris
-
-        // Pupil
-        const pupilSize = irisSize * 0.5
-        g.ellipse(pupilX, pupilY, pupilSize, pupilSize * 0.6 * eyeOpenness)
-        g.fill({ color: 0x000000 })
-
-        // Highlight
-        g.circle(pupilX - pupilSize * 0.3, pupilY - pupilSize * 0.2 * eyeOpenness, pupilSize * 0.25)
-        g.fill({ color: 0xffffff, alpha: 0.7 })
+        // Vertical slit pupil
+        const pupilW = size * 0.15
+        const pupilH = size * 0.35 * eyeOpenness
+        g.ellipse(eye.x, eye.y, pupilW, pupilH)
+        g.fill({ color: 0x000000, alpha: 0.95 })
     }
 
     /**
@@ -1328,95 +1318,34 @@ export class WobblediverScene extends BaseMiniGameScene {
             : 1.0
         const totalScale = scaryScale * pulseScale
 
-        const scaledSize = eye.size * totalScale
+        const size = eye.size * totalScale
 
-        // Glowing outer aura - much brighter when scary
-        const glowColor = this.isDrowningActive
-            ? 0xff2222
-            : this.lerpColor(0x7a5a90, 0xaa5555, blood)
-        const glowAlpha = this.isDrowningActive
-            ? 0.5 + Math.sin(this.abyssTime * 8 + eye.x * 0.05) * 0.2
-            : 0.25 + Math.sin(this.abyssTime * 2 + eye.x * 0.01) * 0.1
+        // Outer red glow - brighter when scary
+        const glowAlpha = this.isDrowningActive ? 0.5 : 0.3
+        g.ellipse(eye.x, eye.y, size * 1.3, size * 0.6 * eyeOpenness)
+        g.fill({ color: 0xef4444, alpha: glowAlpha })
 
         // Extra scary outer glow
         if (this.isDrowningActive) {
-            g.ellipse(eye.x, eye.y, scaledSize + 35, (scaledSize * 0.6 + 35) * eyeOpenness)
-            g.fill({ color: 0xff0000, alpha: glowAlpha * 0.2 })
-
-            g.ellipse(eye.x, eye.y, scaledSize + 25, (scaledSize * 0.6 + 25) * eyeOpenness)
-            g.fill({ color: 0xff2200, alpha: glowAlpha * 0.3 })
+            g.ellipse(eye.x, eye.y, size * 1.6, size * 0.75 * eyeOpenness)
+            g.fill({ color: 0xff0000, alpha: 0.2 })
         }
 
-        g.ellipse(eye.x, eye.y, scaledSize + 15, (scaledSize * 0.6 + 15) * eyeOpenness)
-        g.fill({ color: glowColor, alpha: glowAlpha * 0.4 })
+        // Main eye (red ellipse) - brighter when scary
+        const eyeAlpha = this.isDrowningActive ? 0.95 : 0.8
+        g.ellipse(eye.x, eye.y, size, size * 0.45 * eyeOpenness)
+        g.fill({ color: 0xdc2626, alpha: eyeAlpha })
 
-        g.ellipse(eye.x, eye.y, scaledSize + 8, (scaledSize * 0.6 + 8) * eyeOpenness)
-        g.fill({ color: glowColor, alpha: glowAlpha * 0.7 })
-
-        // Eye glow ring - bright
-        const ringColor = this.isDrowningActive
-            ? 0xaa2020
-            : this.lerpColor(0x5a3d70, 0x8b4040, blood)
-        g.ellipse(eye.x, eye.y, scaledSize + 3, (scaledSize * 0.6 + 3) * eyeOpenness)
-        g.fill({ color: ringColor, alpha: this.isDrowningActive ? 0.6 : 0.4 })
-
-        // White of eye - bloodshot when scary
-        const whiteColor = this.isDrowningActive ? 0xffddcc : 0xf0eedd
-        g.ellipse(eye.x, eye.y, scaledSize, scaledSize * 0.6 * eyeOpenness)
-        g.fill({ color: whiteColor, alpha: this.isDrowningActive ? 0.9 : 0.75 })
-
-        // Bloodshot veins when scary
-        if (this.isDrowningActive) {
-            for (let i = 0; i < 6; i++) {
-                const angle = (i / 6) * Math.PI * 2 + this.abyssTime * 0.5
-                const veinX = eye.x + Math.cos(angle) * scaledSize * 0.6
-                const veinY = eye.y + Math.sin(angle) * scaledSize * 0.35 * eyeOpenness
-                g.moveTo(eye.x, eye.y)
-                g.lineTo(veinX, veinY)
-                g.stroke({ color: 0xcc3333, width: 1.5, alpha: 0.5 })
-            }
-        }
-
-        // Iris - much larger iris when scary (predator look)
-        const irisScale = this.isDrowningActive ? 0.75 : 0.6
-        const irisSize = scaledSize * irisScale
-        const pupilX = eye.x + Math.cos(eye.lookAngle) * scaledSize * eye.pupilOffset * 0.5
-        const pupilY =
-            eye.y + Math.sin(eye.lookAngle) * scaledSize * 0.3 * eye.pupilOffset * eyeOpenness
-
-        const irisColor = this.isDrowningActive
-            ? 0xee0000
-            : this.lerpColor(0x8b0000, 0xcc2222, blood)
-        g.ellipse(pupilX, pupilY, irisSize, irisSize * 0.6 * eyeOpenness)
-        g.fill({ color: irisColor, alpha: 0.95 })
-
-        // Pupil - smaller/contracted when scary (intense focus)
-        const pupilScale = this.isDrowningActive ? 0.3 : 0.5
-        const pupilSize = irisSize * pupilScale
+        // Vertical slit pupil
+        const pupilW = size * 0.15
+        const pupilH = size * 0.35 * eyeOpenness
 
         // Scary pupil shake
         const shakeX = this.isDrowningActive ? Math.sin(this.abyssTime * 20) * 1 : 0
         const shakeY = this.isDrowningActive ? Math.cos(this.abyssTime * 25) * 0.5 : 0
 
-        g.ellipse(pupilX + shakeX, pupilY + shakeY, pupilSize, pupilSize * 0.6 * eyeOpenness)
-        g.fill({ color: 0x000000, alpha: 0.98 })
-
-        // Bright highlight for menacing look
-        const highlightSize = this.isDrowningActive ? pupilSize * 0.3 : pupilSize * 0.2
-        g.circle(
-            pupilX - pupilSize * 0.3 + shakeX,
-            pupilY - pupilSize * 0.2 * eyeOpenness + shakeY,
-            highlightSize
-        )
-        g.fill({ color: 0xffffff, alpha: 0.9 })
-
-        // Small secondary highlight
-        g.circle(
-            pupilX + pupilSize * 0.2 + shakeX,
-            pupilY + pupilSize * 0.1 * eyeOpenness + shakeY,
-            highlightSize * 0.5
-        )
-        g.fill({ color: 0xffffff, alpha: 0.5 })
+        g.ellipse(eye.x + shakeX, eye.y + shakeY, pupilW, pupilH)
+        g.fill({ color: 0x000000, alpha: 0.95 })
     }
 
     private updateAbyss(deltaSeconds: number): void {
