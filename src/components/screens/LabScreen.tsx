@@ -21,7 +21,8 @@ import {
 } from 'lucide-react'
 import Balatro from '@/components/Balatro'
 import { LabScene } from '@/components/canvas/lab/LabScene'
-import { useLabStore, useSyncLabOnMount } from '@/stores/labStore'
+import { useLabStore, syncLabOnMount } from '@/stores/labStore'
+import type { LabResources } from '@/types/lab'
 import { usePurchaseStore } from '@/stores/purchaseStore'
 import { useAdMob } from '@/hooks/useAdMob'
 import { UPGRADES } from '@/config/labConfig'
@@ -68,6 +69,18 @@ const PHYSICS_NAMES: Record<PhysicsProperty, string> = {
     thermodynamics: 'Thermo',
 }
 
+// Format elapsed time in a human-readable way
+function formatTime(seconds: number): string {
+    if (seconds < 60) return `${Math.floor(seconds)}s`
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`
+    const hours = Math.floor(seconds / 3600)
+    const mins = Math.floor((seconds % 3600) / 60)
+    if (hours < 24) return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
+    const days = Math.floor(hours / 24)
+    const remainingHours = hours % 24
+    return remainingHours > 0 ? `${days}d ${remainingHours}h` : `${days}d`
+}
+
 interface LabScreenProps {
     onBack: () => void
 }
@@ -93,6 +106,7 @@ export function LabScreen({ onBack }: LabScreenProps) {
     const [mounted, setMounted] = useState(false)
     const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null)
     const [showUpgradePanel, setShowUpgradePanel] = useState(false)
+    const [offlineData, setOfflineData] = useState<{ production: LabResources; elapsedSeconds: number } | null>(null)
 
     // Refs for callbacks
     const selectedWorkerIdRef = useRef<string | null>(null)
@@ -107,7 +121,10 @@ export function LabScreen({ onBack }: LabScreenProps) {
     }, [workers])
 
     useEffect(() => {
-        useSyncLabOnMount()
+        const result = syncLabOnMount()
+        if (result) {
+            setOfflineData(result)
+        }
     }, [])
 
     // Hide banner when unmounting
@@ -148,9 +165,6 @@ export function LabScreen({ onBack }: LabScreenProps) {
             const scene = new LabScene(app)
             app.stage.addChild(scene.container)
             sceneRef.current = scene
-
-            // Set ad-free status for toolbar positioning
-            scene.setAdFreeStatus(isAdFree)
 
             scene.setOnWorkerSelect((workerId) => {
                 setSelectedWorkerId(workerId)
@@ -502,6 +516,93 @@ export function LabScreen({ onBack }: LabScreenProps) {
                                     </div>
                                 ))}
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Offline Progress Popup */}
+            {offlineData && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center p-4">
+                    <div
+                        className="absolute inset-0 bg-black/70"
+                        onClick={() => setOfflineData(null)}
+                    />
+
+                    <div
+                        className={cn(
+                            'relative w-full max-w-xs rounded-2xl overflow-hidden transition-all duration-500',
+                            mounted ? 'scale-100 opacity-100' : 'scale-90 opacity-0'
+                        )}
+                        style={{
+                            background: theme.bgPanel,
+                            border: `3px solid ${theme.gold}`,
+                            boxShadow: `0 0 40px ${theme.gold}40, 0 8px 32px rgba(0,0,0,0.5)`,
+                        }}
+                    >
+                        {/* Header */}
+                        <div
+                            className="px-4 py-3 flex flex-col items-center"
+                            style={{ background: `linear-gradient(135deg, ${theme.gold}30, transparent)` }}
+                        >
+                            <FlaskConical className="w-8 h-8 text-yellow-400 mb-1" />
+                            <h2 className="text-lg font-bold text-white">
+                                {t('lab.welcomeBack', 'Welcome Back!')}
+                            </h2>
+                            <p className="text-xs text-white/60">
+                                {formatTime(offlineData.elapsedSeconds)} {t('lab.ofResearch', 'of research')}
+                            </p>
+                        </div>
+
+                        {/* Resources earned */}
+                        <div className="p-4 space-y-2">
+                            <p className="text-xs text-white/50 text-center mb-3">
+                                {t('lab.workersProduced', 'Your workers produced:')}
+                            </p>
+                            {physicsProperties.map((property) => {
+                                const amount = offlineData.production[property]
+                                if (amount <= 0) return null
+                                return (
+                                    <div
+                                        key={property}
+                                        className="flex items-center justify-between px-3 py-2 rounded-lg"
+                                        style={{
+                                            background: `${PHYSICS_COLORS[property]}20`,
+                                            border: `1px solid ${PHYSICS_COLORS[property]}40`,
+                                        }}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <span
+                                                className="text-lg font-bold italic"
+                                                style={{ color: PHYSICS_COLORS[property], fontFamily: 'Georgia, serif' }}
+                                            >
+                                                {PHYSICS_SYMBOLS[property]}
+                                            </span>
+                                            <span className="text-sm text-white/80">
+                                                {PHYSICS_NAMES[property]}
+                                            </span>
+                                        </div>
+                                        <span className="text-lg font-bold text-white">
+                                            +{formatNumber(Math.floor(amount))}
+                                        </span>
+                                    </div>
+                                )
+                            })}
+                        </div>
+
+                        {/* Collect button */}
+                        <div className="p-4 pt-0">
+                            <button
+                                onClick={() => setOfflineData(null)}
+                                className="w-full py-3 rounded-xl font-bold text-white transition-all active:scale-95"
+                                style={{
+                                    background: `linear-gradient(135deg, ${theme.gold}, ${theme.orange})`,
+                                    border: `2px solid ${theme.border}`,
+                                    boxShadow: `0 4px 12px ${theme.gold}40`,
+                                }}
+                            >
+                                {t('lab.collect', 'Collect!')}
+                            </button>
                         </div>
                     </div>
                 </div>

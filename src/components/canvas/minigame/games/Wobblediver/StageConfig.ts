@@ -8,6 +8,14 @@
 import { BlobExpression } from '@/components/canvas/Blob'
 
 /**
+ * Fixed game width for consistent gameplay across different screen sizes.
+ * The game content is centered horizontally if the screen is wider.
+ * This ensures pendulum physics, wormhole positions, and obstacles
+ * behave identically regardless of device resolution.
+ */
+export const GAME_WIDTH = 400
+
+/**
  * Anchor wobble personality types
  * Each personality has distinct behavioral characteristics
  */

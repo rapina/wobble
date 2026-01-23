@@ -154,7 +154,7 @@ export interface LabStoreState {
 
     // Offline production
     calculateOfflineProduction: () => LabResources
-    syncOfflineProgress: () => void
+    syncOfflineProgress: () => { production: LabResources; elapsedSeconds: number }
 
     // Minigame stat application
     getAppliedStats: () => AppliedPhysicsStats

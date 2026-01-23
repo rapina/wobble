@@ -187,6 +187,8 @@ export const useLabStore = create<LabStoreState>()(
 
             syncOfflineProgress: () => {
                 const state = get()
+                const now = Date.now()
+                const elapsedSeconds = (now - state.lastSyncAt) / 1000
                 const offlineProduction = state.calculateOfflineProduction()
 
                 set((state) => ({
@@ -198,6 +200,12 @@ export const useLabStore = create<LabStoreState>()(
                     },
                     lastSyncAt: Date.now(),
                 }))
+
+                // Return offline info for UI display
+                return {
+                    production: offlineProduction,
+                    elapsedSeconds: Math.min(elapsedSeconds, 24 * 60 * 60),
+                }
             },
 
             getAppliedStats: (): AppliedPhysicsStats => {
@@ -262,7 +270,18 @@ export const useLabStore = create<LabStoreState>()(
     )
 )
 
-// Helper hook to sync offline progress on mount
-export function useSyncLabOnMount() {
-    useLabStore.getState().syncOfflineProgress()
+// Helper function to sync offline progress on mount
+// Returns offline production info if there was significant earnings
+export function syncLabOnMount(): { production: LabResources; elapsedSeconds: number } | null {
+    const result = useLabStore.getState().syncOfflineProgress()
+
+    // Check if there was significant production (at least 100 total resources)
+    const totalProduction = result.production.gravity + result.production.momentum +
+                           result.production.elasticity + result.production.thermodynamics
+
+    // Only return if significant and was offline for at least 30 seconds
+    if (totalProduction >= 100 && result.elapsedSeconds >= 30) {
+        return result
+    }
+    return null
 }

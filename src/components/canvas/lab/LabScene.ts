@@ -14,12 +14,10 @@ import { Application, Container, Graphics, Ticker, Point } from 'pixi.js'
 import { WorkStation } from './WorkStation'
 import { LabWorkerSprite } from './LabWorkerSprite'
 import { ResourcePopupManager } from './ResourcePopup'
-import { WorkerToolbar, WorkerData } from './WorkerToolbar'
 import { Wobble, WOBBLE_CHARACTERS } from '../Wobble'
 import { STATIONS, getCharacterBonus, LAB_COLORS } from '@/config/labConfig'
 import { useLabStore } from '@/stores/labStore'
 import type { StationId } from '@/types/lab'
-import { formatNumber } from '@/utils/numberFormatter'
 
 // Isometric grid settings
 const ISO_TILE_SIZE = 50 // Size of each isometric tile
@@ -49,12 +47,10 @@ export class LabScene {
     private workerSprites: Map<string, LabWorkerSprite> = new Map()
     private popupManager: ResourcePopupManager
 
-    // Toolbar and drag state
-    private toolbar: WorkerToolbar | null = null
+    // Drag state
     private dragGhost: Wobble | null = null
     private draggedWorkerId: string | null = null
     private dropTargetStation: StationId | null = null
-    private isAdFree = false
     private dragPhase = 0 // Animation phase for drag ghost
 
     // Work progress tracking (per worker)
@@ -103,7 +99,6 @@ export class LabScene {
         this.drawBackground()
         this.drawGrid()
         this.createStations()
-        this.setupToolbar()
         this.syncWorkersFromStore()
 
         // Bind animation loop
@@ -240,34 +235,9 @@ export class LabScene {
     }
 
     /**
-     * Setup the worker toolbar
+     * Handle drag start from worker sprite in scene
      */
-    private setupToolbar(): void {
-        this.toolbar = new WorkerToolbar({
-            screenWidth: this.width,
-            screenHeight: this.height,
-            isAdFree: this.isAdFree,
-            onDragStart: (workerId, globalX, globalY) => this.handleDragStart(workerId, globalX, globalY),
-            onDragMove: (globalX, globalY) => this.handleDragMove(globalX, globalY),
-            onDragEnd: (globalX, globalY) => this.handleDragEnd(globalX, globalY),
-        })
-        this.uiLayer.addChild(this.toolbar)
-    }
-
-    /**
-     * Set ad-free status (affects toolbar position)
-     */
-    setAdFreeStatus(isAdFree: boolean): void {
-        this.isAdFree = isAdFree
-        if (this.toolbar) {
-            this.toolbar.resize(this.width, this.height, isAdFree)
-        }
-    }
-
-    /**
-     * Handle drag start from toolbar
-     */
-    private handleDragStart(workerId: string, globalX: number, globalY: number): void {
+    private handleWorkerSpriteDragStart(workerId: string, globalX: number, globalY: number): void {
         const worker = useLabStore.getState().workers.find((w) => w.id === workerId)
         if (!worker) return
 
@@ -308,67 +278,6 @@ export class LabScene {
         this.dragGhost.y = localPos.y
 
         // Update drop target highlight
-        this.updateDropTargetHighlight(globalX, globalY)
-    }
-
-    /**
-     * Handle drag end (from toolbar)
-     */
-    private handleDragEnd(globalX: number, globalY: number): void {
-        if (!this.draggedWorkerId) return
-
-        // Find station at drop position
-        const stationId = this.findStationAtPosition(globalX, globalY)
-
-        // Get current worker assignment
-        const worker = useLabStore.getState().workers.find((w) => w.id === this.draggedWorkerId)
-        const currentStation = worker?.assignedStation
-
-        if (stationId) {
-            // Dropped on a station
-            if (stationId !== currentStation) {
-                // Assign to new station immediately (teleport, don't walk)
-                this.assignWorkerToStation(this.draggedWorkerId, stationId, true)
-            }
-            // If dropped on same station, do nothing
-        } else if (currentStation) {
-            // Dropped outside any station - unassign the worker
-            this.assignWorkerToStation(this.draggedWorkerId, null)
-        }
-
-        // Clean up drag state
-        this.cleanupDrag()
-    }
-
-    /**
-     * Handle drag start from worker sprite in scene
-     */
-    private handleWorkerSpriteDragStart(workerId: string, globalX: number, globalY: number): void {
-        const worker = useLabStore.getState().workers.find((w) => w.id === workerId)
-        if (!worker) return
-
-        this.draggedWorkerId = workerId
-        this.dragPhase = 0 // Reset animation phase
-
-        // Create drag ghost with panicked expression
-        const character = WOBBLE_CHARACTERS[worker.shape]
-        this.dragGhost = new Wobble({
-            size: 55,
-            color: character.color,
-            shape: worker.shape,
-            expression: 'surprised', // Panicked look!
-            showShadow: true,
-            showLegs: true, // Show legs for frantic animation
-        })
-
-        // Position at touch point
-        const localPos = this.container.toLocal(new Point(globalX, globalY))
-        this.dragGhost.x = localPos.x
-        this.dragGhost.y = localPos.y
-
-        this.dragLayer.addChild(this.dragGhost)
-
-        // Check for initial station highlight
         this.updateDropTargetHighlight(globalX, globalY)
     }
 
@@ -476,11 +385,6 @@ export class LabScene {
             this.dragGhost = null
         }
 
-        // Reset toolbar item visibility
-        if (this.draggedWorkerId && this.toolbar) {
-            this.toolbar.setWorkerDragVisibility(this.draggedWorkerId, true)
-        }
-
         // Clear drop target
         this.dropTargetStation = null
         this.draggedWorkerId = null
@@ -559,24 +463,6 @@ export class LabScene {
 
         // Update station active states
         this.updateStationStates()
-
-        // Sync toolbar
-        this.syncToolbar()
-    }
-
-    /**
-     * Sync toolbar with current workers
-     */
-    private syncToolbar(): void {
-        if (!this.toolbar) return
-
-        const storeWorkers = useLabStore.getState().workers
-        const workerData: WorkerData[] = storeWorkers.map((w) => ({
-            id: w.id,
-            shape: w.shape,
-            assignedStation: w.assignedStation,
-        }))
-        this.toolbar.syncWorkers(workerData)
     }
 
     /**
@@ -613,9 +499,6 @@ export class LabScene {
         // Reset progress
         this.workProgress.set(workerId, 0)
         this.updateStationStates()
-
-        // Sync toolbar to update assigned state
-        this.syncToolbar()
     }
 
     private updateStationStates(): void {
@@ -728,11 +611,6 @@ export class LabScene {
             const yOffset = Math.abs(Math.sin(this.dragPhase * 4)) * 5
             this.dragGhost.pivot.y = yOffset
         }
-
-        // Update toolbar animations
-        if (this.toolbar) {
-            this.toolbar.update(delta)
-        }
     }
 
     /**
@@ -762,15 +640,10 @@ export class LabScene {
             sprite.setHomePosition(centerX, centerY)
         }
 
-        // Update toolbar
-        if (this.toolbar) {
-            this.toolbar.resize(this.width, this.height, this.isAdFree)
-        }
-
         // Cancel any active drag on resize
         this.cleanupDrag()
-        if (this.toolbar) {
-            this.toolbar.cancelAllDrags()
+        for (const sprite of this.workerSprites.values()) {
+            sprite.cancelDrag()
         }
     }
 
@@ -800,12 +673,6 @@ export class LabScene {
             station.destroy()
         }
         this.stations.clear()
-
-        // Cleanup toolbar
-        if (this.toolbar) {
-            this.toolbar.destroy()
-            this.toolbar = null
-        }
 
         // Cleanup drag ghost
         if (this.dragGhost) {

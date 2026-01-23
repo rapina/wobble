@@ -11,6 +11,7 @@
 import { Container, Graphics, Text, TextStyle, Sprite, Texture } from 'pixi.js'
 import { RunMap, MapNode, RunRank, parseNodeId } from './RunMapTypes'
 import { BalatroFilter } from '@/components/canvas/filters/BalatroFilter'
+import { GAME_WIDTH } from '../StageConfig'
 
 /**
  * Depth zone definitions
@@ -151,6 +152,8 @@ export class RunMapDisplay {
     readonly container: Container
     private width: number
     private height: number
+    private mapOffsetX: number // Offset to center fixed-width content
+    private effectiveMapWidth: number // Actual map width (may be less than GAME_WIDTH on narrow screens)
 
     // Visual layers (back to front)
     private backgroundSprite: Sprite | null = null
@@ -230,6 +233,9 @@ export class RunMapDisplay {
     constructor(width: number, height: number) {
         this.width = width
         this.height = height
+        // On narrow screens (like Galaxy Flip folded), use full screen width
+        this.effectiveMapWidth = Math.min(width, GAME_WIDTH)
+        this.mapOffsetX = Math.max(0, (width - this.effectiveMapWidth) / 2)
 
         this.container = new Container()
         this.container.eventMode = 'static'
@@ -753,6 +759,7 @@ export class RunMapDisplay {
 
     /**
      * Get node position with organic wavy offset
+     * Positions are centered within the effective map width area
      */
     private getNodePosition(node: MapNode): { x: number; y: number } {
         // Create organic horizontal offset based on depth
@@ -761,13 +768,16 @@ export class RunMapDisplay {
         const depthFactor = node.depth * 0.7 + seed
 
         // Combine multiple frequencies for organic feel
-        const wave1 = Math.sin(depthFactor * 1.3) * 35
-        const wave2 = Math.sin(depthFactor * 2.7 + 1.5) * 20
-        const wave3 = Math.cos(depthFactor * 0.8 + 0.7) * 15
+        // Scale wave amplitude based on available width
+        const widthScale = this.effectiveMapWidth / GAME_WIDTH
+        const wave1 = Math.sin(depthFactor * 1.3) * 35 * widthScale
+        const wave2 = Math.sin(depthFactor * 2.7 + 1.5) * 20 * widthScale
+        const wave3 = Math.cos(depthFactor * 0.8 + 0.7) * 15 * widthScale
 
         const xOffset = wave1 + wave2 + wave3
 
-        const x = this.width / 2 + xOffset
+        // Center within the effective map width area
+        const x = this.mapOffsetX + this.effectiveMapWidth / 2 + xOffset
         const y = ABYSS_CONFIG.padding.top + node.depth * ABYSS_CONFIG.nodeSpacingY
         return { x, y }
     }
@@ -1503,6 +1513,9 @@ export class RunMapDisplay {
     resize(width: number, height: number): void {
         this.width = width
         this.height = height
+        // Recalculate for narrow screens
+        this.effectiveMapWidth = Math.min(width, GAME_WIDTH)
+        this.mapOffsetX = Math.max(0, (width - this.effectiveMapWidth) / 2)
 
         if (this.backgroundSprite) {
             this.backgroundSprite.width = width

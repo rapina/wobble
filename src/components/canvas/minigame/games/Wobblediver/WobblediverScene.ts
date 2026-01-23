@@ -25,7 +25,7 @@ import { AbyssFluidFilter } from '@/components/canvas/filters/AbyssFluidFilter'
 import { BalatroFilter } from '@/components/canvas/filters/BalatroFilter'
 import { StageGenerator } from './StageGenerator'
 import { AbyssTentacle } from './AbyssTentacle'
-import { StageConfig, AnchorPersonalityConfig, ANCHOR_PERSONALITIES } from './StageConfig'
+import { StageConfig, AnchorPersonalityConfig, ANCHOR_PERSONALITIES, GAME_WIDTH } from './StageConfig'
 import { musicManager, AudioBands } from '@/services/MusicManager'
 import i18n from '@/i18n'
 import { useRunStore } from '@/stores/runStore'
@@ -165,7 +165,12 @@ export class WobblediverScene extends BaseMiniGameScene {
     // Visual elements
     declare private backgroundGraphics: Graphics
     declare private boundaryGraphics: Graphics
-    declare private spikesGraphics: Graphics // Separate layer for audio-reactive spikes
+    declare private outerAbyssGraphics: Graphics // Fill area outside game boundaries
+    declare private wallTentaclesGraphics: Graphics // Animated boundary tentacles
+    private wallTentacleTime = 0 // Animation time for wall tentacles
+    private wallTentacleTips: { x: number; y: number; side: 'left' | 'right' }[] = [] // For collision
+    private wallTentacleDamageCooldown = 0 // Cooldown to prevent rapid damage
+    private wallTentacleReachTarget: { x: number; y: number } | null = null // Player pos when close
     declare private instructionText: Text
     declare private outText: Text
 
@@ -200,6 +205,8 @@ export class WobblediverScene extends BaseMiniGameScene {
     declare private boundaryRight: number
     declare private boundaryTop: number
     declare private boundaryBottom: number
+    declare private gameOffsetX: number // Offset to center fixed-width game area
+    declare private effectiveGameWidth: number // Actual game width (may be less than GAME_WIDTH on narrow screens)
 
     // Game state
     declare private roundNumber: number
@@ -336,10 +343,13 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.roundTransitionTime = 0
         this.roundStartTime = 0
 
-        // Define game boundary - use full screen, leave space for banner ad at bottom
-        this.boundaryPadding = 0 // No side padding - use full width
-        this.boundaryLeft = 0
-        this.boundaryRight = this.width
+        // Define game boundary - use fixed width centered, leave space for banner ad at bottom
+        // On narrow screens (like Galaxy Flip folded), use full screen width instead
+        this.effectiveGameWidth = Math.min(this.width, GAME_WIDTH)
+        this.gameOffsetX = Math.max(0, (this.width - this.effectiveGameWidth) / 2)
+        this.boundaryPadding = 0 // No side padding within game area
+        this.boundaryLeft = this.gameOffsetX
+        this.boundaryRight = this.gameOffsetX + this.effectiveGameWidth
         this.boundaryTop = 0 // Start from top
         this.boundaryBottom = this.height - 60 // Leave 60px for banner ad
 
@@ -549,7 +559,8 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     private setupAnchorWobble(): void {
-        const anchorX = this.width / 2
+        // Center anchor in game area (not screen)
+        const anchorX = this.gameOffsetX + this.effectiveGameWidth / 2
         const anchorY = 70 // Fixed position from top (clear of HUD)
 
         this.anchorWobble = new AnchorWobble(anchorX, anchorY)
@@ -1532,109 +1543,347 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     private setupBoundary(): void {
+        // Outer abyss areas (behind everything in game area)
+        this.outerAbyssGraphics = new Graphics()
+        this.gameContainer.addChild(this.outerAbyssGraphics)
+
         this.boundaryGraphics = new Graphics()
         this.gameContainer.addChild(this.boundaryGraphics)
 
-        // Separate layer for audio-reactive spikes
-        this.spikesGraphics = new Graphics()
-        this.gameContainer.addChild(this.spikesGraphics)
+        // Animated wall tentacles (on top of boundary)
+        this.wallTentaclesGraphics = new Graphics()
+        this.gameContainer.addChild(this.wallTentaclesGraphics)
 
+        this.drawOuterAbyss()
         this.drawBoundary()
-        this.drawSpikes({ bass: 0, mid: 0, high: 0, overall: 0 }) // Initial draw
+        this.drawWallTentacles({ bass: 0, mid: 0, high: 0, overall: 0 }) // Initial draw
     }
 
     /**
-     * Draw audio-reactive wall spikes (equalizer effect)
+     * Draw the dark abyss areas outside the game boundaries
      */
-    private drawSpikes(audioBands: AudioBands): void {
-        const g = this.spikesGraphics
+    private drawOuterAbyss(): void {
+        const g = this.outerAbyssGraphics
         g.clear()
 
         const left = this.boundaryLeft
-        const top = this.boundaryTop
         const right = this.boundaryRight
-        const bottom = this.boundaryBottom - 80
+        const screenWidth = this.width
+        const screenHeight = this.height
+
+        // Dark abyss color
+        const abyssColor = 0x0a0510
+
+        // Left outer area (from screen edge to game boundary)
+        if (left > 0) {
+            // Solid dark fill
+            g.rect(0, 0, left, screenHeight)
+            g.fill({ color: abyssColor, alpha: 0.95 })
+
+            // Gradient edge (lighter toward game area)
+            for (let i = 0; i < 20; i++) {
+                const alpha = 0.4 * (1 - i / 20)
+                g.rect(left - 20 + i, 0, 1, screenHeight)
+                g.fill({ color: 0x1a0820, alpha })
+            }
+
+            // Purple glow edge
+            for (let i = 0; i < 8; i++) {
+                const alpha = 0.15 * (1 - i / 8)
+                g.rect(left - 8 + i, 0, 1, screenHeight)
+                g.fill({ color: 0x6622aa, alpha })
+            }
+        }
+
+        // Right outer area (from game boundary to screen edge)
+        if (right < screenWidth) {
+            // Solid dark fill
+            g.rect(right, 0, screenWidth - right, screenHeight)
+            g.fill({ color: abyssColor, alpha: 0.95 })
+
+            // Gradient edge (lighter toward game area)
+            for (let i = 0; i < 20; i++) {
+                const alpha = 0.4 * (i / 20)
+                g.rect(right + i, 0, 1, screenHeight)
+                g.fill({ color: 0x1a0820, alpha })
+            }
+
+            // Purple glow edge
+            for (let i = 0; i < 8; i++) {
+                const alpha = 0.15 * (i / 8)
+                g.rect(right + i, 0, 1, screenHeight)
+                g.fill({ color: 0x6622aa, alpha })
+            }
+        }
+    }
+
+    /**
+     * Draw audio-reactive wall tentacles that react to player proximity
+     */
+    private drawWallTentacles(audioBands: AudioBands, playerX?: number, playerY?: number): void {
+        const g = this.wallTentaclesGraphics
+        g.clear()
+
+        // Clear tip positions for collision detection
+        this.wallTentacleTips = []
+
+        const left = this.boundaryLeft
+        const top = this.boundaryTop + 60 // Start below HUD
+        const right = this.boundaryRight
+        const bottom = this.boundaryBottom - 80 // Stop above water
         const wallHeight = bottom - top
 
-        const spikeSpacing = 30
-        const spikeCount = Math.floor(wallHeight / spikeSpacing)
+        const tentacleSpacing = 45 // Spacing between tentacles
+        const tentacleCount = Math.floor(wallHeight / tentacleSpacing)
+        const time = this.wallTentacleTime
 
-        // Left wall spikes (pointing right)
-        for (let i = 0; i < spikeCount; i++) {
-            const spikeY = top + 20 + i * spikeSpacing
+        // Detection range for player proximity
+        const detectionRange = 70 // How close player needs to be to trigger reaction
+        const maxReachBonus = 25 // How much extra the tentacle extends when reaching
 
-            // Distribute audio bands across spikes (equalizer style)
-            // Bottom spikes = bass, middle = mid, top = high
-            const normalizedPos = i / spikeCount
+        // Abyss tentacle colors
+        const tentacleBaseColor = 0x3a1a4a // Dark purple
+        const tentacleGlowColor = 0x6633aa // Purple glow
+        const tentacleTipColor = 0x9944cc // Brighter tip
+        const aggressiveColor = 0xaa2244 // Red when aggressive
+        const aggressiveGlow = 0xff4466 // Red glow when aggressive
+
+        // Left wall tentacles (reaching right into game area)
+        for (let i = 0; i < tentacleCount; i++) {
+            const baseY = top + 30 + i * tentacleSpacing
+
+            // Audio reactivity (equalizer style)
+            const normalizedPos = i / tentacleCount
             let audioLevel: number
             if (normalizedPos < 0.33) {
-                audioLevel = audioBands.bass // Bottom = bass
+                audioLevel = audioBands.bass
             } else if (normalizedPos < 0.66) {
-                audioLevel = audioBands.mid // Middle = mid
+                audioLevel = audioBands.mid
             } else {
-                audioLevel = audioBands.high // Top = high
+                audioLevel = audioBands.high
             }
 
-            // Base spike size + audio boost
-            const baseWidth = 14 + (i % 3) * 3
-            const audioBoost = audioLevel * 20 // Up to 20px extra from audio
-            const spikeWidth = baseWidth + audioBoost
-            const spikeHeight = 8 + (i % 2) * 2 + audioLevel * 4 // Slightly thicker too
+            // Check if player is close to this tentacle
+            let reachFactor = 0
+            let targetAngle = 0
+            if (playerX !== undefined && playerY !== undefined) {
+                const distToPlayer = Math.sqrt(
+                    Math.pow(playerX - left, 2) + Math.pow(playerY - baseY, 2)
+                )
+                if (distToPlayer < detectionRange + 50) {
+                    // Tentacle is alerted - calculate reach
+                    reachFactor = Math.max(0, 1 - distToPlayer / (detectionRange + 50))
+                    targetAngle = Math.atan2(playerY - baseY, playerX - left)
+                }
+            }
 
-            // Glow intensity based on audio
-            const glowAlpha = 0.12 + audioLevel * 0.25
+            // Tentacle parameters (varying per tentacle) - shorter lengths
+            const phaseOffset = i * 0.7 + i * i * 0.1
+            const baseLength = 12 + (i % 3) * 5 + audioLevel * 12 + reachFactor * maxReachBonus
+            const segments = 4
+            const waveAmp = (6 + audioLevel * 4) * (1 - reachFactor * 0.5) // Less wave when reaching
 
-            // Spike glow/shadow (draw first, behind)
-            g.moveTo(left, spikeY - spikeHeight / 2 - 1)
-            g.lineTo(left + spikeWidth + 3, spikeY)
-            g.lineTo(left, spikeY + spikeHeight / 2 + 1)
-            g.closePath()
-            g.fill({ color: BALATRO.red, alpha: glowAlpha })
+            // Choose colors based on aggression
+            const currentBaseColor = reachFactor > 0.3 ? aggressiveColor : tentacleBaseColor
+            const currentGlowColor = reachFactor > 0.3 ? aggressiveGlow : tentacleGlowColor
+            const currentTipColor = reachFactor > 0.3 ? 0xff6688 : tentacleTipColor
 
-            // Main spike shape
-            g.moveTo(left, spikeY - spikeHeight / 2)
-            g.lineTo(left + spikeWidth, spikeY)
-            g.lineTo(left, spikeY + spikeHeight / 2)
-            g.closePath()
-            g.fill({ color: BALATRO.red, alpha: 0.55 + audioLevel * 0.3 })
+            // Draw tentacle as connected segments
+            const points: { x: number; y: number }[] = []
+            points.push({ x: left, y: baseY })
+
+            for (let s = 1; s <= segments; s++) {
+                const t = s / segments
+                // Normal wave motion
+                const wave = Math.sin(time * 2 + phaseOffset + t * Math.PI * 1.5) * waveAmp * t
+                // Base direction (right)
+                let x = left + baseLength * t * (0.9 + Math.sin(time * 1.5 + phaseOffset) * 0.1)
+                let y = baseY + wave + Math.sin(time * 3 + phaseOffset + s) * 3
+
+                // Bend toward player when reaching
+                if (reachFactor > 0) {
+                    const bendStrength = reachFactor * t * 30
+                    x += Math.cos(targetAngle) * bendStrength * 0.3
+                    y += Math.sin(targetAngle) * bendStrength
+                }
+
+                points.push({ x, y })
+            }
+
+            // Draw tentacle with gradient thickness
+            for (let p = 0; p < points.length - 1; p++) {
+                const t = p / (points.length - 1)
+                const thickness = (6 - t * 4) * (1 + audioLevel * 0.3) * (1 + reachFactor * 0.3)
+                const alpha = 0.7 - t * 0.3 + audioLevel * 0.2 + reachFactor * 0.2
+
+                // Glow (behind)
+                g.moveTo(points[p].x, points[p].y)
+                g.lineTo(points[p + 1].x, points[p + 1].y)
+                g.stroke({ color: currentGlowColor, width: thickness + 4, alpha: alpha * 0.3 })
+
+                // Main tentacle
+                g.moveTo(points[p].x, points[p].y)
+                g.lineTo(points[p + 1].x, points[p + 1].y)
+                g.stroke({ color: currentBaseColor, width: thickness, alpha })
+            }
+
+            // Tip glow (larger when aggressive)
+            const tip = points[points.length - 1]
+            const tipSize = 2 + audioLevel * 2 + reachFactor * 4
+            g.circle(tip.x, tip.y, tipSize)
+            g.fill({ color: currentTipColor, alpha: 0.5 + audioLevel * 0.3 + reachFactor * 0.3 })
+
+            // Store tip position for collision detection
+            this.wallTentacleTips.push({ x: tip.x, y: tip.y, side: 'left' })
         }
 
-        // Right wall spikes (pointing left)
-        for (let i = 0; i < spikeCount; i++) {
-            const spikeY = top + 35 + i * spikeSpacing
+        // Right wall tentacles (reaching left into game area)
+        for (let i = 0; i < tentacleCount; i++) {
+            const baseY = top + 50 + i * tentacleSpacing // Offset from left side
 
-            // Distribute audio bands (inverted for right side visual variety)
-            const normalizedPos = i / spikeCount
+            // Audio reactivity (inverted for variety)
+            const normalizedPos = i / tentacleCount
             let audioLevel: number
             if (normalizedPos < 0.33) {
-                audioLevel = audioBands.high // Bottom = high (inverted)
+                audioLevel = audioBands.high
             } else if (normalizedPos < 0.66) {
-                audioLevel = audioBands.mid // Middle = mid
+                audioLevel = audioBands.mid
             } else {
-                audioLevel = audioBands.bass // Top = bass (inverted)
+                audioLevel = audioBands.bass
             }
 
-            const baseWidth = 14 + ((i + 1) % 3) * 3
-            const audioBoost = audioLevel * 20
-            const spikeWidth = baseWidth + audioBoost
-            const spikeHeight = 8 + ((i + 1) % 2) * 2 + audioLevel * 4
+            // Check if player is close to this tentacle
+            let reachFactor = 0
+            let targetAngle = 0
+            if (playerX !== undefined && playerY !== undefined) {
+                const distToPlayer = Math.sqrt(
+                    Math.pow(playerX - right, 2) + Math.pow(playerY - baseY, 2)
+                )
+                if (distToPlayer < detectionRange + 50) {
+                    reachFactor = Math.max(0, 1 - distToPlayer / (detectionRange + 50))
+                    targetAngle = Math.atan2(playerY - baseY, playerX - right)
+                }
+            }
 
-            const glowAlpha = 0.12 + audioLevel * 0.25
+            const phaseOffset = i * 0.8 + i * i * 0.15 + Math.PI
+            const baseLength = 12 + ((i + 1) % 3) * 5 + audioLevel * 12 + reachFactor * maxReachBonus
+            const segments = 4
+            const waveAmp = (6 + audioLevel * 4) * (1 - reachFactor * 0.5)
 
-            // Spike glow/shadow
-            g.moveTo(right, spikeY - spikeHeight / 2 - 1)
-            g.lineTo(right - spikeWidth - 3, spikeY)
-            g.lineTo(right, spikeY + spikeHeight / 2 + 1)
-            g.closePath()
-            g.fill({ color: BALATRO.red, alpha: glowAlpha })
+            const currentBaseColor = reachFactor > 0.3 ? aggressiveColor : tentacleBaseColor
+            const currentGlowColor = reachFactor > 0.3 ? aggressiveGlow : tentacleGlowColor
+            const currentTipColor = reachFactor > 0.3 ? 0xff6688 : tentacleTipColor
 
-            // Main spike shape
-            g.moveTo(right, spikeY - spikeHeight / 2)
-            g.lineTo(right - spikeWidth, spikeY)
-            g.lineTo(right, spikeY + spikeHeight / 2)
-            g.closePath()
-            g.fill({ color: BALATRO.red, alpha: 0.55 + audioLevel * 0.3 })
+            const points: { x: number; y: number }[] = []
+            points.push({ x: right, y: baseY })
+
+            for (let s = 1; s <= segments; s++) {
+                const t = s / segments
+                const wave = Math.sin(time * 2 + phaseOffset + t * Math.PI * 1.5) * waveAmp * t
+                let x = right - baseLength * t * (0.9 + Math.sin(time * 1.5 + phaseOffset) * 0.1)
+                let y = baseY + wave + Math.sin(time * 3 + phaseOffset + s) * 3
+
+                if (reachFactor > 0) {
+                    const bendStrength = reachFactor * t * 30
+                    x += Math.cos(targetAngle) * bendStrength * 0.3
+                    y += Math.sin(targetAngle) * bendStrength
+                }
+
+                points.push({ x, y })
+            }
+
+            for (let p = 0; p < points.length - 1; p++) {
+                const t = p / (points.length - 1)
+                const thickness = (6 - t * 4) * (1 + audioLevel * 0.3) * (1 + reachFactor * 0.3)
+                const alpha = 0.7 - t * 0.3 + audioLevel * 0.2 + reachFactor * 0.2
+
+                g.moveTo(points[p].x, points[p].y)
+                g.lineTo(points[p + 1].x, points[p + 1].y)
+                g.stroke({ color: currentGlowColor, width: thickness + 4, alpha: alpha * 0.3 })
+
+                g.moveTo(points[p].x, points[p].y)
+                g.lineTo(points[p + 1].x, points[p + 1].y)
+                g.stroke({ color: currentBaseColor, width: thickness, alpha })
+            }
+
+            const tip = points[points.length - 1]
+            const tipSize = 2 + audioLevel * 2 + reachFactor * 4
+            g.circle(tip.x, tip.y, tipSize)
+            g.fill({ color: currentTipColor, alpha: 0.5 + audioLevel * 0.3 + reachFactor * 0.3 })
+
+            // Store tip position for collision detection
+            this.wallTentacleTips.push({ x: tip.x, y: tip.y, side: 'right' })
         }
+    }
+
+    /**
+     * Check wall tentacle collision with player and deal damage
+     */
+    private checkWallTentacleCollision(playerX: number, playerY: number): boolean {
+        const collisionRadius = 15 // How close player needs to be to take damage
+
+        for (const tip of this.wallTentacleTips) {
+            const dist = Math.sqrt(Math.pow(playerX - tip.x, 2) + Math.pow(playerY - tip.y, 2))
+            if (dist < collisionRadius) {
+                return true
+            }
+        }
+        return false
+    }
+
+    /**
+     * Handle wall tentacle damage to player
+     * Only deals damage - doesn't push player (obstacle tentacles handle that)
+     */
+    private handleWallTentacleDamage(): void {
+        if (!this.wobble) return
+
+        // Visual feedback - red flash
+        this.showWallTentacleHit(this.wobble.x, this.wobble.y)
+
+        // Deal damage in run mode
+        if (this.runMode) {
+            const runState = useRunStore.getState()
+            if (runState.activeRun) {
+                runState.damageHP(5) // 5 HP per tentacle hit
+                this.runHpLostThisStage += 5
+            }
+        }
+
+        // Show pain speech bubble
+        if (this.wobble) {
+            const painPhrases = ['Ow!', 'Ugh!', 'Ouch!', 'Agh!']
+            const phrase = painPhrases[Math.floor(Math.random() * painPhrases.length)]
+            this.wobble.showSpeechBubble(phrase, 0.5)
+        }
+    }
+
+    /**
+     * Visual effect when hit by wall tentacle
+     */
+    private showWallTentacleHit(x: number, y: number): void {
+        const ring = new Graphics()
+        ring.circle(x, y, 20)
+        ring.stroke({ color: 0xff4466, width: 4, alpha: 0.9 })
+        this.gameContainer.addChild(ring)
+
+        let elapsed = 0
+        const animate = () => {
+            elapsed += 1 / 60
+            const progress = elapsed / 0.25
+
+            ring.clear()
+            ring.circle(x, y, 20 + progress * 25)
+            ring.stroke({ color: 0xff4466, width: 4, alpha: 0.9 * (1 - progress) })
+
+            if (progress < 1) {
+                requestAnimationFrame(animate)
+            } else {
+                this.gameContainer.removeChild(ring)
+                ring.destroy()
+            }
+        }
+        requestAnimationFrame(animate)
     }
 
     private drawBoundary(): void {
@@ -3110,9 +3359,10 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.updateDepthColors(this.roundNumber)
 
         // Generate stage configuration using seeded generator
+        // Use effectiveGameWidth for proper positioning (adapts to narrow screens)
         this.currentStageConfig = this.stageGenerator.generate(
             this.roundNumber,
-            this.width,
+            this.effectiveGameWidth,
             this.height
         )
 
@@ -3222,17 +3472,19 @@ export class WobblediverScene extends BaseMiniGameScene {
 
     /**
      * Position goal (wormhole) using stage config
+     * Config positions are relative to game area, so we add gameOffsetX
      */
     private positionGoalFromConfig(config: StageConfig): void {
         const { wormhole } = config
+        const screenX = wormhole.x + this.gameOffsetX
 
-        this.goal.moveTo(wormhole.x, wormhole.y)
+        this.goal.moveTo(screenX, wormhole.y)
         this.goal.setRadius(wormhole.radius)
 
         // Position wormhole at same location
         // Always start at full size - shrinking happens during gameplay
         this.currentWormholeScale = 2.5
-        this.wormhole.moveTo(wormhole.x, wormhole.y)
+        this.wormhole.moveTo(screenX, wormhole.y)
         this.wormhole.setRadius(wormhole.radius)
         this.wormhole.setWidthScale(this.currentWormholeScale)
         this.wormhole.setOrientation(wormhole.orientation)
@@ -3243,6 +3495,7 @@ export class WobblediverScene extends BaseMiniGameScene {
 
     /**
      * Spawn portal pairs from stage config
+     * Config positions are relative to game area, so we add gameOffsetX
      */
     private spawnPortalPairsFromConfig(config: StageConfig): void {
         // Clear existing portals
@@ -3252,17 +3505,17 @@ export class WobblediverScene extends BaseMiniGameScene {
         }
         this.portalPairs = []
 
-        // Create portals from config
+        // Create portals from config (add gameOffsetX to x positions)
         for (const portalConfig of config.portalPairs) {
             const portalPair = new PortalPair({
                 entrance: {
-                    x: portalConfig.entrance.x,
+                    x: portalConfig.entrance.x + this.gameOffsetX,
                     y: portalConfig.entrance.y,
                     radius: portalConfig.entrance.radius,
                     orientation: portalConfig.entrance.orientation,
                 },
                 exit: {
-                    x: portalConfig.exit.x,
+                    x: portalConfig.exit.x + this.gameOffsetX,
                     y: portalConfig.exit.y,
                     radius: portalConfig.exit.radius,
                     orientation: portalConfig.exit.orientation,
@@ -3307,6 +3560,7 @@ export class WobblediverScene extends BaseMiniGameScene {
 
     /**
      * Update abyss tentacles from stage config
+     * Config positions are relative to game area, so we add gameOffsetX
      */
     private updateAbyssTentacles(config: StageConfig): void {
         // Clear existing tentacles
@@ -3323,10 +3577,15 @@ export class WobblediverScene extends BaseMiniGameScene {
         const maxRise = 150
         const waterSurfaceY = baseWaterLevel - config.waterLevelRise * maxRise
 
-        // Create tentacles from config
+        // Create tentacles from config (add gameOffsetX to x positions)
         for (const tentacleConfig of config.abyssTentacles) {
-            const tentacle = new AbyssTentacle(tentacleConfig, waterSurfaceY)
-            tentacle.setWormholePosition(config.wormhole.x, config.wormhole.y)
+            // Create a modified config with offset x position
+            const offsetConfig = {
+                ...tentacleConfig,
+                baseX: tentacleConfig.baseX + this.gameOffsetX,
+            }
+            const tentacle = new AbyssTentacle(offsetConfig, waterSurfaceY)
+            tentacle.setWormholePosition(config.wormhole.x + this.gameOffsetX, config.wormhole.y)
             tentacle.setWaterLevel(waterSurfaceY, this.height)
             this.abyssTentacles.push(tentacle)
             this.gameContainer.addChild(tentacle.container)
@@ -3336,6 +3595,7 @@ export class WobblediverScene extends BaseMiniGameScene {
     /**
      * Update abyss tentacle animation and apply displacement to wormhole
      * Tentacles pull the wormhole based on water level
+     * Config positions are relative to game area, so we add gameOffsetX
      */
     private updateAbyssTentacleAnimation(deltaSeconds: number): void {
         if (this.abyssTentacles.length === 0 || !this.currentStageConfig) return
@@ -3347,7 +3607,8 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         // Use BASE wormhole position for tentacle targeting (not current position!)
         // This prevents feedback loop where tentacles chase the displaced wormhole
-        const baseX = this.currentStageConfig.wormhole.x
+        // Add gameOffsetX since config positions are relative to game area
+        const baseX = this.currentStageConfig.wormhole.x + this.gameOffsetX
         const baseY = this.currentStageConfig.wormhole.y
 
         // Update wormhole position and water level for tentacles
@@ -3385,9 +3646,9 @@ export class WobblediverScene extends BaseMiniGameScene {
         const newX = baseX + totalDisplacementX
         const newY = baseY + totalDisplacementY
 
-        // Ensure wormhole stays within bounds
+        // Ensure wormhole stays within game bounds (use boundaryLeft/Right)
         const padding = 60
-        const clampedX = Math.max(padding, Math.min(this.width - padding, newX))
+        const clampedX = Math.max(this.boundaryLeft + padding, Math.min(this.boundaryRight - padding, newX))
         // Don't let the wormhole go too close to the water
         const minWormholeY = this.boundaryTop + 100
         const maxWormholeY = waterSurfaceY - 50 // Keep above water
@@ -3493,8 +3754,8 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     private getAnchorX(): number {
-        // Pendulum anchor is always at horizontal center
-        return this.width / 2
+        // Pendulum anchor is always at horizontal center of game area
+        return this.gameOffsetX + this.effectiveGameWidth / 2
     }
 
     private getRandomRopeLength(): number {
@@ -3568,13 +3829,13 @@ export class WobblediverScene extends BaseMiniGameScene {
         for (let i = 0; i < portalCount; i++) {
             const color = colors[i % colors.length]
 
-            // Entrance on left/top side
-            const entranceX = this.boundaryLeft + padding + Math.random() * (this.width * 0.3)
+            // Entrance on left/top side (within game area)
+            const entranceX = this.boundaryLeft + padding + Math.random() * (this.effectiveGameWidth * 0.3)
             const entranceY =
                 this.boundaryTop + 100 + Math.random() * (abyssTop - this.boundaryTop - 200)
 
-            // Exit on right/bottom side (strategic placement)
-            const exitX = this.width - padding - Math.random() * (this.width * 0.3)
+            // Exit on right/bottom side (strategic placement within game area)
+            const exitX = this.boundaryRight - padding - Math.random() * (this.effectiveGameWidth * 0.3)
             const exitY =
                 this.boundaryTop + 100 + Math.random() * (abyssTop - this.boundaryTop - 200)
 
@@ -3836,8 +4097,22 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Get audio bands for equalizer effect
         const audioBands = musicManager.getAudioBands()
 
-        // Update wall spikes with audio reactivity
-        this.drawSpikes(audioBands)
+        // Update wall tentacles with audio reactivity, animation, and player tracking
+        this.wallTentacleTime += deltaSeconds
+        const playerX = this.wobble?.x
+        const playerY = this.wobble?.y
+        this.drawWallTentacles(audioBands, playerX, playerY)
+
+        // Check wall tentacle collision and deal damage (with cooldown)
+        if (this.wallTentacleDamageCooldown > 0) {
+            this.wallTentacleDamageCooldown -= deltaSeconds
+        }
+        if (this.wobble && this.wobble.state === 'released' && this.wallTentacleDamageCooldown <= 0) {
+            if (this.checkWallTentacleCollision(this.wobble.x, this.wobble.y)) {
+                this.handleWallTentacleDamage()
+                this.wallTentacleDamageCooldown = 0.8 // 0.8 second cooldown between hits
+            }
+        }
 
         // Update obstacles with audio reactivity (equalizer effect)
         for (let i = 0; i < this.obstacles.length; i++) {
@@ -4345,8 +4620,8 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Reset anchor wobble to default personality
         this.anchorWobble.setPersonality(ANCHOR_PERSONALITIES.steady)
 
-        // Reset goal position
-        this.goal.moveTo(this.width / 2, this.height - 200)
+        // Reset goal position (center in game area)
+        this.goal.moveTo(this.gameOffsetX + this.effectiveGameWidth / 2, this.height - 200)
         this.goal.setRadius(35)
         this.wormhole.setWidthScale(2.5)
         this.wormhole.setOrientation('horizontal')
@@ -4599,11 +4874,12 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.runHpLostThisStage = 0
 
         // Generate stage config based on node type
+        // Use effectiveGameWidth for proper positioning (adapts to narrow screens)
         this.stageGenerator.setSeed(node.stageSeed)
         const config = this.stageGenerator.generateForRunNode(
             node.type,
             node.depth,
-            this.width,
+            this.effectiveGameWidth,
             this.height,
             node.stageSeed
         )
