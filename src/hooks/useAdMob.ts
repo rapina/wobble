@@ -21,11 +21,16 @@ const TEST_BANNER_ID_IOS = 'ca-app-pub-3940256099942544/2934735716'
 const TEST_REWARD_ID_ANDROID = 'ca-app-pub-3940256099942544/5224354917'
 const TEST_REWARD_ID_IOS = 'ca-app-pub-3940256099942544/1712485313'
 
-// Production Ad Unit IDs (TODO: 실제 ID로 교체)
-const PROD_BANNER_ID_ANDROID = 'ca-app-pub-XXXXX/YYYYY'
-const PROD_BANNER_ID_IOS = 'ca-app-pub-XXXXX/YYYYY'
-const PROD_REWARD_ID_ANDROID = 'ca-app-pub-XXXXX/ZZZZZ'
-const PROD_REWARD_ID_IOS = 'ca-app-pub-XXXXX/ZZZZZ'
+// Production Ad Unit IDs
+const PROD_BANNER_ID_ANDROID = 'ca-app-pub-4114842312318190/5483532947'
+const PROD_BANNER_ID_IOS = 'ca-app-pub-XXXXX/YYYYY' // TODO: iOS 배너 ID 설정
+const PROD_REWARD_ID_ANDROID = 'ca-app-pub-4114842312318190/3062411404'
+const PROD_REWARD_ID_IOS = 'ca-app-pub-XXXXX/ZZZZZ' // TODO: iOS 보상형 ID 설정
+
+// Test Device IDs (MD5 hash of Android ID)
+const TEST_DEVICE_IDS = [
+    '397475BB1D479B892747EFED8A85E4F4', // rapina's device
+]
 
 interface UseAdMobReturn {
     isInitialized: boolean
@@ -62,6 +67,7 @@ export function useAdMob(): UseAdMobReturn {
             try {
                 await AdMob.initialize({
                     initializeForTesting: IS_AD_TESTING,
+                    testingDevices: TEST_DEVICE_IDS,
                 })
                 setIsInitialized(true)
                 console.log('AdMob initialized successfully')

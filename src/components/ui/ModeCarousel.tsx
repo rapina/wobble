@@ -5,7 +5,7 @@ import { EffectCoverflow, Pagination } from 'swiper/modules'
 import type { Swiper as SwiperType } from 'swiper'
 import { WobbleShape, WobbleExpression } from '@/components/canvas/Wobble'
 import { GameMode } from '@/components/screens/HomeScreen'
-import { ShoppingBag, BookOpen, Gamepad2, FlaskConical, Factory } from 'lucide-react'
+import { ShoppingBag, BookOpen, Gamepad2, FlaskConical } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // @ts-ignore - Swiper CSS modules
@@ -66,15 +66,6 @@ export const modeCards: ModeCard[] = [
         icon: <BookOpen className="w-5 h-5" />,
         wobbleShape: 'pentagon',
         wobbleExpression: 'surprised',
-    },
-    {
-        id: 'lab',
-        titleKey: 'home.lab',
-        descriptionKey: 'home.labDesc',
-        color: '#ff8c42',
-        icon: <Factory className="w-5 h-5" />,
-        wobbleShape: 'square',
-        wobbleExpression: 'effort',
     },
     {
         id: 'shop',
