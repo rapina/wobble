@@ -27,9 +27,9 @@ const PROD_BANNER_ID_IOS = 'ca-app-pub-XXXXX/YYYYY' // TODO: iOS 배너 ID 설�
 const PROD_REWARD_ID_ANDROID = 'ca-app-pub-4114842312318190/3062411404'
 const PROD_REWARD_ID_IOS = 'ca-app-pub-XXXXX/ZZZZZ' // TODO: iOS 보상형 ID 설정
 
-// Test Device IDs (MD5 hash of Android ID)
+// Test Device IDs (from AdMob logcat)
 const TEST_DEVICE_IDS = [
-    '397475BB1D479B892747EFED8A85E4F4', // rapina's device
+    'F6058443C3FCC3AA17192007CF0A85A3', // rapina's device
 ]
 
 interface UseAdMobReturn {

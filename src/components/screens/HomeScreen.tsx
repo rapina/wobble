@@ -11,6 +11,7 @@ import {
     gameSelectPreset,
     collectionPreset,
     shopPreset,
+    labPreset,
     BackgroundPreset,
 } from '@/config/backgroundPresets'
 import ShuffleText from '@/components/ShuffleText'
@@ -48,7 +49,7 @@ const theme = {
     purple: '#9b59b6',
 }
 
-export type GameMode = 'sandbox' | 'collection' | 'game' | 'learning' | 'shop'
+export type GameMode = 'sandbox' | 'collection' | 'game' | 'learning' | 'shop' | 'lab'
 
 // Category colors for formula cards (matching SandboxScreen)
 const categoryColors: Record<FormulaCategory, string> = {
@@ -69,6 +70,7 @@ const modeBackgrounds: Record<GameMode, BackgroundPreset> = {
     collection: collectionPreset,
     shop: shopPreset,
     learning: sandboxPreset,
+    lab: labPreset,
 }
 
 interface HomeScreenProps {
