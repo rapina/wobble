@@ -389,56 +389,65 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                 {/* Persona-style Logo */}
                 <div className="text-center relative flex flex-col items-center">
                     {/* Angled background shape - fixed width container */}
-                    <div className="relative" style={{ width: '280px', minWidth: '280px' }}>
+                    <div className="relative" style={{ width: '310px', minWidth: '310px' }}>
                         {/* Shadow layer */}
                         <div
                             className="absolute inset-0 translate-x-2 translate-y-2"
                             style={{
                                 background: theme.border,
                                 transform: 'skewX(-5deg) translateX(8px) translateY(8px)',
+                                clipPath: 'polygon(8% 0%, 100% 0%, 92% 100%, 0% 100%)',
                             }}
                         />
-                        {/* Main container */}
+                        {/* Border wrapper */}
                         <div
-                            className="relative px-10 py-4 overflow-hidden"
+                            className="relative"
                             style={{
-                                background: `linear-gradient(135deg, ${theme.bgPanel} 0%, #2a3234 100%)`,
-                                border: `4px solid ${theme.border}`,
+                                background: theme.border,
                                 transform: 'skewX(-5deg)',
                                 clipPath: 'polygon(8% 0%, 100% 0%, 92% 100%, 0% 100%)',
-                                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)',
+                                padding: '4px',
                             }}
                         >
-                            <h1
-                                className="text-5xl font-black tracking-wider whitespace-nowrap"
+                            {/* Main container */}
+                            <div
+                                className="relative px-10 py-4 overflow-hidden"
                                 style={{
-                                    color: theme.gold,
-                                    textShadow: `3px 3px 0 ${theme.border}, -1px -1px 0 ${theme.border}`,
-                                    fontFamily: 'system-ui, -apple-system, sans-serif',
-                                    transform: 'skewX(5deg)',
-                                    animation: 'persona-title-pulse 3s ease-in-out infinite',
+                                    background: `linear-gradient(135deg, ${theme.bgPanel} 0%, #2a3234 100%)`,
+                                    clipPath: 'polygon(8% 0%, 100% 0%, 92% 100%, 0% 100%)',
+                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)',
                                 }}
                             >
-                                <ShuffleText
-                                    duration={1200}
-                                    trigger="mount"
-                                    loop={true}
-                                    loopDelay={5000}
+                                <h1
+                                    className="text-5xl font-black tracking-wider whitespace-nowrap"
+                                    style={{
+                                        color: theme.gold,
+                                        textShadow: `3px 3px 0 ${theme.border}, -1px -1px 0 ${theme.border}`,
+                                        fontFamily: 'system-ui, -apple-system, sans-serif',
+                                        transform: 'skewX(5deg)',
+                                        animation: 'persona-title-pulse 3s ease-in-out infinite',
+                                    }}
                                 >
-                                    {t('home.title')}
-                                </ShuffleText>
-                            </h1>
+                                    <ShuffleText
+                                        duration={1200}
+                                        trigger="mount"
+                                        loop={true}
+                                        loopDelay={5000}
+                                    >
+                                        {t('home.title')}
+                                    </ShuffleText>
+                                </h1>
+                            </div>
+                            {/* Accent line - inside border wrapper to match frame */}
+                            <div
+                                className="absolute -bottom-0 left-0 right-0 h-1"
+                                style={{
+                                    background: theme.gold,
+                                    animation: 'persona-line-glow 2s ease-in-out infinite',
+                                    boxShadow: `0 0 8px ${theme.gold}80`,
+                                }}
+                            />
                         </div>
-                        {/* Accent line */}
-                        <div
-                            className="absolute -bottom-1 left-0 right-0 h-1"
-                            style={{
-                                background: theme.gold,
-                                transform: 'skewX(-5deg)',
-                                animation: 'persona-line-glow 2s ease-in-out infinite',
-                                boxShadow: `0 0 8px ${theme.gold}80`,
-                            }}
-                        />
                     </div>
                     {/* Subtitle with persona style */}
                     <div

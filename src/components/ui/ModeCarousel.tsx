@@ -189,109 +189,118 @@ export function ModeCarousel({
                                         clipPath: 'polygon(5% 0%, 100% 0%, 95% 100%, 0% 100%)',
                                     }}
                                 />
-                                {/* Main card */}
+                                {/* Main card - border wrapper */}
                                 <div
-                                    className="relative overflow-hidden"
+                                    className="relative"
                                     style={{
-                                        background: `linear-gradient(135deg, ${theme.bgPanel} 0%, #2a3234 100%)`,
-                                        border: `3px solid ${isActive ? card.color : theme.border}`,
+                                        background: isActive ? card.color : theme.border,
                                         clipPath: 'polygon(5% 0%, 100% 0%, 95% 100%, 0% 100%)',
+                                        padding: '3px',
                                     }}
                                 >
-                                    {/* Diagonal accent stripe */}
+                                    {/* Inner card content */}
                                     <div
-                                        className="absolute top-0 right-0 w-full h-full pointer-events-none"
+                                        className="relative overflow-hidden"
                                         style={{
-                                            background: `linear-gradient(135deg, transparent 70%, ${card.color}20 70%)`,
+                                            background: `linear-gradient(135deg, ${theme.bgPanel} 0%, #2a3234 100%)`,
+                                            clipPath: 'polygon(5% 0%, 100% 0%, 95% 100%, 0% 100%)',
                                         }}
-                                    />
-                                    {/* Color accent bar */}
-                                    <div
-                                        className="h-2"
-                                        style={{
-                                            background: card.color,
-                                            clipPath: 'polygon(0 0, 100% 0, 98% 100%, 2% 100%)',
-                                        }}
-                                    />
-
-                                    {/* Card Content */}
-                                    <div className="p-4 flex flex-col items-center relative">
-                                        {/* Mode Icon with glow */}
+                                    >
+                                        {/* Diagonal accent stripe */}
                                         <div
-                                            className="mb-2 p-2 rounded-lg relative"
+                                            className="absolute top-0 right-0 w-full h-full pointer-events-none"
                                             style={{
-                                                background: isActive ? `${card.color}30` : 'transparent',
-                                                transform: 'skewX(3deg)',
-                                            }}
-                                        >
-                                            {isActive && (
-                                                <div
-                                                    className="absolute inset-0 rounded-lg blur-md"
-                                                    style={{ background: card.color, opacity: 0.3 }}
-                                                />
-                                            )}
-                                            <span
-                                                className="relative"
-                                                style={{
-                                                    color: card.color,
-                                                    filter: isActive ? `drop-shadow(0 0 4px ${card.color})` : 'none',
-                                                }}
-                                            >
-                                                {card.icon}
-                                            </span>
-                                        </div>
-
-                                        {/* Mode Title */}
-                                        <h3
-                                            className="text-sm font-black tracking-wider uppercase text-center"
-                                            style={{
-                                                color: isActive ? card.color : 'white',
-                                                transform: 'skewX(3deg)',
-                                                textShadow: isActive ? `0 0 10px ${card.color}80` : 'none',
-                                            }}
-                                        >
-                                            {t(card.titleKey)}
-                                        </h3>
-
-                                        {/* Badge for specific modes */}
-                                        {card.id === 'sandbox' && unseenFormulaCount && unseenFormulaCount > 0 && (
-                                            <span
-                                                className="mt-2 px-2 py-0.5 text-[9px] font-black"
-                                                style={{
-                                                    background: theme.red,
-                                                    color: 'white',
-                                                    transform: 'skewX(-5deg)',
-                                                    boxShadow: `2px 2px 0 ${theme.border}`,
-                                                }}
-                                            >
-                                                NEW
-                                            </span>
-                                        )}
-                                        {card.id === 'collection' && collectionProgress && achievementProgress && (
-                                            <span
-                                                className="mt-2 px-2 py-0.5 text-[10px] font-bold"
-                                                style={{
-                                                    background: 'rgba(0,0,0,0.5)',
-                                                    color: 'white',
-                                                    transform: 'skewX(-5deg)',
-                                                }}
-                                            >
-                                                {collectionProgress.unlocked + achievementProgress.unlocked}/
-                                                {collectionProgress.total + achievementProgress.total}
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {/* Bottom accent */}
-                                    {isActive && (
-                                        <div
-                                            className="absolute bottom-0 left-0 right-0 h-1"
-                                            style={{
-                                                background: card.color,
-                                                animation: 'persona-bottom-glow 1.5s ease-in-out infinite',
+                                                background: `linear-gradient(135deg, transparent 70%, ${card.color}20 70%)`,
                                             }}
                                         />
-                                    )}
+                                        {/* Color accent bar */}
+                                        <div
+                                            className="h-2"
+                                            style={{
+                                                background: card.color,
+                                                clipPath: 'polygon(0 0, 100% 0, 98% 100%, 2% 100%)',
+                                            }}
+                                        />
+
+                                        {/* Card Content */}
+                                        <div className="p-4 flex flex-col items-center relative">
+                                            {/* Mode Icon with glow */}
+                                            <div
+                                                className="mb-2 p-2 rounded-lg relative"
+                                                style={{
+                                                    background: isActive ? `${card.color}30` : 'transparent',
+                                                    transform: 'skewX(3deg)',
+                                                }}
+                                            >
+                                                {isActive && (
+                                                    <div
+                                                        className="absolute inset-0 rounded-lg blur-md"
+                                                        style={{ background: card.color, opacity: 0.3 }}
+                                                    />
+                                                )}
+                                                <span
+                                                    className="relative"
+                                                    style={{
+                                                        color: card.color,
+                                                        filter: isActive ? `drop-shadow(0 0 4px ${card.color})` : 'none',
+                                                    }}
+                                                >
+                                                    {card.icon}
+                                                </span>
+                                            </div>
+
+                                            {/* Mode Title */}
+                                            <h3
+                                                className="text-sm font-black tracking-wider uppercase text-center"
+                                                style={{
+                                                    color: isActive ? card.color : 'white',
+                                                    transform: 'skewX(3deg)',
+                                                    textShadow: isActive ? `0 0 10px ${card.color}80` : 'none',
+                                                }}
+                                            >
+                                                {t(card.titleKey)}
+                                            </h3>
+
+                                            {/* Badge for specific modes */}
+                                            {card.id === 'sandbox' && unseenFormulaCount && unseenFormulaCount > 0 && (
+                                                <span
+                                                    className="mt-2 px-2 py-0.5 text-[9px] font-black"
+                                                    style={{
+                                                        background: theme.red,
+                                                        color: 'white',
+                                                        transform: 'skewX(-5deg)',
+                                                        boxShadow: `2px 2px 0 ${theme.border}`,
+                                                    }}
+                                                >
+                                                    NEW
+                                                </span>
+                                            )}
+                                            {card.id === 'collection' && collectionProgress && achievementProgress && (
+                                                <span
+                                                    className="mt-2 px-2 py-0.5 text-[10px] font-bold"
+                                                    style={{
+                                                        background: 'rgba(0,0,0,0.5)',
+                                                        color: 'white',
+                                                        transform: 'skewX(-5deg)',
+                                                    }}
+                                                >
+                                                    {collectionProgress.unlocked + achievementProgress.unlocked}/
+                                                    {collectionProgress.total + achievementProgress.total}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Bottom accent */}
+                                        {isActive && (
+                                            <div
+                                                className="absolute bottom-0 left-0 right-0 h-1"
+                                                style={{
+                                                    background: card.color,
+                                                    animation: 'persona-bottom-glow 1.5s ease-in-out infinite',
+                                                }}
+                                            />
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         )}
