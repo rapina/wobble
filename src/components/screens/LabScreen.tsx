@@ -24,6 +24,8 @@ import Balatro from '@/components/Balatro'
 import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
 import { LabScene } from '@/components/canvas/lab/LabScene'
 import { useLabStore, useSyncLabOnMount } from '@/stores/labStore'
+import { usePurchaseStore } from '@/stores/purchaseStore'
+import { useAdMob } from '@/hooks/useAdMob'
 import { STATIONS, UPGRADES } from '@/config/labConfig'
 import { labPreset } from '@/config/backgroundPresets'
 import { WOBBLE_CHARACTERS } from '@/components/canvas/Wobble'
@@ -86,6 +88,10 @@ export function LabScreen({ onBack }: LabScreenProps) {
     const upgradeStat = useLabStore((s) => s.upgradeStat)
     const getUpgradeCost = useLabStore((s) => s.getUpgradeCost)
 
+    // AdMob
+    const { isAdFree } = usePurchaseStore()
+    const { isBannerVisible, hideBanner, isNative } = useAdMob()
+
     // UI state
     const [mounted, setMounted] = useState(false)
     const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null)
@@ -106,6 +112,15 @@ export function LabScreen({ onBack }: LabScreenProps) {
     useEffect(() => {
         useSyncLabOnMount()
     }, [])
+
+    // Hide banner when unmounting
+    useEffect(() => {
+        return () => {
+            if (isBannerVisible) {
+                hideBanner()
+            }
+        }
+    }, [isBannerVisible, hideBanner])
 
     // Initialize PixiJS
     useEffect(() => {
@@ -340,7 +355,7 @@ export function LabScreen({ onBack }: LabScreenProps) {
                     mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                 )}
                 style={{
-                    bottom: 'max(env(safe-area-inset-bottom, 0px), 12px)',
+                    bottom: `calc(max(env(safe-area-inset-bottom, 0px), 8px) + ${isAdFree ? 12 : 110}px)`,
                     paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
                     paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
                 }}
@@ -593,6 +608,29 @@ export function LabScreen({ onBack }: LabScreenProps) {
                                 ))}
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Ad Banner Area (Web placeholder) */}
+            {!isNative && !isAdFree && (
+                <div
+                    className="absolute left-0 right-0 z-10 flex items-center justify-center"
+                    style={{
+                        bottom: 'max(env(safe-area-inset-bottom, 0px), 8px)',
+                        height: '98px', // Banner height + button spacing
+                        paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
+                        paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
+                    }}
+                >
+                    <div
+                        className="w-full h-14 rounded-lg flex items-center justify-center"
+                        style={{
+                            background: `${theme.bgPanel}cc`,
+                            border: `2px dashed ${theme.border}`,
+                        }}
+                    >
+                        <span className="text-white/30 text-xs font-bold">AD BANNER (WEB)</span>
                     </div>
                 </div>
             )}
