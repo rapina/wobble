@@ -168,8 +168,9 @@ export const LAB_COLORS = {
 
 /**
  * Worker movement speed (pixels per second at default scale)
+ * Reduced for smaller workers to maintain visual proportionality
  */
-export const WORKER_SPEED = 100
+export const WORKER_SPEED = 50
 
 /**
  * Maximum workers allowed in the lab
@@ -185,18 +186,18 @@ export const STARTING_WORKERS: string[] = ['circle', 'square']
  * Worker AI Behavior Configuration
  */
 export const WORKER_AI = {
-    // Idle wandering
-    idleWanderRadius: 0.15,
-    idleWanderInterval: { min: 2, max: 5 },
-    idlePauseChance: 0.3,
+    // Idle wandering (labor market clustering)
+    idleWanderRadius: 0.06, // Smaller radius for tight clustering in labor market
+    idleWanderInterval: { min: 1.5, max: 4 }, // More frequent small movements
+    idlePauseChance: 0.4, // Higher chance to pause (standing around)
 
     // Working behavior
     workCyclesBeforeBreak: { min: 2, max: 5 },
     breakDuration: { min: 1.5, max: 3 },
-    breakWanderRadius: 0.08,
+    breakWanderRadius: 0.04, // Smaller break wander for smaller workers
 
     // Movement
-    arrivalThreshold: 5,
+    arrivalThreshold: 3, // Smaller threshold for smaller workers
 }
 
 /**
@@ -227,25 +228,25 @@ export interface StationAffordance {
 export const STATION_AFFORDANCES: Record<StationId, StationAffordance> = {
     'gravity-lab': {
         type: 'observe_orbit',
-        workerOffset: { x: 0, y: 30 },
+        workerOffset: { x: 0, y: 45 }, // Below the floating simulation
         animationSpeed: 1.0,
         particleEffect: 'glow',
     },
     'accelerator': {
         type: 'track_particles',
-        workerOffset: { x: -15, y: 25 },
+        workerOffset: { x: 0, y: 45 },
         animationSpeed: 1.5,
         particleEffect: 'energy',
     },
     'collision-lab': {
         type: 'test_collision',
-        workerOffset: { x: 10, y: 30 },
+        workerOffset: { x: 0, y: 45 },
         animationSpeed: 0.8,
         particleEffect: 'sparks',
     },
     'thermodynamics-lab': {
         type: 'measure_heat',
-        workerOffset: { x: -5, y: 28 },
+        workerOffset: { x: 0, y: 45 },
         animationSpeed: 1.2,
         particleEffect: 'glow',
     },

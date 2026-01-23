@@ -22,6 +22,10 @@
         "upgrades": "強化",
         "appliedStats": "適用ステータス",
         "perLevel": "レベルごと",
+        "welcomeBack": "おかえりなさい！",
+        "ofResearch": "の研究成果",
+        "workersProduced": "研究員たちが生産しました：",
+        "collect": "受け取る！",
         "stations": {
             "gravityLab": "重力研究所",
             "accelerator": "加速器",

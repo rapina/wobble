@@ -27,6 +27,15 @@ const GRID_ALPHA = 0.15
 const GRID_DOT_COLOR = 0x6a6a8a
 const GRID_DOT_ALPHA = 0.25
 
+// Worker sizing
+const WORKER_SIZE = 18 // Small wobbles (1/3 of original 50-55)
+const DRAG_GHOST_SIZE = 25 // Slightly larger when dragging
+
+// Labor market (idle area) settings
+const LABOR_MARKET_Y_RATIO = 0.82 // Bottom area of screen
+const LABOR_MARKET_HEIGHT_RATIO = 0.12 // Height of idle zone
+const LABOR_MARKET_WIDTH_RATIO = 0.7 // Width centered
+
 export class LabScene {
     private app: Application
     public container: Container
@@ -244,10 +253,10 @@ export class LabScene {
         this.draggedWorkerId = workerId
         this.dragPhase = 0 // Reset animation phase
 
-        // Create drag ghost with panicked expression
+        // Create drag ghost with panicked expression (slightly larger than normal)
         const character = WOBBLE_CHARACTERS[worker.shape]
         this.dragGhost = new Wobble({
-            size: 55,
+            size: DRAG_GHOST_SIZE,
             color: character.color,
             shape: worker.shape,
             expression: 'surprised', // Panicked look!
@@ -391,6 +400,76 @@ export class LabScene {
     }
 
     /**
+     * Get labor market (idle area) bounds
+     */
+    private getLaborMarketBounds(): { x: number; y: number; width: number; height: number } {
+        const width = this.width * LABOR_MARKET_WIDTH_RATIO
+        const height = this.height * LABOR_MARKET_HEIGHT_RATIO
+        const x = (this.width - width) / 2
+        const y = this.height * LABOR_MARKET_Y_RATIO
+        return { x, y, width, height }
+    }
+
+    /**
+     * Get a clustered position in the labor market for idle workers
+     */
+    private getIdleWorkerPosition(index: number, total: number): { x: number; y: number } {
+        const bounds = this.getLaborMarketBounds()
+        const centerX = bounds.x + bounds.width / 2
+        const centerY = bounds.y + bounds.height / 2
+
+        // Cluster workers together with slight randomness
+        const spreadX = Math.min(bounds.width * 0.6, total * 12)
+        const spreadY = bounds.height * 0.4
+
+        // Arrange in a loose cluster
+        const offsetX = (Math.random() - 0.5) * spreadX
+        const offsetY = (Math.random() - 0.5) * spreadY
+
+        return {
+            x: centerX + offsetX,
+            y: centerY + offsetY,
+        }
+    }
+
+    /**
+     * Get worker position around a station (for multiple workers)
+     * Workers are spread in a row below the station
+     */
+    private getStationWorkerPosition(stationId: StationId, workerIndex: number): { x: number; y: number } {
+        const station = this.stations.get(stationId)
+        if (!station) return { x: this.width / 2, y: this.height / 2 }
+
+        const basePos = station.getWorkerPosition()
+
+        // Spread workers in a horizontal row with slight vertical offset
+        const spacing = 22 // Space between workers
+        const totalOffset = (workerIndex - 0.5) * spacing // Center the row
+
+        return {
+            x: basePos.x + totalOffset,
+            y: basePos.y + (workerIndex % 2) * 8, // Slight stagger for depth
+        }
+    }
+
+    /**
+     * Count how many workers are already assigned to a station
+     */
+    private getStationWorkerCount(stationId: StationId): number {
+        const storeWorkers = useLabStore.getState().workers
+        return storeWorkers.filter((w) => w.assignedStation === stationId).length
+    }
+
+    /**
+     * Get the index of a worker within its station's worker list
+     */
+    private getWorkerIndexAtStation(workerId: string, stationId: StationId): number {
+        const storeWorkers = useLabStore.getState().workers
+        const stationWorkers = storeWorkers.filter((w) => w.assignedStation === stationId)
+        return stationWorkers.findIndex((w) => w.id === workerId)
+    }
+
+    /**
      * Sync workers from store
      */
     syncWorkersFromStore(): void {
@@ -406,21 +485,36 @@ export class LabScene {
             }
         }
 
-        // Center position for idle workers
-        const centerX = this.width * 0.5
-        const centerY = this.height * 0.5
+        // Labor market position for idle workers
+        const laborMarket = this.getLaborMarketBounds()
+        const laborMarketCenterX = laborMarket.x + laborMarket.width / 2
+        const laborMarketCenterY = laborMarket.y + laborMarket.height / 2
+
+        // Count workers per station for positioning
+        const workersPerStation = new Map<StationId, number>()
+        for (const worker of storeWorkers) {
+            if (worker.assignedStation) {
+                const count = workersPerStation.get(worker.assignedStation) || 0
+                workersPerStation.set(worker.assignedStation, count + 1)
+            }
+        }
+        const stationWorkerIndex = new Map<StationId, number>()
+
+        // Count idle workers for positioning
+        const idleWorkers = storeWorkers.filter((w) => !w.assignedStation)
+        let idleIndex = 0
 
         // Add or update sprites for store workers
         for (const worker of storeWorkers) {
             let sprite = this.workerSprites.get(worker.id)
 
             if (!sprite) {
-                // Create new sprite
-                sprite = new LabWorkerSprite(worker.id, worker.shape, 45)
+                // Create new sprite with smaller size
+                sprite = new LabWorkerSprite(worker.id, worker.shape, WORKER_SIZE)
 
-                // Set scene bounds for AI wandering
+                // Set scene bounds for AI wandering (labor market area)
                 sprite.setSceneBounds(this.width, this.height)
-                sprite.setHomePosition(centerX, centerY)
+                sprite.setHomePosition(laborMarketCenterX, laborMarketCenterY)
 
                 // Setup drag callbacks for reassignment
                 sprite.setDragCallbacks(
@@ -429,20 +523,18 @@ export class LabScene {
                     (globalX, globalY) => this.handleWorkerSpriteDragEnd(globalX, globalY)
                 )
 
-                // Position at center or at assigned station
+                // Position at station or in labor market
                 if (worker.assignedStation) {
-                    const station = this.stations.get(worker.assignedStation)
-                    if (station) {
-                        const pos = station.getWorkerPosition()
-                        sprite.setPosition(pos.x, pos.y)
-                        sprite.goToStation(pos.x, pos.y)
-                    }
+                    const currentIndex = stationWorkerIndex.get(worker.assignedStation) || 0
+                    stationWorkerIndex.set(worker.assignedStation, currentIndex + 1)
+                    const pos = this.getStationWorkerPosition(worker.assignedStation, currentIndex)
+                    sprite.setPosition(pos.x, pos.y)
+                    sprite.goToStation(pos.x, pos.y)
                 } else {
-                    // Random position in center area
-                    sprite.setPosition(
-                        this.width * 0.35 + Math.random() * this.width * 0.3,
-                        this.height * 0.35 + Math.random() * this.height * 0.3
-                    )
+                    // Position in labor market
+                    const pos = this.getIdleWorkerPosition(idleIndex, idleWorkers.length)
+                    sprite.setPosition(pos.x, pos.y)
+                    idleIndex++
                 }
 
                 this.workerSprites.set(worker.id, sprite)
@@ -451,7 +543,7 @@ export class LabScene {
             } else {
                 // Update existing sprite's scene bounds (in case of resize)
                 sprite.setSceneBounds(this.width, this.height)
-                sprite.setHomePosition(centerX, centerY)
+                sprite.setHomePosition(laborMarketCenterX, laborMarketCenterY)
             }
 
             // Update sprite state only if not currently doing something
@@ -473,13 +565,18 @@ export class LabScene {
         const sprite = this.workerSprites.get(workerId)
         if (!sprite) return
 
+        // Count existing workers at the station BEFORE updating store
+        const existingCount = stationId ? this.getStationWorkerCount(stationId) : 0
+
         // Update store
         useLabStore.getState().assignWorker(workerId, stationId)
 
         if (stationId) {
             const station = this.stations.get(stationId)
             if (station) {
-                const pos = station.getWorkerPosition()
+                // New worker gets the next index (existingCount = their index since it's 0-based)
+                const pos = this.getStationWorkerPosition(stationId, existingCount)
+
                 sprite.assignedStation = stationId
 
                 if (immediate) {
@@ -491,9 +588,17 @@ export class LabScene {
                 }
             }
         } else {
+            // Save previous station before unassigning
+            const previousStation = sprite.assignedStation
+
             // Unassign - sprite will return to idle wandering
             sprite.assignedStation = null
             sprite.stopWorking()
+
+            // Reposition remaining workers at the station they left
+            if (previousStation) {
+                this.repositionWorkersAtStation(previousStation)
+            }
         }
 
         // Reset progress
@@ -501,15 +606,36 @@ export class LabScene {
         this.updateStationStates()
     }
 
+    /**
+     * Reposition all workers at a station (e.g., after one leaves)
+     */
+    private repositionWorkersAtStation(stationId: StationId): void {
+        const storeWorkers = useLabStore.getState().workers
+        const stationWorkers = storeWorkers.filter((w) => w.assignedStation === stationId)
+
+        stationWorkers.forEach((worker, index) => {
+            const sprite = this.workerSprites.get(worker.id)
+            if (sprite && sprite.state === 'working') {
+                const pos = this.getStationWorkerPosition(stationId, index)
+                sprite.setPosition(pos.x, pos.y)
+            }
+        })
+    }
+
     private updateStationStates(): void {
         const storeWorkers = useLabStore.getState().workers
 
         for (const [stationId, station] of this.stations) {
-            const assignedWorker = storeWorkers.find((w) => w.assignedStation === stationId)
-            if (assignedWorker) {
-                const sprite = this.workerSprites.get(assignedWorker.id)
-                // Station is active only when worker is actually working (not on break)
-                station.isActive = sprite?.state === 'working'
+            // Find all workers assigned to this station
+            const assignedWorkers = storeWorkers.filter((w) => w.assignedStation === stationId)
+
+            if (assignedWorkers.length > 0) {
+                // Station is active if any worker is actually working (not on break)
+                const anyWorking = assignedWorkers.some((w) => {
+                    const sprite = this.workerSprites.get(w.id)
+                    return sprite?.state === 'working'
+                })
+                station.isActive = anyWorking
             } else {
                 station.isActive = false
             }
@@ -632,12 +758,13 @@ export class LabScene {
             }
         }
 
-        // Update worker scene bounds
-        const centerX = this.width * 0.5
-        const centerY = this.height * 0.5
+        // Update worker scene bounds (use labor market center for idle workers)
+        const laborMarket = this.getLaborMarketBounds()
+        const laborMarketCenterX = laborMarket.x + laborMarket.width / 2
+        const laborMarketCenterY = laborMarket.y + laborMarket.height / 2
         for (const sprite of this.workerSprites.values()) {
             sprite.setSceneBounds(this.width, this.height)
-            sprite.setHomePosition(centerX, centerY)
+            sprite.setHomePosition(laborMarketCenterX, laborMarketCenterY)
         }
 
         // Cancel any active drag on resize

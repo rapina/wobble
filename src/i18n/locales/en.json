@@ -22,6 +22,10 @@
         "upgrades": "Upgrades",
         "appliedStats": "Applied Stats",
         "perLevel": "per level",
+        "welcomeBack": "Welcome Back!",
+        "ofResearch": "of research",
+        "workersProduced": "Your workers produced:",
+        "collect": "Collect!",
         "stations": {
             "gravityLab": "Gravity Lab",
             "accelerator": "Accelerator",

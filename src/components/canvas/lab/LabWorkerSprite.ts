@@ -78,15 +78,15 @@ export class LabWorkerSprite extends Container {
     private onDragMoveCallback?: (globalX: number, globalY: number) => void
     private onDragEndCallback?: (globalX: number, globalY: number) => void
 
-    constructor(workerId: string, shape: WobbleShape, size: number = 50) {
+    constructor(workerId: string, shape: WobbleShape, size: number = 18) {
         super()
         this.workerId = workerId
         this.shape = shape
 
         const character = WOBBLE_CHARACTERS[shape]
 
-        // Set hit area for click detection (PixiJS v8 style)
-        this.hitArea = new Circle(0, 0, size * 0.8)
+        // Set hit area for click detection (PixiJS v8 style) - larger hit area for smaller sprites
+        this.hitArea = new Circle(0, 0, Math.max(size * 1.2, 20))
 
         this.wobble = new Wobble({
             size,
@@ -255,18 +255,10 @@ export class LabWorkerSprite extends Container {
 
     /**
      * Move to station and start working
+     * Position is the final target position (already includes any offsets)
      */
-    goToStation(stationX: number, stationY: number): void {
-        // Apply station offset from affordance
-        let offsetX = 0
-        let offsetY = 0
-        if (this._assignedStation) {
-            const affordance = STATION_AFFORDANCES[this._assignedStation]
-            offsetX = affordance.workerOffset.x
-            offsetY = affordance.workerOffset.y
-        }
-
-        this.stationPosition = { x: stationX + offsetX, y: stationY + offsetY }
+    goToStation(targetX: number, targetY: number): void {
+        this.stationPosition = { x: targetX, y: targetY }
         this.moveTo(this.stationPosition.x, this.stationPosition.y, () => {
             this.startWorking()
         })
@@ -274,18 +266,10 @@ export class LabWorkerSprite extends Container {
 
     /**
      * Teleport to station and start working immediately (for drag-drop)
+     * Position is the final target position (already includes any offsets)
      */
-    teleportToStation(stationX: number, stationY: number): void {
-        // Apply station offset from affordance
-        let offsetX = 0
-        let offsetY = 0
-        if (this._assignedStation) {
-            const affordance = STATION_AFFORDANCES[this._assignedStation]
-            offsetX = affordance.workerOffset.x
-            offsetY = affordance.workerOffset.y
-        }
-
-        this.stationPosition = { x: stationX + offsetX, y: stationY + offsetY }
+    teleportToStation(targetX: number, targetY: number): void {
+        this.stationPosition = { x: targetX, y: targetY }
         this.setPosition(this.stationPosition.x, this.stationPosition.y)
         this.startWorking()
     }

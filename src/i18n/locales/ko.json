@@ -22,6 +22,10 @@
         "upgrades": "강화",
         "appliedStats": "적용 스탯",
         "perLevel": "레벨당",
+        "welcomeBack": "다시 오셨군요!",
+        "ofResearch": "동안 연구한 결과",
+        "workersProduced": "연구원들이 생산했어요:",
+        "collect": "받기!",
         "stations": {
             "gravityLab": "중력 연구소",
             "accelerator": "가속기",
