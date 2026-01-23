@@ -162,6 +162,9 @@ export class WobblediverScene extends BaseMiniGameScene {
     private isShowingRunMap: boolean = false
     private runHpLostThisStage: number = 0
 
+    // Pending timeout IDs for cleanup
+    private pendingTimeoutIds: number[] = []
+
     // Visual elements
     declare private backgroundGraphics: Graphics
     declare private boundaryGraphics: Graphics
@@ -303,6 +306,9 @@ export class WobblediverScene extends BaseMiniGameScene {
         size: number
         openness: number
         targetOpenness: number
+        blinkTimer: number
+        nextBlink: number
+        phase: number // For unique animation offset
     }[] = []
     private transitionDepthParticles: {
         x: number
@@ -1055,15 +1061,19 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         // Create surface ripples
         for (let i = 0; i < 3; i++) {
-            setTimeout(() => {
-                this.surfaceRipples.push({
-                    x: pos.x,
-                    y: abyssTop,
-                    radius: 5,
-                    maxRadius: 60 + i * 20,
-                    alpha: 0.8,
-                })
+            const timeoutId = window.setTimeout(() => {
+                // Check if scene is still active before modifying state
+                if (this.surfaceRipples) {
+                    this.surfaceRipples.push({
+                        x: pos.x,
+                        y: abyssTop,
+                        radius: 5,
+                        maxRadius: 60 + i * 20,
+                        alpha: 0.8,
+                    })
+                }
             }, i * 200)
+            this.pendingTimeoutIds.push(timeoutId)
         }
 
         // Start blood rise
@@ -2541,46 +2551,26 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     /**
-     * Draw a single result screen eye
+     * Draw a single result screen eye - Simple red eye with vertical slit pupil
      */
     private drawResultEye(g: Graphics, eye: ResultEye, time: number): void {
         if (eye.openness < 0.1) return
 
         const size = eye.size
 
-        // Outer glow
-        const glowColor = this.lerpColor(0x6a3080, 0x8b2040, eye.intensity)
-        g.ellipse(eye.x, eye.y, size + 15, (size + 15) * 0.5 * eye.openness)
-        g.fill({ color: glowColor, alpha: 0.2 * eye.intensity })
+        // Outer red glow
+        g.ellipse(eye.x, eye.y, size * 1.3, size * 0.6 * eye.openness)
+        g.fill({ color: 0xef4444, alpha: 0.3 * eye.intensity })
 
-        g.ellipse(eye.x, eye.y, size + 8, (size + 8) * 0.5 * eye.openness)
-        g.fill({ color: glowColor, alpha: 0.35 * eye.intensity })
+        // Main eye (red ellipse)
+        g.ellipse(eye.x, eye.y, size, size * 0.45 * eye.openness)
+        g.fill({ color: 0xdc2626, alpha: 0.8 * eye.intensity })
 
-        // Eye white
-        g.ellipse(eye.x, eye.y, size, size * 0.5 * eye.openness)
-        g.fill({ color: 0xeeeedd, alpha: 0.85 })
-
-        // Iris
-        const irisSize = size * 0.65
-        const lookDist = size * 0.15
-        const pupilX = eye.x + Math.cos(eye.lookAngle) * lookDist
-        const pupilY = eye.y + Math.sin(eye.lookAngle) * lookDist * eye.openness
-
-        g.ellipse(pupilX, pupilY, irisSize, irisSize * 0.5 * eye.openness)
-        g.fill({ color: 0xaa1133, alpha: 0.95 })
-
-        // Pupil
-        const pupilSize = irisSize * 0.4
-        g.ellipse(pupilX, pupilY, pupilSize, pupilSize * 0.5 * eye.openness)
-        g.fill({ color: 0x000000, alpha: 0.98 })
-
-        // Highlight
-        g.circle(
-            pupilX - pupilSize * 0.4,
-            pupilY - pupilSize * 0.2 * eye.openness,
-            pupilSize * 0.25
-        )
-        g.fill({ color: 0xffffff, alpha: 0.8 })
+        // Vertical slit pupil
+        const pupilW = size * 0.15
+        const pupilH = size * 0.35 * eye.openness
+        g.ellipse(eye.x, eye.y, pupilW, pupilH)
+        g.fill({ color: 0x000000, alpha: 0.95 })
     }
 
     /**
@@ -2828,6 +2818,9 @@ export class WobblediverScene extends BaseMiniGameScene {
                 size: 15 + Math.random() * 25,
                 openness: 0,
                 targetOpenness: 1,
+                blinkTimer: 0,
+                nextBlink: 2 + Math.random() * 4, // Random time until first blink
+                phase: Math.random() * Math.PI * 2, // Unique animation offset
             })
         }
 
@@ -2987,9 +2980,25 @@ export class WobblediverScene extends BaseMiniGameScene {
             const eyeProgress = Math.min(1, (t - closePhaseEnd - 0.1) / 0.3)
 
             for (const eye of this.transitionEyes) {
-                eye.openness =
-                    Math.min(eye.openness + deltaSeconds * 3, eye.targetOpenness) * eyeProgress
-                this.drawTransitionEye(g, eye, effectsFade, animT)
+                // Blink logic
+                eye.blinkTimer += deltaSeconds
+                if (eye.blinkTimer >= eye.nextBlink) {
+                    // Start blink - close eye
+                    eye.targetOpenness = 0
+                    if (eye.openness < 0.1) {
+                        // Eye is closed, reopen it
+                        eye.targetOpenness = 1
+                        eye.blinkTimer = 0
+                        eye.nextBlink = 2 + Math.random() * 5 // Next blink in 2-7 seconds
+                    }
+                }
+
+                // Smooth interpolation toward target
+                eye.openness += (eye.targetOpenness - eye.openness) * deltaSeconds * 8
+                // Apply eye progress for fade-in effect
+                const effectiveOpenness = eye.openness * eyeProgress
+                const drawEye = { ...eye, openness: effectiveOpenness }
+                this.drawTransitionEye(g, drawEye, effectsFade, animT)
             }
         }
 
@@ -3148,46 +3157,28 @@ export class WobblediverScene extends BaseMiniGameScene {
 
     private drawTransitionEye(
         g: Graphics,
-        eye: { x: number; y: number; size: number; openness: number },
+        eye: { x: number; y: number; size: number; openness: number; phase?: number },
         fade: number,
         time: number
     ): void {
-        if (eye.openness < 0.1) return
+        if (eye.openness < 0.05) return
 
         const size = eye.size
         const openness = eye.openness
 
-        // Outer glow
-        g.ellipse(eye.x, eye.y, size + 20, (size + 20) * 0.5 * openness)
-        g.fill({ color: 0xff0000, alpha: 0.15 * fade })
+        // Outer red glow
+        g.ellipse(eye.x, eye.y, size * 1.3, size * 0.6 * openness)
+        g.fill({ color: 0xef4444, alpha: 0.3 * fade })
 
-        g.ellipse(eye.x, eye.y, size + 10, (size + 10) * 0.5 * openness)
-        g.fill({ color: 0x8b0000, alpha: 0.3 * fade })
+        // Main eye (red ellipse)
+        g.ellipse(eye.x, eye.y, size, size * 0.45 * openness)
+        g.fill({ color: 0xdc2626, alpha: 0.8 * fade })
 
-        // Eye white
-        g.ellipse(eye.x, eye.y, size, size * 0.5 * openness)
-        g.fill({ color: 0xf0eedd, alpha: 0.9 * fade })
-
-        // Iris
-        const irisSize = size * 0.7
-        const lookX = Math.sin(time * 2 + eye.x * 0.01) * size * 0.1
-        const lookY = Math.cos(time * 1.5 + eye.y * 0.01) * size * 0.05 * openness
-
-        g.ellipse(eye.x + lookX, eye.y + lookY, irisSize, irisSize * 0.5 * openness)
-        g.fill({ color: 0xcc0000, alpha: 0.95 * fade })
-
-        // Pupil (contracted, predatory)
-        const pupilSize = irisSize * 0.3
-        g.ellipse(eye.x + lookX, eye.y + lookY, pupilSize, pupilSize * 0.5 * openness)
-        g.fill({ color: 0x000000, alpha: 0.98 * fade })
-
-        // Highlight
-        g.circle(
-            eye.x + lookX - pupilSize * 0.5,
-            eye.y + lookY - pupilSize * 0.2 * openness,
-            pupilSize * 0.3
-        )
-        g.fill({ color: 0xffffff, alpha: 0.8 * fade })
+        // Vertical slit pupil
+        const pupilW = size * 0.15
+        const pupilH = size * 0.35 * openness
+        g.ellipse(eye.x, eye.y, pupilW, pupilH)
+        g.fill({ color: 0x000000, alpha: 0.95 * fade })
     }
 
     private showStageResult(
@@ -4574,9 +4565,12 @@ export class WobblediverScene extends BaseMiniGameScene {
             this.isWaitingForRetry = true
 
             // Wait for death animation, then restart current stage
-            setTimeout(() => {
+            const timeoutId = window.setTimeout(() => {
+                // Check if scene is still active
+                if (!this.isWaitingForRetry) return
                 this.restartCurrentStage()
             }, 1200)
+            this.pendingTimeoutIds.push(timeoutId)
         }
         // If lives == 0, LifeSystem will trigger game over automatically
     }
@@ -4800,6 +4794,12 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     public destroy(): void {
+        // Clear all pending timeouts to prevent callbacks on destroyed scene
+        for (const timeoutId of this.pendingTimeoutIds) {
+            window.clearTimeout(timeoutId)
+        }
+        this.pendingTimeoutIds = []
+
         // Cleanup run mode UI (including minimap)
         this.cleanupRunModeUI()
 
@@ -4836,6 +4836,16 @@ export class WobblediverScene extends BaseMiniGameScene {
         if (this.intro) {
             this.intro.hide()
             this.intro = null
+        }
+
+        // Cleanup PixiJS filters to prevent GPU memory leaks
+        if (this.abyssBackgroundFilter) {
+            this.abyssBackgroundSprite.filters = []
+            this.abyssBackgroundFilter.destroy()
+        }
+        if (this.abyssFluidFilter) {
+            this.abyssFluidSprite.filters = []
+            this.abyssFluidFilter.destroy()
         }
 
         super.destroy()

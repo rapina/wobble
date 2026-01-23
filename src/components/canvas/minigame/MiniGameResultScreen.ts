@@ -1024,46 +1024,26 @@ export class MiniGameResultScreen {
     }
 
     /**
-     * Draw a single abyss eye
+     * Draw a single abyss eye - Simple red eye with vertical slit pupil
      */
     private drawAbyssEye(g: Graphics, eye: AbyssEye): void {
         if (eye.openness < 0.1) return
 
         const size = eye.size
 
-        // Outer glow
-        const glowColor = 0x6a3080
-        g.ellipse(eye.x, eye.y, size + 12, (size + 12) * 0.5 * eye.openness)
-        g.fill({ color: glowColor, alpha: 0.2 * eye.intensity })
+        // Outer red glow
+        g.ellipse(eye.x, eye.y, size * 1.3, size * 0.6 * eye.openness)
+        g.fill({ color: 0xef4444, alpha: 0.3 * eye.intensity })
 
-        g.ellipse(eye.x, eye.y, size + 6, (size + 6) * 0.5 * eye.openness)
-        g.fill({ color: glowColor, alpha: 0.35 * eye.intensity })
+        // Main eye (red ellipse)
+        g.ellipse(eye.x, eye.y, size, size * 0.45 * eye.openness)
+        g.fill({ color: 0xdc2626, alpha: 0.8 * eye.intensity })
 
-        // Eye white
-        g.ellipse(eye.x, eye.y, size, size * 0.5 * eye.openness)
-        g.fill({ color: 0xeeeedd, alpha: 0.85 })
-
-        // Iris
-        const irisSize = size * 0.65
-        const lookDist = size * 0.15
-        const pupilX = eye.x + Math.cos(eye.lookAngle) * lookDist
-        const pupilY = eye.y + Math.sin(eye.lookAngle) * lookDist * eye.openness
-
-        g.ellipse(pupilX, pupilY, irisSize, irisSize * 0.5 * eye.openness)
-        g.fill({ color: 0xaa1133, alpha: 0.95 })
-
-        // Pupil
-        const pupilSize = irisSize * 0.4
-        g.ellipse(pupilX, pupilY, pupilSize, pupilSize * 0.5 * eye.openness)
-        g.fill({ color: 0x000000, alpha: 0.98 })
-
-        // Highlight
-        g.circle(
-            pupilX - pupilSize * 0.4,
-            pupilY - pupilSize * 0.2 * eye.openness,
-            pupilSize * 0.25
-        )
-        g.fill({ color: 0xffffff, alpha: 0.8 })
+        // Vertical slit pupil
+        const pupilW = size * 0.15
+        const pupilH = size * 0.35 * eye.openness
+        g.ellipse(eye.x, eye.y, pupilW, pupilH)
+        g.fill({ color: 0x000000, alpha: 0.95 })
     }
 
     /**

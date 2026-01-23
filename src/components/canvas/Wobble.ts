@@ -1316,6 +1316,28 @@ export class Wobble extends Container {
     public getGulpPhase(): number {
         return this.gulpPhase
     }
+
+    /**
+     * Clean up resources to prevent memory leaks
+     */
+    public override destroy(options?: boolean | { children?: boolean; texture?: boolean; textureSource?: boolean }): void {
+        // Cancel any pending gulp animation
+        if (this.gulpAnimationId !== null) {
+            cancelAnimationFrame(this.gulpAnimationId)
+            this.gulpAnimationId = null
+        }
+
+        // Clear filter reference before destroying graphics
+        this.glowGraphics.filters = []
+
+        // Destroy the blur filter explicitly
+        if (this.blurFilter) {
+            this.blurFilter.destroy()
+        }
+
+        // Call parent destroy which will clean up children
+        super.destroy(options)
+    }
 }
 
 // Backwards compatibility aliases
