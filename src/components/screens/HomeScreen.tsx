@@ -387,9 +387,9 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                 }}
             >
                 {/* Persona-style Logo */}
-                <div className="text-center relative">
-                    {/* Angled background shape */}
-                    <div className="relative inline-block">
+                <div className="text-center relative flex justify-center">
+                    {/* Angled background shape - fixed width container */}
+                    <div className="relative" style={{ width: '280px', minWidth: '280px' }}>
                         {/* Shadow layer */}
                         <div
                             className="absolute inset-0 translate-x-2 translate-y-2"
@@ -400,7 +400,7 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                         />
                         {/* Main container */}
                         <div
-                            className="relative px-10 py-4"
+                            className="relative px-10 py-4 overflow-hidden"
                             style={{
                                 background: `linear-gradient(135deg, ${theme.bgPanel} 0%, #2a3234 100%)`,
                                 border: `4px solid ${theme.border}`,
@@ -409,7 +409,7 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                             }}
                         >
                             <h1
-                                className="text-5xl font-black tracking-wider"
+                                className="text-5xl font-black tracking-wider whitespace-nowrap"
                                 style={{
                                     color: theme.gold,
                                     textShadow: `3px 3px 0 ${theme.border}, -1px -1px 0 ${theme.border}`,
