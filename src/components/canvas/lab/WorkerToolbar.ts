@@ -20,8 +20,8 @@ const TOOLBAR_WIDTH = 56
 const TOOLBAR_PADDING = 6
 const ITEM_SPACING = 6
 const ITEM_SIZE = 52 // Total item height including padding
-const HEADER_HEIGHT = 60
-const RESOURCE_BAR_HEIGHT = 60 // Resource bar below header
+const HEADER_HEIGHT = 60 // Header with safe area
+const RESOURCE_BAR_HEIGHT = 90 // Resource bar below header (account for safe area)
 const AD_BANNER_HEIGHT = 98
 
 export interface WorkerData {

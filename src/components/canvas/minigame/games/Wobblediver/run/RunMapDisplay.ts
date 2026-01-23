@@ -162,6 +162,11 @@ export class RunMapDisplay {
     private tentacleContainer: Container
     private uiContainer: Container
 
+    // Reusable graphics objects (to prevent memory leaks)
+    private particleGraphics: Graphics | null = null
+    private tentacleGraphics: Graphics | null = null
+    private connectionsGraphics: Graphics | null = null
+
     // Map data
     private map: RunMap | null = null
     private currentNodeId: string | null = null
@@ -178,6 +183,8 @@ export class RunMapDisplay {
     // Animation state
     private animTime: number = 0
     private nodeGraphics: Map<string, Container> = new Map()
+    private nodeInnerGraphics: Map<string, Graphics> = new Map() // Reusable graphics per node
+    private nodeDepthLabels: Map<string, Text> = new Map() // Reusable text per node
     private eldritchStates: Map<string, EldritchNodeState> = new Map()
 
     // Particles
@@ -246,6 +253,16 @@ export class RunMapDisplay {
         this.container.addChild(this.connectionsContainer)
         this.container.addChild(this.nodesContainer)
         this.container.addChild(this.uiContainer)
+
+        // Initialize reusable graphics objects
+        this.particleGraphics = new Graphics()
+        this.particleContainer.addChild(this.particleGraphics)
+
+        this.tentacleGraphics = new Graphics()
+        this.tentacleContainer.addChild(this.tentacleGraphics)
+
+        this.connectionsGraphics = new Graphics()
+        this.connectionsContainer.addChild(this.connectionsGraphics)
 
         // Transition overlay (on top of everything)
         this.transitionOverlay = new Graphics()
@@ -767,12 +784,11 @@ export class RunMapDisplay {
      * Draw organic tendril connections between nodes
      */
     private drawConnections(): void {
-        this.connectionsContainer.removeChildren()
+        if (!this.connectionsGraphics || !this.map) return
 
-        if (!this.map) return
-
-        const g = new Graphics()
-        this.connectionsContainer.addChild(g)
+        // Clear and redraw using reusable graphics
+        const g = this.connectionsGraphics
+        g.clear()
 
         const { bodyRadius, tentacleLength } = ABYSS_CONFIG.eldritch
 
@@ -860,6 +876,16 @@ export class RunMapDisplay {
      * Draw eldritch creature nodes
      */
     private drawNodes(): void {
+        // Destroy old graphics objects to prevent memory leaks
+        for (const g of this.nodeInnerGraphics.values()) {
+            g.destroy()
+        }
+        for (const t of this.nodeDepthLabels.values()) {
+            t.destroy()
+        }
+        this.nodeInnerGraphics.clear()
+        this.nodeDepthLabels.clear()
+
         this.nodesContainer.removeChildren()
         this.nodeGraphics.clear()
 
@@ -874,6 +900,30 @@ export class RunMapDisplay {
             if (!this.eldritchStates.has(node.id)) {
                 this.initEldritchState(node.id)
             }
+
+            // Create reusable graphics and text for this node
+            const nodeGraphics = new Graphics()
+            nodeContainer.addChild(nodeGraphics)
+            this.nodeInnerGraphics.set(node.id, nodeGraphics)
+
+            const depthLabel = new Text({
+                text: `${node.depth}`,
+                style: new TextStyle({
+                    fontFamily: 'monospace',
+                    fontSize: 11,
+                    fontWeight: 'bold',
+                    fill: 0x66ffcc,
+                    dropShadow: {
+                        alpha: 0.8,
+                        blur: 3,
+                        color: 0x000000,
+                        distance: 1,
+                    },
+                }),
+            })
+            depthLabel.anchor.set(0.5, 0)
+            nodeContainer.addChild(depthLabel)
+            this.nodeDepthLabels.set(node.id, depthLabel)
 
             this.nodesContainer.addChild(nodeContainer)
             this.nodeGraphics.set(node.id, nodeContainer)
@@ -913,18 +963,19 @@ export class RunMapDisplay {
         if (!this.map) return
 
         for (const node of Object.values(this.map.nodes)) {
-            const container = this.nodeGraphics.get(node.id)
-            if (!container) continue
-
-            container.removeChildren()
-            this.drawEldritchNode(container, node)
+            this.drawEldritchNode(node)
         }
     }
 
     /**
-     * Draw a single eldritch creature node
+     * Draw a single eldritch creature node (uses reusable graphics)
      */
-    private drawEldritchNode(container: Container, node: MapNode): void {
+    private drawEldritchNode(node: MapNode): void {
+        // Get reusable graphics and text objects
+        const g = this.nodeInnerGraphics.get(node.id)
+        const depthLabel = this.nodeDepthLabels.get(node.id)
+        if (!g || !depthLabel) return
+
         const isCompleted = this.completedNodeIds.has(node.id)
         const isAvailable = this.availableNodeIds.has(node.id)
         const isCurrent = this.currentNodeId === node.id
@@ -938,7 +989,8 @@ export class RunMapDisplay {
         const { tentacleCount, tentacleLength, tentacleSegments, eyeRadius, pupilRadius, bodyRadius } =
             ABYSS_CONFIG.eldritch
 
-        const g = new Graphics()
+        // Clear and redraw
+        g.clear()
 
         // Calculate breathing scale
         const breatheScale = 1 + Math.sin(state.breathePhase) * 0.05
@@ -955,8 +1007,11 @@ export class RunMapDisplay {
 
         // === Draw outer glow ===
         if (!isLocked) {
-            const glowColor = isCurrent ? 0xffdd44 : colors.glow
-            const glowAlpha = state.glowIntensity * intensity * 0.3
+            // Sealed nodes have a cyan/teal suppressed glow
+            const glowColor = isCompleted ? 0x44aaaa : isCurrent ? 0xffdd44 : colors.glow
+            const glowAlpha = isCompleted
+                ? 0.15 // Dimmer glow for sealed
+                : state.glowIntensity * intensity * 0.3
             for (let i = 3; i >= 1; i--) {
                 g.circle(0, 0, (bodyRadius + tentacleLength * 0.5) * breatheScale + i * 10)
                 g.fill({ color: glowColor, alpha: glowAlpha / i })
@@ -988,15 +1043,20 @@ export class RunMapDisplay {
             const points: { x: number; y: number }[] = []
             for (let s = 0; s <= tentacleSegments; s++) {
                 const t = s / tentacleSegments
-                const segmentLength = bodyRadius + tentacleLength * t * breatheScale
+                // Completed nodes have shorter, droopier tentacles
+                const lengthMult = isCompleted ? 0.7 : 1.0
+                const segmentLength = bodyRadius + tentacleLength * t * breatheScale * lengthMult
 
-                // Wave motion
-                const waveOffset = Math.sin(phase + t * Math.PI * 2) * 8 * t * intensity
+                // Wave motion (minimal for completed - they're dormant)
+                const waveIntensity = isCompleted ? 0.1 : intensity
+                const waveOffset = Math.sin(phase + t * Math.PI * 2) * 8 * t * waveIntensity
+                // Completed tentacles droop downward
+                const droopOffset = isCompleted ? t * t * 12 : 0
                 const angle = baseAngle + waveOffset * 0.05
 
                 points.push({
                     x: Math.cos(angle) * segmentLength,
-                    y: Math.sin(angle) * segmentLength + waveOffset,
+                    y: Math.sin(angle) * segmentLength + waveOffset + droopOffset,
                 })
             }
 
@@ -1025,17 +1085,69 @@ export class RunMapDisplay {
         g.circle(0, 0, bodyRadius * breatheScale)
         g.fill({ color: bodyColor, alpha: 0.95 })
 
-        // Body outline
-        const outlineColor = isCurrent ? 0xffdd44 : isAvailable ? colors.primary : isCompleted ? colors.secondary : 0x222233
+        // Body outline (sealed nodes get cyan outline)
+        const outlineColor = isCurrent ? 0xffdd44 : isAvailable ? colors.primary : isCompleted ? 0x44aaaa : 0x222233
         g.circle(0, 0, bodyRadius * breatheScale)
-        g.stroke({ color: outlineColor, width: isCurrent ? 3 : 2, alpha: intensity })
+        g.stroke({ color: outlineColor, width: isCurrent ? 3 : 2, alpha: isCompleted ? 0.6 : intensity })
 
         // === Draw eye ===
-        if (!isLocked || isCompleted) {
+        if (isCompleted && !isCurrent) {
+            // SEALED EYE - the abyss has been conquered
+            const sealRadius = eyeRadius * breatheScale
+
+            // Dark closed eye socket
+            g.circle(0, 0, sealRadius)
+            g.fill({ color: 0x0a0a0a, alpha: 0.9 })
+
+            // Closed eye line (horizontal scar)
+            g.moveTo(-sealRadius * 0.8, 0)
+            g.lineTo(sealRadius * 0.8, 0)
+            g.stroke({ color: 0x334455, width: 2.5, alpha: 0.7 })
+
+            // X SEAL MARK
+            const xSize = sealRadius * 0.6
+            const sealColor = 0x44dddd // Cyan seal color
+
+            // X mark with glow effect
+            for (let glow = 2; glow >= 0; glow--) {
+                const glowWidth = 3 + glow * 2
+                const glowAlpha = glow === 0 ? 0.9 : 0.2 / glow
+                // First line of X
+                g.moveTo(-xSize, -xSize)
+                g.lineTo(xSize, xSize)
+                g.stroke({ color: sealColor, width: glowWidth, alpha: glowAlpha })
+                // Second line of X
+                g.moveTo(xSize, -xSize)
+                g.lineTo(-xSize, xSize)
+                g.stroke({ color: sealColor, width: glowWidth, alpha: glowAlpha })
+            }
+
+            // CRACK EFFECTS emanating from the seal
+            const crackColor = 0x225555
+            const crackCount = 5
+            for (let c = 0; c < crackCount; c++) {
+                const angle = (c / crackCount) * Math.PI * 2 + Math.PI / 5
+                const crackLen = sealRadius * (0.8 + Math.sin(c * 1.7) * 0.3)
+                const midX = Math.cos(angle) * crackLen * 0.5
+                const midY = Math.sin(angle) * crackLen * 0.5
+                const endX = Math.cos(angle + 0.1) * crackLen
+                const endY = Math.sin(angle + 0.1) * crackLen
+
+                g.moveTo(Math.cos(angle) * sealRadius * 0.3, Math.sin(angle) * sealRadius * 0.3)
+                g.lineTo(midX, midY)
+                g.lineTo(endX, endY)
+                g.stroke({ color: crackColor, width: 1.5, alpha: 0.5 })
+            }
+
+            // Small seal glow at center
+            g.circle(0, 0, 3)
+            g.fill({ color: sealColor, alpha: 0.6 })
+        } else if (!isLocked) {
+            // ACTIVE EYE (current or available)
             const eyeScale = state.eyeOpenness * breatheScale
 
             // Eye white (sclera)
-            const scleraColor = isLocked ? 0x111122 : 0x112222
+            const scleraColor = 0x112222
             g.ellipse(0, 0, eyeRadius * breatheScale, eyeRadius * eyeScale * 0.8)
             g.fill({ color: scleraColor, alpha: 0.9 })
 
@@ -1062,75 +1174,35 @@ export class RunMapDisplay {
                 g.circle(-eyeRadius * 0.3, -eyeRadius * 0.3, 2)
                 g.fill({ color: 0xffffff, alpha: 0.6 })
             }
-
-            // Eyelid effect for locked/completed
-            if (isCompleted && !isCurrent) {
-                // Half-closed eye
-                g.ellipse(0, -eyeRadius * 0.3, eyeRadius * breatheScale * 1.1, eyeRadius * 0.5)
-                g.fill({ color: bodyColor, alpha: 0.7 })
-            }
         } else {
-            // Closed eye for locked
+            // LOCKED - Closed eye
             g.moveTo(-eyeRadius * 0.7, 0)
             g.lineTo(eyeRadius * 0.7, 0)
             g.stroke({ color: 0x333344, width: 2, alpha: 0.5 })
         }
 
-        container.addChild(g)
-
-        // === Depth label (stage number only) ===
-        const depthStyle = new TextStyle({
-            fontFamily: 'monospace',
-            fontSize: 11,
-            fontWeight: 'bold',
-            fill: colors.glow,
-            dropShadow: {
-                alpha: 0.8,
-                blur: 3,
-                color: 0x000000,
-                distance: 1,
-            },
-        })
-        const depthLabel = new Text({ text: `${node.depth}`, style: depthStyle })
-        depthLabel.anchor.set(0.5, 0)
+        // === Update depth label (reuse existing Text object) ===
+        // Sealed nodes use cyan color, others use zone glow
+        const depthLabelColor = isCompleted ? 0x44aaaa : colors.glow
+        depthLabel.style.fill = depthLabelColor
         depthLabel.position.set(0, bodyRadius + tentacleLength * 0.4 + 8)
-        container.addChild(depthLabel)
 
-        // === Rank badge for completed nodes ===
+        // === Rank badge for completed nodes (draw on same graphics) ===
         if (isCompleted && node.rank) {
-            this.drawRankBadge(container, node.rank, bodyRadius)
+            const badgeX = bodyRadius * 0.8
+            const badgeY = -bodyRadius * 0.8
+            const badgeSize = 12
+
+            // Badge background
+            g.circle(badgeX, badgeY, badgeSize)
+            g.fill({ color: ABYSS_CONFIG.rankColors[node.rank] })
+            g.stroke({ color: 0x000000, width: 2, alpha: 0.5 })
+
+            // Rank letter (draw as simple shape approximation since Text would leak)
+            // Just use the filled circle with different size as visual indicator
+            g.circle(badgeX, badgeY, badgeSize * 0.5)
+            g.fill({ color: node.rank === 'S' ? 0x000000 : 0xffffff, alpha: 0.8 })
         }
-    }
-
-    /**
-     * Draw rank badge
-     */
-    private drawRankBadge(container: Container, rank: RunRank, nodeRadius: number): void {
-        const badgeX = nodeRadius * 0.8
-        const badgeY = -nodeRadius * 0.8
-        const badgeSize = 12
-
-        const g = new Graphics()
-
-        // Badge background
-        g.circle(badgeX, badgeY, badgeSize)
-        g.fill({ color: ABYSS_CONFIG.rankColors[rank] })
-        g.stroke({ color: 0x000000, width: 2, alpha: 0.5 })
-
-        container.addChild(g)
-
-        // Rank letter
-        const rankText = new Text({
-            text: rank,
-            style: new TextStyle({
-                fontSize: 12,
-                fontWeight: 'bold',
-                fill: rank === 'S' ? 0x000000 : 0xffffff,
-            }),
-        })
-        rankText.anchor.set(0.5)
-        rankText.position.set(badgeX, badgeY)
-        container.addChild(rankText)
     }
 
     /**
@@ -1317,12 +1389,10 @@ export class RunMapDisplay {
                 state.pupilOffsetY *= 0.95
             }
 
-            // Redraw only this visible node
-            const container = this.nodeGraphics.get(nodeId)
+            // Redraw only this visible node (using reusable graphics)
             const node = this.map.nodes[nodeId]
-            if (container && node) {
-                container.removeChildren()
-                this.drawEldritchNode(container, node)
+            if (node) {
+                this.drawEldritchNode(node)
             }
         }
     }
@@ -1331,11 +1401,11 @@ export class RunMapDisplay {
      * Update floating particles
      */
     private updateParticles(deltaSeconds: number): void {
-        // Clear and redraw particles
-        this.particleContainer.removeChildren()
+        if (!this.particleGraphics) return
 
-        const g = new Graphics()
-        this.particleContainer.addChild(g)
+        // Clear and redraw using reusable graphics
+        const g = this.particleGraphics
+        g.clear()
 
         for (const particle of this.particles) {
             // Update position
@@ -1383,10 +1453,11 @@ export class RunMapDisplay {
      * Update edge tentacles
      */
     private updateTentacles(deltaSeconds: number): void {
-        this.tentacleContainer.removeChildren()
+        if (!this.tentacleGraphics) return
 
-        const g = new Graphics()
-        this.tentacleContainer.addChild(g)
+        // Clear and redraw using reusable graphics
+        const g = this.tentacleGraphics
+        g.clear()
 
         for (const tentacle of this.tentacles) {
             tentacle.phase += deltaSeconds * tentacle.speed
@@ -1493,6 +1564,32 @@ export class RunMapDisplay {
         // Clear callbacks to prevent memory leaks
         this.onNodeSelected = null
         this.onTransitionComplete = null
+
+        // Destroy reusable graphics objects
+        for (const g of this.nodeInnerGraphics.values()) {
+            g.destroy()
+        }
+        this.nodeInnerGraphics.clear()
+
+        for (const t of this.nodeDepthLabels.values()) {
+            t.destroy()
+        }
+        this.nodeDepthLabels.clear()
+
+        if (this.particleGraphics) {
+            this.particleGraphics.destroy()
+            this.particleGraphics = null
+        }
+
+        if (this.tentacleGraphics) {
+            this.tentacleGraphics.destroy()
+            this.tentacleGraphics = null
+        }
+
+        if (this.connectionsGraphics) {
+            this.connectionsGraphics.destroy()
+            this.connectionsGraphics = null
+        }
 
         // Destroy containers and graphics
         this.container.removeChildren()
