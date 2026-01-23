@@ -93,8 +93,8 @@ export class Wormhole {
     }
 
     // Funnel dimensions
-    private readonly ellipseRatio = 0.35
-    private readonly funnelDepth = 0.8 // How deep the funnel appears (relative to radius)
+    private readonly ellipseRatio = 0.4 // Slightly less flat
+    private readonly funnelDepth = 1.2 // Deeper funnel for more 3D effect
 
     constructor(config: WormholeConfig) {
         this.container = new Container()
@@ -391,30 +391,67 @@ export class Wormhole {
         const g = this.glowGraphics
         g.clear()
 
-        const pulse = 1 + Math.sin(this.pulsePhase) * 0.1
+        const pulse = 1 + Math.sin(this.pulsePhase) * 0.08
         const intensityBoost = 1 + this.proximityIntensity * 0.5
-        const rx = this.radius * 1.4 * pulse * intensityBoost * this.widthScale
-        const ry = this.radius * 1.4 * pulse * intensityBoost * this.ellipseRatio
+        const rx = this.radius * this.widthScale
+        const ry = this.radius * this.ellipseRatio
 
-        // Outer glow layers
-        const layers = 4 + Math.floor(this.proximityIntensity * 2)
+        // === BIOLUMINESCENT OUTER AURA ===
+        // Organic pulsing glow layers
+        const layers = 5 + Math.floor(this.proximityIntensity * 2)
         for (let i = layers; i >= 0; i--) {
-            const scale = 1 + i * 0.12
-            const alpha = 0.06 + this.proximityIntensity * 0.04 - i * 0.012
-            g.ellipse(0, 0, rx * scale, ry * scale)
+            const layerPulse = pulse + Math.sin(this.time * 2 + i * 0.5) * 0.05
+            const scale = 1.2 + i * 0.15
+            const alpha = (0.05 + this.proximityIntensity * 0.03 - i * 0.008) * layerPulse
+            g.ellipse(0, 0, rx * scale * layerPulse, ry * scale * layerPulse)
             g.fill({ color: this.colors.glow, alpha: Math.max(0, alpha) })
+        }
+
+        // === EVENT HORIZON RING ===
+        // A distinct bright ring at the edge where light bends
+        const horizonPulse = 0.8 + Math.sin(this.pulsePhase * 2) * 0.2
+        const horizonRx = rx * 1.05 * pulse
+        const horizonRy = ry * 1.05 * pulse
+
+        // Outer soft edge
+        g.ellipse(0, 0, horizonRx * 1.08, horizonRy * 1.08)
+        g.stroke({ color: this.colors.glow, width: 4, alpha: 0.15 * horizonPulse * intensityBoost })
+
+        // Main horizon ring
+        g.ellipse(0, 0, horizonRx, horizonRy)
+        g.stroke({ color: this.colors.primary, width: 2, alpha: 0.4 * horizonPulse * intensityBoost })
+
+        // === GRAVITATIONAL LENSING DISTORTION ===
+        // Subtle warped light effects around the edge
+        const distortionCount = 8
+        for (let i = 0; i < distortionCount; i++) {
+            const angle = (Math.PI * 2 * i) / distortionCount + this.time * 0.3
+            const distortPulse = 0.5 + Math.sin(this.time * 4 + i * 1.2) * 0.5
+            const distortLength = 15 + distortPulse * 10
+            const distortWidth = 3 + distortPulse * 2
+
+            const startX = Math.cos(angle) * horizonRx * 1.1
+            const startY = Math.sin(angle) * horizonRy * 1.1
+            const endX = Math.cos(angle) * (horizonRx * 1.1 + distortLength)
+            const endY = Math.sin(angle) * (horizonRy * 1.1 + distortLength * 0.4)
+
+            // Light streak being pulled in
+            g.moveTo(endX, endY)
+            g.lineTo(startX, startY)
+            g.stroke({ color: this.colors.beam, width: distortWidth, alpha: 0.2 * distortPulse * intensityBoost })
         }
 
         // Suction/hit flash
         if (this.isSucking) {
             const progress = this.suckTimer / this.suckDuration
-            const flashAlpha = Math.sin(progress * Math.PI) * 0.5
-            g.ellipse(0, 0, rx * (1.3 - progress * 0.3), ry * (1.3 - progress * 0.3))
+            const flashAlpha = Math.sin(progress * Math.PI) * 0.6
+            const flashScale = 1.4 - progress * 0.4
+            g.ellipse(0, 0, rx * flashScale, ry * flashScale)
             g.fill({ color: 0xffffff, alpha: flashAlpha })
         }
 
         if (this.hitFlashTimer > 0) {
-            const flashAlpha = (this.hitFlashTimer / 0.3) * 0.4
+            const flashAlpha = (this.hitFlashTimer / 0.3) * 0.5
             g.ellipse(0, 0, rx * 1.3, ry * 1.3)
             g.fill({ color: 0xffffff, alpha: flashAlpha })
         }
@@ -429,75 +466,115 @@ export class Wormhole {
         const depth = this.radius * this.funnelDepth
         const intensityBoost = 1 + this.proximityIntensity * 0.3
 
-        // Draw funnel interior (dark gradient layers)
-        const funnelLayers = 15
+        // === DEEP VOID INTERIOR ===
+        // Multiple layers creating depth illusion with exponential darkening
+        const funnelLayers = 20
         for (let i = funnelLayers; i >= 0; i--) {
             const t = i / funnelLayers // 0 = bottom, 1 = top
-            const layerRx = rx * (0.05 + t * 0.95)
-            const layerRy = ry * (0.05 + t * 0.95)
-            const layerY = depth * (1 - t) // Lower layers are further down
+            // Exponential shrinking for more dramatic depth
+            const shrinkFactor = Math.pow(t, 0.7)
+            const layerRx = rx * (0.02 + shrinkFactor * 0.98)
+            const layerRy = ry * (0.02 + shrinkFactor * 0.98)
+            const layerY = depth * (1 - t) * 1.1 // Slight overshoot for depth
 
-            // Darker as it goes deeper
-            const alpha = 0.15 + (1 - t) * 0.25
+            // Exponential darkening toward center
+            const darkness = Math.pow(1 - t, 1.5)
+            const alpha = 0.1 + darkness * 0.6
 
             g.ellipse(0, layerY, layerRx, layerRy)
             g.fill({ color: this.colors.dark, alpha })
         }
 
-        // Draw gravity spiral lines
+        // === ORGANIC WALL SHADING (3D rim effect) ===
+        // Left side brighter (rim lighting)
+        const rimLayers = 8
+        for (let i = 0; i < rimLayers; i++) {
+            const t = i / rimLayers
+            const rimY = depth * t * 0.8
+            const rimRx = rx * (1 - t * 0.85)
+            const rimRy = ry * (1 - t * 0.85)
+
+            // Crescent shape on the left side for rim lighting
+            const rimOffset = -rimRx * 0.15
+            const rimAlpha = (0.15 - t * 0.12) * intensityBoost
+
+            g.ellipse(rimOffset, rimY, rimRx * 0.3, rimRy * 0.8)
+            g.fill({ color: this.colors.glow, alpha: rimAlpha })
+        }
+
+        // === BIOLUMINESCENT VEINS (organic tendrils spiraling down) ===
         for (const line of this.gravityLines) {
-            const angle =
-                line.startAngle +
-                this.rotationAngle +
-                Math.sin(this.time * line.speed + line.phase) * 0.2
+            const baseAngle = line.startAngle + this.rotationAngle
+            // Organic pulsing movement
+            const pulseOffset = Math.sin(this.time * 1.5 + line.phase) * 0.3
 
-            // Draw spiral from top to bottom
-            g.moveTo(Math.cos(angle) * rx, Math.sin(angle) * ry)
+            g.moveTo(Math.cos(baseAngle) * rx, Math.sin(baseAngle) * ry)
 
-            const segments = 12
+            const segments = 16
             for (let i = 1; i <= segments; i++) {
                 const t = i / segments
-                const spiralAngle = angle + t * Math.PI * 0.8 // Spiral twist
-                const shrink = 1 - t * 0.95
-                const px = Math.cos(spiralAngle) * rx * shrink
-                const py = Math.sin(spiralAngle) * ry * shrink + depth * t
+                // More dramatic spiral with organic wobble
+                const spiralAngle = baseAngle + t * Math.PI * 1.2 + pulseOffset * t
+                const shrink = 1 - Math.pow(t, 0.8) * 0.97
+                // Organic wave in the tendril
+                const waveOffset = Math.sin(t * Math.PI * 3 + this.time * 2 + line.phase) * 5 * (1 - t)
+
+                const px = Math.cos(spiralAngle) * rx * shrink + waveOffset * Math.cos(spiralAngle + Math.PI / 2)
+                const py = Math.sin(spiralAngle) * ry * shrink + depth * t + waveOffset * 0.3
 
                 g.lineTo(px, py)
             }
 
+            // Pulsing glow effect
+            const glowPulse = 0.5 + Math.sin(this.time * 2 + line.phase) * 0.3
             g.stroke({
                 color: this.colors.primary,
-                width: 1.5,
-                alpha: (0.2 + this.proximityIntensity * 0.15) * intensityBoost,
+                width: 2 + glowPulse,
+                alpha: (0.25 + this.proximityIntensity * 0.2) * intensityBoost * glowPulse,
             })
         }
 
-        // Draw connecting rings at different depths
-        const ringCount = 5
-        for (let i = 1; i < ringCount; i++) {
-            const t = i / ringCount
-            const ringRx = rx * (1 - t * 0.9)
-            const ringRy = ry * (1 - t * 0.9)
-            const ringY = depth * t
-            const alpha = (0.25 - t * 0.15) * intensityBoost
+        // === EVENT HORIZON RINGS ===
+        // Rings that appear to be pulled into the void
+        const ringCount = 7
+        for (let i = 1; i <= ringCount; i++) {
+            const t = i / (ringCount + 1)
+            const ringRx = rx * (1 - Math.pow(t, 0.6) * 0.92)
+            const ringRy = ry * (1 - Math.pow(t, 0.6) * 0.92)
+            const ringY = depth * Math.pow(t, 0.8)
+
+            // Rings pulse at different phases
+            const ringPulse = 0.6 + Math.sin(this.time * 3 - t * 4 + this.pulsePhase) * 0.4
+            const alpha = (0.35 - t * 0.25) * intensityBoost * ringPulse
 
             g.ellipse(0, ringY, ringRx, ringRy)
-            g.stroke({ color: this.colors.secondary, width: 1.5, alpha })
+            g.stroke({ color: this.colors.secondary, width: 1.5 + (1 - t) * 1.5, alpha })
         }
 
-        // Singularity point at bottom (bright spot)
-        const singularityPulse = 0.6 + Math.sin(this.pulsePhase * 2) * 0.3
-        const singularitySize = 4 + this.proximityIntensity * 3
+        // === ABYSSAL SINGULARITY ===
+        // Deep glow emanating from the void
+        const singularityPulse = 0.5 + Math.sin(this.pulsePhase * 1.5) * 0.3
+        const singularityY = depth * 0.95
 
-        // Singularity glow
-        g.circle(0, depth, singularitySize * 2)
-        g.fill({ color: this.colors.glow, alpha: 0.3 * singularityPulse })
+        // Outer ethereal glow
+        for (let i = 4; i >= 0; i--) {
+            const glowSize = (8 + i * 6) * singularityPulse + this.proximityIntensity * 4
+            const glowAlpha = (0.08 - i * 0.015) * intensityBoost
+            g.ellipse(0, singularityY, glowSize * 1.5, glowSize * 0.6)
+            g.fill({ color: this.colors.glow, alpha: glowAlpha })
+        }
 
-        g.circle(0, depth, singularitySize)
-        g.fill({ color: this.colors.beam, alpha: 0.6 * singularityPulse })
+        // Core light being pulled in
+        const coreSize = 6 + this.proximityIntensity * 4
+        g.ellipse(0, singularityY, coreSize * 1.2, coreSize * 0.5)
+        g.fill({ color: this.colors.beam, alpha: 0.5 * singularityPulse })
 
-        g.circle(0, depth, singularitySize * 0.4)
-        g.fill({ color: 0xffffff, alpha: 0.8 * singularityPulse })
+        g.ellipse(0, singularityY, coreSize * 0.6, coreSize * 0.25)
+        g.fill({ color: 0xffffff, alpha: 0.7 * singularityPulse })
+
+        // Tiny bright point (the actual singularity)
+        g.ellipse(0, singularityY, 2, 1)
+        g.fill({ color: 0xffffff, alpha: 0.9 })
     }
 
     private drawParticles(): void {
@@ -509,37 +586,82 @@ export class Wormhole {
         const depth = this.radius * this.funnelDepth
 
         for (const particle of this.funnelParticles) {
-            // Calculate position based on depth
-            const shrink = 1 - particle.depth * 0.95
+            // Calculate position based on depth with accelerating spiral
+            const depthCurve = Math.pow(particle.depth, 0.6) // Accelerate toward center
+            const shrink = 1 - depthCurve * 0.97
             const px = Math.cos(particle.angle) * rx * shrink
-            const py = Math.sin(particle.angle) * ry * shrink + depth * particle.depth
+            const py = Math.sin(particle.angle) * ry * shrink + depth * depthCurve
 
-            // Fade and shrink as it goes deeper
-            const fadeAlpha = particle.alpha * (1 - particle.depth * 0.7)
-            const size = particle.size * (1 - particle.depth * 0.6)
+            // Particles get brighter then fade as they approach singularity
+            const brightnessPhase = Math.sin(particle.depth * Math.PI) // Peak brightness in middle
+            const fadeAlpha = particle.alpha * (0.3 + brightnessPhase * 0.7) * (1 - particle.depth * 0.5)
+            const size = particle.size * (1 - depthCurve * 0.7)
 
-            // Trail effect
-            const trailCount = 3
+            // Elongated trail (stretched by gravitational pull)
+            const trailCount = 5
             for (let i = trailCount - 1; i >= 0; i--) {
-                const trailDepth = Math.max(0, particle.depth - i * 0.08)
-                const trailShrink = 1 - trailDepth * 0.95
-                const trailAngle = particle.angle - i * 0.15
+                const trailDepth = Math.max(0, particle.depth - i * 0.06)
+                const trailDepthCurve = Math.pow(trailDepth, 0.6)
+                const trailShrink = 1 - trailDepthCurve * 0.97
+                const trailAngle = particle.angle - i * 0.12 * (1 + particle.depth) // Trail stretches more as it falls
                 const tx = Math.cos(trailAngle) * rx * trailShrink
-                const ty = Math.sin(trailAngle) * ry * trailShrink + depth * trailDepth
-                const trailAlpha = fadeAlpha * (1 - i / trailCount) * 0.5
-                const trailSize = size * (1 - (i / trailCount) * 0.4)
+                const ty = Math.sin(trailAngle) * ry * trailShrink + depth * trailDepthCurve
+                const trailAlpha = fadeAlpha * (1 - i / trailCount) * 0.4
+                const trailSize = size * (1 - (i / trailCount) * 0.5)
 
                 g.circle(tx, ty, trailSize)
                 g.fill({ color: this.colors.beam, alpha: trailAlpha })
             }
 
-            // Main particle
+            // Main particle with glow
+            g.circle(px, py, size * 1.5)
+            g.fill({ color: this.colors.glow, alpha: fadeAlpha * 0.3 })
+
             g.circle(px, py, size)
             g.fill({ color: this.colors.beam, alpha: fadeAlpha })
 
-            // Bright core
-            g.circle(px, py, size * 0.4)
-            g.fill({ color: 0xffffff, alpha: fadeAlpha * 0.8 })
+            // Bright core (like captured light)
+            g.circle(px, py, size * 0.5)
+            g.fill({ color: 0xffffff, alpha: fadeAlpha * 0.9 })
+        }
+
+        // === LIGHT BEING PULLED IN (from outside) ===
+        // Additional particles at the edge being captured
+        const capturedCount = 6
+        for (let i = 0; i < capturedCount; i++) {
+            const angle = (Math.PI * 2 * i) / capturedCount + this.time * 0.5
+            const capturePhase = (this.time * 0.8 + i * 0.5) % 1
+            const captureT = Math.pow(capturePhase, 0.5) // Accelerate inward
+
+            // Start from outside, spiral in
+            const startR = 1.3
+            const endR = 0.1
+            const r = startR - (startR - endR) * captureT
+            const spiralAngle = angle + captureT * Math.PI * 0.8
+
+            const cx = Math.cos(spiralAngle) * rx * r
+            const cy = Math.sin(spiralAngle) * ry * r + depth * captureT * 0.3
+
+            const captureAlpha = Math.sin(capturePhase * Math.PI) * 0.4
+            const captureSize = 2 + (1 - captureT) * 3
+
+            if (captureAlpha > 0.05) {
+                // Trail
+                for (let t = 3; t >= 0; t--) {
+                    const trailPhase = Math.max(0, capturePhase - t * 0.08)
+                    const trailT = Math.pow(trailPhase, 0.5)
+                    const trailR = startR - (startR - endR) * trailT
+                    const trailSpiralAngle = angle + trailT * Math.PI * 0.8
+                    const trailX = Math.cos(trailSpiralAngle) * rx * trailR
+                    const trailY = Math.sin(trailSpiralAngle) * ry * trailR + depth * trailT * 0.3
+
+                    g.circle(trailX, trailY, captureSize * (1 - t * 0.2))
+                    g.fill({ color: this.colors.beam, alpha: captureAlpha * (1 - t * 0.25) * 0.5 })
+                }
+
+                g.circle(cx, cy, captureSize)
+                g.fill({ color: this.colors.beam, alpha: captureAlpha })
+            }
         }
     }
 
@@ -550,37 +672,75 @@ export class Wormhole {
         const rx = this.radius * this.widthScale
         const ry = this.radius * this.ellipseRatio
         const alphaBoost = 1 + this.proximityIntensity * 0.3
+        const pulse = 1 + Math.sin(this.pulsePhase) * 0.03
 
-        // Outer ring (main portal edge)
-        g.ellipse(0, 0, rx, ry)
-        g.stroke({ color: this.colors.primary, width: 3, alpha: Math.min(1, 0.9 * alphaBoost) })
+        // === 3D OUTER RIM ===
+        // Shadow/depth on the back edge (top of ellipse = further away)
+        g.ellipse(0, -ry * 0.08, rx * 1.02, ry * 0.3)
+        g.fill({ color: 0x000000, alpha: 0.2 })
 
-        // Second ring
-        g.ellipse(0, 0, rx * 0.92, ry * 0.92)
-        g.stroke({ color: this.colors.secondary, width: 2, alpha: Math.min(1, 0.6 * alphaBoost) })
+        // Main outer ring with glow
+        g.ellipse(0, 0, rx * pulse, ry * pulse)
+        g.stroke({ color: this.colors.primary, width: 4, alpha: Math.min(1, 0.95 * alphaBoost) })
 
-        // Perfect zone ring (also scaled horizontally)
+        // Inner bright edge (rim highlight)
+        g.ellipse(0, 0, rx * 0.96 * pulse, ry * 0.96 * pulse)
+        g.stroke({ color: this.colors.glow, width: 2, alpha: Math.min(1, 0.5 * alphaBoost) })
+
+        // Second decorative ring
+        g.ellipse(0, 0, rx * 0.88 * pulse, ry * 0.88 * pulse)
+        g.stroke({ color: this.colors.secondary, width: 1.5, alpha: Math.min(1, 0.4 * alphaBoost) })
+
+        // Perfect zone ring with pulsing glow
+        const perfectPulse = 0.8 + Math.sin(this.pulsePhase * 2) * 0.2
         const perfectRx = this.perfectRadius * this.widthScale
         const perfectRy = this.perfectRadius * this.ellipseRatio
-        g.ellipse(0, 0, perfectRx, perfectRy)
-        g.stroke({ color: this.colors.beam, width: 2, alpha: Math.min(1, 0.5 * alphaBoost) })
+        g.ellipse(0, 0, perfectRx * perfectPulse, perfectRy * perfectPulse)
+        g.stroke({ color: this.colors.beam, width: 2, alpha: Math.min(1, 0.6 * alphaBoost * perfectPulse) })
 
-        // Rotating dashed outer decoration
-        const dashRx = rx * 1.08
-        const dashRy = ry * 1.08
-        const dashCount = 20
-        for (let i = 0; i < dashCount; i++) {
-            const startAngle = (Math.PI * 2 * i) / dashCount + this.rotationAngle * 0.5
-            const endAngle = startAngle + (Math.PI / dashCount) * 0.5
+        // === BIOLUMINESCENT NODULES ===
+        // Organic glowing points around the rim
+        const noduleCount = 16
+        for (let i = 0; i < noduleCount; i++) {
+            const angle = (Math.PI * 2 * i) / noduleCount + this.rotationAngle * 0.3
+            const nodulePulse = 0.5 + Math.sin(this.time * 3 + i * 0.8) * 0.5
 
-            const x1 = Math.cos(startAngle) * dashRx
-            const y1 = Math.sin(startAngle) * dashRy
-            const x2 = Math.cos(endAngle) * dashRx
-            const y2 = Math.sin(endAngle) * dashRy
+            const nx = Math.cos(angle) * rx * 1.02
+            const ny = Math.sin(angle) * ry * 1.02
+            const noduleSize = 3 + nodulePulse * 2
+
+            // Outer glow
+            g.circle(nx, ny, noduleSize * 2)
+            g.fill({ color: this.colors.glow, alpha: 0.15 * nodulePulse * alphaBoost })
+
+            // Core
+            g.circle(nx, ny, noduleSize)
+            g.fill({ color: this.colors.beam, alpha: 0.5 * nodulePulse * alphaBoost })
+
+            // Bright center
+            g.circle(nx, ny, noduleSize * 0.4)
+            g.fill({ color: 0xffffff, alpha: 0.6 * nodulePulse })
+        }
+
+        // === ORGANIC TENDRILS connecting nodules ===
+        for (let i = 0; i < noduleCount; i++) {
+            const angle1 = (Math.PI * 2 * i) / noduleCount + this.rotationAngle * 0.3
+            const angle2 = (Math.PI * 2 * ((i + 1) % noduleCount)) / noduleCount + this.rotationAngle * 0.3
+
+            const x1 = Math.cos(angle1) * rx * 1.02
+            const y1 = Math.sin(angle1) * ry * 1.02
+            const x2 = Math.cos(angle2) * rx * 1.02
+            const y2 = Math.sin(angle2) * ry * 1.02
+
+            // Wavy connection
+            const midAngle = (angle1 + angle2) / 2
+            const waveOffset = Math.sin(this.time * 2 + i) * 3
+            const cx = Math.cos(midAngle) * (rx * 1.06 + waveOffset)
+            const cy = Math.sin(midAngle) * (ry * 1.06 + waveOffset * 0.4)
 
             g.moveTo(x1, y1)
-            g.lineTo(x2, y2)
-            g.stroke({ color: this.colors.primary, width: 2, alpha: 0.35 * alphaBoost })
+            g.quadraticCurveTo(cx, cy, x2, y2)
+            g.stroke({ color: this.colors.primary, width: 1.5, alpha: 0.25 * alphaBoost })
         }
     }
 
