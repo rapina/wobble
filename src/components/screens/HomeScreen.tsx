@@ -406,6 +406,7 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                                 border: `4px solid ${theme.border}`,
                                 transform: 'skewX(-5deg)',
                                 clipPath: 'polygon(8% 0%, 100% 0%, 92% 100%, 0% 100%)',
+                                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)',
                             }}
                         >
                             <h1
@@ -435,22 +436,24 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                                 background: theme.gold,
                                 transform: 'skewX(-5deg)',
                                 animation: 'persona-line-glow 2s ease-in-out infinite',
+                                boxShadow: `0 0 8px ${theme.gold}80`,
                             }}
                         />
                     </div>
                     {/* Subtitle with persona style */}
                     <div
-                        className="mt-5 inline-block px-6 py-1"
+                        className="mt-5 inline-block px-6 py-1.5"
                         style={{
-                            background: 'rgba(0,0,0,0.5)',
+                            background: 'rgba(0,0,0,0.6)',
                             transform: 'skewX(-8deg)',
                             borderLeft: `3px solid ${theme.gold}`,
+                            boxShadow: `2px 2px 8px rgba(0,0,0,0.3)`,
                         }}
                     >
                         <p
                             className="text-sm tracking-[0.2em] font-black uppercase"
                             style={{
-                                color: 'rgba(255,255,255,0.9)',
+                                color: 'rgba(255,255,255,0.95)',
                                 transform: 'skewX(8deg)',
                             }}
                         >
@@ -523,13 +526,14 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                             transitionDelay: '100ms',
                         }}
                     >
-                        {/* Speech bubble tail */}
+                        {/* Speech bubble tail with shadow */}
                         <div
                             className="absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0"
                             style={{
                                 borderLeft: '12px solid transparent',
                                 borderRight: '12px solid transparent',
                                 borderBottom: `12px solid ${activeCard.color}`,
+                                filter: 'drop-shadow(2px 2px 2px rgba(0,0,0,0.3))',
                             }}
                         />
                         {/* Main bubble */}
@@ -539,7 +543,7 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                                 background: activeCard.color,
                                 transform: 'skewX(-3deg)',
                                 clipPath: 'polygon(3% 0%, 97% 0%, 100% 100%, 0% 100%)',
-                                boxShadow: `4px 4px 0 ${theme.border}`,
+                                boxShadow: `4px 4px 0 ${theme.border}, inset 0 1px 0 rgba(255,255,255,0.3)`,
                             }}
                         >
                             <p
@@ -547,6 +551,7 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                                 style={{
                                     color: theme.border,
                                     transform: 'skewX(3deg)',
+                                    textShadow: '0 1px 0 rgba(255,255,255,0.3)',
                                 }}
                             >
                                 {t(activeCard.descriptionKey, '')}
@@ -570,11 +575,13 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                         )}
                     >
                         <div
-                            className="flex items-center gap-2 px-4 py-2"
+                            className="flex items-center gap-2 px-4 py-2 rounded"
                             style={{
-                                background: 'rgba(0,0,0,0.4)',
+                                background: 'rgba(0,0,0,0.5)',
                                 transform: 'skewX(-5deg)',
                                 animation: 'persona-tap-pulse 1.5s ease-in-out infinite',
+                                border: `1px solid ${theme.gold}40`,
+                                boxShadow: `0 0 12px ${theme.gold}20`,
                             }}
                         >
                             <ChevronDown
@@ -590,6 +597,7 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                                 style={{
                                     color: theme.gold,
                                     transform: 'skewX(5deg)',
+                                    textShadow: `0 0 8px ${theme.gold}40`,
                                 }}
                             >
                                 {t('home.tapToStart', 'Tap to start')}
@@ -673,16 +681,16 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
 
             {/* Disclaimer */}
             <div
-                className="absolute left-0 right-0 text-center text-white/40 text-xs px-6 leading-relaxed whitespace-pre-line"
-                style={{ bottom: 105 }}
+                className="absolute left-0 right-0 text-center text-white/50 text-xs px-6 leading-relaxed whitespace-pre-line"
+                style={{ bottom: 130 }}
             >
                 {t('home.disclaimer')}
             </div>
 
             {/* Footer - 광고 배너 위에 위치 */}
             <div
-                className="absolute left-0 right-0 text-center text-white/30 text-xs"
-                style={{ bottom: 85 }}
+                className="absolute left-0 right-0 text-center text-white/40 text-[11px]"
+                style={{ bottom: 105 }}
             >
                 <span className="font-medium">2026 Sputnik Workshop</span>
                 <span className="mx-2">·</span>
@@ -700,13 +708,37 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                     }}
                 >
                     <div
-                        className="w-full max-w-[320px] h-[50px] rounded-lg flex items-center justify-center"
+                        className="relative w-full max-w-[320px] h-[50px] rounded-lg overflow-hidden"
                         style={{
-                            background: 'rgba(0,0,0,0.4)',
-                            border: `2px dashed ${theme.border}`,
+                            background: `linear-gradient(135deg, ${theme.bgPanel} 0%, #2a3234 100%)`,
+                            border: `2px solid ${theme.border}`,
+                            boxShadow: `0 4px 0 ${theme.border}, inset 0 1px 0 rgba(255,255,255,0.1)`,
                         }}
                     >
-                        <span className="text-white/30 text-xs font-bold">AD BANNER</span>
+                        {/* Animated stripe pattern */}
+                        <div
+                            className="absolute inset-0 opacity-20"
+                            style={{
+                                backgroundImage: `repeating-linear-gradient(
+                                    45deg,
+                                    transparent,
+                                    transparent 10px,
+                                    ${theme.gold}20 10px,
+                                    ${theme.gold}20 20px
+                                )`,
+                            }}
+                        />
+                        <div className="relative w-full h-full flex items-center justify-center">
+                            <span
+                                className="text-xs font-black tracking-wider uppercase"
+                                style={{
+                                    color: theme.gold,
+                                    textShadow: `1px 1px 0 ${theme.border}`,
+                                }}
+                            >
+                                AD BANNER
+                            </span>
+                        </div>
                     </div>
                 </div>
             )}
