@@ -387,7 +387,7 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                 }}
             >
                 {/* Persona-style Logo */}
-                <div className="text-center relative flex justify-center">
+                <div className="text-center relative flex flex-col items-center">
                     {/* Angled background shape - fixed width container */}
                     <div className="relative" style={{ width: '280px', minWidth: '280px' }}>
                         {/* Shadow layer */}
