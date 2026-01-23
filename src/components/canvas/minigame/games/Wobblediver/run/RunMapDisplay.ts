@@ -212,12 +212,25 @@ export class RunMapDisplay {
     onNodeSelected: ((nodeId: string) => void) | null = null
     onTransitionComplete: ((nodeId: string) => void) | null = null
 
+    // Event handlers (bound for proper removal)
+    private boundOnPointerDown: (e: any) => void
+    private boundOnPointerMove: (e: any) => void
+    private boundOnPointerUp: (e: any) => void
+
+    // Timers for cleanup
+    private blinkTimers: Set<number> = new Set()
+
     constructor(width: number, height: number) {
         this.width = width
         this.height = height
 
         this.container = new Container()
         this.container.eventMode = 'static'
+
+        // Bind event handlers once for proper cleanup
+        this.boundOnPointerDown = this.onPointerDown.bind(this)
+        this.boundOnPointerMove = this.onPointerMove.bind(this)
+        this.boundOnPointerUp = this.onPointerUp.bind(this)
 
         // Create layers (order matters for rendering)
         this.depthGradientGraphics = new Graphics()
@@ -532,10 +545,10 @@ export class RunMapDisplay {
      * Setup touch/drag interaction
      */
     private setupInteraction(): void {
-        this.container.on('pointerdown', this.onPointerDown.bind(this))
-        this.container.on('pointermove', this.onPointerMove.bind(this))
-        this.container.on('pointerup', this.onPointerUp.bind(this))
-        this.container.on('pointerupoutside', this.onPointerUp.bind(this))
+        this.container.on('pointerdown', this.boundOnPointerDown)
+        this.container.on('pointermove', this.boundOnPointerMove)
+        this.container.on('pointerup', this.boundOnPointerUp)
+        this.container.on('pointerupoutside', this.boundOnPointerUp)
     }
 
     private onPointerDown(e: any): void {
@@ -1280,9 +1293,11 @@ export class RunMapDisplay {
                 // Random blink (reduced frequency)
                 if (Math.random() < eyeBlink * deltaSeconds * 0.5) {
                     state.targetEyeOpenness = 0.1
-                    setTimeout(() => {
+                    const timerId = window.setTimeout(() => {
                         state.targetEyeOpenness = 1.0
+                        this.blinkTimers.delete(timerId)
                     }, 150)
+                    this.blinkTimers.add(timerId)
                 }
             } else if (isCompleted) {
                 state.targetEyeOpenness = 0.6
@@ -1452,6 +1467,34 @@ export class RunMapDisplay {
     }
 
     destroy(): void {
+        // Remove event listeners
+        this.container.off('pointerdown', this.boundOnPointerDown)
+        this.container.off('pointermove', this.boundOnPointerMove)
+        this.container.off('pointerup', this.boundOnPointerUp)
+        this.container.off('pointerupoutside', this.boundOnPointerUp)
+
+        // Clear all pending blink timers
+        this.blinkTimers.forEach((timerId) => window.clearTimeout(timerId))
+        this.blinkTimers.clear()
+
+        // Destroy background filter
+        if (this.backgroundFilter) {
+            this.backgroundFilter.destroy()
+            this.backgroundFilter = null
+        }
+
+        // Clear filters from sprite
+        if (this.backgroundSprite) {
+            this.backgroundSprite.filters = null
+            this.backgroundSprite.destroy()
+            this.backgroundSprite = null
+        }
+
+        // Clear callbacks to prevent memory leaks
+        this.onNodeSelected = null
+        this.onTransitionComplete = null
+
+        // Destroy containers and graphics
         this.container.removeChildren()
         this.container.destroy()
         this.nodeGraphics.clear()

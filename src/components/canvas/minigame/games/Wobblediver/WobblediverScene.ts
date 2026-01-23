@@ -4385,6 +4385,9 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     public destroy(): void {
+        // Cleanup run mode UI (including minimap)
+        this.cleanupRunModeUI()
+
         // Cleanup wobble
         if (this.wobble) {
             this.wobble.destroy()
@@ -4500,6 +4503,10 @@ export class WobblediverScene extends BaseMiniGameScene {
      */
     private cleanupRunModeUI(): void {
         if (this.runMapDisplay) {
+            // Clear callbacks before destroying to break reference cycles
+            this.runMapDisplay.onNodeSelected = null
+            this.runMapDisplay.onTransitionComplete = null
+
             this.uiContainer.removeChild(this.runMapDisplay.container)
             this.runMapDisplay.destroy()
             this.runMapDisplay = null
