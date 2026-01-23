@@ -2278,40 +2278,62 @@ export class WobblediverScene extends BaseMiniGameScene {
         }
 
         // Create tentacles reaching toward the result card
-        const tentacleCount = isPerfect ? 12 : 8
+        // More tentacles for better visual density
+        const tentacleCount = isPerfect ? 16 : 12
         for (let i = 0; i < tentacleCount; i++) {
             const side = i % 4
             let x, y, angle
             switch (side) {
                 case 0: // Top
-                    x = this.width * 0.2 + Math.random() * this.width * 0.6
-                    y = 0
-                    angle = Math.PI / 2 + (Math.random() - 0.5) * 0.4
+                    x = this.width * 0.15 + Math.random() * this.width * 0.7
+                    y = -10
+                    angle = Math.PI / 2 + (Math.random() - 0.5) * 0.5
                     break
                 case 1: // Right
-                    x = this.width
-                    y = this.height * 0.2 + Math.random() * this.height * 0.6
-                    angle = Math.PI + (Math.random() - 0.5) * 0.4
+                    x = this.width + 10
+                    y = this.height * 0.15 + Math.random() * this.height * 0.7
+                    angle = Math.PI + (Math.random() - 0.5) * 0.5
                     break
                 case 2: // Bottom
-                    x = this.width * 0.2 + Math.random() * this.width * 0.6
-                    y = this.height
-                    angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.4
+                    x = this.width * 0.15 + Math.random() * this.width * 0.7
+                    y = this.height + 10
+                    angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.5
                     break
                 default: // Left
-                    x = 0
-                    y = this.height * 0.2 + Math.random() * this.height * 0.6
-                    angle = (Math.random() - 0.5) * 0.4
+                    x = -10
+                    y = this.height * 0.15 + Math.random() * this.height * 0.7
+                    angle = (Math.random() - 0.5) * 0.5
                     break
             }
+            // Longer tentacles reaching more toward center
+            const baseLength = 100 + Math.random() * 80
             this.resultTentacles.push({
                 startX: x,
                 startY: y,
                 angle,
                 length: 0,
-                targetLength: 80 + Math.random() * 60,
+                targetLength: baseLength,
                 phase: Math.random() * Math.PI * 2,
-                waveSpeed: 2 + Math.random() * 2,
+                waveSpeed: 1.5 + Math.random() * 2.5,
+            })
+        }
+
+        // Add corner tentacles for extra drama
+        const corners = [
+            { x: -10, y: -10, angle: Math.PI / 4 },
+            { x: this.width + 10, y: -10, angle: (Math.PI * 3) / 4 },
+            { x: this.width + 10, y: this.height + 10, angle: (-Math.PI * 3) / 4 },
+            { x: -10, y: this.height + 10, angle: -Math.PI / 4 },
+        ]
+        for (const corner of corners) {
+            this.resultTentacles.push({
+                startX: corner.x,
+                startY: corner.y,
+                angle: corner.angle + (Math.random() - 0.5) * 0.3,
+                length: 0,
+                targetLength: 120 + Math.random() * 60,
+                phase: Math.random() * Math.PI * 2,
+                waveSpeed: 1.2 + Math.random() * 1.5,
             })
         }
 
@@ -2391,51 +2413,130 @@ export class WobblediverScene extends BaseMiniGameScene {
     private drawResultTentacle(g: Graphics, tentacle: ResultTentacle, time: number): void {
         if (tentacle.length < 5) return
 
-        const segments = 10
+        const segments = 12
         const segmentLength = tentacle.length / segments
-        const baseWidth = 15
+        // Pulsating width based on time
+        const pulse = 1 + Math.sin(time * 3 + tentacle.phase) * 0.15
+        const baseWidth = 18 * pulse
+
+        // Store segment positions for multi-pass drawing
+        const segmentPositions: { x: number; y: number; angle: number; width: number }[] = []
 
         let x = tentacle.startX
         let y = tentacle.startY
         let angle = tentacle.angle
 
-        for (let i = 0; i < segments; i++) {
+        // Calculate all segment positions first
+        for (let i = 0; i <= segments; i++) {
             const t = i / segments
-            const width = baseWidth * (1 - t * 0.7)
-            const wave = Math.sin(time * tentacle.waveSpeed + tentacle.phase + i * 0.4) * 10 * t
+            const width = baseWidth * (1 - t * 0.6)
+            segmentPositions.push({ x, y, angle, width })
 
-            // Curve toward center
-            const toCenterX = this.width / 2 - x
-            const toCenterY = this.height / 2 - 20 - y
-            const toCenterAngle = Math.atan2(toCenterY, toCenterX)
-            angle += (toCenterAngle - angle) * 0.1
+            if (i < segments) {
+                // More dramatic wave with secondary oscillation
+                const wave1 = Math.sin(time * tentacle.waveSpeed + tentacle.phase + i * 0.5) * 12 * t
+                const wave2 = Math.sin(time * tentacle.waveSpeed * 0.7 + tentacle.phase * 1.5 + i * 0.3) * 6 * t
+                const wave = wave1 + wave2
 
-            const nextX = x + Math.cos(angle) * segmentLength + Math.cos(angle + Math.PI / 2) * wave
-            const nextY = y + Math.sin(angle) * segmentLength + Math.sin(angle + Math.PI / 2) * wave
+                // Curve toward center with slight random drift
+                const toCenterX = this.width / 2 - x
+                const toCenterY = this.height / 2 - 20 - y
+                const toCenterAngle = Math.atan2(toCenterY, toCenterX)
+                angle += (toCenterAngle - angle) * 0.12
 
-            // Draw segment
-            const perpX = (Math.cos(angle + Math.PI / 2) * width) / 2
-            const perpY = (Math.sin(angle + Math.PI / 2) * width) / 2
+                x += Math.cos(angle) * segmentLength + Math.cos(angle + Math.PI / 2) * wave
+                y += Math.sin(angle) * segmentLength + Math.sin(angle + Math.PI / 2) * wave
+            }
+        }
 
-            g.moveTo(x + perpX, y + perpY)
-            g.lineTo(nextX + perpX * 0.8, nextY + perpY * 0.8)
-            g.lineTo(nextX - perpX * 0.8, nextY - perpY * 0.8)
-            g.lineTo(x - perpX, y - perpY)
+        // Pass 1: Draw outer glow
+        for (let i = 0; i < segments; i++) {
+            const seg = segmentPositions[i]
+            const nextSeg = segmentPositions[i + 1]
+            const t = i / segments
+
+            const glowWidth = seg.width * 1.8
+            const perpX = (Math.cos(seg.angle + Math.PI / 2) * glowWidth) / 2
+            const perpY = (Math.sin(seg.angle + Math.PI / 2) * glowWidth) / 2
+            const nextPerpX = (Math.cos(nextSeg.angle + Math.PI / 2) * nextSeg.width * 1.8) / 2
+            const nextPerpY = (Math.sin(nextSeg.angle + Math.PI / 2) * nextSeg.width * 1.8) / 2
+
+            g.moveTo(seg.x + perpX, seg.y + perpY)
+            g.lineTo(nextSeg.x + nextPerpX * 0.85, nextSeg.y + nextPerpY * 0.85)
+            g.lineTo(nextSeg.x - nextPerpX * 0.85, nextSeg.y - nextPerpY * 0.85)
+            g.lineTo(seg.x - perpX, seg.y - perpY)
             g.closePath()
 
-            const tentacleColor = this.lerpColor(0x4a2060, 0x1a0a20, t)
-            g.fill({ color: tentacleColor, alpha: 0.8 })
+            const glowColor = this.lerpColor(0x6a3090, 0x2a1040, t)
+            g.fill({ color: glowColor, alpha: 0.25 })
+        }
 
-            // Suckers
-            if (i > 1 && i % 2 === 0 && tentacle.length > 30) {
-                g.circle(x, y, width * 0.25)
-                g.fill({ color: 0x6a3080, alpha: 0.5 })
-                g.circle(x, y, width * 0.12)
-                g.fill({ color: 0x1a0a20, alpha: 0.7 })
-            }
+        // Pass 2: Draw main tentacle body
+        for (let i = 0; i < segments; i++) {
+            const seg = segmentPositions[i]
+            const nextSeg = segmentPositions[i + 1]
+            const t = i / segments
 
-            x = nextX
-            y = nextY
+            const perpX = (Math.cos(seg.angle + Math.PI / 2) * seg.width) / 2
+            const perpY = (Math.sin(seg.angle + Math.PI / 2) * seg.width) / 2
+            const nextPerpX = (Math.cos(nextSeg.angle + Math.PI / 2) * nextSeg.width) / 2
+            const nextPerpY = (Math.sin(nextSeg.angle + Math.PI / 2) * nextSeg.width) / 2
+
+            g.moveTo(seg.x + perpX, seg.y + perpY)
+            g.lineTo(nextSeg.x + nextPerpX * 0.85, nextSeg.y + nextPerpY * 0.85)
+            g.lineTo(nextSeg.x - nextPerpX * 0.85, nextSeg.y - nextPerpY * 0.85)
+            g.lineTo(seg.x - perpX, seg.y - perpY)
+            g.closePath()
+
+            // Gradient from deep purple at base to dark at tip
+            const tentacleColor = this.lerpColor(0x5a2878, 0x1a0a20, t)
+            g.fill({ color: tentacleColor, alpha: 0.9 })
+        }
+
+        // Pass 3: Draw highlight/shine on one side
+        for (let i = 0; i < segments; i++) {
+            const seg = segmentPositions[i]
+            const nextSeg = segmentPositions[i + 1]
+            const t = i / segments
+
+            const perpX = Math.cos(seg.angle + Math.PI / 2) * (seg.width * 0.35)
+            const perpY = Math.sin(seg.angle + Math.PI / 2) * (seg.width * 0.35)
+            const nextPerpX = Math.cos(nextSeg.angle + Math.PI / 2) * (nextSeg.width * 0.35)
+            const nextPerpY = Math.sin(nextSeg.angle + Math.PI / 2) * (nextSeg.width * 0.35)
+
+            g.moveTo(seg.x + perpX, seg.y + perpY)
+            g.lineTo(nextSeg.x + nextPerpX, nextSeg.y + nextPerpY)
+            g.lineTo(nextSeg.x + nextPerpX * 0.5, nextSeg.y + nextPerpY * 0.5)
+            g.lineTo(seg.x + perpX * 0.5, seg.y + perpY * 0.5)
+            g.closePath()
+
+            const highlightColor = this.lerpColor(0x8a4098, 0x3a1848, t)
+            g.fill({ color: highlightColor, alpha: 0.4 * (1 - t * 0.5) })
+        }
+
+        // Pass 4: Draw suckers with glow
+        for (let i = 2; i < segments; i += 2) {
+            if (tentacle.length < 30) continue
+
+            const seg = segmentPositions[i]
+            const suckerSize = seg.width * 0.28
+            const suckerPulse = 1 + Math.sin(time * 4 + tentacle.phase + i) * 0.2
+
+            // Sucker glow
+            g.circle(seg.x, seg.y, suckerSize * 1.5 * suckerPulse)
+            g.fill({ color: 0x8a40a0, alpha: 0.2 })
+
+            // Outer sucker ring
+            g.circle(seg.x, seg.y, suckerSize * suckerPulse)
+            g.fill({ color: 0x7a3890, alpha: 0.7 })
+
+            // Inner dark hole
+            g.circle(seg.x, seg.y, suckerSize * 0.5 * suckerPulse)
+            g.fill({ color: 0x150810, alpha: 0.85 })
+
+            // Tiny highlight
+            g.circle(seg.x - suckerSize * 0.2, seg.y - suckerSize * 0.2, suckerSize * 0.15)
+            g.fill({ color: 0xaa60b0, alpha: 0.5 })
         }
     }
 
@@ -2499,14 +2600,16 @@ export class WobblediverScene extends BaseMiniGameScene {
             }
         }
 
-        // Tentacles react too
+        // Tentacles react dramatically
         for (const tentacle of this.resultTentacles) {
             if (isGoodGrade) {
-                // Tentacles recoil slightly
-                tentacle.targetLength *= 0.8
+                // Tentacles recoil in fear/respect
+                tentacle.targetLength *= 0.6
+                tentacle.waveSpeed *= 1.5 // Faster retreat animation
             } else {
-                // Tentacles reach closer
-                tentacle.targetLength *= 1.2
+                // Tentacles reach hungrily closer
+                tentacle.targetLength *= 1.4
+                tentacle.waveSpeed *= 0.7 // Slower, more menacing
             }
         }
     }
@@ -3264,17 +3367,41 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Add the counted score to the score system
         this.scoreSystem.addPoints(this.resultCountTarget.total)
 
-        // Animate out
+        // Make tentacles retract to edges (set targetLength to 0)
+        for (const tentacle of this.resultTentacles) {
+            tentacle.targetLength = 0
+        }
+
+        // Animate out with longer duration for tentacle retraction
         let elapsed = 0
+        const fadeOutDuration = 0.6 // Longer duration for dramatic tentacle retract
         const animateOut = () => {
-            elapsed += 1 / 60
-            const progress = Math.min(elapsed / 0.2, 1)
+            const dt = 1 / 60
+            elapsed += dt
+            const progress = Math.min(elapsed / fadeOutDuration, 1)
 
-            this.stageResultContainer.alpha = 1 - progress
-            this.stageResultContainer.scale.set(1 - progress * 0.3)
+            // Keep time incrementing for tentacle animation
+            this.resultEffectTime += dt
 
-            // Fade out effects too
+            // Update tentacles - faster retraction
+            for (const tentacle of this.resultTentacles) {
+                tentacle.length += (tentacle.targetLength - tentacle.length) * dt * 4
+            }
+
+            // Fade out UI card faster than effects
+            const cardProgress = Math.min(elapsed / 0.3, 1)
+            this.stageResultContainer.alpha = 1 - cardProgress
+            this.stageResultContainer.scale.set(1 - cardProgress * 0.3)
+
+            // Fade out vignette and eyes more slowly
             this.resultVignetteAlpha = 0.7 * (1 - progress)
+
+            // Eyes close during fade-out
+            for (const eye of this.resultEyes) {
+                eye.targetOpenness = 0
+                eye.openness += (eye.targetOpenness - eye.openness) * dt * 3
+            }
+
             this.drawResultEffects()
 
             if (progress < 1) {

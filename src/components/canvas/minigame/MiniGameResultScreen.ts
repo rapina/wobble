@@ -139,9 +139,11 @@ export class MiniGameResultScreen {
 
     // Abyss theme effects
     private abyssEffectGraphics: Graphics | null = null
+    private abyssTentacleGraphics: Graphics | null = null // Separate layer for tentacles (on top)
     private abyssEyes: AbyssEye[] = []
     private abyssTentacles: AbyssTentacle[] = []
     private abyssVignetteAlpha = 0
+    private abyssReactionTriggered = false // Prevent multiple reaction triggers
 
     // Callbacks
     onRetry?: () => void
@@ -188,6 +190,7 @@ export class MiniGameResultScreen {
         this.abyssEyes = []
         this.abyssTentacles = []
         this.abyssVignetteAlpha = 0
+        this.abyssReactionTriggered = false
 
         this.screenContainer.visible = true
         this.screenContainer.removeChildren()
@@ -255,8 +258,9 @@ export class MiniGameResultScreen {
                 const pulse = 1 + Math.sin(this.animTime * 4) * 0.03
                 this.rankContainer.scale.set(pulse)
 
-                // Abyss eye reaction on rank reveal
-                if (this.theme === 'abyss' && rankProgress >= 1 && rankProgress < 1.05) {
+                // Abyss eye reaction on rank reveal (only trigger once)
+                if (this.theme === 'abyss' && !this.abyssReactionTriggered) {
+                    this.abyssReactionTriggered = true
                     this.triggerAbyssReaction()
                 }
             }
@@ -284,6 +288,7 @@ export class MiniGameResultScreen {
         this.abyssEyes = []
         this.abyssTentacles = []
         this.abyssVignetteAlpha = 0
+        this.abyssReactionTriggered = false
     }
 
     private createUI(): void {
@@ -297,10 +302,14 @@ export class MiniGameResultScreen {
         bg.fill(c.bgDark)
         this.screenContainer.addChild(bg)
 
-        // Abyss theme: add effect graphics layer (behind card)
+        // Abyss theme: add effect graphics layers
         if (this.theme === 'abyss') {
+            // Background effects (vignette, eyes) - behind everything
             this.abyssEffectGraphics = new Graphics()
             this.screenContainer.addChild(this.abyssEffectGraphics)
+            // Tentacles layer - behind card but above vignette
+            this.abyssTentacleGraphics = new Graphics()
+            this.screenContainer.addChild(this.abyssTentacleGraphics)
         } else {
             // Default theme: Subtle dot pattern
             const dots = new Graphics()
@@ -740,41 +749,61 @@ export class MiniGameResultScreen {
             })
         }
 
-        // Create tentacles reaching from edges
-        const tentacleCount = 10
+        // Create tentacles reaching from edges - more and longer for dramatic effect
+        const tentacleCount = 16
         for (let i = 0; i < tentacleCount; i++) {
             const side = i % 4
             let x: number, y: number, angle: number
             switch (side) {
                 case 0: // Top
                     x = this.width * 0.1 + Math.random() * this.width * 0.8
-                    y = 0
-                    angle = Math.PI / 2 + (Math.random() - 0.5) * 0.4
+                    y = -10
+                    angle = Math.PI / 2 + (Math.random() - 0.5) * 0.5
                     break
                 case 1: // Right
-                    x = this.width
+                    x = this.width + 10
                     y = this.height * 0.1 + Math.random() * this.height * 0.8
-                    angle = Math.PI + (Math.random() - 0.5) * 0.4
+                    angle = Math.PI + (Math.random() - 0.5) * 0.5
                     break
                 case 2: // Bottom
                     x = this.width * 0.1 + Math.random() * this.width * 0.8
-                    y = this.height
-                    angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.4
+                    y = this.height + 10
+                    angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.5
                     break
                 default: // Left
-                    x = 0
+                    x = -10
                     y = this.height * 0.1 + Math.random() * this.height * 0.8
-                    angle = (Math.random() - 0.5) * 0.4
+                    angle = (Math.random() - 0.5) * 0.5
                     break
             }
+            // Longer tentacles for better visibility
             this.abyssTentacles.push({
                 startX: x,
                 startY: y,
                 angle,
                 length: 0,
-                targetLength: 60 + Math.random() * 80,
+                targetLength: 120 + Math.random() * 100,
                 phase: Math.random() * Math.PI * 2,
-                waveSpeed: 2 + Math.random() * 2,
+                waveSpeed: 1.5 + Math.random() * 2,
+            })
+        }
+
+        // Add corner tentacles for extra drama
+        const corners = [
+            { x: -10, y: -10, angle: Math.PI / 4 },
+            { x: this.width + 10, y: -10, angle: (Math.PI * 3) / 4 },
+            { x: this.width + 10, y: this.height + 10, angle: (-Math.PI * 3) / 4 },
+            { x: -10, y: this.height + 10, angle: -Math.PI / 4 },
+        ]
+        for (const corner of corners) {
+            this.abyssTentacles.push({
+                startX: corner.x,
+                startY: corner.y,
+                angle: corner.angle + (Math.random() - 0.5) * 0.3,
+                length: 0,
+                targetLength: 150 + Math.random() * 80,
+                phase: Math.random() * Math.PI * 2,
+                waveSpeed: 1.2 + Math.random() * 1.5,
             })
         }
     }
@@ -792,9 +821,19 @@ export class MiniGameResultScreen {
             eye.intensity = 0.5 + Math.sin(this.animTime * 3 + eye.phase) * 0.3
         }
 
-        // Update tentacles
+        // Update tentacles - faster growth for better visibility
+        // Also ensure targetLength never goes below minimum
+        const minTargetLength = 80
         for (const tentacle of this.abyssTentacles) {
-            tentacle.length += (tentacle.targetLength - tentacle.length) * deltaSeconds * 1.5
+            // Ensure targetLength stays above minimum
+            if (tentacle.targetLength < minTargetLength) {
+                tentacle.targetLength = minTargetLength
+            }
+            tentacle.length += (tentacle.targetLength - tentacle.length) * deltaSeconds * 2.5
+            // Ensure length never goes below a visible minimum
+            if (tentacle.length < 10) {
+                tentacle.length = Math.max(tentacle.length, 10)
+            }
         }
 
         this.drawAbyssEffects()
@@ -821,73 +860,166 @@ export class MiniGameResultScreen {
             g.fill({ color: 0x0a0510, alpha })
         }
 
-        // Draw tentacles
-        for (const tentacle of this.abyssTentacles) {
-            this.drawAbyssTentacle(g, tentacle)
-        }
-
-        // Draw eyes
+        // Draw eyes on the background layer
         for (const eye of this.abyssEyes) {
             this.drawAbyssEye(g, eye)
+        }
+
+        // Draw tentacles on the TOP layer (above card and buttons)
+        if (this.abyssTentacleGraphics) {
+            const tg = this.abyssTentacleGraphics
+            tg.clear()
+            for (const tentacle of this.abyssTentacles) {
+                this.drawAbyssTentacle(tg, tentacle)
+            }
         }
     }
 
     /**
-     * Draw a single abyss tentacle
+     * Draw a single abyss tentacle with enhanced visuals
      */
     private drawAbyssTentacle(g: Graphics, tentacle: AbyssTentacle): void {
         if (tentacle.length < 5) return
 
-        const segments = 8
+        const segments = 12
         const segmentLength = tentacle.length / segments
-        const baseWidth = 12
+        // Pulsating width based on time
+        const pulse = 1 + Math.sin(this.animTime * 3 + tentacle.phase) * 0.15
+        const baseWidth = 16 * pulse
+
+        // Store segment positions for multi-pass drawing
+        const segmentPositions: { x: number; y: number; angle: number; width: number }[] = []
 
         let x = tentacle.startX
         let y = tentacle.startY
         let angle = tentacle.angle
 
-        for (let i = 0; i < segments; i++) {
+        // Calculate all segment positions first
+        for (let i = 0; i <= segments; i++) {
             const t = i / segments
-            const width = baseWidth * (1 - t * 0.7)
-            const wave =
-                Math.sin(this.animTime * tentacle.waveSpeed + tentacle.phase + i * 0.4) * 8 * t
+            const width = baseWidth * (1 - t * 0.6)
+            segmentPositions.push({ x, y, angle, width })
 
-            // Curve toward center
-            const toCenterX = this.centerX - x
-            const toCenterY = this.centerY - y
-            const toCenterAngle = Math.atan2(toCenterY, toCenterX)
-            angle += (toCenterAngle - angle) * 0.08
+            if (i < segments) {
+                // More dramatic wave with secondary oscillation
+                const wave1 =
+                    Math.sin(this.animTime * tentacle.waveSpeed + tentacle.phase + i * 0.5) * 12 * t
+                const wave2 =
+                    Math.sin(
+                        this.animTime * tentacle.waveSpeed * 0.7 + tentacle.phase * 1.5 + i * 0.3
+                    ) *
+                    6 *
+                    t
+                const wave = wave1 + wave2
 
-            const nextX = x + Math.cos(angle) * segmentLength + Math.cos(angle + Math.PI / 2) * wave
-            const nextY = y + Math.sin(angle) * segmentLength + Math.sin(angle + Math.PI / 2) * wave
+                // Curve toward center
+                const toCenterX = this.centerX - x
+                const toCenterY = this.centerY - y
+                const toCenterAngle = Math.atan2(toCenterY, toCenterX)
+                angle += (toCenterAngle - angle) * 0.1
 
-            // Draw segment
-            const perpX = (Math.cos(angle + Math.PI / 2) * width) / 2
-            const perpY = (Math.sin(angle + Math.PI / 2) * width) / 2
+                x += Math.cos(angle) * segmentLength + Math.cos(angle + Math.PI / 2) * wave
+                y += Math.sin(angle) * segmentLength + Math.sin(angle + Math.PI / 2) * wave
+            }
+        }
 
-            g.moveTo(x + perpX, y + perpY)
-            g.lineTo(nextX + perpX * 0.8, nextY + perpY * 0.8)
-            g.lineTo(nextX - perpX * 0.8, nextY - perpY * 0.8)
-            g.lineTo(x - perpX, y - perpY)
+        // Pass 1: Draw outer glow
+        for (let i = 0; i < segments; i++) {
+            const seg = segmentPositions[i]
+            const nextSeg = segmentPositions[i + 1]
+            const t = i / segments
+
+            const glowWidth = seg.width * 1.8
+            const perpX = (Math.cos(seg.angle + Math.PI / 2) * glowWidth) / 2
+            const perpY = (Math.sin(seg.angle + Math.PI / 2) * glowWidth) / 2
+            const nextPerpX = (Math.cos(nextSeg.angle + Math.PI / 2) * nextSeg.width * 1.8) / 2
+            const nextPerpY = (Math.sin(nextSeg.angle + Math.PI / 2) * nextSeg.width * 1.8) / 2
+
+            g.moveTo(seg.x + perpX, seg.y + perpY)
+            g.lineTo(nextSeg.x + nextPerpX * 0.85, nextSeg.y + nextPerpY * 0.85)
+            g.lineTo(nextSeg.x - nextPerpX * 0.85, nextSeg.y - nextPerpY * 0.85)
+            g.lineTo(seg.x - perpX, seg.y - perpY)
             g.closePath()
 
-            const colorT = t
-            const r = Math.floor(0x4a + (0x1a - 0x4a) * colorT)
-            const gr = Math.floor(0x20 + (0x0a - 0x20) * colorT)
-            const b = Math.floor(0x60 + (0x20 - 0x60) * colorT)
-            const tentacleColor = (r << 16) | (gr << 8) | b
-            g.fill({ color: tentacleColor, alpha: 0.85 })
+            const glowR = Math.floor(0x6a + (0x2a - 0x6a) * t)
+            const glowG = Math.floor(0x30 + (0x10 - 0x30) * t)
+            const glowB = Math.floor(0x90 + (0x40 - 0x90) * t)
+            const glowColor = (glowR << 16) | (glowG << 8) | glowB
+            g.fill({ color: glowColor, alpha: 0.25 })
+        }
 
-            // Suckers
-            if (i > 1 && i % 2 === 0 && tentacle.length > 30) {
-                g.circle(x, y, width * 0.25)
-                g.fill({ color: 0x6a3080, alpha: 0.5 })
-                g.circle(x, y, width * 0.12)
-                g.fill({ color: 0x1a0a20, alpha: 0.7 })
-            }
+        // Pass 2: Draw main tentacle body
+        for (let i = 0; i < segments; i++) {
+            const seg = segmentPositions[i]
+            const nextSeg = segmentPositions[i + 1]
+            const t = i / segments
 
-            x = nextX
-            y = nextY
+            const perpX = (Math.cos(seg.angle + Math.PI / 2) * seg.width) / 2
+            const perpY = (Math.sin(seg.angle + Math.PI / 2) * seg.width) / 2
+            const nextPerpX = (Math.cos(nextSeg.angle + Math.PI / 2) * nextSeg.width) / 2
+            const nextPerpY = (Math.sin(nextSeg.angle + Math.PI / 2) * nextSeg.width) / 2
+
+            g.moveTo(seg.x + perpX, seg.y + perpY)
+            g.lineTo(nextSeg.x + nextPerpX * 0.85, nextSeg.y + nextPerpY * 0.85)
+            g.lineTo(nextSeg.x - nextPerpX * 0.85, nextSeg.y - nextPerpY * 0.85)
+            g.lineTo(seg.x - perpX, seg.y - perpY)
+            g.closePath()
+
+            // Gradient from deep purple at base to dark at tip
+            const bodyR = Math.floor(0x5a + (0x1a - 0x5a) * t)
+            const bodyG = Math.floor(0x28 + (0x0a - 0x28) * t)
+            const bodyB = Math.floor(0x78 + (0x20 - 0x78) * t)
+            const tentacleColor = (bodyR << 16) | (bodyG << 8) | bodyB
+            g.fill({ color: tentacleColor, alpha: 0.9 })
+        }
+
+        // Pass 3: Draw highlight/shine on one side
+        for (let i = 0; i < segments; i++) {
+            const seg = segmentPositions[i]
+            const nextSeg = segmentPositions[i + 1]
+            const t = i / segments
+
+            const perpX = Math.cos(seg.angle + Math.PI / 2) * (seg.width * 0.35)
+            const perpY = Math.sin(seg.angle + Math.PI / 2) * (seg.width * 0.35)
+            const nextPerpX = Math.cos(nextSeg.angle + Math.PI / 2) * (nextSeg.width * 0.35)
+            const nextPerpY = Math.sin(nextSeg.angle + Math.PI / 2) * (nextSeg.width * 0.35)
+
+            g.moveTo(seg.x + perpX, seg.y + perpY)
+            g.lineTo(nextSeg.x + nextPerpX, nextSeg.y + nextPerpY)
+            g.lineTo(nextSeg.x + nextPerpX * 0.5, nextSeg.y + nextPerpY * 0.5)
+            g.lineTo(seg.x + perpX * 0.5, seg.y + perpY * 0.5)
+            g.closePath()
+
+            const highlightR = Math.floor(0x8a + (0x3a - 0x8a) * t)
+            const highlightG = Math.floor(0x40 + (0x18 - 0x40) * t)
+            const highlightB = Math.floor(0x98 + (0x48 - 0x98) * t)
+            const highlightColor = (highlightR << 16) | (highlightG << 8) | highlightB
+            g.fill({ color: highlightColor, alpha: 0.4 * (1 - t * 0.5) })
+        }
+
+        // Pass 4: Draw suckers with glow
+        for (let i = 2; i < segments; i += 2) {
+            if (tentacle.length < 30) continue
+
+            const seg = segmentPositions[i]
+            const suckerSize = seg.width * 0.28
+            const suckerPulse = 1 + Math.sin(this.animTime * 4 + tentacle.phase + i) * 0.2
+
+            // Sucker glow
+            g.circle(seg.x, seg.y, suckerSize * 1.5 * suckerPulse)
+            g.fill({ color: 0x8a40a0, alpha: 0.2 })
+
+            // Outer sucker ring
+            g.circle(seg.x, seg.y, suckerSize * suckerPulse)
+            g.fill({ color: 0x7a3890, alpha: 0.7 })
+
+            // Inner dark hole
+            g.circle(seg.x, seg.y, suckerSize * 0.5 * suckerPulse)
+            g.fill({ color: 0x150810, alpha: 0.85 })
+
+            // Tiny highlight
+            g.circle(seg.x - suckerSize * 0.2, seg.y - suckerSize * 0.2, suckerSize * 0.15)
+            g.fill({ color: 0xaa60b0, alpha: 0.5 })
         }
     }
 
@@ -954,13 +1086,16 @@ export class MiniGameResultScreen {
             }
         }
 
+        // Tentacles react dramatically
         for (const tentacle of this.abyssTentacles) {
             if (isGoodRank) {
-                // Tentacles recoil
-                tentacle.targetLength *= 0.7
+                // Tentacles recoil in fear/respect
+                tentacle.targetLength *= 0.5
+                tentacle.waveSpeed *= 1.5 // Faster retreat animation
             } else {
-                // Tentacles reach closer (claiming the soul)
-                tentacle.targetLength *= 1.3
+                // Tentacles reach hungrily closer (claiming the soul)
+                tentacle.targetLength *= 1.5
+                tentacle.waveSpeed *= 0.7 // Slower, more menacing
             }
         }
     }
