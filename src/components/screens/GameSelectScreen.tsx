@@ -482,7 +482,7 @@ function WobblediverScreen({
 
             {/* === BOTTOM INFO PANEL === */}
             <div
-                className="relative z-30 mx-4 mb-4 p-5 rounded-2xl"
+                className="relative z-30 mx-4 mb-20 p-5 rounded-2xl"
                 style={{
                     background: `linear-gradient(180deg, ${abyssTheme.mid}ee 0%, ${abyssTheme.void}ee 100%)`,
                     border: `2px solid ${abyssTheme.accent}50`,
@@ -564,7 +564,7 @@ function WobblediverScreen({
 // Coming Soon Screen
 function ComingSoonScreen({ t }: { t: (key: string, options?: Record<string, unknown>) => string }) {
     return (
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-8">
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 pb-24">
             <div className="text-8xl mb-6 opacity-20">?</div>
             <h2 className="text-2xl font-black text-white/40 mb-2">{t('game.comingSoon')}</h2>
             <p className="text-sm text-white/30 text-center">{t('game.moreComingSoon', { defaultValue: 'More adventures coming soon!' })}</p>
