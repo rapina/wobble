@@ -810,7 +810,7 @@ export function SandboxScreen({
                                                     const prereq = formulaRegistry[cond.formulaId]
                                                     return (
                                                         <div
-                                                            className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                                            className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold pointer-events-none"
                                                             style={{
                                                                 background: theme.bgPanel,
                                                                 color: '#aaa',
@@ -827,13 +827,8 @@ export function SandboxScreen({
                                                     )
                                                 }
                                                 return (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            handleUnlockFormula(f.id)
-                                                        }}
-                                                        disabled={isRewardAdLoading}
-                                                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold transition-all active:scale-95"
+                                                    <div
+                                                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold pointer-events-none"
                                                         style={{
                                                             background: '#f59e0b',
                                                             color: '#000',
@@ -843,7 +838,7 @@ export function SandboxScreen({
                                                     >
                                                         <Lock className="w-2.5 h-2.5" />
                                                         {i18n.language === 'ko' ? '잠김' : 'Locked'}
-                                                    </button>
+                                                    </div>
                                                 )
                                             })()}
                                     </div>
@@ -1548,7 +1543,7 @@ export function SandboxScreen({
                                                                 formulaRegistry[cond.formulaId]
                                                             return (
                                                                 <div
-                                                                    className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                                                    className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold pointer-events-none"
                                                                     style={{
                                                                         background: theme.bgPanel,
                                                                         color: '#aaa',
@@ -1565,13 +1560,8 @@ export function SandboxScreen({
                                                             )
                                                         }
                                                         return (
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation()
-                                                                    handleUnlockFormula(f.id)
-                                                                }}
-                                                                disabled={isRewardAdLoading}
-                                                                className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold transition-all active:scale-95"
+                                                            <div
+                                                                className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold pointer-events-none"
                                                                 style={{
                                                                     background: '#f59e0b',
                                                                     color: '#000',
@@ -1583,7 +1573,7 @@ export function SandboxScreen({
                                                                 {i18n.language === 'ko'
                                                                     ? '잠김'
                                                                     : 'Locked'}
-                                                            </button>
+                                                            </div>
                                                         )
                                                     })()}
                                             </div>

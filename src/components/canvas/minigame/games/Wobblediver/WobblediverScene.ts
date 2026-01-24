@@ -36,6 +36,16 @@ import i18n from '@/i18n'
 import { useRunStore } from '@/stores/runStore'
 import { MapNode, RunNodeType } from './run/RunMapTypes'
 import { RunMapDisplay } from './run/RunMapDisplay'
+import { PerkSelectionUI } from './run/PerkSelectionUI'
+import {
+    PerkEffect,
+    PerkDefinition,
+    PerkInstance,
+    getPerkById,
+    getCombinedPerkEffects,
+    selectRandomPerks,
+    PERK_DEFINITIONS,
+} from './run/PerkConfig'
 
 // Balatro-style colors
 const BALATRO = {
@@ -166,6 +176,26 @@ export class WobblediverScene extends BaseMiniGameScene {
     private runMapDisplay: RunMapDisplay | null = null
     private isShowingRunMap: boolean = false
     private runHpLostThisStage: number = 0
+
+    // Perk system state
+    private perkSelectionUI: PerkSelectionUI | null = null
+    private isPerkSelectionActive: boolean = false
+    private currentPerkEffects: PerkEffect = {}
+    private phaseUsesThisStage: number = 0 // Track phase shift uses per stage
+    private doubleJumpAvailable: boolean = false // Reset per release
+    private slowMoActive: boolean = false
+    private slowMoTimer: number = 0
+
+    // Shield system (from Barrier perk)
+    private currentShield: number = 0
+    private maxShield: number = 0
+    private shieldGraphics: Graphics | null = null
+    private shieldAnimTime: number = 0
+
+    // Local perk state (for endless mode - run mode uses runStore)
+    private localPerks: PerkInstance[] = []
+    private localExtraLives: number = 0
+    private localPerkSeed: number = 0
 
     // Pending timeout IDs for cleanup
     private pendingTimeoutIds: number[] = []
@@ -354,6 +384,12 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.roundTransitionTime = 0
         this.roundStartTime = 0
 
+        // Initialize local perk state (for endless mode)
+        this.localPerks = []
+        this.localExtraLives = 0
+        this.localPerkSeed = Date.now()
+        this.currentPerkEffects = {}
+
         // Define game boundary - use fixed width centered, leave space for banner ad at bottom
         // On narrow screens (like Galaxy Flip folded), use full screen width instead
         this.effectiveGameWidth = Math.min(this.width, GAME_WIDTH)
@@ -390,6 +426,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.setupTransition()
         this.setupInteraction()
         this.setupIntro()
+        this.setupPerkSelection()
 
         // Hide default HUD - we use custom in-game HUD
         this.hud.setVisible(false)
@@ -397,6 +434,181 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         // Apply abyss theme to game over screen
         this.resultScreen.setTheme('abyss')
+    }
+
+    private setupPerkSelection(): void {
+        // Create perk selection UI (will be shown after stage completion in run mode)
+        this.perkSelectionUI = new PerkSelectionUI({
+            width: this.width,
+            height: this.height,
+            onPerkSelected: (perkId: string) => {
+                this.onPerkSelected(perkId)
+            },
+        })
+        // Add to main container to ensure it's on top of everything
+        this.container.addChild(this.perkSelectionUI.container)
+    }
+
+    private onPerkSelected(perkId: string): void {
+        const perkDef = getPerkById(perkId)
+        if (!perkDef) return
+
+        if (this.runMode) {
+            // Run mode: use runStore
+            const runState = useRunStore.getState()
+            const success = runState.selectPerk(perkId)
+
+            if (success) {
+                this.currentPerkEffects = runState.getPerkEffects()
+
+                if (runState.activeRun) {
+                    const extraLives = runState.activeRun.extraLives
+                    const totalLives = 3 + extraLives
+                    if (this.lifeSystem.lives < totalLives) {
+                        this.lifeSystem.configure(totalLives, totalLives)
+                        this.customHudLives = totalLives
+                    }
+                }
+            }
+
+            this.hidePerkSelection()
+            this.showRunMap()
+        } else {
+            // Endless mode: use local perk state
+            const existingIndex = this.localPerks.findIndex((p) => p.perkId === perkId)
+
+            if (existingIndex >= 0) {
+                // Increment stacks
+                if (this.localPerks[existingIndex].stacks < perkDef.maxStacks) {
+                    this.localPerks[existingIndex].stacks++
+                }
+            } else {
+                // Add new perk
+                this.localPerks.push({
+                    perkId,
+                    stacks: 1,
+                    acquiredAtDepth: this.roundNumber,
+                })
+            }
+
+            // Update effects
+            this.currentPerkEffects = getCombinedPerkEffects(this.localPerks)
+
+            // Apply extra lives
+            if (perkDef.effect.extraLives) {
+                this.localExtraLives += perkDef.effect.extraLives
+                const totalLives = 3 + this.localExtraLives
+                this.lifeSystem.configure(totalLives, this.lifeSystem.lives + perkDef.effect.extraLives)
+                this.customHudLives = this.lifeSystem.lives
+            }
+
+            this.hidePerkSelection()
+            // In endless mode, start next round after perk selection
+            this.startNewRound()
+        }
+    }
+
+    private showPerkSelection(): void {
+        // Lazy initialization of perk selection UI
+        if (!this.perkSelectionUI) {
+            console.log('[Wobblediver] Creating perkSelectionUI lazily')
+            this.perkSelectionUI = new PerkSelectionUI({
+                width: this.width,
+                height: this.height,
+                onPerkSelected: (perkId: string) => {
+                    this.onPerkSelected(perkId)
+                },
+            })
+            // Add to main container (not uiContainer) to ensure it's on top of everything
+            this.container.addChild(this.perkSelectionUI.container)
+        }
+
+        let perkOptions: PerkDefinition[]
+
+        if (this.runMode) {
+            // Run mode: get perks from runStore
+            const runState = useRunStore.getState()
+            perkOptions = runState.getPerkOptions()
+
+            if (perkOptions.length === 0) {
+                this.showRunMap()
+                return
+            }
+        } else {
+            // Endless mode: generate perks locally
+            this.localPerkSeed += this.roundNumber * 1000
+            perkOptions = selectRandomPerks(this.localPerks, this.localPerkSeed, 3)
+
+            // Fallback: if random selection fails, use first 3 common perks
+            if (perkOptions.length === 0) {
+                console.warn('[Wobblediver] selectRandomPerks returned empty, using fallback')
+                perkOptions = PERK_DEFINITIONS.filter((p) => p.rarity === 'common').slice(0, 3)
+            }
+
+            // If still no perks (shouldn't happen), skip perk selection
+            if (perkOptions.length === 0) {
+                console.warn('[Wobblediver] No perks available, skipping perk selection')
+                this.startNewRound()
+                return
+            }
+        }
+
+        console.log('[Wobblediver] Showing perk selection with', perkOptions.length, 'perks')
+        this.isPerkSelectionActive = true
+
+        // Set game phase to 'playing' so updateGame() is called
+        // This allows the perk selection UI to animate (cards start with alpha=0)
+        this.gamePhase = 'playing'
+
+        // Ensure perk selection UI is on top of everything
+        if (this.perkSelectionUI.container.parent) {
+            this.perkSelectionUI.container.parent.removeChild(this.perkSelectionUI.container)
+        }
+        this.container.addChild(this.perkSelectionUI.container)
+
+        this.perkSelectionUI.show(perkOptions)
+    }
+
+    private hidePerkSelection(): void {
+        this.isPerkSelectionActive = false
+        if (this.perkSelectionUI) {
+            this.perkSelectionUI.hide()
+        }
+    }
+
+    /**
+     * Load and apply perk effects at the start of a stage
+     */
+    private applyPerkEffectsForStage(): void {
+        if (this.runMode) {
+            const runState = useRunStore.getState()
+            this.currentPerkEffects = runState.getPerkEffects()
+        } else {
+            // Endless mode: use local perks
+            this.currentPerkEffects = getCombinedPerkEffects(this.localPerks)
+        }
+
+        // Reset per-stage perk state
+        this.phaseUsesThisStage = this.currentPerkEffects.phaseUses || 0
+        this.doubleJumpAvailable = false
+        this.slowMoActive = false
+        this.slowMoTimer = 0
+
+        // Refill shield to max at stage start
+        this.maxShield = this.currentPerkEffects.shieldAmount || 0
+        this.currentShield = this.maxShield
+
+        // Apply trajectory visibility perk
+        if (this.currentPerkEffects.trajectoryAlwaysVisible) {
+            this.trajectoryMode = 'always'
+        }
+
+        // Apply wormhole size perk
+        if (this.currentPerkEffects.wormholeSizeMultiplier && this.wormhole) {
+            const baseScale = this.currentWormholeScale
+            const multiplier = this.currentPerkEffects.wormholeSizeMultiplier
+            this.wormhole.setWidthScale(baseScale * multiplier)
+        }
     }
 
     private setupIntro(): void {
@@ -1777,6 +1989,155 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     /**
+     * Apply damage with shield absorption
+     * Returns the actual HP damage dealt (after shield absorption)
+     */
+    private applyDamageWithShield(baseDamage: number): number {
+        // Apply damage reduction perk first
+        let damage = baseDamage
+        if (this.currentPerkEffects.damageReduction) {
+            damage = Math.ceil(damage * this.currentPerkEffects.damageReduction)
+        }
+
+        // Shield absorbs damage first
+        if (this.currentShield > 0) {
+            const shieldAbsorbed = Math.min(this.currentShield, damage)
+            this.currentShield -= shieldAbsorbed
+            damage -= shieldAbsorbed
+
+            // Visual feedback for shield hit
+            if (this.wobble) {
+                this.showShieldHitEffect(this.wobble.x, this.wobble.y)
+            }
+
+            // If all damage absorbed by shield, return 0
+            if (damage <= 0) {
+                return 0
+            }
+        }
+
+        // Apply remaining damage to HP in run mode
+        if (this.runMode) {
+            const runState = useRunStore.getState()
+            if (runState.activeRun) {
+                runState.damageHP(damage)
+                this.runHpLostThisStage += damage
+            }
+        }
+
+        return damage
+    }
+
+    /**
+     * Visual effect when shield absorbs damage
+     */
+    private showShieldHitEffect(x: number, y: number): void {
+        const ring = new Graphics()
+        ring.circle(x, y, 30)
+        ring.stroke({ color: 0x44aaff, width: 3, alpha: 0.9 })
+        this.gameContainer.addChild(ring)
+
+        let elapsed = 0
+        const animate = () => {
+            elapsed += 1 / 60
+            const progress = elapsed / 0.3
+
+            ring.clear()
+            ring.circle(x, y, 30 + progress * 20)
+            ring.stroke({ color: 0x44aaff, width: 3 * (1 - progress), alpha: 0.9 * (1 - progress) })
+
+            if (progress < 1) {
+                requestAnimationFrame(animate)
+            } else {
+                this.gameContainer.removeChild(ring)
+                ring.destroy()
+            }
+        }
+        requestAnimationFrame(animate)
+    }
+
+    /**
+     * Update shield visual effect around wobble
+     */
+    private updateShieldVisual(deltaSeconds: number): void {
+        if (!this.wobble) {
+            // Hide shield if no wobble
+            if (this.shieldGraphics) {
+                this.shieldGraphics.visible = false
+            }
+            return
+        }
+
+        // Create shield graphics if needed
+        if (!this.shieldGraphics) {
+            this.shieldGraphics = new Graphics()
+            this.gameContainer.addChild(this.shieldGraphics)
+        }
+
+        // Hide if no shield
+        if (this.maxShield <= 0 || this.currentShield <= 0) {
+            this.shieldGraphics.visible = false
+            return
+        }
+
+        this.shieldGraphics.visible = true
+        this.shieldAnimTime += deltaSeconds
+
+        // Calculate shield properties
+        const shieldRatio = this.currentShield / this.maxShield
+        const baseRadius = 35
+        const pulseAmount = 3 * Math.sin(this.shieldAnimTime * 4)
+        const radius = baseRadius + pulseAmount
+
+        // Shield color based on remaining amount
+        // Full: cyan, Low: purple/red
+        const fullColor = 0x44ddff
+        const lowColor = 0x9944ff
+        const r1 = (fullColor >> 16) & 0xff
+        const g1 = (fullColor >> 8) & 0xff
+        const b1 = fullColor & 0xff
+        const r2 = (lowColor >> 16) & 0xff
+        const g2 = (lowColor >> 8) & 0xff
+        const b2 = lowColor & 0xff
+        const rCol = Math.round(r2 + (r1 - r2) * shieldRatio)
+        const gCol = Math.round(g2 + (g1 - g2) * shieldRatio)
+        const bCol = Math.round(b2 + (b1 - b2) * shieldRatio)
+        const shieldColor = (rCol << 16) | (gCol << 8) | bCol
+
+        // Draw shield bubble
+        const gfx = this.shieldGraphics
+        gfx.clear()
+        gfx.position.set(this.wobble.x, this.wobble.y)
+
+        // Outer glow ring
+        const glowAlpha = 0.2 + 0.1 * Math.sin(this.shieldAnimTime * 3)
+        gfx.circle(0, 0, radius + 8)
+        gfx.stroke({ color: shieldColor, width: 2, alpha: glowAlpha * shieldRatio })
+
+        // Main shield ring
+        const mainAlpha = 0.4 + 0.2 * Math.sin(this.shieldAnimTime * 5)
+        gfx.circle(0, 0, radius)
+        gfx.stroke({ color: shieldColor, width: 3, alpha: mainAlpha * shieldRatio })
+
+        // Inner shimmer
+        const shimmerAlpha = 0.1 + 0.05 * Math.sin(this.shieldAnimTime * 7)
+        gfx.circle(0, 0, radius - 5)
+        gfx.fill({ color: shieldColor, alpha: shimmerAlpha * shieldRatio })
+
+        // Floating particles around the shield
+        const particleCount = Math.ceil(3 * shieldRatio)
+        for (let i = 0; i < particleCount; i++) {
+            const angle = this.shieldAnimTime * 2 + (i * Math.PI * 2) / particleCount
+            const particleRadius = radius + 5 + Math.sin(this.shieldAnimTime * 3 + i) * 3
+            const px = Math.cos(angle) * particleRadius
+            const py = Math.sin(angle) * particleRadius
+            const particleSize = 2 + Math.sin(this.shieldAnimTime * 4 + i * 2) * 1
+            gfx.circle(px, py, particleSize)
+            gfx.fill({ color: 0xffffff, alpha: 0.6 })
+        }
+    }
+
+    /**
      * Handle wall tentacle damage to player
      * Only deals damage - doesn't push player (obstacle tentacles handle that)
      */
@@ -1786,20 +2147,17 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Visual feedback - red flash
         this.showWallTentacleHit(this.wobble.x, this.wobble.y)
 
-        // Deal damage in run mode
-        if (this.runMode) {
-            const runState = useRunStore.getState()
-            if (runState.activeRun) {
-                runState.damageHP(5) // 5 HP per tentacle hit
-                this.runHpLostThisStage += 5
-            }
-        }
+        // Apply damage with shield absorption
+        const actualDamage = this.applyDamageWithShield(5)
 
-        // Show pain speech bubble
-        if (this.wobble) {
+        // Show pain speech bubble only if HP was damaged
+        if (actualDamage > 0 && this.wobble) {
             const painPhrases = ['Ow!', 'Ugh!', 'Ouch!', 'Agh!']
             const phrase = painPhrases[Math.floor(Math.random() * painPhrases.length)]
             this.wobble.showSpeechBubble(phrase, 0.5)
+        } else if (this.wobble) {
+            // Shield absorbed all damage
+            this.wobble.showSpeechBubble('Blocked!', 0.5)
         }
     }
 
@@ -3136,19 +3494,34 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Calculate individual score components
         const basePoints = 100
         const stageMultiplier = 1 + (this.roundNumber - 1) * 0.1
-        const perfectMultiplier = perfect ? 2.0 : 1.0
+
+        // Perfect multiplier (with perk bonus)
+        let perfectMultiplier = perfect ? 2.0 : 1.0
+        if (perfect && this.currentPerkEffects.perfectBonusMultiplier) {
+            perfectMultiplier *= this.currentPerkEffects.perfectBonusMultiplier
+        }
 
         // HP bonus: 0-150 points based on remaining HP
         const hpBonus = Math.round(150 * hpPercent * stageMultiplier)
 
         // Time bonus: 0-100 points based on speed (max at 0s, decays over 10s)
         const timeDecay = Math.max(0, 1 - timeTaken / 10)
-        const timeBonus = Math.round(100 * timeDecay * stageMultiplier)
+        let timeBonus = Math.round(100 * timeDecay * stageMultiplier)
+
+        // Speed bonus perk: extra points per second saved
+        if (this.currentPerkEffects.speedBonusPerSecond && timeTaken < 10) {
+            const secondsSaved = 10 - timeTaken
+            timeBonus += Math.round(secondsSaved * this.currentPerkEffects.speedBonusPerSecond)
+        }
 
         // Base score for landing
         const baseScore = Math.round(basePoints * perfectMultiplier * stageMultiplier)
 
-        const totalScore = hpBonus + timeBonus + baseScore
+        // Total score with perk score multiplier
+        let totalScore = hpBonus + timeBonus + baseScore
+        if (this.currentPerkEffects.scoreMultiplier) {
+            totalScore = Math.round(totalScore * this.currentPerkEffects.scoreMultiplier)
+        }
 
         // Set targets for counting animation
         this.resultCountTarget = { hp: hpBonus, time: timeBonus, total: totalScore }
@@ -3339,9 +3712,28 @@ export class WobblediverScene extends BaseMiniGameScene {
             } else {
                 this.stageResultContainer.visible = false
                 this.cleanupResultEffects()
+                // Trigger perk selection or next stage after result fade out completes
+                this.onResultFadeOutComplete()
             }
         }
         requestAnimationFrame(animateOut)
+    }
+
+    /**
+     * Called when result screen fade out animation completes
+     */
+    private onResultFadeOutComplete(): void {
+        console.log('[Wobblediver] onResultFadeOutComplete called, runMode:', this.runMode)
+        if (this.runMode && this.runNodeId) {
+            // Run mode: complete the node and show map
+            const rank = this.resultGrade.letter as 'S' | 'A' | 'B' | 'C' | 'D'
+            const stageScore = this.resultCountTarget?.total || 0
+            this.completeRunNode(rank, stageScore)
+        } else {
+            // Endless mode: show perk selection
+            console.log('[Wobblediver] Calling showPerkSelection for endless mode')
+            this.showPerkSelection()
+        }
     }
 
     private calculateGrade(
@@ -3412,6 +3804,9 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.roundTransitionTime = 0
         this.roundStartTime = Date.now() / 1000 // Track start time for scoring
 
+        // Apply perk effects for this stage (works for both endless and run mode)
+        this.applyPerkEffectsForStage()
+
         // Update background and water colors based on depth
         this.updateDepthColors(this.roundNumber)
 
@@ -3474,8 +3869,11 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.surfaceRipples = []
         this.abyssSplashEffects = []
 
-        // Apply trajectory visibility from stage config
-        this.wobble.setTrajectoryMode(config.trajectoryMode, {
+        // Apply trajectory visibility (perk can override to always show)
+        const trajectoryMode = this.currentPerkEffects.trajectoryAlwaysVisible
+            ? 'always'
+            : config.trajectoryMode
+        this.wobble.setTrajectoryMode(trajectoryMode, {
             duration: config.trajectoryDuration,
             flickerInterval: config.trajectoryFlickerInterval,
             flickerOnRatio: config.trajectoryFlickerOnRatio,
@@ -3484,7 +3882,11 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Apply water pressure effect (increases gravity, making landing harder)
         // Higher water level = more pressure = stronger gravity pull
         // gravityMultiplier: 1.0 (no rise) to 2.0 (max rise)
-        const gravityMultiplier = 1.0 + config.waterLevelRise
+        // Also apply perk gravity multiplier
+        let gravityMultiplier = 1.0 + config.waterLevelRise
+        if (this.currentPerkEffects.gravityMultiplier) {
+            gravityMultiplier *= this.currentPerkEffects.gravityMultiplier
+        }
         this.wobble.setGravityMultiplier(gravityMultiplier)
 
         // Position goal using stage config
@@ -3541,6 +3943,10 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Position wormhole at same location
         // Always start at full size - shrinking happens during gameplay
         this.currentWormholeScale = 2.5
+        // Apply wormhole size perk
+        if (this.currentPerkEffects.wormholeSizeMultiplier) {
+            this.currentWormholeScale *= this.currentPerkEffects.wormholeSizeMultiplier
+        }
         this.wormhole.moveTo(screenX, wormhole.y)
         this.wormhole.setRadius(wormhole.radius)
         this.wormhole.setWidthScale(this.currentWormholeScale)
@@ -4000,6 +4406,12 @@ export class WobblediverScene extends BaseMiniGameScene {
     }
 
     protected updateGame(deltaSeconds: number): void {
+        // Update perk selection UI
+        if (this.perkSelectionUI && this.isPerkSelectionActive) {
+            this.perkSelectionUI.update(deltaSeconds)
+            return // Skip other updates during perk selection
+        }
+
         // Update stage transition effect
         this.updateTransition(deltaSeconds)
 
@@ -4022,6 +4434,9 @@ export class WobblediverScene extends BaseMiniGameScene {
         if (this.wobble) {
             this.wobble.update(deltaSeconds)
             this.wobble.applyFadeAlpha()
+
+            // Update shield visual effect
+            this.updateShieldVisual(deltaSeconds)
 
             // Check for released state
             if (this.wobble.state === 'released') {
@@ -4128,9 +4543,9 @@ export class WobblediverScene extends BaseMiniGameScene {
                 if (this.resultPhase === 'done') {
                     this.resultDisplayTime += resultDelta
                     // Wait 1 second after grade reveal, then proceed
+                    // Perk selection is triggered in hideStageResult -> onResultFadeOutComplete
                     if (this.resultDisplayTime >= 1.0) {
                         this.hideStageResult()
-                        this.roundTransitionTime = 0.3
                     }
                 }
             }
@@ -4221,18 +4636,12 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Update custom HUD (hearts above player, corner info)
         this.updateCustomHUD()
 
-        // Round transition
+        // Round transition (for failure case only - success is handled by onResultFadeOutComplete)
         if (this.roundTransitionTime > 0) {
             this.roundTransitionTime -= deltaSeconds
             if (this.roundTransitionTime <= 0) {
-                // In run mode, complete the node and show map instead of starting new round
-                if (this.runMode && this.runNodeId) {
-                    const rank = this.resultGrade.letter as 'S' | 'A' | 'B' | 'C' | 'D'
-                    const stageScore = this.resultCountTarget?.total || 0
-                    this.completeRunNode(rank, stageScore)
-                } else {
-                    this.startNewRound()
-                }
+                // Failure case: start new round directly (no perk selection on failure)
+                this.startNewRound()
             }
         }
 
@@ -4499,13 +4908,8 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.lifeSystem.loseLife()
 
         // Track HP loss in run mode (each death = significant HP loss)
-        if (this.runMode) {
-            const runState = useRunStore.getState()
-            if (runState.activeRun) {
-                // Lose 20 HP per death
-                runState.damageHP(20)
-            }
-        }
+        // Shield can absorb this damage too
+        this.applyDamageWithShield(20)
 
         // Check if we have lives remaining (after losing one)
         if (this.lifeSystem.lives > 0) {
@@ -4984,6 +5388,9 @@ export class WobblediverScene extends BaseMiniGameScene {
      * Used by run mode to start stages with pre-generated configs
      */
     private startStageFromConfig(config: StageConfig): void {
+        // Apply perk effects for this stage (in run mode)
+        this.applyPerkEffectsForStage()
+
         // Update background colors
         this.updateDepthColors(config.depth)
 
@@ -5026,15 +5433,21 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.surfaceRipples = []
         this.abyssSplashEffects = []
 
-        // Apply trajectory visibility
-        this.wobble.setTrajectoryMode(config.trajectoryMode, {
+        // Apply trajectory visibility (perk can override to always show)
+        const trajectoryMode = this.currentPerkEffects.trajectoryAlwaysVisible
+            ? 'always'
+            : config.trajectoryMode
+        this.wobble.setTrajectoryMode(trajectoryMode, {
             duration: config.trajectoryDuration,
             flickerInterval: config.trajectoryFlickerInterval,
             flickerOnRatio: config.trajectoryFlickerOnRatio,
         })
 
-        // Apply gravity multiplier
-        const gravityMultiplier = 1.0 + config.waterLevelRise
+        // Apply gravity multiplier (stage config + perk effect)
+        let gravityMultiplier = 1.0 + config.waterLevelRise
+        if (this.currentPerkEffects.gravityMultiplier) {
+            gravityMultiplier *= this.currentPerkEffects.gravityMultiplier
+        }
         this.wobble.setGravityMultiplier(gravityMultiplier)
 
         // Position goal
@@ -5069,6 +5482,11 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Complete the node in run state (hpLost = 0 since it's already applied)
         runState.completeNode(rank, stageScore, 0)
 
+        // Apply healOnClear perk effect
+        if (this.currentPerkEffects.healOnClear && runState.activeRun) {
+            runState.healHP(this.currentPerkEffects.healOnClear)
+        }
+
         // Reset node tracking
         this.runNodeId = null
         this.runNodeType = null
@@ -5083,8 +5501,8 @@ export class WobblediverScene extends BaseMiniGameScene {
                 this.handleRunComplete(false)
             }
         } else {
-            // Show map for next node selection
-            this.showRunMap()
+            // Show perk selection, then map
+            this.showPerkSelection()
         }
     }
 

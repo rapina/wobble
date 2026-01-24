@@ -5,6 +5,11 @@
  * Visual representation shows descent into the abyss.
  */
 
+import { PerkInstance } from './PerkConfig'
+
+// Re-export PerkInstance for convenience
+export type { PerkInstance } from './PerkConfig'
+
 /**
  * Rank grades for stage completion
  */
@@ -89,6 +94,15 @@ export interface ActiveRun {
     /** Legacy tracking */
     elitesDefeated: number
     eventsTriggered: number
+
+    /** Perks acquired during this run */
+    perks: PerkInstance[]
+
+    /** Remaining rewind uses (from Rewind perk) */
+    rewindUsesRemaining: number
+
+    /** Extra lives from perks (added to base lives) */
+    extraLives: number
 }
 
 /**

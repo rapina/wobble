@@ -19,7 +19,15 @@ import {
     REST_NODE_CONFIG,
     RestChoice,
     parseNodeId,
+    PerkInstance,
 } from '@/components/canvas/minigame/games/Wobblediver/run/RunMapTypes'
+import {
+    PerkDefinition,
+    PerkEffect,
+    getPerkById,
+    getCombinedPerkEffects,
+    selectRandomPerks,
+} from '@/components/canvas/minigame/games/Wobblediver/run/PerkConfig'
 import { RunMapGenerator } from '@/components/canvas/minigame/games/Wobblediver/run/RunMapGenerator'
 import { SeededRandom } from '@/utils/SeededRandom'
 import { useLabStore } from '@/stores/labStore'
@@ -84,6 +92,23 @@ interface RunState {
 
     /** Reset all run progress (for testing) */
     resetProgress: () => void
+
+    // === Perk Actions ===
+
+    /** Get random perk options for selection */
+    getPerkOptions: () => PerkDefinition[]
+
+    /** Select and apply a perk */
+    selectPerk: (perkId: string) => boolean
+
+    /** Get combined effects of all perks */
+    getPerkEffects: () => PerkEffect
+
+    /** Use a rewind (from Rewind perk) - returns true if successful */
+    useRewind: () => boolean
+
+    /** Get current perks */
+    getPerks: () => PerkInstance[]
 }
 
 export const useRunStore = create<RunState>()(
@@ -123,11 +148,11 @@ export const useRunStore = create<RunState>()(
                 const maxHP = Math.round(DEFAULT_RUN_HP.maxHP * labStats.gravityMultiplier)
 
                 // Create new active run (using legacy structure)
-                const newRun = {
+                const newRun: ActiveRun = {
                     runSeed,
                     map,
                     currentNodeId: null,
-                    completedNodeIds: [] as string[],
+                    completedNodeIds: [],
                     currentHP: startingHP,
                     maxHP: maxHP,
                     score: 0,
@@ -136,9 +161,13 @@ export const useRunStore = create<RunState>()(
                     scoreMultiplierDuration: 0,
                     elitesDefeated: 0,
                     eventsTriggered: 0,
+                    // Perk system
+                    perks: [],
+                    rewindUsesRemaining: 0,
+                    extraLives: 0,
                 }
 
-                set({ activeRun: newRun as any })
+                set({ activeRun: newRun })
             },
 
             selectNode: (nodeId: string) => {
@@ -449,6 +478,138 @@ export const useRunStore = create<RunState>()(
                     completedRuns: 0,
                     activeRun: null,
                 })
+            },
+
+            // === Perk Actions ===
+
+            getPerkOptions: () => {
+                const state = get()
+                if (!state.activeRun) return []
+
+                // Use a seed based on run seed + completed nodes for deterministic options
+                const perkSeed =
+                    state.activeRun.runSeed + state.activeRun.completedNodeIds.length * 1000
+
+                return selectRandomPerks(state.activeRun.perks, perkSeed, 3)
+            },
+
+            selectPerk: (perkId: string) => {
+                const state = get()
+                if (!state.activeRun) return false
+
+                const perkDef = getPerkById(perkId)
+                if (!perkDef) {
+                    console.warn(`Perk ${perkId} not found`)
+                    return false
+                }
+
+                // Check if already at max stacks
+                const existing = state.activeRun.perks.find((p) => p.perkId === perkId)
+                if (existing && existing.stacks >= perkDef.maxStacks) {
+                    console.warn(`Perk ${perkId} already at max stacks`)
+                    return false
+                }
+
+                // Get current depth for tracking
+                const currentDepth = state.activeRun.completedNodeIds.length
+
+                set((state) => {
+                    if (!state.activeRun) return state
+
+                    let updatedPerks: PerkInstance[]
+                    const existingIndex = state.activeRun.perks.findIndex(
+                        (p) => p.perkId === perkId
+                    )
+
+                    if (existingIndex >= 0) {
+                        // Increment stacks
+                        updatedPerks = [...state.activeRun.perks]
+                        updatedPerks[existingIndex] = {
+                            ...updatedPerks[existingIndex],
+                            stacks: updatedPerks[existingIndex].stacks + 1,
+                        }
+                    } else {
+                        // Add new perk
+                        updatedPerks = [
+                            ...state.activeRun.perks,
+                            {
+                                perkId,
+                                stacks: 1,
+                                acquiredAtDepth: currentDepth,
+                            },
+                        ]
+                    }
+
+                    // Calculate updated perk effects
+                    const effects = getCombinedPerkEffects(updatedPerks)
+
+                    // Apply immediate effects
+                    let newMaxHP = state.activeRun.maxHP
+                    let newCurrentHP = state.activeRun.currentHP
+                    let newExtraLives = state.activeRun.extraLives
+                    let newRewindUses = state.activeRun.rewindUsesRemaining
+
+                    // Extra lives from this perk
+                    if (perkDef.effect.extraLives) {
+                        newExtraLives += perkDef.effect.extraLives
+                    }
+
+                    // Max HP bonus from this perk
+                    if (perkDef.effect.maxHPBonus) {
+                        newMaxHP += perkDef.effect.maxHPBonus
+                        // Also heal by the bonus amount
+                        newCurrentHP = Math.min(newMaxHP, newCurrentHP + perkDef.effect.maxHPBonus)
+                    }
+
+                    // Rewind uses from this perk
+                    if (perkDef.effect.rewindUses) {
+                        newRewindUses += perkDef.effect.rewindUses
+                    }
+
+                    return {
+                        activeRun: {
+                            ...state.activeRun,
+                            perks: updatedPerks,
+                            maxHP: newMaxHP,
+                            currentHP: newCurrentHP,
+                            extraLives: newExtraLives,
+                            rewindUsesRemaining: newRewindUses,
+                        },
+                    }
+                })
+
+                return true
+            },
+
+            getPerkEffects: () => {
+                const state = get()
+                if (!state.activeRun) return {}
+                return getCombinedPerkEffects(state.activeRun.perks)
+            },
+
+            useRewind: () => {
+                const state = get()
+                if (!state.activeRun || state.activeRun.rewindUsesRemaining <= 0) {
+                    return false
+                }
+
+                set((state) => {
+                    if (!state.activeRun) return state
+
+                    return {
+                        activeRun: {
+                            ...state.activeRun,
+                            rewindUsesRemaining: state.activeRun.rewindUsesRemaining - 1,
+                        },
+                    }
+                })
+
+                return true
+            },
+
+            getPerks: () => {
+                const state = get()
+                return state.activeRun?.perks || []
             },
         }),
         {

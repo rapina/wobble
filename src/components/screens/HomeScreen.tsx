@@ -249,10 +249,8 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
 
     // Handle formula selection in sandbox mode
     const handleFormulaSelect = (formula: Formula) => {
-        const isLocked = !isAdFree && !isUnlocked(formula.id)
-        if (isLocked) return
-
-        setShowFormulaSelect(false)
+        // Allow selecting locked formulas - they will show locked overlay in simulation
+        // Don't close the overlay here - it will unmount when screen transitions to sandbox
         if (onSelectSandboxFormula) {
             onSelectSandboxFormula(formula)
         }
