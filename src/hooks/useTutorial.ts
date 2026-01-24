@@ -75,7 +75,6 @@ export function useTutorial({
                         : isJa
                           ? 'ここで物理公式を直接触りながら学べます。変数を調整すると結果がどう変わるか、目で確認してみてください！'
                           : 'Here you can learn physics formulas by interacting with them. Adjust variables and see how the results change in real-time!',
-                    wobbleExpression: 'happy',
                 },
                 // Step 2: Point to formula grid
                 {
@@ -91,7 +90,6 @@ export function useTutorial({
                         : isJa
                           ? '様々な物理公式が用意されています。好きな公式をタップしてシミュレーションを始めてみてください！'
                           : 'Various physics formulas are ready for you. Tap any formula to start the simulation!',
-                    wobbleExpression: 'excited',
                 },
             ]
         }
@@ -109,7 +107,6 @@ export function useTutorial({
                 : isJa
                   ? 'この画面で物理現象が可視化されます。変数を調整するとウォブルキャラクターの動きが変わるのが見えます！'
                   : "Physics phenomena are visualized here. Adjust variables and watch how the Wobble character's movement changes!",
-            wobbleExpression: 'happy',
         })
 
         // Step 2-N: Variable cards
@@ -131,7 +128,6 @@ export function useTutorial({
                     : isJa
                       ? `このカードは「${varName}」を調整します。タップして選択し、スライダーで値を変えてみてください！`
                       : `This card controls "${varName}". Tap to select it, then use the slider to change its value!`,
-                wobbleExpression: index === 0 ? 'excited' : 'happy',
             })
         })
 
@@ -145,7 +141,6 @@ export function useTutorial({
                 : isJa
                   ? '画面上部にミッションが表示されます。変数を調整して目標条件を合わせてみてください！'
                   : 'Missions appear at the top. Adjust variables to meet the target conditions!',
-            wobbleExpression: 'surprised',
         })
 
         // Submit button step
@@ -158,7 +153,6 @@ export function useTutorial({
                 : isJa
                   ? '正解だと思ったら提出ボタンを押してください！当たるとポイントがもらえ、連続で当てるとコンボボーナスもあります！'
                   : 'Press submit when you think you have the answer! Earn points for correct answers, and combo bonuses for streaks!',
-            wobbleExpression: 'excited',
         })
 
         // Info button step if formula has applications
@@ -172,8 +166,7 @@ export function useTutorial({
                     : isJa
                       ? 'このボタンを押すと公式が実生活でどう使われるか分かります。気になったら押してみてください！'
                       : "Tap this button to see how the formula is used in real life. Check it out if you're curious!",
-                wobbleExpression: 'happy',
-            })
+                })
         }
 
         return simulationSteps

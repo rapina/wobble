@@ -1344,19 +1344,6 @@ export function SandboxScreen({
                         paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
                     }}
                 >
-                    {/* Remove Ads Button */}
-                    <button
-                        onClick={() => setShowSettingsModal(true)}
-                        className="mb-2 px-3 py-1 rounded-full text-xs font-medium transition-all active:scale-95"
-                        style={{
-                            background: 'rgba(0,0,0,0.5)',
-                            color: 'rgba(255,255,255,0.6)',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                        }}
-                    >
-                        {t('settings.removeAds', 'Remove Ads')}
-                    </button>
-
                     {/* Web placeholder */}
                     {!isNative && (
                         <div
