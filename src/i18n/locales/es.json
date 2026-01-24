@@ -1,0 +1,232 @@
+{
+    "home": {
+        "title": "WOBBLE",
+        "sandbox": "Sandbox",
+        "sandboxDesc": "Explora la fisica libremente",
+        "collection": "Coleccion",
+        "collectionDesc": "Personajes, Estudio, Registros",
+        "game": "Juego",
+        "gameDesc": "Desafia los minijuegos!",
+        "lab": "Laboratorio",
+        "labDesc": "Los Wobbles investigan fisica!",
+        "shop": "Tienda",
+        "shopDesc": "Quitar anuncios y articulos especiales",
+        "soon": "PRONTO",
+        "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
+        "disclaimer": "Wobble es un juego para explorar la fisica de forma divertida.\nLos resultados pueden diferir de los calculos reales."
+    },
+    "lab": {
+        "title": "Laboratorio de Fisica",
+        "workers": "Trabajadores",
+        "tapStation": "Toca una estacion para asignar",
+        "upgrades": "Mejoras",
+        "appliedStats": "Estadisticas Aplicadas",
+        "perLevel": "por nivel",
+        "welcomeBack": "Bienvenido de nuevo!",
+        "ofResearch": "de investigacion",
+        "workersProduced": "Tus trabajadores produjeron:",
+        "collect": "Recolectar!",
+        "stations": {
+            "gravityLab": "Lab de Gravedad",
+            "accelerator": "Acelerador",
+            "collisionLab": "Lab de Colision",
+            "insulationResearch": "Investigacion de Aislamiento"
+        },
+        "stat": {
+            "hp": "Vida",
+            "speed": "Velocidad",
+            "damage": "Dano",
+            "defense": "Defensa"
+        },
+        "resources": {
+            "mass": "Masa",
+            "velocity": "Velocidad",
+            "force": "Fuerza",
+            "resistance": "Resistencia"
+        }
+    },
+    "simulation": {
+        "loading": "Cargando...",
+        "categories": {
+            "all": "Todo",
+            "mechanics": "Mecanica",
+            "wave": "Ondas",
+            "gravity": "Gravedad",
+            "thermodynamics": "Termo",
+            "electricity": "Electricidad",
+            "special": "Especial",
+            "quantum": "Cuantica",
+            "chemistry": "Quimica"
+        },
+        "emptyCategory": "No hay formulas en esta categoria",
+        "info": {
+            "title": "Usos en la Vida Real",
+            "applicationsLabel": "Aplicaciones Practicas",
+            "dontShowAgain": "No mostrar automaticamente para esta formula"
+        },
+        "welcome": {
+            "title": "WOBBLE",
+            "description": "Bienvenido a Wobble!\nSelecciona una formula de fisica y explora la simulacion.",
+            "openingDesc": "Selecciona una formula de fisica,\najusta las variables,\ny explora la simulacion!",
+            "tapToStart": "Toca para Empezar",
+            "selectFormula": "Seleccionar Formula"
+        }
+    },
+    "tutorial": {
+        "stepMessage": "Toca la tarjeta {{symbol}} para ajustar {{name}}. Usa el deslizador para ver como afecta la simulacion!",
+        "infoButtonMessage": "Toca el boton de info para ver aplicaciones reales de esta formula!",
+        "next": "Siguiente",
+        "skip": "Saltar",
+        "done": "Entendido!",
+        "startButton": "Como usar"
+    },
+    "settings": {
+        "title": "Ajustes",
+        "removeAds": "Quitar Anuncios",
+        "removeAdsDesc": "Compra unica",
+        "adFree": "Sin Anuncios",
+        "adFreeDesc": "Disfruta sin anuncios!",
+        "buyFor": "Comprar por",
+        "restore": "Restaurar Compras",
+        "loading": "Cargando...",
+        "loadingProduct": "Cargando producto...",
+        "webOnly": "Compras disponibles en la app movil"
+    },
+    "game": {
+        "title": "Aventura",
+        "selectAdventure": "Seleccionar Aventura",
+        "wobbleAdventure": "Crisis en Planeta Wobble",
+        "wobbleAdventureTag": "SUPERVIVENCIA",
+        "wobbleAdventureDesc": "Las reglas del mundo estan desapareciendo! Wobi debe sobrevivir la invasion de Sombras y restaurar el orden en el Planeta Wobble!",
+        "pendulumFrenzy": "Frenesi del Pendulo",
+        "pendulumFrenzyDesc": "Corta la cuerda en el momento justo! Domina la fisica del pendulo para dar en el blanco.",
+        "wobblediver": "Wobblediver",
+        "wobblediverDesc": "Sumérgete en el abismo! Usa el impulso del péndulo para escapar por los agujeros de gusano. Esquiva los tentáculos mientras desciendes a la oscuridad...",
+        "minigame": "MINIJUEGO",
+        "comingSoon": "Proximamente",
+        "levelSelect": "Seleccionar Nivel",
+        "completed": "completado",
+        "locked": "Bloqueado",
+        "success": "Exito!",
+        "cleared": "completado!",
+        "nextLevel": "Siguiente Nivel",
+        "levels": "Niveles",
+        "target": "Objetivo",
+        "tapToContinue": "Toca para continuar",
+        "tapForNext": "Toca para siguiente",
+        "tryAgain": "Intentar de Nuevo",
+        "play": "Jugar",
+        "newWobbleUnlocked": "Nuevo Wobble desbloqueado!",
+        "formulaLearned": "Fisica que Usaste",
+        "formulaUsed": "Estas formulas potenciaron tu juego!",
+        "realWorldUse": "Uso en la vida real",
+        "continue": "Continuar",
+        "physicsTags": {
+            "pendulumMotion": "Movimiento Pendular",
+            "gravity": "Gravedad",
+            "momentum": "Momento"
+        },
+        "abyss": {
+            "notWorthy": "NO ERES DIGNO",
+            "proveYourself": "El Abismo no te reconoce.\nDemuestra tu valor en las profundidades infinitas.",
+            "currentDepth": "Tu Profundidad",
+            "required": "Requerido",
+            "hint": "Alcanza Profundidad {{depth}} en modo Sin Fin"
+        }
+    },
+    "share": {
+        "title": "Compartir Resultado",
+        "button": "Compartir",
+        "gameResult": "Consegui rango {{rank}} en Wobble Survivor!\n\nNivel {{level}} | {{kills}} eliminaciones | {{time}} sobrevivido\n\nUn juego de supervivencia con formulas de fisica!\n#Wobble #JuegoDeFisica #Supervivencia"
+    },
+    "achievements": {
+        "title": "Logros",
+        "unlocked": "Logro Desbloqueado!",
+        "progress": "{{unlocked}} de {{total}} desbloqueados"
+    },
+    "wobblediver": {
+        "intro": {
+            "title1": "Wobblediver",
+            "message1": "...Donde estoy?\nAlgo me observa desde abajo...",
+            "title2": "Un Amigo Extrano",
+            "message2": "Una medusa me sostiene con su tentaculo!\nToca para hacer que pulse y me balancee.",
+            "title3": "Escapa al Agujero de Gusano!",
+            "message3": "Aterriza en el agujero de gusano para escapar!\nMayor precision = mayor puntuacion.",
+            "title4": "Evita el Abismo",
+            "message4": "Alli abajo... ojos y tentaculos esperan.\nSi caes... no hay retorno.",
+            "title5": "...Debo Ir",
+            "message5": "Mi amiga medusa ayudara.\nAntes de que tengan hambre..."
+        },
+        "panic": {
+            "phrase1": "Ahhhhh!",
+            "phrase2": "Ayudame!",
+            "phrase3": "No!",
+            "phrase4": "Aaahhh!",
+            "phrase5": "Salvame!"
+        },
+        "transitions": {
+            "awaken": "El abismo despierta...",
+            "depth1": "Descendiendo al abismo...",
+            "depth2": "Mas profundo en la oscuridad...",
+            "depth3": "La luz desaparece...",
+            "depth4": "La presion del agua aumenta...",
+            "depth5": "Estan despertando...",
+            "depth6": "No hay vuelta atras...",
+            "depth7": "Abismo sin fin...",
+            "depth8": "La esperanza se desvanece...",
+            "tapToStart": "TOCA PARA EMPEZAR"
+        },
+        "hints": {
+            "wormholeShrinks": "La salida se estrecha... (agujero se encoge)",
+            "abyssTentacles": "Algo agarra la salida... (tentaculos del abismo)",
+            "portalAppears": "Una grieta en el espacio se abre... (aparece portal)",
+            "obstacleAppears": "Algo se agita en las paredes... (emergen tentaculos)",
+            "moreObstacles": "Mas de ellos despiertan... (mas tentaculos)",
+            "maxObstacles": "Estan por todas partes... (tentaculos maximos)",
+            "trajectoryTimed": "Confia en tus instintos... (trayectoria limitada)",
+            "trajectoryFlicker": "Algo nubla tu vision... (trayectoria parpadea)",
+            "trajectoryMinimal": "Apenas puedo ver... (trayectoria debil)",
+            "waterPressure": "La presion del agua aumenta... (gravedad aumentada)"
+        },
+        "perfect": {
+            "phrase1": "Perfecto!",
+            "phrase2": "Increible!",
+            "phrase3": "Genial!",
+            "phrase4": "Yupi!",
+            "phrase5": "Cambio dimensional!"
+        },
+        "success": {
+            "phrase1": "Uf~",
+            "phrase2": "Sobrevivi!",
+            "phrase3": "Suerte!",
+            "phrase4": "Estuvo cerca",
+            "phrase5": "Entrada al agujero!"
+        },
+        "teleport": {
+            "phrase1": "Warp!",
+            "phrase2": "Teletransporte!",
+            "phrase3": "Cambio dimensional!",
+            "phrase4": "Salto de portal!"
+        },
+        "pain": {
+            "phrase1": "Ay!",
+            "phrase2": "Ugh!",
+            "phrase3": "Duele!",
+            "phrase4": "Agh!",
+            "phrase5": "Auch!",
+            "phrase6": "Argh!"
+        },
+        "ranks": {
+            "S": "El abismo te teme",
+            "A": "Resistencia impresionante",
+            "B": "Presa decente",
+            "C": "Sacrificio ordinario",
+            "D": "Alma insignificante"
+        },
+        "buttons": {
+            "next": "Siguiente",
+            "start": "...Vamos",
+            "skip": "Saltar"
+        }
+    }
+}

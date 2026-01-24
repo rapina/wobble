@@ -1,0 +1,232 @@
+{
+    "home": {
+        "title": "WOBBLE",
+        "sandbox": "沙盒",
+        "sandboxDesc": "自由探索物理",
+        "collection": "收藏",
+        "collectionDesc": "角色、學習、紀錄",
+        "game": "遊戲",
+        "gameDesc": "挑戰小遊戲！",
+        "lab": "實驗室",
+        "labDesc": "Wobble們研究物理！",
+        "shop": "商店",
+        "shopDesc": "移除廣告和特殊物品",
+        "soon": "即將推出",
+        "modes": ["街機", "沙盒", "解謎"],
+        "disclaimer": "Wobble是一款以有趣的方式探索物理的遊戲。\n結果可能與實際計算有所不同。"
+    },
+    "lab": {
+        "title": "物理實驗室",
+        "workers": "研究員",
+        "tapStation": "點擊工作站分配",
+        "upgrades": "升級",
+        "appliedStats": "已套用屬性",
+        "perLevel": "每級",
+        "welcomeBack": "歡迎回來！",
+        "ofResearch": "的研究",
+        "workersProduced": "你的研究員生產了：",
+        "collect": "收集！",
+        "stations": {
+            "gravityLab": "重力實驗室",
+            "accelerator": "加速器",
+            "collisionLab": "碰撞實驗室",
+            "insulationResearch": "絕緣研究"
+        },
+        "stat": {
+            "hp": "生命值",
+            "speed": "速度",
+            "damage": "傷害",
+            "defense": "防禦"
+        },
+        "resources": {
+            "mass": "質量",
+            "velocity": "速度",
+            "force": "力",
+            "resistance": "阻力"
+        }
+    },
+    "simulation": {
+        "loading": "載入中...",
+        "categories": {
+            "all": "全部",
+            "mechanics": "力學",
+            "wave": "波動",
+            "gravity": "重力",
+            "thermodynamics": "熱力學",
+            "electricity": "電學",
+            "special": "特殊",
+            "quantum": "量子",
+            "chemistry": "化學"
+        },
+        "emptyCategory": "此分類暫無公式",
+        "info": {
+            "title": "現實應用",
+            "applicationsLabel": "實際應用",
+            "dontShowAgain": "不再自動顯示此公式"
+        },
+        "welcome": {
+            "title": "WOBBLE",
+            "description": "歡迎來到Wobble！\n選擇一個物理公式並探索模擬。",
+            "openingDesc": "選擇一個物理公式，\n調整變數，\n探索模擬！",
+            "tapToStart": "點擊開始",
+            "selectFormula": "選擇公式"
+        }
+    },
+    "tutorial": {
+        "stepMessage": "點擊{{symbol}}卡片來調整{{name}}。使用滑桿查看它如何影響模擬！",
+        "infoButtonMessage": "點擊資訊按鈕查看此公式的實際應用！",
+        "next": "下一步",
+        "skip": "跳過",
+        "done": "明白了！",
+        "startButton": "使用方法"
+    },
+    "settings": {
+        "title": "設定",
+        "removeAds": "移除廣告",
+        "removeAdsDesc": "一次性購買",
+        "adFree": "無廣告",
+        "adFreeDesc": "享受無廣告體驗！",
+        "buyFor": "購買",
+        "restore": "恢復購買",
+        "loading": "載入中...",
+        "loadingProduct": "載入產品中...",
+        "webOnly": "購買功能僅在行動應用程式中可用"
+    },
+    "game": {
+        "title": "冒險",
+        "selectAdventure": "選擇冒險",
+        "wobbleAdventure": "Wobble星球危機",
+        "wobbleAdventureTag": "生存",
+        "wobbleAdventureDesc": "世界的規則正在消失！Wobi必須在暗影入侵中生存，恢復Wobble星球的秩序！",
+        "pendulumFrenzy": "擺錘狂潮",
+        "pendulumFrenzyDesc": "在正確的時機切斷繩索！掌握擺錘物理來擊中目標。",
+        "wobblediver": "深淵潛水員",
+        "wobblediverDesc": "潛入深淵！利用擺錘動量通過蟲洞逃脫。在下降到黑暗中時躲避觸手...",
+        "minigame": "小遊戲",
+        "comingSoon": "即將推出",
+        "levelSelect": "選擇關卡",
+        "completed": "已完成",
+        "locked": "已鎖定",
+        "success": "成功！",
+        "cleared": "通關！",
+        "nextLevel": "下一關",
+        "levels": "關卡",
+        "target": "目標",
+        "tapToContinue": "點擊繼續",
+        "tapForNext": "點擊下一個",
+        "tryAgain": "再試一次",
+        "play": "開始",
+        "newWobbleUnlocked": "解鎖新Wobble！",
+        "formulaLearned": "你使用的物理",
+        "formulaUsed": "這些公式為你的遊戲提供動力！",
+        "realWorldUse": "現實應用",
+        "continue": "繼續",
+        "physicsTags": {
+            "pendulumMotion": "擺動",
+            "gravity": "重力",
+            "momentum": "動量"
+        },
+        "abyss": {
+            "notWorthy": "不夠資格",
+            "proveYourself": "深淵不認可你。\n在無盡的深處證明你的價值。",
+            "currentDepth": "當前深度",
+            "required": "需要",
+            "hint": "在無盡模式中到達深度{{depth}}"
+        }
+    },
+    "share": {
+        "title": "分享結果",
+        "button": "分享",
+        "gameResult": "在Wobble生存者中達到{{rank}}等級！\n\n等級{{level}} | {{kills}}擊殺 | 生存{{time}}\n\n一款由物理公式驅動的生存遊戲！\n#Wobble #物理遊戲 #生存"
+    },
+    "achievements": {
+        "title": "成就",
+        "unlocked": "成就解鎖！",
+        "progress": "已解鎖{{unlocked}}/{{total}}"
+    },
+    "wobblediver": {
+        "intro": {
+            "title1": "深淵潛水員",
+            "message1": "...這是哪裡？\n下面有什麼東西在看著我...",
+            "title2": "奇怪的朋友",
+            "message2": "一隻水母用觸手抓住了我！\n點擊讓它脈動並搖擺我。",
+            "title3": "逃向蟲洞！",
+            "message3": "降落在旋轉的蟲洞中逃脫！\n越精確=分數越高。",
+            "title4": "避開深淵",
+            "message4": "下面...眼睛和觸手在等待。\n掉下去的話...就回不來了。",
+            "title5": "...我必須走了",
+            "message5": "我的水母朋友會幫忙。\n在牠們餓了之前..."
+        },
+        "panic": {
+            "phrase1": "啊啊啊！",
+            "phrase2": "救命！",
+            "phrase3": "不要！",
+            "phrase4": "啊啊！",
+            "phrase5": "救我！"
+        },
+        "transitions": {
+            "awaken": "深淵正在甦醒...",
+            "depth1": "下降到深淵...",
+            "depth2": "更深入黑暗...",
+            "depth3": "光芒正在消失...",
+            "depth4": "水壓正在上升...",
+            "depth5": "牠們正在醒來...",
+            "depth6": "無法回頭...",
+            "depth7": "無盡的深淵...",
+            "depth8": "希望正在消逝...",
+            "tapToStart": "點擊開始"
+        },
+        "hints": {
+            "wormholeShrinks": "出口越來越窄...（蟲洞縮小）",
+            "abyssTentacles": "有什麼東西抓住出口...（深淵觸手）",
+            "portalAppears": "空間裂縫打開...（傳送門出現）",
+            "obstacleAppears": "牆壁裡有什麼在蠕動...（觸手出現）",
+            "moreObstacles": "更多的牠們醒來了...（更多觸手）",
+            "maxObstacles": "牠們無處不在...（觸手最大）",
+            "trajectoryTimed": "相信你的直覺...（軌跡受限）",
+            "trajectoryFlicker": "有什麼遮住了視線...（軌跡閃爍）",
+            "trajectoryMinimal": "幾乎看不見...（軌跡微弱）",
+            "waterPressure": "水壓正在上升...（重力增加）"
+        },
+        "perfect": {
+            "phrase1": "完美！",
+            "phrase2": "太棒了！",
+            "phrase3": "厲害！",
+            "phrase4": "耶！",
+            "phrase5": "次元轉移！"
+        },
+        "success": {
+            "phrase1": "呼~",
+            "phrase2": "活下來了！",
+            "phrase3": "好險！",
+            "phrase4": "太危險了",
+            "phrase5": "進入蟲洞！"
+        },
+        "teleport": {
+            "phrase1": "躍遷！",
+            "phrase2": "傳送！",
+            "phrase3": "次元轉移！",
+            "phrase4": "傳送門跳躍！"
+        },
+        "pain": {
+            "phrase1": "哎呀！",
+            "phrase2": "呃！",
+            "phrase3": "好痛！",
+            "phrase4": "啊！",
+            "phrase5": "疼！",
+            "phrase6": "啊！"
+        },
+        "ranks": {
+            "S": "深淵懼怕你",
+            "A": "令人印象深刻的抵抗",
+            "B": "還不錯的獵物",
+            "C": "普通的祭品",
+            "D": "微不足道的靈魂"
+        },
+        "buttons": {
+            "next": "下一步",
+            "start": "...走吧",
+            "skip": "跳過"
+        }
+    }
+}

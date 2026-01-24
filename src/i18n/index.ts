@@ -5,19 +5,34 @@ import LanguageDetector from 'i18next-browser-languagedetector'
 import en from './locales/en.json'
 import ko from './locales/ko.json'
 import ja from './locales/ja.json'
+import es from './locales/es.json'
+import pt from './locales/pt.json'
+import zhCN from './locales/zh-CN.json'
+import zhTW from './locales/zh-TW.json'
 
 const resources = {
     en: { translation: en },
     ko: { translation: ko },
     ja: { translation: ja },
+    es: { translation: es },
+    pt: { translation: pt },
+    'zh-CN': { translation: zhCN },
+    'zh-TW': { translation: zhTW },
 }
 
-// Normalize language code (ko-KR -> ko, en-US -> en, ja-JP -> ja)
+// Normalize language code (ko-KR -> ko, en-US -> en, ja-JP -> ja, zh-CN -> zh-CN, zh-TW -> zh-TW)
 const normalizeLanguage = (lng: string | undefined): string => {
     if (!lng) return 'ko'
-    const base = lng.split('-')[0].toLowerCase()
+    const lower = lng.toLowerCase()
+    // Handle Chinese variants first (before splitting by -)
+    if (lower === 'zh-cn' || lower === 'zh-hans' || lower === 'zh-sg') return 'zh-CN'
+    if (lower === 'zh-tw' || lower === 'zh-hant' || lower === 'zh-hk' || lower === 'zh-mo') return 'zh-TW'
+    if (lower.startsWith('zh')) return 'zh-CN' // Default Chinese to Simplified
+    const base = lower.split('-')[0]
     if (base === 'en') return 'en'
     if (base === 'ja') return 'ja'
+    if (base === 'es') return 'es'
+    if (base === 'pt') return 'pt'
     return 'ko'
 }
 
@@ -32,7 +47,7 @@ i18n.use(initReactI18next).init({
     resources,
     lng: getInitialLanguage(),
     fallbackLng: 'ko',
-    supportedLngs: ['ko', 'en', 'ja'],
+    supportedLngs: ['ko', 'en', 'ja', 'es', 'pt', 'zh-CN', 'zh-TW'],
     debug: import.meta.env.DEV,
     interpolation: {
         escapeValue: false,
