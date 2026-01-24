@@ -48,11 +48,11 @@ export class BohrScene extends BaseScene {
         this.energyGraphics = new Graphics()
         this.container.addChild(this.energyGraphics)
 
-        // Nucleus (proton) - Pentagon (Penta) as the reliable center
+        // Nucleus (proton) - Einstein for quantum mechanics theme
         this.nucleusWobble = new Wobble({
             size: 30,
             color: 0xf39c12, // Orange/yellow for proton
-            shape: 'pentagon',
+            shape: 'einstein',
             expression: 'happy',
             glowIntensity: 0.4,
             glowColor: 0xf39c12,

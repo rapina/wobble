@@ -2382,8 +2382,10 @@ export class WobblediverScene extends BaseMiniGameScene {
      * Shows particles floating up (low gravity) or falling fast (high gravity)
      */
     private updateGravityEffect(deltaSeconds: number): void {
-        if (!this.wobble || this.wobble.state !== 'released') {
-            // Hide effect when not falling
+        // Show effect when swinging OR released (not during success/failed/drowning)
+        const validStates = ['swinging', 'released']
+        if (!this.wobble || !validStates.includes(this.wobble.state)) {
+            // Hide effect when not in valid state
             if (this.gravityEffectGraphics) {
                 this.gravityEffectGraphics.visible = false
             }
@@ -2420,28 +2422,22 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         const pos = this.wobble.getPosition()
         const isLightGravity = gravityMod < 1.0
-        const intensity = Math.abs(gravityMod - 1.0) // How much it deviates from normal
 
-        // Spawn new particles around player - high spawn rate for visibility
-        const spawnRate = 8 + intensity * 20 // More particles for stronger effect
-        const particlesToSpawn = Math.floor(spawnRate * deltaSeconds) + (Math.random() < (spawnRate * deltaSeconds) % 1 ? 1 : 0)
-
-        for (let s = 0; s < Math.max(1, particlesToSpawn); s++) {
-            // Always spawn at least 1 particle per frame when effect is active
-            if (this.gravityParticles.length < 30) { // Cap max particles
-                const angle = Math.random() * Math.PI * 2
-                const distance = 20 + Math.random() * 25
-                const particle = {
-                    x: pos.x + Math.cos(angle) * distance,
-                    y: pos.y + Math.sin(angle) * distance,
-                    vx: (Math.random() - 0.5) * 40,
-                    vy: isLightGravity ? -80 - Math.random() * 60 : 100 + Math.random() * 80,
-                    size: isLightGravity ? 3 + Math.random() * 4 : 4 + Math.random() * 5,
-                    alpha: 0.8 + Math.random() * 0.2,
-                    life: 0.8 + Math.random() * 0.5,
-                }
-                this.gravityParticles.push(particle)
+        // Spawn particles sparingly for subtle effect
+        const spawnRate = 3 // Low spawn rate
+        if (Math.random() < spawnRate * deltaSeconds && this.gravityParticles.length < 8) {
+            const angle = Math.random() * Math.PI * 2
+            const distance = 15 + Math.random() * 20
+            const particle = {
+                x: pos.x + Math.cos(angle) * distance,
+                y: pos.y + Math.sin(angle) * distance,
+                vx: (Math.random() - 0.5) * 20,
+                vy: isLightGravity ? -50 - Math.random() * 30 : 60 + Math.random() * 40,
+                size: isLightGravity ? 2 + Math.random() * 2 : 2 + Math.random() * 2.5,
+                alpha: 0.4 + Math.random() * 0.2,
+                life: 0.6 + Math.random() * 0.4,
             }
+            this.gravityParticles.push(particle)
         }
 
         // Update and draw particles
@@ -2471,86 +2467,26 @@ export class WobblediverScene extends BaseMiniGameScene {
             const lifeFade = Math.min(1, p.life * 2)
             const alpha = p.alpha * lifeFade
 
-            // Draw particle
+            // Draw simple particle
             if (isLightGravity) {
-                // Light gravity: soft glowing circles (like bubbles/feathers)
+                // Light gravity: small soft circles
                 gfx.circle(p.x, p.y, p.size)
-                gfx.fill({ color: particleColor, alpha: alpha * 0.5 })
-                gfx.circle(p.x, p.y, p.size * 0.6)
-                gfx.fill({ color: 0xffffff, alpha: alpha * 0.8 })
+                gfx.fill({ color: particleColor, alpha: alpha * 0.6 })
             } else {
-                // Heavy gravity: streaky lines (like falling debris)
-                const streakLength = 8 + p.size * 2
-                gfx.moveTo(p.x, p.y - streakLength * 0.3)
-                gfx.lineTo(p.x, p.y + streakLength * 0.7)
-                gfx.stroke({ color: particleColor, width: p.size * 0.8, alpha: alpha })
-
-                // Bright head
-                gfx.circle(p.x, p.y + streakLength * 0.5, p.size * 0.5)
-                gfx.fill({ color: 0xffdd88, alpha: alpha })
+                // Heavy gravity: small falling dots
+                gfx.circle(p.x, p.y, p.size)
+                gfx.fill({ color: particleColor, alpha: alpha * 0.6 })
             }
         }
 
-        // Draw prominent aura around player indicating gravity state
-        const auraAlpha = 0.35 + Math.sin(performance.now() / 200) * 0.1
-        const auraRadius = 40 + Math.sin(performance.now() / 300) * 5
+        // Draw subtle aura ring only
+        const auraAlpha = 0.15 + Math.sin(performance.now() / 300) * 0.05
+        const auraRadius = 30
         const auraColor = isLightGravity ? 0x88ddff : 0xffaa44
 
-        // Outer glow
-        gfx.circle(pos.x, pos.y, auraRadius + 5)
-        gfx.fill({ color: auraColor, alpha: auraAlpha * 0.2 })
-
-        // Main aura ring
+        // Single subtle ring
         gfx.circle(pos.x, pos.y, auraRadius)
-        gfx.stroke({ color: auraColor, width: 3, alpha: auraAlpha })
-
-        // Inner ring
-        gfx.circle(pos.x, pos.y, auraRadius - 8)
-        gfx.stroke({ color: auraColor, width: 1.5, alpha: auraAlpha * 0.6 })
-
-        if (isLightGravity) {
-            // Floating arrows pointing up - more visible
-            for (let i = 0; i < 4; i++) {
-                const arrowAngle = (i / 4) * Math.PI * 2 + performance.now() / 800
-                const arrowDist = auraRadius + 10
-                const ax = pos.x + Math.cos(arrowAngle) * arrowDist * 0.6
-                const ay = pos.y + Math.sin(arrowAngle) * arrowDist * 0.4 - 15
-                const arrowSize = 8
-
-                // Arrow body (line pointing up)
-                gfx.moveTo(ax, ay + arrowSize * 1.5)
-                gfx.lineTo(ax, ay - arrowSize)
-                gfx.stroke({ color: 0x88ddff, width: 3, alpha: auraAlpha })
-
-                // Arrow head
-                gfx.moveTo(ax, ay - arrowSize)
-                gfx.lineTo(ax - arrowSize * 0.6, ay)
-                gfx.moveTo(ax, ay - arrowSize)
-                gfx.lineTo(ax + arrowSize * 0.6, ay)
-                gfx.stroke({ color: 0xffffff, width: 2, alpha: auraAlpha })
-            }
-        } else {
-            // Falling arrows pointing down - more visible
-            for (let i = 0; i < 4; i++) {
-                const arrowAngle = (i / 4) * Math.PI * 2 + performance.now() / 600
-                const arrowDist = auraRadius + 10
-                const ax = pos.x + Math.cos(arrowAngle) * arrowDist * 0.6
-                const ay = pos.y + Math.sin(arrowAngle) * arrowDist * 0.4 + 15
-                const arrowSize = 8
-
-                // Arrow body (line pointing down)
-                gfx.moveTo(ax, ay - arrowSize * 1.5)
-                gfx.lineTo(ax, ay + arrowSize)
-                gfx.stroke({ color: 0xffaa44, width: 3, alpha: auraAlpha })
-
-                // Arrow head
-                gfx.moveTo(ax, ay + arrowSize)
-                gfx.lineTo(ax - arrowSize * 0.6, ay)
-                gfx.moveTo(ax, ay + arrowSize)
-                gfx.lineTo(ax + arrowSize * 0.6, ay)
-                gfx.stroke({ color: 0xffdd88, width: 2, alpha: auraAlpha })
-            }
-        }
+        gfx.stroke({ color: auraColor, width: 1.5, alpha: auraAlpha })
     }
 
     /**
@@ -4964,6 +4900,9 @@ export class WobblediverScene extends BaseMiniGameScene {
             // Update shield visual effect
             this.updateShieldVisual(effectiveDelta)
 
+            // Update gravity visual effect (shows during swinging and released)
+            this.updateGravityEffect(effectiveDelta)
+
             // Check for released state
             if (this.wobble.state === 'released') {
                 this.checkCollisions()
@@ -4971,14 +4910,6 @@ export class WobblediverScene extends BaseMiniGameScene {
 
                 // Apply perk effects while falling
                 this.applyFallingPerkEffects(effectiveDelta)
-
-                // Update gravity visual effect
-                this.updateGravityEffect(effectiveDelta)
-            } else {
-                // Hide gravity effect when not released
-                if (this.gravityEffectGraphics) {
-                    this.gravityEffectGraphics.visible = false
-                }
             }
 
             // Check bottom boundary (falling into abyss) - instant death

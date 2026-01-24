@@ -3,17 +3,33 @@ import { colors } from '../styles/colors'
 
 export const ph: Formula = {
     id: 'ph',
-    name: { ko: 'pH (산성도)', en: 'pH Scale', ja: 'pH（水素イオン指数）' },
+    name: {
+        ko: 'pH (산성도)',
+        en: 'pH Scale',
+        ja: 'pH（水素イオン指数）',
+        es: 'Escala de pH',
+        pt: 'Escala de pH',
+        'zh-CN': 'pH值（酸碱度）',
+        'zh-TW': 'pH值（酸鹼度）',
+    },
     expression: 'pH = -log[H⁺]',
     description: {
         ko: '수소 이온 농도의 음의 로그값',
         en: 'Negative logarithm of hydrogen ion concentration',
         ja: '水素イオン濃度の負の対数値',
+        es: 'Logaritmo negativo de la concentración de iones de hidrógeno',
+        pt: 'Logaritmo negativo da concentração de íons de hidrogênio',
+        'zh-CN': '氢离子浓度的负对数',
+        'zh-TW': '氫離子濃度的負對數',
     },
     simulationHint: {
         ko: '수소 이온 농도에 따라 용액 색이 변하는 모습',
         en: 'Solution color changes based on hydrogen ion concentration',
         ja: '水素イオン濃度に応じて溶液の色が変わる様子',
+        es: 'El color de la solución cambia según la concentración de iones de hidrógeno',
+        pt: 'A cor da solução muda com base na concentração de íons de hidrogênio',
+        'zh-CN': '溶液颜色根据氢离子浓度变化',
+        'zh-TW': '溶液顏色根據氫離子濃度變化',
     },
     applications: {
         ko: [
@@ -34,12 +50,44 @@ export const ph: Formula = {
             '胃酸（pH 1〜2）と制酸剤の中和作用',
             '土壌pHに応じた植物栽培管理',
         ],
+        es: [
+            'Mantener el pH adecuado del agua de piscina (7.2-7.8)',
+            'Ajustar productos de cuidado de piel a pH ligeramente ácido',
+            'Neutralizar ácido estomacal (pH 1-2) con antiácidos',
+            'Gestionar el crecimiento de plantas según el pH del suelo',
+        ],
+        pt: [
+            'Manter o pH adequado da água da piscina (7.2-7.8)',
+            'Ajustar produtos de cuidado da pele para pH levemente ácido',
+            'Neutralizar ácido estomacal (pH 1-2) com antiácidos',
+            'Gerenciar o crescimento de plantas com base no pH do solo',
+        ],
+        'zh-CN': [
+            '维持游泳池水的适当pH值（7.2-7.8）',
+            '调整护肤品为弱酸性pH值',
+            '用抗酸剂中和胃酸（pH 1-2）',
+            '根据土壤pH值管理植物生长',
+        ],
+        'zh-TW': [
+            '維持游泳池水的適當pH值（7.2-7.8）',
+            '調整護膚品為弱酸性pH值',
+            '用制酸劑中和胃酸（pH 1-2）',
+            '根據土壤pH值管理植物生長',
+        ],
     },
     category: 'chemistry',
     variables: [
         {
             symbol: '[H⁺]',
-            name: { ko: '수소 이온 농도', en: 'H+ Concentration', ja: '水素イオン濃度' },
+            name: {
+                ko: '수소 이온 농도',
+                en: 'H+ Concentration',
+                ja: '水素イオン濃度',
+                es: 'Concentración de H+',
+                pt: 'Concentração de H+',
+                'zh-CN': '氢离子浓度',
+                'zh-TW': '氫離子濃度',
+            },
             role: 'input',
             unit: 'mol/L',
             range: [0.0000001, 1],
@@ -52,7 +100,15 @@ export const ph: Formula = {
         },
         {
             symbol: 'pH',
-            name: { ko: 'pH 값', en: 'pH Value', ja: 'pH値' },
+            name: {
+                ko: 'pH 값',
+                en: 'pH Value',
+                ja: 'pH値',
+                es: 'Valor de pH',
+                pt: 'Valor de pH',
+                'zh-CN': 'pH值',
+                'zh-TW': 'pH值',
+            },
             role: 'output',
             unit: '',
             range: [0, 14],
@@ -95,11 +151,19 @@ export const ph: Formula = {
                 ko: '[H⁺]를 0.1 mol/L 이상으로 올려봐!',
                 en: 'Raise [H+] above 0.1 mol/L!',
                 ja: '[H⁺]を0.1 mol/L以上に上げてみて！',
+                es: '¡Sube [H+] por encima de 0.1 mol/L!',
+                pt: 'Aumente [H+] acima de 0.1 mol/L!',
+                'zh-CN': '把[H⁺]提高到0.1 mol/L以上！',
+                'zh-TW': '把[H⁺]提高到0.1 mol/L以上！',
             },
             result: {
                 ko: 'pH 1 이하! 위산이나 염산 수준의 강산이야.',
                 en: 'pH below 1! Strong acid like stomach acid or hydrochloric acid.',
                 ja: 'pH 1以下！胃酸や塩酸レベルの強酸だよ。',
+                es: '¡pH por debajo de 1! Ácido fuerte como ácido estomacal o ácido clorhídrico.',
+                pt: 'pH abaixo de 1! Ácido forte como ácido estomacal ou ácido clorídrico.',
+                'zh-CN': 'pH低于1！像胃酸或盐酸一样的强酸。',
+                'zh-TW': 'pH低於1！像胃酸或鹽酸一樣的強酸。',
             },
             icon: '🧪',
             condition: (vars) => vars['[H⁺]'] >= 0.1,
@@ -110,11 +174,19 @@ export const ph: Formula = {
                 ko: 'pH를 7에 가깝게 맞춰봐!',
                 en: 'Adjust pH close to 7!',
                 ja: 'pHを7に近づけてみて！',
+                es: '¡Ajusta el pH cerca de 7!',
+                pt: 'Ajuste o pH perto de 7!',
+                'zh-CN': '把pH调到接近7！',
+                'zh-TW': '把pH調到接近7！',
             },
             result: {
                 ko: '중성! 순수한 물의 pH야. 대부분의 생명체에 안전한 환경이지.',
                 en: 'Neutral! pH of pure water. Safe environment for most living things.',
                 ja: '中性！純水のpHだよ。ほとんどの生物に安全な環境だね。',
+                es: '¡Neutro! pH del agua pura. Ambiente seguro para la mayoría de los seres vivos.',
+                pt: 'Neutro! pH da água pura. Ambiente seguro para a maioria dos seres vivos.',
+                'zh-CN': '中性！纯水的pH值。对大多数生物来说是安全的环境。',
+                'zh-TW': '中性！純水的pH值。對大多數生物來說是安全的環境。',
             },
             icon: '💧',
             condition: (vars) => Math.abs(vars['pH'] - 7) < 0.5,
@@ -125,11 +197,19 @@ export const ph: Formula = {
                 ko: '[H⁺]를 0.0000001 mol/L 이하로 낮춰봐!',
                 en: 'Lower [H+] below 0.0000001 mol/L!',
                 ja: '[H⁺]を0.0000001 mol/L以下に下げてみて！',
+                es: '¡Baja [H+] por debajo de 0.0000001 mol/L!',
+                pt: 'Reduza [H+] abaixo de 0.0000001 mol/L!',
+                'zh-CN': '把[H⁺]降低到0.0000001 mol/L以下！',
+                'zh-TW': '把[H⁺]降低到0.0000001 mol/L以下！',
             },
             result: {
                 ko: 'pH 7 이상의 염기성! 비누나 표백제 수준이야.',
                 en: 'Alkaline pH above 7! Like soap or bleach.',
                 ja: 'pH 7以上の塩基性！石鹸や漂白剤レベルだよ。',
+                es: '¡pH alcalino por encima de 7! Como jabón o lejía.',
+                pt: 'pH alcalino acima de 7! Como sabão ou alvejante.',
+                'zh-CN': 'pH大于7的碱性！像肥皂或漂白剂。',
+                'zh-TW': 'pH大於7的鹼性！像肥皂或漂白劑。',
             },
             icon: '🫧',
             condition: (vars) => vars['[H⁺]'] <= 0.0000001,
@@ -142,41 +222,69 @@ export const ph: Formula = {
                 ko: '강산! 위산, 염산 수준',
                 en: 'Strong acid! Like stomach acid',
                 ja: '強酸！胃酸、塩酸レベル',
+                es: '¡Ácido fuerte! Como ácido estomacal',
+                pt: 'Ácido forte! Como ácido estomacal',
+                'zh-CN': '强酸！像胃酸、盐酸',
+                'zh-TW': '強酸！像胃酸、鹽酸',
             }
         if (pH < 4)
             return {
                 ko: '산성! 식초, 레몬즙 수준',
                 en: 'Acidic! Like vinegar or lemon',
                 ja: '酸性！酢、レモン汁レベル',
+                es: '¡Ácido! Como vinagre o limón',
+                pt: 'Ácido! Como vinagre ou limão',
+                'zh-CN': '酸性！像醋或柠檬汁',
+                'zh-TW': '酸性！像醋或檸檬汁',
             }
         if (pH < 6)
             return {
                 ko: '약산성! 커피, 산성비 수준',
                 en: 'Slightly acidic! Like coffee',
                 ja: '弱酸性！コーヒー、酸性雨レベル',
+                es: '¡Ligeramente ácido! Como café',
+                pt: 'Levemente ácido! Como café',
+                'zh-CN': '弱酸性！像咖啡、酸雨',
+                'zh-TW': '弱酸性！像咖啡、酸雨',
             }
         if (pH < 8)
             return {
                 ko: '중성~약염기! 물, 혈액 수준',
                 en: 'Neutral! Like water or blood',
                 ja: '中性〜弱塩基！水、血液レベル',
+                es: '¡Neutro! Como agua o sangre',
+                pt: 'Neutro! Como água ou sangue',
+                'zh-CN': '中性~弱碱！像水、血液',
+                'zh-TW': '中性~弱鹼！像水、血液',
             }
         if (pH < 10)
             return {
                 ko: '약염기! 베이킹소다 수준',
                 en: 'Mild base! Like baking soda',
                 ja: '弱塩基！重曹レベル',
+                es: '¡Base suave! Como bicarbonato',
+                pt: 'Base suave! Como bicarbonato',
+                'zh-CN': '弱碱！像小苏打',
+                'zh-TW': '弱鹼！像小蘇打',
             }
         if (pH < 12)
             return {
                 ko: '염기성! 비누, 암모니아 수준',
                 en: 'Basic! Like soap or ammonia',
                 ja: '塩基性！石鹸、アンモニアレベル',
+                es: '¡Básico! Como jabón o amoníaco',
+                pt: 'Básico! Como sabão ou amônia',
+                'zh-CN': '碱性！像肥皂、氨水',
+                'zh-TW': '鹼性！像肥皂、氨水',
             }
         return {
             ko: '강염기! 표백제, 하수구 세정제 수준',
             en: 'Strong base! Like bleach',
             ja: '強塩基！漂白剤、排水溝洗剤レベル',
+            es: '¡Base fuerte! Como lejía',
+            pt: 'Base forte! Como alvejante',
+            'zh-CN': '强碱！像漂白剂、下水道清洁剂',
+            'zh-TW': '強鹼！像漂白劑、下水道清潔劑',
         }
     },
 }

@@ -19,7 +19,7 @@ export type LocalizedText = Record<string, string>
 export type LocalizedArray = Record<string, string[]>
 
 // Supported languages (single source of truth)
-export const SUPPORTED_LANGUAGES = ['ko', 'en', 'ja'] as const
+export const SUPPORTED_LANGUAGES = ['ko', 'en', 'ja', 'es', 'pt', 'zh-CN', 'zh-TW'] as const
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 
 export const DEFAULT_LANGUAGE: SupportedLanguage = 'ko'
