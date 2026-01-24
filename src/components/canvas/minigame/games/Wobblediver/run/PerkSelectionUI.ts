@@ -77,20 +77,20 @@ export class PerkSelectionUI {
         this.backgroundGraphics = new Graphics()
         this.container.addChild(this.backgroundGraphics)
 
-        // Title
+        // Title - positioned at top
         this.titleText = new Text({
             text: 'CHOOSE A PERK',
             style: new TextStyle({
                 fontFamily: 'Arial Black, sans-serif',
-                fontSize: 24,
+                fontSize: 20,
                 fontWeight: 'bold',
                 fill: ABYSS.gold,
                 stroke: { color: ABYSS.bgDark, width: 3 },
-                letterSpacing: 3,
+                letterSpacing: 2,
             }),
         })
         this.titleText.anchor.set(0.5)
-        this.titleText.position.set(options.width / 2, 80)
+        this.titleText.position.set(options.width / 2, 60)
         this.container.addChild(this.titleText)
 
         // Subtitle
@@ -98,12 +98,12 @@ export class PerkSelectionUI {
             text: 'Tap to select',
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 14,
+                fontSize: 12,
                 fill: ABYSS.textMuted,
             }),
         })
         this.subtitleText.anchor.set(0.5)
-        this.subtitleText.position.set(options.width / 2, 110)
+        this.subtitleText.position.set(options.width / 2, 85)
         this.container.addChild(this.subtitleText)
 
         this.drawBackground()
@@ -144,27 +144,29 @@ export class PerkSelectionUI {
         }
         this.cards = []
 
-        // Create new cards
-        const cardWidth = 100
-        const cardHeight = 150
-        const cardGap = 15
-        const totalWidth = perks.length * cardWidth + (perks.length - 1) * cardGap
-        const finalStartX = (this.options.width - totalWidth) / 2
-        const finalY = 180
+        // Create new cards - VERTICAL layout for mobile portrait
+        const cardWidth = Math.min(280, this.options.width - 40)
+        const cardHeight = 70
+        const cardGap = 12
+        const totalHeight = perks.length * cardHeight + (perks.length - 1) * cardGap
+        const titleAreaHeight = 100 // Space for title and subtitle
+        const availableHeight = this.options.height - titleAreaHeight
+        const finalStartY = titleAreaHeight + (availableHeight - totalHeight) / 2
+        const finalX = this.options.width / 2
 
-        // Define entry directions for each card (슝슝슝 effect)
+        // Define entry directions for each card (슝슝슝 effect) - from sides
         const entryDirections = [
-            { x: -200, y: -100, rotation: -0.8 }, // Left card from top-left
-            { x: 0, y: -300, rotation: 0.3 }, // Center card from top
-            { x: 200, y: -100, rotation: 0.8 }, // Right card from top-right
+            { x: -250, y: 0, rotation: -0.5 }, // First card from left
+            { x: 250, y: 0, rotation: 0.5 }, // Second card from right
+            { x: -250, y: 0, rotation: -0.5 }, // Third card from left
         ]
 
         perks.forEach((perk, index) => {
             const card = this.createPerkCard(perk, index, cardWidth, cardHeight)
 
-            // Calculate final position
-            const targetX = finalStartX + index * (cardWidth + cardGap) + cardWidth / 2
-            const targetY = finalY + cardHeight / 2
+            // Calculate final position - vertical stack
+            const targetX = finalX
+            const targetY = finalStartY + index * (cardHeight + cardGap) + cardHeight / 2
 
             // Get entry direction (cycle if more than 3 cards)
             const entry = entryDirections[index % entryDirections.length]
@@ -203,7 +205,7 @@ export class PerkSelectionUI {
     }
 
     /**
-     * Create a single perk card
+     * Create a single perk card - HORIZONTAL layout (icon left, text right)
      */
     private createPerkCard(
         perk: PerkDefinition,
@@ -221,64 +223,60 @@ export class PerkSelectionUI {
         // Draw card base
         this.drawCard(graphics, perk, width, height, false)
 
-        // Icon (emoji)
+        const iconAreaWidth = 60
+        const textStartX = iconAreaWidth + 10
+
+        // Icon (emoji) - left side
         const iconText = new Text({
             text: perk.icon,
             style: new TextStyle({
-                fontSize: 36,
+                fontSize: 32,
             }),
         })
         iconText.anchor.set(0.5)
-        iconText.position.set(width / 2, 40)
+        iconText.position.set(iconAreaWidth / 2, height / 2)
         cardContainer.addChild(iconText)
 
-        // Name
+        // Rarity indicator - small badge near icon
+        const rarityText = new Text({
+            text: perk.rarity.charAt(0).toUpperCase(),
+            style: new TextStyle({
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 9,
+                fontWeight: 'bold',
+                fill: RARITY_COLORS[perk.rarity],
+            }),
+        })
+        rarityText.anchor.set(0.5)
+        rarityText.position.set(iconAreaWidth / 2, height - 12)
+        cardContainer.addChild(rarityText)
+
+        // Name - right side, top
         const nameText = new Text({
             text: perk.name,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 12,
+                fontSize: 14,
                 fontWeight: 'bold',
                 fill: ABYSS.text,
-                wordWrap: true,
-                wordWrapWidth: width - 10,
-                align: 'center',
             }),
         })
-        nameText.anchor.set(0.5, 0)
-        nameText.position.set(width / 2, 72)
+        nameText.anchor.set(0, 0.5)
+        nameText.position.set(textStartX, height / 2 - 12)
         cardContainer.addChild(nameText)
 
-        // Description
+        // Description - right side, bottom
         const descText = new Text({
             text: perk.description,
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
-                fontSize: 10,
+                fontSize: 11,
                 fill: ABYSS.textMuted,
-                wordWrap: true,
-                wordWrapWidth: width - 14,
-                align: 'center',
             }),
         })
-        descText.anchor.set(0.5, 0)
-        descText.position.set(width / 2, 95)
+        descText.anchor.set(0, 0.5)
+        descText.position.set(textStartX, height / 2 + 12)
         cardContainer.addChild(descText)
-
-        // Rarity indicator
-        const rarityText = new Text({
-            text: perk.rarity.toUpperCase(),
-            style: new TextStyle({
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 8,
-                fontWeight: 'bold',
-                fill: RARITY_COLORS[perk.rarity],
-                letterSpacing: 1,
-            }),
-        })
-        rarityText.anchor.set(0.5)
-        rarityText.position.set(width / 2, height - 15)
-        cardContainer.addChild(rarityText)
 
         // Interaction
         cardContainer.on('pointerover', () => {
@@ -318,7 +316,7 @@ export class PerkSelectionUI {
     }
 
     /**
-     * Draw a card's graphics
+     * Draw a card's graphics - HORIZONTAL layout
      */
     private drawCard(
         g: Graphics,
@@ -336,8 +334,8 @@ export class PerkSelectionUI {
 
         // Outer glow for rare/legendary
         if (perk.rarity !== 'common') {
-            const glowSize = isHovered ? 6 : 4
-            g.roundRect(-glowSize, -glowSize, width + glowSize * 2, height + glowSize * 2, 12)
+            const glowSize = isHovered ? 5 : 3
+            g.roundRect(-glowSize, -glowSize, width + glowSize * 2, height + glowSize * 2, 10)
             g.fill({ color: glowColor, alpha: isHovered ? 0.4 : 0.2 })
         }
 
@@ -346,8 +344,8 @@ export class PerkSelectionUI {
         g.fill({ color: bgColor })
         g.stroke({ color: borderColor, width: 2 })
 
-        // Top accent line (rarity color)
-        g.roundRect(10, 4, width - 20, 3, 1.5)
+        // Left accent bar (rarity color) - vertical stripe on icon area
+        g.roundRect(4, 8, 3, height - 16, 1.5)
         g.fill({ color: rarityColor, alpha: isHovered ? 1 : 0.7 })
     }
 

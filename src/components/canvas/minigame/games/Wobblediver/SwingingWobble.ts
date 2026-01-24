@@ -46,6 +46,9 @@ export class SwingingWobble {
     // Water pressure effect (increases gravity for harder landing)
     private gravityMultiplier = 1.0 // 1.0 = normal, higher = stronger gravity
 
+    // Swing speed multiplier (from Momentum perk)
+    private swingSpeedMultiplier = 1.0 // 1.0 = normal, higher = faster swing
+
     // Game state
     public state: SwingState = 'swinging'
     private stateTime = 0
@@ -320,6 +323,15 @@ export class SwingingWobble {
     }
 
     /**
+     * Set swing speed multiplier (from Momentum perk)
+     * Higher value = faster pendulum swing
+     * @param multiplier - 1.0 = normal speed, higher = faster
+     */
+    setSwingSpeedMultiplier(multiplier: number): void {
+        this.swingSpeedMultiplier = Math.max(0.5, multiplier) // Min 50% speed
+    }
+
+    /**
      * Set goal position for distance-based expressions
      */
     setGoalPosition(x: number, y: number): void {
@@ -388,6 +400,27 @@ export class SwingingWobble {
         this.hurtTimer = 0.3
 
         return this.currentHp > 0
+    }
+
+    /**
+     * Handle wall bounce without taking damage (Bounce perk)
+     */
+    bounceOffWallNoDamage(wallSide: 'left' | 'right' | 'top', boundaryValue: number): void {
+        if (this.state !== 'released') return
+
+        // Correct position to prevent multiple collisions
+        const buffer = 20 // Push out of wall
+        if (wallSide === 'left') {
+            this.releaseX = boundaryValue + buffer
+            this.releaseVx *= -0.85 // Less energy loss for perk
+        } else if (wallSide === 'right') {
+            this.releaseX = boundaryValue - buffer
+            this.releaseVx *= -0.85
+        } else if (wallSide === 'top') {
+            this.releaseY = boundaryValue + buffer
+            this.releaseVy *= -0.85
+            if (this.releaseVy < 0) this.releaseVy = Math.abs(this.releaseVy) * 0.6
+        }
     }
 
     /**
@@ -515,8 +548,11 @@ export class SwingingWobble {
 
     private updateSwinging(deltaSeconds: number): void {
         // Pendulum equation: α = -(g/L) * sin(θ)
+        // Apply swing speed multiplier: higher multiplier = faster swing
+        // Since T = 2π√(L/g), to make swing faster we increase effective gravity
+        const effectiveGravity = this.physics.gravity * (this.swingSpeedMultiplier ** 2)
         const angularAcceleration =
-            -(this.physics.gravity / this.physics.ropeLength) * Math.sin(this.physics.angle)
+            -(effectiveGravity / this.physics.ropeLength) * Math.sin(this.physics.angle)
 
         // Update angular velocity
         this.physics.angularVelocity += angularAcceleration * deltaSeconds

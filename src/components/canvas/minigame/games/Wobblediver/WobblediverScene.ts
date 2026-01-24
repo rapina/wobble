@@ -192,6 +192,18 @@ export class WobblediverScene extends BaseMiniGameScene {
     private shieldGraphics: Graphics | null = null
     private shieldAnimTime: number = 0
 
+    // Slow motion visual overlay (from Slow Motion perk)
+    private slowMoGraphics: Graphics | null = null
+
+    // Active perk icons display
+    private perkIconsContainer: Container | null = null
+    private perkIconTexts: Text[] = []
+
+    // Gravity visual effect (from Featherfall/Heavy Drop perks)
+    private gravityParticles: { x: number; y: number; vx: number; vy: number; size: number; alpha: number; life: number }[] = []
+    private gravityEffectGraphics: Graphics | null = null
+    private currentGravityMultiplier: number = 1.0
+
     // Local perk state (for endless mode - run mode uses runStore)
     private localPerks: PerkInstance[] = []
     private localExtraLives: number = 0
@@ -609,6 +621,9 @@ export class WobblediverScene extends BaseMiniGameScene {
             const multiplier = this.currentPerkEffects.wormholeSizeMultiplier
             this.wormhole.setWidthScale(baseScale * multiplier)
         }
+
+        // Update perk icons display
+        this.updatePerkIconsDisplay()
     }
 
     private setupIntro(): void {
@@ -2134,6 +2149,407 @@ export class WobblediverScene extends BaseMiniGameScene {
             const particleSize = 2 + Math.sin(this.shieldAnimTime * 4 + i * 2) * 1
             gfx.circle(px, py, particleSize)
             gfx.fill({ color: 0xffffff, alpha: 0.6 })
+        }
+    }
+
+    /**
+     * Apply perk effects while wobble is falling (released state)
+     */
+    private applyFallingPerkEffects(deltaSeconds: number): void {
+        if (!this.wobble || this.wobble.state !== 'released') return
+
+        // Magnet effect - pull toward wormhole
+        if (this.currentPerkEffects.magnetStrength && this.wormhole) {
+            const dx = this.wormhole.x - this.wobble.x
+            const dy = this.wormhole.y - this.wobble.y
+            const dist = Math.sqrt(dx * dx + dy * dy)
+
+            if (dist > 10) {
+                // Magnet strength scales with distance (stronger when closer)
+                const magnetForce = this.currentPerkEffects.magnetStrength * 150
+                const falloffDist = 200
+                const strength = Math.min(1, falloffDist / dist)
+                const forceX = (dx / dist) * magnetForce * strength * deltaSeconds
+                const forceY = (dy / dist) * magnetForce * strength * deltaSeconds
+                this.wobble.applyImpulse(dx / dist, dy / dist, magnetForce * strength * deltaSeconds)
+            }
+        }
+
+        // Air control - apply horizontal force based on touch/tilt
+        if (this.currentPerkEffects.hasAirControl && this.lastTouchX !== null) {
+            const centerX = this.width / 2
+            const offset = this.lastTouchX - centerX
+            const airControlForce = 100
+            const normalizedOffset = Math.max(-1, Math.min(1, offset / (this.width / 3)))
+            this.wobble.applyImpulse(normalizedOffset, 0, airControlForce * deltaSeconds)
+        }
+    }
+
+    // Track last touch position for air control
+    private lastTouchX: number | null = null
+
+    /**
+     * Update slow motion visual effect
+     */
+    private updateSlowMoVisual(remainingTime: number): void {
+        // Create graphics if needed
+        if (!this.slowMoGraphics) {
+            this.slowMoGraphics = new Graphics()
+            this.container.addChild(this.slowMoGraphics)
+        }
+
+        this.slowMoGraphics.visible = true
+
+        const gfx = this.slowMoGraphics
+        gfx.clear()
+
+        // Calculate intensity based on remaining time
+        const maxDuration = this.currentPerkEffects.slowMoDuration || 0.5
+        const intensity = Math.min(1, remainingTime / maxDuration)
+
+        // Screen edge vignette effect (purple tint for time distortion)
+        const edgeWidth = 60 * intensity
+        const alpha = 0.3 * intensity
+
+        // Draw gradient edges
+        for (let i = 0; i < edgeWidth; i++) {
+            const edgeAlpha = alpha * (1 - i / edgeWidth)
+
+            // Left edge
+            gfx.rect(i, 0, 1, this.height)
+            gfx.fill({ color: 0x6a4a8a, alpha: edgeAlpha })
+
+            // Right edge
+            gfx.rect(this.width - i - 1, 0, 1, this.height)
+            gfx.fill({ color: 0x6a4a8a, alpha: edgeAlpha })
+
+            // Top edge
+            gfx.rect(0, i, this.width, 1)
+            gfx.fill({ color: 0x6a4a8a, alpha: edgeAlpha * 0.7 })
+
+            // Bottom edge
+            gfx.rect(0, this.height - i - 1, this.width, 1)
+            gfx.fill({ color: 0x6a4a8a, alpha: edgeAlpha * 0.7 })
+        }
+
+        // Pulsing time icon in corner
+        const iconX = 30
+        const iconY = 120
+        const pulse = 1 + Math.sin(performance.now() / 100) * 0.1
+        const iconRadius = 12 * pulse
+
+        // Clock icon background
+        gfx.circle(iconX, iconY, iconRadius + 3)
+        gfx.fill({ color: 0x2a1a3a, alpha: 0.8 })
+
+        gfx.circle(iconX, iconY, iconRadius)
+        gfx.stroke({ color: 0x9b59b6, width: 2, alpha: intensity })
+
+        // Clock hands
+        const handAngle = performance.now() / 200
+        gfx.moveTo(iconX, iconY)
+        gfx.lineTo(iconX + Math.cos(handAngle) * 6, iconY + Math.sin(handAngle) * 6)
+        gfx.stroke({ color: 0xffffff, width: 2, alpha: intensity })
+
+        gfx.moveTo(iconX, iconY)
+        gfx.lineTo(iconX + Math.cos(handAngle * 0.1) * 8, iconY + Math.sin(handAngle * 0.1) * 8)
+        gfx.stroke({ color: 0xffffff, width: 1.5, alpha: intensity })
+    }
+
+    /**
+     * Hide slow motion visual
+     */
+    private hideSlowMoVisual(): void {
+        if (this.slowMoGraphics) {
+            this.slowMoGraphics.visible = false
+            this.slowMoGraphics.clear()
+        }
+    }
+
+    /**
+     * Update active perk icons display
+     * Shows icons of all currently active perks
+     */
+    private updatePerkIconsDisplay(): void {
+        // Get current perks
+        let perks: PerkInstance[]
+        if (this.runMode) {
+            const runState = useRunStore.getState()
+            perks = runState.activeRun?.perks || []
+        } else {
+            perks = this.localPerks
+        }
+
+        if (perks.length === 0) {
+            if (this.perkIconsContainer) {
+                this.perkIconsContainer.visible = false
+            }
+            return
+        }
+
+        // Create container if needed
+        if (!this.perkIconsContainer) {
+            this.perkIconsContainer = new Container()
+            this.container.addChild(this.perkIconsContainer)
+        }
+
+        this.perkIconsContainer.visible = true
+        this.perkIconsContainer.position.set(this.width - 10, 80)
+
+        // Clear old icons
+        for (const text of this.perkIconTexts) {
+            this.perkIconsContainer.removeChild(text)
+            text.destroy()
+        }
+        this.perkIconTexts = []
+
+        // Create icon for each perk
+        const iconSize = 24
+        const gap = 4
+        const maxPerRow = 4
+        let currentX = 0
+        let currentY = 0
+
+        for (let i = 0; i < perks.length; i++) {
+            const perkInstance = perks[i]
+            const perkDef = getPerkById(perkInstance.perkId)
+            if (!perkDef) continue
+
+            // Position in grid
+            const col = i % maxPerRow
+            const row = Math.floor(i / maxPerRow)
+            currentX = -(col * (iconSize + gap)) - iconSize
+            currentY = row * (iconSize + gap)
+
+            // Background circle
+            const bg = new Graphics()
+            bg.circle(currentX + iconSize / 2, currentY + iconSize / 2, iconSize / 2 + 2)
+            bg.fill({ color: 0x1a1025, alpha: 0.8 })
+            bg.stroke({ color: this.getPerkRarityColor(perkDef.rarity), width: 2, alpha: 0.8 })
+            this.perkIconsContainer.addChild(bg)
+
+            // Icon emoji
+            const iconText = new Text({
+                text: perkDef.icon,
+                style: new TextStyle({
+                    fontSize: 16,
+                }),
+            })
+            iconText.anchor.set(0.5)
+            iconText.position.set(currentX + iconSize / 2, currentY + iconSize / 2)
+            this.perkIconsContainer.addChild(iconText)
+            this.perkIconTexts.push(iconText)
+
+            // Stack count badge if > 1
+            if (perkInstance.stacks > 1) {
+                const stackBg = new Graphics()
+                stackBg.circle(currentX + iconSize - 2, currentY + iconSize - 2, 8)
+                stackBg.fill({ color: 0x6a4a8a, alpha: 0.9 })
+                this.perkIconsContainer.addChild(stackBg)
+
+                const stackText = new Text({
+                    text: `${perkInstance.stacks}`,
+                    style: new TextStyle({
+                        fontFamily: 'Arial, sans-serif',
+                        fontSize: 10,
+                        fontWeight: 'bold',
+                        fill: 0xffffff,
+                    }),
+                })
+                stackText.anchor.set(0.5)
+                stackText.position.set(currentX + iconSize - 2, currentY + iconSize - 2)
+                this.perkIconsContainer.addChild(stackText)
+            }
+        }
+    }
+
+    /**
+     * Get color for perk rarity
+     */
+    private getPerkRarityColor(rarity: 'common' | 'rare' | 'legendary'): number {
+        switch (rarity) {
+            case 'common':
+                return 0x8899aa
+            case 'rare':
+                return 0x5588dd
+            case 'legendary':
+                return 0xffaa00
+        }
+    }
+
+    /**
+     * Update gravity visual effect around player
+     * Shows particles floating up (low gravity) or falling fast (high gravity)
+     */
+    private updateGravityEffect(deltaSeconds: number): void {
+        if (!this.wobble || this.wobble.state !== 'released') {
+            // Hide effect when not falling
+            if (this.gravityEffectGraphics) {
+                this.gravityEffectGraphics.visible = false
+            }
+            this.gravityParticles = [] // Clear particles when not active
+            return
+        }
+
+        // Check if gravity is modified by perk
+        const gravityMod = this.currentPerkEffects.gravityMultiplier
+        if (!gravityMod || Math.abs(gravityMod - 1.0) < 0.01) {
+            // No gravity modification from perk
+            if (this.gravityEffectGraphics) {
+                this.gravityEffectGraphics.visible = false
+            }
+            this.gravityParticles = []
+            return
+        }
+
+        // Create graphics if needed
+        if (!this.gravityEffectGraphics) {
+            this.gravityEffectGraphics = new Graphics()
+        }
+
+        // Ensure graphics is in the container and on top of wobble
+        if (!this.gravityEffectGraphics.parent) {
+            this.gameContainer.addChild(this.gravityEffectGraphics)
+        }
+        // Bring to front
+        this.gameContainer.setChildIndex(
+            this.gravityEffectGraphics,
+            this.gameContainer.children.length - 1
+        )
+        this.gravityEffectGraphics.visible = true
+
+        const pos = this.wobble.getPosition()
+        const isLightGravity = gravityMod < 1.0
+        const intensity = Math.abs(gravityMod - 1.0) // How much it deviates from normal
+
+        // Spawn new particles around player - high spawn rate for visibility
+        const spawnRate = 8 + intensity * 20 // More particles for stronger effect
+        const particlesToSpawn = Math.floor(spawnRate * deltaSeconds) + (Math.random() < (spawnRate * deltaSeconds) % 1 ? 1 : 0)
+
+        for (let s = 0; s < Math.max(1, particlesToSpawn); s++) {
+            // Always spawn at least 1 particle per frame when effect is active
+            if (this.gravityParticles.length < 30) { // Cap max particles
+                const angle = Math.random() * Math.PI * 2
+                const distance = 20 + Math.random() * 25
+                const particle = {
+                    x: pos.x + Math.cos(angle) * distance,
+                    y: pos.y + Math.sin(angle) * distance,
+                    vx: (Math.random() - 0.5) * 40,
+                    vy: isLightGravity ? -80 - Math.random() * 60 : 100 + Math.random() * 80,
+                    size: isLightGravity ? 3 + Math.random() * 4 : 4 + Math.random() * 5,
+                    alpha: 0.8 + Math.random() * 0.2,
+                    life: 0.8 + Math.random() * 0.5,
+                }
+                this.gravityParticles.push(particle)
+            }
+        }
+
+        // Update and draw particles
+        const gfx = this.gravityEffectGraphics
+        gfx.clear()
+
+        // Particle colors based on gravity type
+        const particleColor = isLightGravity ? 0x88ddff : 0xffaa44 // Light blue for feather, orange for heavy
+
+        for (let i = this.gravityParticles.length - 1; i >= 0; i--) {
+            const p = this.gravityParticles[i]
+
+            // Update position
+            p.x += p.vx * deltaSeconds
+            p.y += p.vy * deltaSeconds
+            p.life -= deltaSeconds
+
+            // Add some drift
+            p.vx += (Math.random() - 0.5) * 20 * deltaSeconds
+
+            if (p.life <= 0) {
+                this.gravityParticles.splice(i, 1)
+                continue
+            }
+
+            // Fade based on life
+            const lifeFade = Math.min(1, p.life * 2)
+            const alpha = p.alpha * lifeFade
+
+            // Draw particle
+            if (isLightGravity) {
+                // Light gravity: soft glowing circles (like bubbles/feathers)
+                gfx.circle(p.x, p.y, p.size)
+                gfx.fill({ color: particleColor, alpha: alpha * 0.5 })
+                gfx.circle(p.x, p.y, p.size * 0.6)
+                gfx.fill({ color: 0xffffff, alpha: alpha * 0.8 })
+            } else {
+                // Heavy gravity: streaky lines (like falling debris)
+                const streakLength = 8 + p.size * 2
+                gfx.moveTo(p.x, p.y - streakLength * 0.3)
+                gfx.lineTo(p.x, p.y + streakLength * 0.7)
+                gfx.stroke({ color: particleColor, width: p.size * 0.8, alpha: alpha })
+
+                // Bright head
+                gfx.circle(p.x, p.y + streakLength * 0.5, p.size * 0.5)
+                gfx.fill({ color: 0xffdd88, alpha: alpha })
+            }
+        }
+
+        // Draw prominent aura around player indicating gravity state
+        const auraAlpha = 0.35 + Math.sin(performance.now() / 200) * 0.1
+        const auraRadius = 40 + Math.sin(performance.now() / 300) * 5
+        const auraColor = isLightGravity ? 0x88ddff : 0xffaa44
+
+        // Outer glow
+        gfx.circle(pos.x, pos.y, auraRadius + 5)
+        gfx.fill({ color: auraColor, alpha: auraAlpha * 0.2 })
+
+        // Main aura ring
+        gfx.circle(pos.x, pos.y, auraRadius)
+        gfx.stroke({ color: auraColor, width: 3, alpha: auraAlpha })
+
+        // Inner ring
+        gfx.circle(pos.x, pos.y, auraRadius - 8)
+        gfx.stroke({ color: auraColor, width: 1.5, alpha: auraAlpha * 0.6 })
+
+        if (isLightGravity) {
+            // Floating arrows pointing up - more visible
+            for (let i = 0; i < 4; i++) {
+                const arrowAngle = (i / 4) * Math.PI * 2 + performance.now() / 800
+                const arrowDist = auraRadius + 10
+                const ax = pos.x + Math.cos(arrowAngle) * arrowDist * 0.6
+                const ay = pos.y + Math.sin(arrowAngle) * arrowDist * 0.4 - 15
+                const arrowSize = 8
+
+                // Arrow body (line pointing up)
+                gfx.moveTo(ax, ay + arrowSize * 1.5)
+                gfx.lineTo(ax, ay - arrowSize)
+                gfx.stroke({ color: 0x88ddff, width: 3, alpha: auraAlpha })
+
+                // Arrow head
+                gfx.moveTo(ax, ay - arrowSize)
+                gfx.lineTo(ax - arrowSize * 0.6, ay)
+                gfx.moveTo(ax, ay - arrowSize)
+                gfx.lineTo(ax + arrowSize * 0.6, ay)
+                gfx.stroke({ color: 0xffffff, width: 2, alpha: auraAlpha })
+            }
+        } else {
+            // Falling arrows pointing down - more visible
+            for (let i = 0; i < 4; i++) {
+                const arrowAngle = (i / 4) * Math.PI * 2 + performance.now() / 600
+                const arrowDist = auraRadius + 10
+                const ax = pos.x + Math.cos(arrowAngle) * arrowDist * 0.6
+                const ay = pos.y + Math.sin(arrowAngle) * arrowDist * 0.4 + 15
+                const arrowSize = 8
+
+                // Arrow body (line pointing down)
+                gfx.moveTo(ax, ay - arrowSize * 1.5)
+                gfx.lineTo(ax, ay + arrowSize)
+                gfx.stroke({ color: 0xffaa44, width: 3, alpha: auraAlpha })
+
+                // Arrow head
+                gfx.moveTo(ax, ay + arrowSize)
+                gfx.lineTo(ax - arrowSize * 0.6, ay)
+                gfx.moveTo(ax, ay + arrowSize)
+                gfx.lineTo(ax + arrowSize * 0.6, ay)
+                gfx.stroke({ color: 0xffdd88, width: 2, alpha: auraAlpha })
+            }
         }
     }
 
@@ -3775,8 +4191,22 @@ export class WobblediverScene extends BaseMiniGameScene {
             contains: () => true,
         }
 
-        this.gameContainer.on('pointerdown', () => {
+        this.gameContainer.on('pointerdown', (e) => {
+            this.lastTouchX = e.globalX
             this.onTap()
+        })
+
+        // Track pointer movement for air control perk
+        this.gameContainer.on('pointermove', (e) => {
+            this.lastTouchX = e.globalX
+        })
+
+        this.gameContainer.on('pointerup', () => {
+            this.lastTouchX = null
+        })
+
+        this.gameContainer.on('pointerupoutside', () => {
+            this.lastTouchX = null
         })
     }
 
@@ -3790,13 +4220,90 @@ export class WobblediverScene extends BaseMiniGameScene {
             return
         }
 
-        if (!this.isWaitingForTap || !this.wobble) return
+        if (!this.wobble) return
+
+        // Double jump - tap while falling
+        if (this.wobble.state === 'released' && this.doubleJumpAvailable && this.currentPerkEffects.hasDoubleJump) {
+            this.performDoubleJump()
+            return
+        }
+
+        if (!this.isWaitingForTap) return
         if (this.wobble.state !== 'swinging') return
 
         // Cut the rope!
         this.wobble.release()
         this.isWaitingForTap = false
         this.instructionText.alpha = 0
+
+        // Reset double jump availability on release
+        if (this.currentPerkEffects.hasDoubleJump) {
+            this.doubleJumpAvailable = true
+        }
+
+        // Activate slow motion if perk is available
+        if (this.currentPerkEffects.slowMoDuration && this.currentPerkEffects.slowMoDuration > 0) {
+            this.slowMoActive = true
+            this.slowMoTimer = this.currentPerkEffects.slowMoDuration
+        }
+    }
+
+    /**
+     * Perform double jump (tap while falling)
+     */
+    private performDoubleJump(): void {
+        if (!this.wobble) return
+
+        // Apply upward impulse
+        const jumpForce = 350
+        this.wobble.applyImpulse(0, -1, jumpForce)
+        this.doubleJumpAvailable = false
+
+        // Visual and audio feedback
+        this.wobble.showSpeechBubble('Hyah!', 0.4)
+        this.showDoubleJumpEffect()
+    }
+
+    /**
+     * Visual effect for double jump
+     */
+    private showDoubleJumpEffect(): void {
+        if (!this.wobble) return
+
+        const pos = this.wobble.getPosition()
+
+        // Create burst ring effect
+        const ring = new Graphics()
+        this.gameContainer.addChild(ring)
+
+        let elapsed = 0
+        const animate = () => {
+            elapsed += 1 / 60
+            const progress = elapsed / 0.3
+
+            ring.clear()
+            const radius = 10 + progress * 40
+            ring.circle(pos.x, pos.y + 10, radius)
+            ring.stroke({ color: 0x4ecdc4, width: 3, alpha: 0.8 * (1 - progress) })
+
+            // Inner sparkles
+            for (let i = 0; i < 4; i++) {
+                const angle = (i / 4) * Math.PI * 2 + elapsed * 5
+                const sparkleR = radius * 0.6
+                const sx = pos.x + Math.cos(angle) * sparkleR
+                const sy = pos.y + 10 + Math.sin(angle) * sparkleR
+                ring.circle(sx, sy, 3 * (1 - progress))
+                ring.fill({ color: 0xffffff, alpha: 0.8 * (1 - progress) })
+            }
+
+            if (progress < 1) {
+                requestAnimationFrame(animate)
+            } else {
+                this.gameContainer.removeChild(ring)
+                ring.destroy()
+            }
+        }
+        requestAnimationFrame(animate)
     }
 
     private startNewRound(): void {
@@ -3888,6 +4395,11 @@ export class WobblediverScene extends BaseMiniGameScene {
             gravityMultiplier *= this.currentPerkEffects.gravityMultiplier
         }
         this.wobble.setGravityMultiplier(gravityMultiplier)
+
+        // Apply swing speed multiplier (from Momentum perk)
+        if (this.currentPerkEffects.swingSpeedMultiplier) {
+            this.wobble.setSwingSpeedMultiplier(this.currentPerkEffects.swingSpeedMultiplier)
+        }
 
         // Position goal using stage config
         this.positionGoalFromConfig(config)
@@ -4412,37 +4924,61 @@ export class WobblediverScene extends BaseMiniGameScene {
             return // Skip other updates during perk selection
         }
 
+        // Apply slow motion effect (from slow motion perk)
+        let effectiveDelta = deltaSeconds
+        if (this.slowMoActive && this.slowMoTimer > 0) {
+            this.slowMoTimer -= deltaSeconds
+            // Slow down game time by 50%
+            effectiveDelta = deltaSeconds * 0.5
+            // Update slow motion visual
+            this.updateSlowMoVisual(this.slowMoTimer)
+            if (this.slowMoTimer <= 0) {
+                this.slowMoActive = false
+                this.hideSlowMoVisual()
+            }
+        }
+
         // Update stage transition effect
-        this.updateTransition(deltaSeconds)
+        this.updateTransition(effectiveDelta)
 
         // Skip game updates during transition
         if (this.isTransitioning) return
 
         // Update anchor wobble (shakes rope to maintain momentum)
-        this.anchorWobble.update(deltaSeconds)
+        this.anchorWobble.update(effectiveDelta)
 
         // Update abyss animation
-        this.updateAbyss(deltaSeconds)
+        this.updateAbyss(effectiveDelta)
 
         // Update abyss tentacles and apply displacement to wormhole
-        this.updateAbyssTentacleAnimation(deltaSeconds)
+        this.updateAbyssTentacleAnimation(effectiveDelta)
 
         // Update wormhole shrinking animation
-        this.updateWormholeShrinking(deltaSeconds)
+        this.updateWormholeShrinking(effectiveDelta)
 
         // Update wobble
         if (this.wobble) {
-            this.wobble.update(deltaSeconds)
+            this.wobble.update(effectiveDelta)
             this.wobble.applyFadeAlpha()
 
             // Update shield visual effect
-            this.updateShieldVisual(deltaSeconds)
+            this.updateShieldVisual(effectiveDelta)
 
             // Check for released state
             if (this.wobble.state === 'released') {
                 this.checkCollisions()
                 this.checkWallCollisions()
-                // HP bar is now displayed directly on the wobble
+
+                // Apply perk effects while falling
+                this.applyFallingPerkEffects(effectiveDelta)
+
+                // Update gravity visual effect
+                this.updateGravityEffect(effectiveDelta)
+            } else {
+                // Hide gravity effect when not released
+                if (this.gravityEffectGraphics) {
+                    this.gravityEffectGraphics.visible = false
+                }
             }
 
             // Check bottom boundary (falling into abyss) - instant death
@@ -4457,7 +4993,7 @@ export class WobblediverScene extends BaseMiniGameScene {
             // Handle drowning animation completion
             // IMPORTANT: Must check BEFORE handleRoundEnd to set isWaitingForRetry flag first
             if (this.wobble.state === 'drowning') {
-                this.updateDrowningEffects(deltaSeconds)
+                this.updateDrowningEffects(effectiveDelta)
                 if (this.wobble.isDrowningComplete()) {
                     this.wobble.markFailed()
                     this.handleDeath()
@@ -4466,7 +5002,7 @@ export class WobblediverScene extends BaseMiniGameScene {
 
             // Handle pending result (wait for suction animation to complete)
             if (this.pendingResult && this.pendingResultTimer > 0) {
-                this.pendingResultTimer -= deltaSeconds
+                this.pendingResultTimer -= effectiveDelta
 
                 // Animate wobble getting sucked into the funnel
                 if (this.wobble) {
@@ -4552,7 +5088,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         }
 
         // Update goal (old, hidden)
-        this.goal.update(deltaSeconds)
+        this.goal.update(effectiveDelta)
 
         // Update wormhole proximity based on player distance
         if (this.wobble) {
@@ -4564,25 +5100,25 @@ export class WobblediverScene extends BaseMiniGameScene {
         }
 
         // Update wormhole
-        this.wormhole.update(deltaSeconds)
+        this.wormhole.update(effectiveDelta)
 
         // Update portal pairs
         for (const portalPair of this.portalPairs) {
-            portalPair.update(deltaSeconds)
+            portalPair.update(effectiveDelta)
         }
 
         // Get audio bands for equalizer effect
         const audioBands = musicManager.getAudioBands()
 
         // Update wall tentacles with audio reactivity, animation, and player tracking
-        this.wallTentacleTime += deltaSeconds
+        this.wallTentacleTime += effectiveDelta
         const playerX = this.wobble?.x
         const playerY = this.wobble?.y
         this.drawWallTentacles(audioBands, playerX, playerY)
 
         // Check wall tentacle collision and deal damage (with cooldown)
         if (this.wallTentacleDamageCooldown > 0) {
-            this.wallTentacleDamageCooldown -= deltaSeconds
+            this.wallTentacleDamageCooldown -= effectiveDelta
         }
         if (
             this.wobble &&
@@ -4618,7 +5154,7 @@ export class WobblediverScene extends BaseMiniGameScene {
             }
 
             obstacle.setAudioLevel(audioLevel)
-            obstacle.update(deltaSeconds)
+            obstacle.update(effectiveDelta)
 
             // Check if player is near - triggers attack behavior
             if (this.wobble && this.wobble.state === 'released') {
@@ -4812,43 +5348,63 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         const pos = this.wobble.getPosition()
         const wobbleRadius = 15 // Approximate wobble radius
+        const hasBounce = this.currentPerkEffects.hasBounce
 
         // Check left wall
         if (pos.x < this.boundaryLeft + wobbleRadius) {
-            const survived = this.wobble.bounceOffWall('left', this.boundaryLeft)
-            this.showWallBounce('left')
-            this.showPainBubble()
+            if (hasBounce) {
+                // Bounce perk - no damage, just bounce
+                this.wobble.bounceOffWallNoDamage('left', this.boundaryLeft)
+                this.showWallBounce('left')
+                this.wobble.showSpeechBubble('Boing!', 0.3)
+            } else {
+                const survived = this.wobble.bounceOffWall('left', this.boundaryLeft)
+                this.showWallBounce('left')
+                this.showPainBubble()
 
-            if (!survived) {
-                // HP depleted
-                this.wobble.markFailed()
-                this.handleDeath()
+                if (!survived) {
+                    // HP depleted
+                    this.wobble.markFailed()
+                    this.handleDeath()
+                }
             }
         }
 
         // Check right wall
         if (pos.x > this.boundaryRight - wobbleRadius) {
-            const survived = this.wobble.bounceOffWall('right', this.boundaryRight)
-            this.showWallBounce('right')
-            this.showPainBubble()
+            if (hasBounce) {
+                this.wobble.bounceOffWallNoDamage('right', this.boundaryRight)
+                this.showWallBounce('right')
+                this.wobble.showSpeechBubble('Boing!', 0.3)
+            } else {
+                const survived = this.wobble.bounceOffWall('right', this.boundaryRight)
+                this.showWallBounce('right')
+                this.showPainBubble()
 
-            if (!survived) {
-                // HP depleted
-                this.wobble.markFailed()
-                this.handleDeath()
+                if (!survived) {
+                    // HP depleted
+                    this.wobble.markFailed()
+                    this.handleDeath()
+                }
             }
         }
 
         // Check top wall (ceiling)
         if (pos.y < this.boundaryTop + wobbleRadius) {
-            const survived = this.wobble.bounceOffWall('top', this.boundaryTop)
-            this.showWallBounce('top')
-            this.showPainBubble()
+            if (hasBounce) {
+                this.wobble.bounceOffWallNoDamage('top', this.boundaryTop)
+                this.showWallBounce('top')
+                this.wobble.showSpeechBubble('Boing!', 0.3)
+            } else {
+                const survived = this.wobble.bounceOffWall('top', this.boundaryTop)
+                this.showWallBounce('top')
+                this.showPainBubble()
 
-            if (!survived) {
-                // HP depleted
-                this.wobble.markFailed()
-                this.handleDeath()
+                if (!survived) {
+                    // HP depleted
+                    this.wobble.markFailed()
+                    this.handleDeath()
+                }
             }
         }
     }
@@ -5121,6 +5677,38 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.runNodeType = null
         this.runHpLostThisStage = 0
         this.isShowingRunMap = false
+
+        // Reset perk state (for endless mode)
+        this.localPerks = []
+        this.localExtraLives = 0
+        this.localPerkSeed = Date.now()
+        this.currentPerkEffects = {}
+        this.phaseUsesThisStage = 0
+        this.doubleJumpAvailable = false
+        this.slowMoActive = false
+        this.slowMoTimer = 0
+        this.currentShield = 0
+        this.maxShield = 0
+
+        // Hide perk icons display
+        if (this.perkIconsContainer) {
+            this.perkIconsContainer.visible = false
+        }
+
+        // Hide slow mo visual
+        this.hideSlowMoVisual()
+
+        // Hide shield visual
+        if (this.shieldGraphics) {
+            this.shieldGraphics.visible = false
+        }
+
+        // Clear gravity effect
+        this.gravityParticles = []
+        if (this.gravityEffectGraphics) {
+            this.gravityEffectGraphics.visible = false
+            this.gravityEffectGraphics.clear()
+        }
     }
 
     /**
@@ -5449,6 +6037,11 @@ export class WobblediverScene extends BaseMiniGameScene {
             gravityMultiplier *= this.currentPerkEffects.gravityMultiplier
         }
         this.wobble.setGravityMultiplier(gravityMultiplier)
+
+        // Apply swing speed multiplier (from Momentum perk)
+        if (this.currentPerkEffects.swingSpeedMultiplier) {
+            this.wobble.setSwingSpeedMultiplier(this.currentPerkEffects.swingSpeedMultiplier)
+        }
 
         // Position goal
         this.positionGoalFromConfig(config)
