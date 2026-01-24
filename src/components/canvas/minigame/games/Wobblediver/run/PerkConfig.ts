@@ -8,7 +8,7 @@
 /**
  * Perk categories for organization and potential filtering
  */
-export type PerkCategory = 'survival' | 'physics' | 'targeting' | 'special' | 'score'
+export type PerkCategory = 'survival' | 'physics' | 'targeting' | 'special'
 
 /**
  * Perk rarity affects selection probability
@@ -173,19 +173,6 @@ export const PERK_DEFINITIONS: PerkDefinition[] = [
         },
     },
     {
-        id: 'heavy_drop',
-        name: 'Heavy Drop',
-        description: '+40% Gravity, +20% Score',
-        icon: '🪨',
-        category: 'physics',
-        rarity: 'common',
-        maxStacks: 2,
-        effect: {
-            gravityMultiplier: 1.4,
-            scoreMultiplier: 1.2,
-        },
-    },
-    {
         id: 'momentum',
         name: 'Momentum',
         description: '+15% Swing Speed',
@@ -223,32 +210,8 @@ export const PERK_DEFINITIONS: PerkDefinition[] = [
             trajectoryAlwaysVisible: true,
         },
     },
-    {
-        id: 'magnet',
-        name: 'Magnet',
-        description: 'Pulled toward wormhole',
-        icon: '🧲',
-        category: 'targeting',
-        rarity: 'rare',
-        maxStacks: 2,
-        effect: {
-            magnetStrength: 0.5,
-        },
-    },
 
     // === SPECIAL (Rare) ===
-    {
-        id: 'air_control',
-        name: 'Air Control',
-        description: 'Steer while falling',
-        icon: '🌀',
-        category: 'special',
-        rarity: 'rare',
-        maxStacks: 1,
-        effect: {
-            hasAirControl: true,
-        },
-    },
     {
         id: 'bounce_back',
         name: 'Bounce Back',
@@ -259,18 +222,6 @@ export const PERK_DEFINITIONS: PerkDefinition[] = [
         maxStacks: 1,
         effect: {
             hasBounce: true,
-        },
-    },
-    {
-        id: 'phase_shift',
-        name: 'Phase Shift',
-        description: 'Pass through 1 obstacle/stage',
-        icon: '👻',
-        category: 'special',
-        rarity: 'rare',
-        maxStacks: 3,
-        effect: {
-            phaseUses: 1,
         },
     },
 
@@ -312,43 +263,6 @@ export const PERK_DEFINITIONS: PerkDefinition[] = [
         },
     },
 
-    // === SCORE (Common/Rare) ===
-    {
-        id: 'score_boost',
-        name: 'Score Boost',
-        description: '+15% Score',
-        icon: '⭐',
-        category: 'score',
-        rarity: 'common',
-        maxStacks: 5,
-        effect: {
-            scoreMultiplier: 1.15,
-        },
-    },
-    {
-        id: 'speed_demon',
-        name: 'Speed Demon',
-        description: '+50 pts per second saved',
-        icon: '🏃',
-        category: 'score',
-        rarity: 'rare',
-        maxStacks: 3,
-        effect: {
-            speedBonusPerSecond: 50,
-        },
-    },
-    {
-        id: 'perfectionist',
-        name: 'Perfectionist',
-        description: '2x Perfect hit bonus',
-        icon: '💎',
-        category: 'score',
-        rarity: 'rare',
-        maxStacks: 2,
-        effect: {
-            perfectBonusMultiplier: 2,
-        },
-    },
 ]
 
 /**

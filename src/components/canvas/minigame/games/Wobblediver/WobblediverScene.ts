@@ -757,12 +757,13 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         const heartSize = 10
         const heartGap = 4
-        const totalWidth = this.customHudLives * (heartSize + heartGap) - heartGap
+        const maxLives = this.lifeSystem.maxLives
+        const totalWidth = maxLives * (heartSize + heartGap) - heartGap
         const startX = pos.x - totalWidth / 2
         const heartY = pos.y - 45 // Above the wobble
 
-        // Draw each heart
-        for (let i = 0; i < 3; i++) {
+        // Draw each heart (shows all max lives, filled based on current lives)
+        for (let i = 0; i < maxLives; i++) {
             const x = startX + i * (heartSize + heartGap)
             const filled = i < this.customHudLives
 
