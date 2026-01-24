@@ -78,7 +78,23 @@
         "next": "Next",
         "skip": "Skip",
         "done": "Got it!",
-        "startButton": "How to use"
+        "startButton": "How to use",
+        "sandbox": {
+            "welcomeTitle": "Welcome to Physics Sandbox!",
+            "welcomeMessage": "Here you can learn physics formulas by interacting with them. Adjust variables and see how the results change in real-time!",
+            "selectFormulaTitle": "Select a Formula",
+            "selectFormulaMessage": "Various physics formulas are ready for you. Tap any formula to start the simulation!",
+            "canvasTitle": "Simulation View",
+            "canvasMessage": "Physics phenomena are visualized here. Adjust variables and watch how the Wobble character's movement changes!",
+            "variableTitle": "Variable: {{symbol}}",
+            "variableMessage": "This card controls \"{{name}}\". Tap to select it, then use the slider to change its value!",
+            "challengeTitle": "Challenge Mission",
+            "challengeMessage": "Missions appear at the top. Adjust variables to meet the target conditions!",
+            "submitTitle": "Submit Button",
+            "submitMessage": "Press submit when you think you have the answer! Earn points for correct answers, and combo bonuses for streaks!",
+            "infoTitle": "Info Button",
+            "infoMessage": "Tap this button to see how the formula is used in real life. Check it out if you're curious!"
+        }
     },
     "settings": {
         "title": "Settings",

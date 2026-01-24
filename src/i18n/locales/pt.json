@@ -78,7 +78,23 @@
         "next": "Proximo",
         "skip": "Pular",
         "done": "Entendi!",
-        "startButton": "Como usar"
+        "startButton": "Como usar",
+        "sandbox": {
+            "welcomeTitle": "Bem-vindo ao Sandbox de Fisica!",
+            "welcomeMessage": "Aqui voce pode aprender formulas de fisica interagindo com elas. Ajuste as variaveis e veja como os resultados mudam em tempo real!",
+            "selectFormulaTitle": "Selecione uma Formula",
+            "selectFormulaMessage": "Varias formulas de fisica estao disponiveis. Toque em qualquer formula para iniciar a simulacao!",
+            "canvasTitle": "Tela de Simulacao",
+            "canvasMessage": "Os fenomenos fisicos sao visualizados aqui. Ajuste as variaveis e observe como o movimento do personagem Wobble muda!",
+            "variableTitle": "Variavel: {{symbol}}",
+            "variableMessage": "Este cartao controla \"{{name}}\". Toque para seleciona-lo e use o controle deslizante para mudar seu valor!",
+            "challengeTitle": "Missao de Desafio",
+            "challengeMessage": "Missoes aparecem no topo. Ajuste as variaveis para atingir as condicoes alvo!",
+            "submitTitle": "Botao Enviar",
+            "submitMessage": "Pressione enviar quando achar que tem a resposta! Ganhe pontos por respostas corretas e bonus de combo por sequencias!",
+            "infoTitle": "Botao de Info",
+            "infoMessage": "Toque neste botao para ver como a formula e usada na vida real. Confira se estiver curioso!"
+        }
     },
     "settings": {
         "title": "Configuracoes",

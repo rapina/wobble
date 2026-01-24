@@ -78,7 +78,23 @@
         "next": "다음",
         "skip": "건너뛰기",
         "done": "알겠어요!",
-        "startButton": "사용법 보기"
+        "startButton": "사용법 보기",
+        "sandbox": {
+            "welcomeTitle": "물리 샌드박스에 오신 것을 환영해요!",
+            "welcomeMessage": "여기서 물리 공식을 직접 만져보며 배울 수 있어요. 변수를 조절하면 결과가 어떻게 바뀌는지 눈으로 확인해보세요!",
+            "selectFormulaTitle": "공식을 선택해보세요",
+            "selectFormulaMessage": "다양한 물리 공식이 준비되어 있어요. 원하는 공식을 탭해서 시뮬레이션을 시작해보세요!",
+            "canvasTitle": "시뮬레이션 화면",
+            "canvasMessage": "이 화면에서 물리 현상이 시각화돼요. 변수를 조절하면 워블 캐릭터의 움직임이 바뀌는 걸 볼 수 있어요!",
+            "variableTitle": "변수: {{symbol}}",
+            "variableMessage": "이 카드는 \"{{name}}\"를 조절해요. 탭해서 선택한 뒤 슬라이더로 값을 바꿔보세요!",
+            "challengeTitle": "챌린지 미션",
+            "challengeMessage": "화면 상단에 미션이 표시돼요. 변수를 조절해서 목표 조건을 맞춰보세요!",
+            "submitTitle": "제출 버튼",
+            "submitMessage": "정답이라고 생각되면 제출 버튼을 눌러주세요! 맞추면 점수를 얻고, 연속으로 맞추면 콤보 보너스도 받아요!",
+            "infoTitle": "정보 버튼",
+            "infoMessage": "이 버튼을 누르면 공식이 실생활에서 어떻게 쓰이는지 알 수 있어요. 궁금하면 눌러보세요!"
+        }
     },
     "settings": {
         "title": "설정",

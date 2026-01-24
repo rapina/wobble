@@ -78,7 +78,23 @@
         "next": "下一步",
         "skip": "跳過",
         "done": "明白了！",
-        "startButton": "使用方法"
+        "startButton": "使用方法",
+        "sandbox": {
+            "welcomeTitle": "歡迎來到物理沙盒！",
+            "welcomeMessage": "在這裡你可以透過互動學習物理公式。調整變數，即時觀察結果如何變化！",
+            "selectFormulaTitle": "選擇一個公式",
+            "selectFormulaMessage": "這裡有各種物理公式供你選擇。點擊任意公式開始模擬！",
+            "canvasTitle": "模擬視圖",
+            "canvasMessage": "物理現象在這裡視覺化。調整變數，觀察Wobble角色的運動如何變化！",
+            "variableTitle": "變數: {{symbol}}",
+            "variableMessage": "這張卡片控制「{{name}}」。點擊選擇它，然後用滑桿改變它的值！",
+            "challengeTitle": "挑戰任務",
+            "challengeMessage": "任務顯示在頂部。調整變數來達成目標條件！",
+            "submitTitle": "提交按鈕",
+            "submitMessage": "當你認為答案正確時按提交！答對得分，連續答對還有連擊獎勵！",
+            "infoTitle": "資訊按鈕",
+            "infoMessage": "點擊這個按鈕查看公式在現實生活中如何應用。感興趣就看看吧！"
+        }
     },
     "settings": {
         "title": "設定",
