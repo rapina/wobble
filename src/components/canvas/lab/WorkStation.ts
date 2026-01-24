@@ -311,7 +311,8 @@ export class WorkStation extends Container {
 
         // Calculate sphere positions - they approach, collide, bounce back
         let sphere1X: number, sphere2X: number
-        let squash1 = 1, squash2 = 1
+        let squash1 = 1,
+            squash2 = 1
 
         if (collisionPhase < collisionPoint) {
             // Approaching

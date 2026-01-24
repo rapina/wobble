@@ -6,7 +6,13 @@ import { WobbleShape, WobbleExpression } from '@/components/canvas/Wobble'
 import { GameMode } from '@/components/screens/HomeScreen'
 import Balatro from '@/components/Balatro'
 import { BackgroundPreset } from '@/config/backgroundPresets'
-import { sandboxPreset, gameSelectPreset, collectionPreset, shopPreset, labPreset } from '@/config/backgroundPresets'
+import {
+    sandboxPreset,
+    gameSelectPreset,
+    collectionPreset,
+    shopPreset,
+    labPreset,
+} from '@/config/backgroundPresets'
 import { cn } from '@/lib/utils'
 
 // Theme colors (matching HomeScreen)
@@ -210,9 +216,7 @@ export function ModeIntroOverlay({ mode, isVisible, onComplete, onCancel }: Mode
                     <div
                         className="relative"
                         style={{
-                            animation: isMounted
-                                ? 'wobble-float 2s ease-in-out infinite'
-                                : 'none',
+                            animation: isMounted ? 'wobble-float 2s ease-in-out infinite' : 'none',
                         }}
                     >
                         <WobbleDisplay
@@ -228,9 +232,7 @@ export function ModeIntroOverlay({ mode, isVisible, onComplete, onCancel }: Mode
                 <h2
                     className={cn(
                         'text-2xl font-black tracking-wider uppercase mb-4 transition-all duration-600',
-                        isMounted
-                            ? 'opacity-100 translate-y-0'
-                            : 'opacity-0 translate-y-6'
+                        isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
                     )}
                     style={{
                         color: config.color,
@@ -245,7 +247,7 @@ export function ModeIntroOverlay({ mode, isVisible, onComplete, onCancel }: Mode
                 <div className="text-center mb-10 px-8 space-y-3">
                     {t(config.descriptionKey, '')
                         .split('\n')
-                        .filter(line => line.trim())
+                        .filter((line) => line.trim())
                         .map((line, i) => (
                             <p
                                 key={i}

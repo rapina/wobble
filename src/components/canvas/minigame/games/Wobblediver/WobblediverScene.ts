@@ -25,7 +25,12 @@ import { AbyssFluidFilter } from '@/components/canvas/filters/AbyssFluidFilter'
 import { BalatroFilter } from '@/components/canvas/filters/BalatroFilter'
 import { StageGenerator } from './StageGenerator'
 import { AbyssTentacle } from './AbyssTentacle'
-import { StageConfig, AnchorPersonalityConfig, ANCHOR_PERSONALITIES, GAME_WIDTH } from './StageConfig'
+import {
+    StageConfig,
+    AnchorPersonalityConfig,
+    ANCHOR_PERSONALITIES,
+    GAME_WIDTH,
+} from './StageConfig'
 import { musicManager, AudioBands } from '@/services/MusicManager'
 import i18n from '@/i18n'
 import { useRunStore } from '@/stores/runStore'
@@ -1705,7 +1710,8 @@ export class WobblediverScene extends BaseMiniGameScene {
             }
 
             const phaseOffset = i * 0.8 + i * i * 0.15 + Math.PI
-            const baseLength = 12 + ((i + 1) % 3) * 5 + audioLevel * 12 + reachFactor * maxReachBonus
+            const baseLength =
+                12 + ((i + 1) % 3) * 5 + audioLevel * 12 + reachFactor * maxReachBonus
             const segments = 4
             const waveAmp = (6 + audioLevel * 4) * (1 - reachFactor * 0.5)
 
@@ -2373,8 +2379,12 @@ export class WobblediverScene extends BaseMiniGameScene {
 
             if (i < segments) {
                 // More dramatic wave with secondary oscillation
-                const wave1 = Math.sin(time * tentacle.waveSpeed + tentacle.phase + i * 0.5) * 12 * t
-                const wave2 = Math.sin(time * tentacle.waveSpeed * 0.7 + tentacle.phase * 1.5 + i * 0.3) * 6 * t
+                const wave1 =
+                    Math.sin(time * tentacle.waveSpeed + tentacle.phase + i * 0.5) * 12 * t
+                const wave2 =
+                    Math.sin(time * tentacle.waveSpeed * 0.7 + tentacle.phase * 1.5 + i * 0.3) *
+                    6 *
+                    t
                 const wave = wave1 + wave2
 
                 // Curve toward center with slight random drift
@@ -3695,7 +3705,10 @@ export class WobblediverScene extends BaseMiniGameScene {
 
         // Ensure wormhole stays within game bounds (use boundaryLeft/Right)
         const padding = 60
-        const clampedX = Math.max(this.boundaryLeft + padding, Math.min(this.boundaryRight - padding, newX))
+        const clampedX = Math.max(
+            this.boundaryLeft + padding,
+            Math.min(this.boundaryRight - padding, newX)
+        )
         // Don't let the wormhole go too close to the water
         const minWormholeY = this.boundaryTop + 100
         const maxWormholeY = waterSurfaceY - 50 // Keep above water
@@ -3877,12 +3890,14 @@ export class WobblediverScene extends BaseMiniGameScene {
             const color = colors[i % colors.length]
 
             // Entrance on left/top side (within game area)
-            const entranceX = this.boundaryLeft + padding + Math.random() * (this.effectiveGameWidth * 0.3)
+            const entranceX =
+                this.boundaryLeft + padding + Math.random() * (this.effectiveGameWidth * 0.3)
             const entranceY =
                 this.boundaryTop + 100 + Math.random() * (abyssTop - this.boundaryTop - 200)
 
             // Exit on right/bottom side (strategic placement within game area)
-            const exitX = this.boundaryRight - padding - Math.random() * (this.effectiveGameWidth * 0.3)
+            const exitX =
+                this.boundaryRight - padding - Math.random() * (this.effectiveGameWidth * 0.3)
             const exitY =
                 this.boundaryTop + 100 + Math.random() * (abyssTop - this.boundaryTop - 200)
 
@@ -4154,7 +4169,11 @@ export class WobblediverScene extends BaseMiniGameScene {
         if (this.wallTentacleDamageCooldown > 0) {
             this.wallTentacleDamageCooldown -= deltaSeconds
         }
-        if (this.wobble && this.wobble.state === 'released' && this.wallTentacleDamageCooldown <= 0) {
+        if (
+            this.wobble &&
+            this.wobble.state === 'released' &&
+            this.wallTentacleDamageCooldown <= 0
+        ) {
             if (this.checkWallTentacleCollision(this.wobble.x, this.wobble.y)) {
                 this.handleWallTentacleDamage()
                 this.wallTentacleDamageCooldown = 0.8 // 0.8 second cooldown between hits

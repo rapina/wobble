@@ -256,11 +256,7 @@ export function SandboxScreen({
 
     // Complete tutorial when info popup is opened during info button tutorial step
     useEffect(() => {
-        if (
-            tutorial.isActive &&
-            tutorial.currentTargetSymbol === '__info__' &&
-            showInfoPopup
-        ) {
+        if (tutorial.isActive && tutorial.currentTargetSymbol === '__info__' && showInfoPopup) {
             // Wait a bit then complete tutorial
             const timer = setTimeout(() => {
                 tutorial.completeTutorial()
@@ -279,7 +275,12 @@ export function SandboxScreen({
         })
 
         // Don't start if no formula, tutorial completed, active, or shown this session
-        if (!formula || tutorial.hasCompletedTutorial || tutorial.isActive || tutorialShownThisSession) {
+        if (
+            !formula ||
+            tutorial.hasCompletedTutorial ||
+            tutorial.isActive ||
+            tutorialShownThisSession
+        ) {
             console.log('[Tutorial Debug] Skipping auto-start')
             return
         }
@@ -413,7 +414,7 @@ export function SandboxScreen({
     const handleSubmitChallenge = useCallback(() => {
         if (!currentChallenge || !formula || !variables || challengeTransition !== 'idle') return
 
-        const isKo = i18n.language === 'ko' || i18n.language.startsWith('ko')
+        const lang = i18n.language
 
         // Check if the challenge condition is met
         if (currentChallenge.condition(variables)) {
@@ -423,7 +424,7 @@ export function SandboxScreen({
             completeDiscovery(formula.id)
 
             // Get contextual insight for the result
-            const insight = getInsightText(formula.id, variables, isKo)
+            const insight = getInsightText(formula.id, variables, lang)
 
             // Card exit animation
             setChallengeTransition('exit')

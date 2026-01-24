@@ -24,9 +24,7 @@ export function AchievementToast() {
 
     const removeToast = useCallback((id: string) => {
         // Start exit animation
-        setToasts((prev) =>
-            prev.map((t) => (t.id === id ? { ...t, isExiting: true } : t))
-        )
+        setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, isExiting: true } : t)))
 
         // Remove after exit animation completes
         setTimeout(() => {
@@ -34,27 +32,30 @@ export function AchievementToast() {
         }, EXIT_ANIMATION_DURATION)
     }, [])
 
-    const addToast = useCallback((achievementId: string) => {
-        const achievement = getAchievement(achievementId)
-        if (!achievement) return
+    const addToast = useCallback(
+        (achievementId: string) => {
+            const achievement = getAchievement(achievementId)
+            if (!achievement) return
 
-        const newToast: ToastItem = {
-            id: `${achievementId}-${Date.now()}`,
-            achievement,
-            timestamp: Date.now(),
-            isExiting: false,
-        }
+            const newToast: ToastItem = {
+                id: `${achievementId}-${Date.now()}`,
+                achievement,
+                timestamp: Date.now(),
+                isExiting: false,
+            }
 
-        setToasts((prev) => [...prev, newToast])
+            setToasts((prev) => [...prev, newToast])
 
-        // Schedule removal after duration
-        const timer = setTimeout(() => {
-            removeToast(newToast.id)
-            timersRef.current.delete(newToast.id)
-        }, TOAST_DURATION)
+            // Schedule removal after duration
+            const timer = setTimeout(() => {
+                removeToast(newToast.id)
+                timersRef.current.delete(newToast.id)
+            }, TOAST_DURATION)
 
-        timersRef.current.set(newToast.id, timer)
-    }, [removeToast])
+            timersRef.current.set(newToast.id, timer)
+        },
+        [removeToast]
+    )
 
     // Cleanup timers on unmount
     useEffect(() => {

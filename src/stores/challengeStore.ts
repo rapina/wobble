@@ -90,7 +90,9 @@ export const useChallengeStore = create<ChallengeState>()(
                 })
 
                 // Check level challenge progress
-                useLevelChallengeStore.getState().checkAndUpdateLevel('challenge-solver', newTotalSolved)
+                useLevelChallengeStore
+                    .getState()
+                    .checkAndUpdateLevel('challenge-solver', newTotalSolved)
 
                 return earnedScore
             },

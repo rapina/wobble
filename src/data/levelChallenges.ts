@@ -123,7 +123,10 @@ export function getLevelChallenge(id: LevelChallengeId): LevelChallenge | undefi
 }
 
 // Helper to calculate current level from progress
-export function calculateLevel(challenge: LevelChallenge, currentValue: number): {
+export function calculateLevel(
+    challenge: LevelChallenge,
+    currentValue: number
+): {
     level: number
     currentTitle: LocalizedText
     nextLevel: LevelThreshold | null
@@ -146,7 +149,8 @@ export function calculateLevel(challenge: LevelChallenge, currentValue: number):
     // Calculate progress to next level
     let progress = 100
     if (nextLevel && currentLevel < challenge.levels.length) {
-        const prevRequirement = currentLevel > 0 ? challenge.levels[currentLevel - 1].requirement : 0
+        const prevRequirement =
+            currentLevel > 0 ? challenge.levels[currentLevel - 1].requirement : 0
         const range = nextLevel.requirement - prevRequirement
         const currentProgress = currentValue - prevRequirement
         progress = Math.min((currentProgress / range) * 100, 100)

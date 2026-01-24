@@ -6,6 +6,7 @@ import { shopPreset } from '@/config/backgroundPresets'
 import { useInAppPurchase } from '@/hooks/useInAppPurchase'
 import { usePurchaseStore } from '@/stores/purchaseStore'
 import { cn } from '@/lib/utils'
+import { t } from '@/utils/localization'
 
 const theme = {
     bg: '#1a1a2e',
@@ -25,8 +26,8 @@ interface ShopScreenProps {
 }
 
 export function ShopScreen({ onBack }: ShopScreenProps) {
-    const { t, i18n } = useTranslation()
-    const isKorean = i18n.language === 'ko'
+    const { i18n } = useTranslation()
+    const lang = i18n.language
     const { isAdFree, isAllFormulasUnlocked } = usePurchaseStore()
     const {
         isNative,
@@ -115,7 +116,7 @@ export function ShopScreen({ onBack }: ShopScreenProps) {
                         textShadow: '0 2px 0 #8a6d1a',
                     }}
                 >
-                    {isKorean ? '상점' : 'Shop'}
+                    {t({ ko: '상점', en: 'Shop', ja: 'ショップ' }, lang)}
                 </h1>
             </div>
 
@@ -173,16 +174,29 @@ export function ShopScreen({ onBack }: ShopScreenProps) {
                                         textShadow: isAdFree ? 'none' : '0 1px 0 rgba(0,0,0,0.3)',
                                     }}
                                 >
-                                    {isKorean ? '광고 제거' : 'Remove Ads'}
+                                    {t(
+                                        { ko: '광고 제거', en: 'Remove Ads', ja: '広告を削除' },
+                                        lang
+                                    )}
                                 </h3>
                                 <p className="text-sm text-white/50 font-medium mt-1">
                                     {isAdFree
-                                        ? isKorean
-                                            ? '광고 없이 즐기고 있어요!'
-                                            : 'Enjoying ad-free experience!'
-                                        : isKorean
-                                          ? '하단 배너 광고를 영구적으로 제거합니다'
-                                          : 'Permanently remove bottom banner ads'}
+                                        ? t(
+                                              {
+                                                  ko: '광고 없이 즐기고 있어요!',
+                                                  en: 'Enjoying ad-free experience!',
+                                                  ja: '広告なしで楽しんでいます！',
+                                              },
+                                              lang
+                                          )
+                                        : t(
+                                              {
+                                                  ko: '하단 배너 광고를 영구적으로 제거합니다',
+                                                  en: 'Permanently remove bottom banner ads',
+                                                  ja: '下部のバナー広告を永久に削除します',
+                                              },
+                                              lang
+                                          )}
                                 </p>
 
                                 {!isAdFree && isNative && (
@@ -205,14 +219,26 @@ export function ShopScreen({ onBack }: ShopScreenProps) {
                                         {isLoading ? (
                                             <span className="flex items-center justify-center gap-2">
                                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                                {isKorean ? '로딩...' : 'Loading...'}
+                                                {t(
+                                                    {
+                                                        ko: '로딩...',
+                                                        en: 'Loading...',
+                                                        ja: '読み込み中...',
+                                                    },
+                                                    lang
+                                                )}
                                             </span>
                                         ) : removeAdsProduct ? (
                                             removeAdsProduct.priceString
-                                        ) : isKorean ? (
-                                            '로딩 중...'
                                         ) : (
-                                            'Loading...'
+                                            t(
+                                                {
+                                                    ko: '로딩 중...',
+                                                    en: 'Loading...',
+                                                    ja: '読み込み中...',
+                                                },
+                                                lang
+                                            )
                                         )}
                                     </button>
                                 )}
@@ -267,16 +293,33 @@ export function ShopScreen({ onBack }: ShopScreenProps) {
                                             : '0 1px 0 rgba(0,0,0,0.3)',
                                     }}
                                 >
-                                    {isKorean ? '모든 공식 해금' : 'Unlock All Formulas'}
+                                    {t(
+                                        {
+                                            ko: '모든 공식 해금',
+                                            en: 'Unlock All Formulas',
+                                            ja: '全公式をアンロック',
+                                        },
+                                        lang
+                                    )}
                                 </h3>
                                 <p className="text-sm text-white/50 font-medium mt-1">
                                     {isAllFormulasUnlocked
-                                        ? isKorean
-                                            ? '모든 공식을 이용할 수 있어요!'
-                                            : 'All formulas are available!'
-                                        : isKorean
-                                          ? '모든 공식을 영구적으로 해금합니다. 향후 추가되는 공식도 포함됩니다.'
-                                          : 'Permanently unlock all formulas, including future additions.'}
+                                        ? t(
+                                              {
+                                                  ko: '모든 공식을 이용할 수 있어요!',
+                                                  en: 'All formulas are available!',
+                                                  ja: 'すべての公式が利用可能です！',
+                                              },
+                                              lang
+                                          )
+                                        : t(
+                                              {
+                                                  ko: '모든 공식을 영구적으로 해금합니다. 향후 추가되는 공식도 포함됩니다.',
+                                                  en: 'Permanently unlock all formulas, including future additions.',
+                                                  ja: 'すべての公式を永久にアンロックします。今後追加される公式も含まれます。',
+                                              },
+                                              lang
+                                          )}
                                 </p>
 
                                 {!isAllFormulasUnlocked && isNative && (
@@ -299,14 +342,26 @@ export function ShopScreen({ onBack }: ShopScreenProps) {
                                         {isLoading ? (
                                             <span className="flex items-center justify-center gap-2">
                                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                                {isKorean ? '로딩...' : 'Loading...'}
+                                                {t(
+                                                    {
+                                                        ko: '로딩...',
+                                                        en: 'Loading...',
+                                                        ja: '読み込み中...',
+                                                    },
+                                                    lang
+                                                )}
                                             </span>
                                         ) : unlockAllFormulasProduct ? (
                                             unlockAllFormulasProduct.priceString
-                                        ) : isKorean ? (
-                                            '로딩 중...'
                                         ) : (
-                                            'Loading...'
+                                            t(
+                                                {
+                                                    ko: '로딩 중...',
+                                                    en: 'Loading...',
+                                                    ja: '読み込み中...',
+                                                },
+                                                lang
+                                            )
                                         )}
                                     </button>
                                 )}
@@ -325,9 +380,14 @@ export function ShopScreen({ onBack }: ShopScreenProps) {
                             }}
                         >
                             <p className="text-sm text-white/50 text-center font-medium">
-                                {isKorean
-                                    ? '구매는 모바일 앱에서만 가능합니다'
-                                    : 'Purchases available in the mobile app'}
+                                {t(
+                                    {
+                                        ko: '구매는 모바일 앱에서만 가능합니다',
+                                        en: 'Purchases available in the mobile app',
+                                        ja: '購入はモバイルアプリでのみ可能です',
+                                    },
+                                    lang
+                                )}
                             </p>
                         </div>
                     )}
@@ -352,7 +412,10 @@ export function ShopScreen({ onBack }: ShopScreenProps) {
                         >
                             <span className="flex items-center justify-center gap-2">
                                 <RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
-                                {isKorean ? '구매 복원' : 'Restore Purchases'}
+                                {t(
+                                    { ko: '구매 복원', en: 'Restore Purchases', ja: '購入を復元' },
+                                    lang
+                                )}
                             </span>
                         </button>
                     )}

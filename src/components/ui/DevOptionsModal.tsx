@@ -4,6 +4,7 @@ import { X, Bug } from 'lucide-react'
 import { usePurchaseStore } from '@/stores/purchaseStore'
 import { useFormulaUnlockStore } from '@/stores/formulaUnlockStore'
 import { cn } from '@/lib/utils'
+import { t } from '@/utils/localization'
 
 const theme = {
     bg: '#1a1a2e',
@@ -25,7 +26,7 @@ interface DevOptionsModalProps {
 
 export function DevOptionsModal({ isOpen, onClose }: DevOptionsModalProps) {
     const { i18n } = useTranslation()
-    const isKorean = i18n.language === 'ko'
+    const lang = i18n.language
     const { isAdFree, isAllFormulasUnlocked, setAdFree, setAllFormulasUnlocked } =
         usePurchaseStore()
     const { unlockAll, unlockedFormulas } = useFormulaUnlockStore()
@@ -62,7 +63,14 @@ export function DevOptionsModal({ isOpen, onClose }: DevOptionsModalProps) {
                     <div className="flex items-center gap-3">
                         <Bug className="w-6 h-6 text-white" />
                         <h2 className="text-xl font-black tracking-wide text-white">
-                            {isKorean ? '개발자 옵션' : 'Developer Options'}
+                            {t(
+                                {
+                                    ko: '개발자 옵션',
+                                    en: 'Developer Options',
+                                    ja: '開発者オプション',
+                                },
+                                lang
+                            )}
                         </h2>
                     </div>
                     <button
@@ -110,7 +118,14 @@ export function DevOptionsModal({ isOpen, onClose }: DevOptionsModalProps) {
                     >
                         <div className="flex items-center justify-between">
                             <span className="text-sm font-bold text-white">
-                                {isKorean ? '디버그 오버레이' : 'Debug Overlay'}
+                                {t(
+                                    {
+                                        ko: '디버그 오버레이',
+                                        en: 'Debug Overlay',
+                                        ja: 'デバッグオーバーレイ',
+                                    },
+                                    lang
+                                )}
                             </span>
                             <div
                                 className="w-12 h-6 rounded-md relative transition-all"
@@ -151,7 +166,14 @@ export function DevOptionsModal({ isOpen, onClose }: DevOptionsModalProps) {
                                 boxShadow: `0 2px 0 ${theme.border}`,
                             }}
                         >
-                            {isKorean ? '광고 제거 강제 활성화' : 'Force Remove Ads'}
+                            {t(
+                                {
+                                    ko: '광고 제거 강제 활성화',
+                                    en: 'Force Remove Ads',
+                                    ja: '広告削除を強制有効化',
+                                },
+                                lang
+                            )}
                         </button>
                     ) : (
                         <div
@@ -162,7 +184,10 @@ export function DevOptionsModal({ isOpen, onClose }: DevOptionsModalProps) {
                                 border: `2px solid ${theme.green}`,
                             }}
                         >
-                            {isKorean ? '광고 제거 활성화됨' : 'Ads Removed'}
+                            {t(
+                                { ko: '광고 제거 활성화됨', en: 'Ads Removed', ja: '広告削除済み' },
+                                lang
+                            )}
                         </div>
                     )}
 
@@ -181,9 +206,14 @@ export function DevOptionsModal({ isOpen, onClose }: DevOptionsModalProps) {
                                 boxShadow: `0 2px 0 ${theme.border}`,
                             }}
                         >
-                            {isKorean
-                                ? '모든 공식 영구 해금'
-                                : 'Force Unlock All Formulas (Purchase)'}
+                            {t(
+                                {
+                                    ko: '모든 공식 영구 해금',
+                                    en: 'Force Unlock All Formulas (Purchase)',
+                                    ja: '全公式を永久アンロック',
+                                },
+                                lang
+                            )}
                         </button>
                     ) : (
                         <div
@@ -194,9 +224,14 @@ export function DevOptionsModal({ isOpen, onClose }: DevOptionsModalProps) {
                                 border: `2px solid ${theme.green}`,
                             }}
                         >
-                            {isKorean
-                                ? '모든 공식 영구 해금됨'
-                                : 'All Formulas Unlocked (Purchase)'}
+                            {t(
+                                {
+                                    ko: '모든 공식 영구 해금됨',
+                                    en: 'All Formulas Unlocked (Purchase)',
+                                    ja: '全公式アンロック済み',
+                                },
+                                lang
+                            )}
                         </div>
                     )}
 
@@ -217,12 +252,15 @@ export function DevOptionsModal({ isOpen, onClose }: DevOptionsModalProps) {
                         }}
                     >
                         {allUnlocked
-                            ? isKorean
-                                ? '해금 완료!'
-                                : 'Unlocked!'
-                            : isKorean
-                              ? `공식 세션 해금 (${unlockedFormulas.size})`
-                              : `Unlock Formulas Session (${unlockedFormulas.size})`}
+                            ? t({ ko: '해금 완료!', en: 'Unlocked!', ja: 'アンロック完了！' }, lang)
+                            : t(
+                                  {
+                                      ko: `공식 세션 해금 (${unlockedFormulas.size})`,
+                                      en: `Unlock Formulas Session (${unlockedFormulas.size})`,
+                                      ja: `公式セッションアンロック (${unlockedFormulas.size})`,
+                                  },
+                                  lang
+                              )}
                     </button>
                 </div>
             </div>

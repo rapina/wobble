@@ -5,6 +5,7 @@ import { usePurchaseStore } from '@/stores/purchaseStore'
 import { useCollectionStore } from '@/stores/collectionStore'
 import { useMusic } from '@/hooks/useMusic'
 import { cn } from '@/lib/utils'
+import { t as localizeText } from '@/utils/localization'
 
 // Balatro theme - HomeScreen과 동일
 const theme = {
@@ -27,7 +28,7 @@ interface SettingsModalProps {
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     const { t, i18n } = useTranslation()
-    const isKorean = i18n.language === 'ko'
+    const lang = i18n.language
     const { reset: resetPurchase } = usePurchaseStore()
     const { resetCollection } = useCollectionStore()
     const { isMusicEnabled, volume, toggleMusic, setVolume } = useMusic()
@@ -131,16 +132,29 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                         textShadow: '0 1px 0 rgba(0,0,0,0.3)',
                                     }}
                                 >
-                                    {isKorean ? '배경 음악' : 'Background Music'}
+                                    {localizeText(
+                                        { ko: '배경 음악', en: 'Background Music', ja: 'BGM' },
+                                        lang
+                                    )}
                                 </p>
                                 <p className="text-sm text-white/50 font-medium">
                                     {isMusicEnabled
-                                        ? isKorean
-                                            ? '음악이 재생 중입니다'
-                                            : 'Music is playing'
-                                        : isKorean
-                                          ? '음악이 꺼져 있습니다'
-                                          : 'Music is off'}
+                                        ? localizeText(
+                                              {
+                                                  ko: '음악이 재생 중입니다',
+                                                  en: 'Music is playing',
+                                                  ja: '音楽再生中',
+                                              },
+                                              lang
+                                          )
+                                        : localizeText(
+                                              {
+                                                  ko: '음악이 꺼져 있습니다',
+                                                  en: 'Music is off',
+                                                  ja: '音楽オフ',
+                                              },
+                                              lang
+                                          )}
                                 </p>
                             </div>
                         </div>
@@ -149,7 +163,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
                                 <span className="text-sm font-bold text-white/70">
-                                    {isKorean ? '볼륨' : 'Volume'}
+                                    {localizeText({ ko: '볼륨', en: 'Volume', ja: '音量' }, lang)}
                                 </span>
                                 <span className="text-sm font-bold text-white/50">
                                     {Math.round(volume * 100)}%
@@ -203,7 +217,14 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         >
                             <span className="flex items-center justify-center gap-2">
                                 <Trash2 className="w-4 h-4" />
-                                {isKorean ? '모든 데이터 초기화' : 'Reset All Data'}
+                                {localizeText(
+                                    {
+                                        ko: '모든 데이터 초기화',
+                                        en: 'Reset All Data',
+                                        ja: 'すべてのデータをリセット',
+                                    },
+                                    lang
+                                )}
                             </span>
                         </button>
                     ) : (
@@ -228,12 +249,24 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                 </div>
                                 <div>
                                     <p className="font-black" style={{ color: theme.red }}>
-                                        {isKorean ? '정말 초기화하시겠습니까?' : 'Are you sure?'}
+                                        {localizeText(
+                                            {
+                                                ko: '정말 초기화하시겠습니까?',
+                                                en: 'Are you sure?',
+                                                ja: '本当にリセットしますか？',
+                                            },
+                                            lang
+                                        )}
                                     </p>
                                     <p className="text-xs text-white/50 mt-1 font-medium">
-                                        {isKorean
-                                            ? '모든 진행 상황과 설정이 삭제됩니다. 구매 항목은 복원할 수 있습니다.'
-                                            : 'All progress and settings will be deleted. Purchases can be restored.'}
+                                        {localizeText(
+                                            {
+                                                ko: '모든 진행 상황과 설정이 삭제됩니다. 구매 항목은 복원할 수 있습니다.',
+                                                en: 'All progress and settings will be deleted. Purchases can be restored.',
+                                                ja: 'すべての進行状況と設定が削除されます。購入は復元可能です。',
+                                            },
+                                            lang
+                                        )}
                                     </p>
                                 </div>
                             </div>
@@ -247,7 +280,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                         boxShadow: `0 2px 0 ${theme.border}`,
                                     }}
                                 >
-                                    {isKorean ? '취소' : 'Cancel'}
+                                    {localizeText(
+                                        { ko: '취소', en: 'Cancel', ja: 'キャンセル' },
+                                        lang
+                                    )}
                                 </button>
                                 <button
                                     onClick={handleResetAllData}
@@ -258,7 +294,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                         boxShadow: `0 2px 0 ${theme.border}`,
                                     }}
                                 >
-                                    {isKorean ? '초기화' : 'Reset'}
+                                    {localizeText(
+                                        { ko: '초기화', en: 'Reset', ja: 'リセット' },
+                                        lang
+                                    )}
                                 </button>
                             </div>
                         </div>

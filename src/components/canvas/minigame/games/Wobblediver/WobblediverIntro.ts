@@ -199,7 +199,7 @@ class MiniJellyfishDisplay extends Container {
         this.swingAngle = Math.PI / 12
 
         // Initial speech
-        this.triggerSpeech("Iä~")
+        this.triggerSpeech('Iä~')
     }
 
     private triggerSpeech(text: string): void {
@@ -213,10 +213,13 @@ class MiniJellyfishDisplay extends Container {
 
         // Periodic pulse (like pressing the jellyfish)
         const pulseCycle = 2.5 // seconds between pulses
-        if (Math.floor(this.pulsePhase / pulseCycle) > Math.floor((this.pulsePhase - delta) / pulseCycle)) {
+        if (
+            Math.floor(this.pulsePhase / pulseCycle) >
+            Math.floor((this.pulsePhase - delta) / pulseCycle)
+        ) {
             // Apply smaller energy boost to keep swing within bounds
             this.angularVelocity += (this.swingAngle >= 0 ? -1 : 1) * 0.8
-            this.triggerSpeech(["Iä~", "Ph'nglui...", "Fhtagn~"][Math.floor(Math.random() * 3)])
+            this.triggerSpeech(['Iä~', "Ph'nglui...", 'Fhtagn~'][Math.floor(Math.random() * 3)])
         }
 
         // Pendulum physics
@@ -227,7 +230,10 @@ class MiniJellyfishDisplay extends Container {
         this.swingAngle += this.angularVelocity * delta
 
         // Clamp swing angle to prevent overflow
-        this.swingAngle = Math.max(-this.maxSwingAngle, Math.min(this.maxSwingAngle, this.swingAngle))
+        this.swingAngle = Math.max(
+            -this.maxSwingAngle,
+            Math.min(this.maxSwingAngle, this.swingAngle)
+        )
 
         // Calculate wobble position
         const wobbleX = this.jellyfishX + Math.sin(this.swingAngle) * this.ropeLength
@@ -259,7 +265,7 @@ class MiniJellyfishDisplay extends Container {
         // Jellyfish pulse animation
         const pulseInCycle = (this.pulsePhase % 2.5) / 2.5
         const isPulsing = pulseInCycle < 0.15
-        const pulseScale = isPulsing ? 1 - Math.sin(pulseInCycle / 0.15 * Math.PI) * 0.15 : 1
+        const pulseScale = isPulsing ? 1 - Math.sin((pulseInCycle / 0.15) * Math.PI) * 0.15 : 1
         const bellWidth = 28 * pulseScale
         const bellHeight = 18 * (2 - pulseScale)
         const tentacleStartY = jy + bellHeight * 0.5
@@ -274,14 +280,21 @@ class MiniJellyfishDisplay extends Container {
         const baseWidth = 4
 
         // Calculate all segment points first
-        const segmentPoints: { x1: number; y1: number; x2: number; y2: number; width: number }[] = []
+        const segmentPoints: { x1: number; y1: number; x2: number; y2: number; width: number }[] =
+            []
         for (let i = 0; i < segments; i++) {
             const t1 = i / segments
             const t2 = (i + 1) / segments
 
-            const x1 = jx + (wobbleX - jx) * t1 + Math.sin(t1 * Math.PI * 3 + this.time * 4) * waveAmp * (1 - t1)
+            const x1 =
+                jx +
+                (wobbleX - jx) * t1 +
+                Math.sin(t1 * Math.PI * 3 + this.time * 4) * waveAmp * (1 - t1)
             const y1 = tentacleStartY + (wobbleY - tentacleStartY) * t1
-            const x2 = jx + (wobbleX - jx) * t2 + Math.sin(t2 * Math.PI * 3 + this.time * 4) * waveAmp * (1 - t2)
+            const x2 =
+                jx +
+                (wobbleX - jx) * t2 +
+                Math.sin(t2 * Math.PI * 3 + this.time * 4) * waveAmp * (1 - t2)
             const y2 = tentacleStartY + (wobbleY - tentacleStartY) * t2
 
             segmentPoints.push({ x1, y1, x2, y2, width: baseWidth * (1 - t1 * 0.5) })
@@ -304,7 +317,10 @@ class MiniJellyfishDisplay extends Container {
         // Glow nodes on tentacle
         for (let i = 1; i < 4; i++) {
             const t = i / 4
-            const nx = jx + (wobbleX - jx) * t + Math.sin(t * Math.PI * 3 + this.time * 4) * waveAmp * (1 - t)
+            const nx =
+                jx +
+                (wobbleX - jx) * t +
+                Math.sin(t * Math.PI * 3 + this.time * 4) * waveAmp * (1 - t)
             const ny = tentacleStartY + (wobbleY - tentacleStartY) * t
             const pulse = 0.5 + Math.sin(this.time * 3 + i) * 0.5
             g.circle(nx, ny, 2 + pulse)
@@ -505,7 +521,8 @@ class MiniWormholeDisplay extends Container {
 // Mini abyss preview with dangerous tentacles
 class MiniAbyssDisplay extends Container {
     private abyss: Graphics
-    private eyes: { x: number; y: number; size: number; blinkTimer: number; lookAngle: number }[] = []
+    private eyes: { x: number; y: number; size: number; blinkTimer: number; lookAngle: number }[] =
+        []
     private time = 0
     private displayWidth: number
     private displayHeight: number

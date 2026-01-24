@@ -142,7 +142,7 @@ interface NewWobbleAlertProps {
 
 export function NewWobbleAlert({ shapes, onClose }: NewWobbleAlertProps) {
     const { i18n } = useTranslation()
-    const isKorean = i18n.language === 'ko'
+    const lang = i18n.language
     const [visible, setVisible] = useState(false)
     const [currentIndex, setCurrentIndex] = useState(0)
 
@@ -218,11 +218,11 @@ export function NewWobbleAlert({ shapes, onClose }: NewWobbleAlertProps) {
                                 en: 'New Resident Found!',
                                 ja: '新しい住民を発見！',
                             },
-                            i18n.language
+                            lang
                         )}
                     </p>
                     <h2 className="text-2xl font-black" style={{ color: theme.gold }}>
-                        {localizeText(character.name, i18n.language)}
+                        {localizeText(character.name, lang)}
                     </h2>
                 </div>
 
@@ -241,7 +241,7 @@ export function NewWobbleAlert({ shapes, onClose }: NewWobbleAlertProps) {
 
                 {/* Personality */}
                 <p className="text-center text-white/70 text-sm mb-5 leading-relaxed">
-                    {localizeText(character.personality, i18n.language)}
+                    {localizeText(character.personality, lang)}
                 </p>
 
                 {/* Action button */}
@@ -260,7 +260,7 @@ export function NewWobbleAlert({ shapes, onClose }: NewWobbleAlertProps) {
                                   en: `Next (${currentIndex + 1}/${shapes.length})`,
                                   ja: `次へ (${currentIndex + 1}/${shapes.length})`,
                               },
-                              i18n.language
+                              lang
                           )
                         : localizeText(
                               {
@@ -268,7 +268,7 @@ export function NewWobbleAlert({ shapes, onClose }: NewWobbleAlertProps) {
                                   en: 'Nice to meet you!',
                                   ja: 'よろしくね！',
                               },
-                              i18n.language
+                              lang
                           )}
                 </button>
             </div>

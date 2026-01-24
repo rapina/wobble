@@ -456,7 +456,10 @@ export class RunMapDisplay {
                 x: Math.random() * this.width,
                 y,
                 vx: (Math.random() - 0.5) * 10,
-                vy: type === 'bubble' ? -ABYSS_CONFIG.bubbleSpeed * (0.5 + Math.random() * 0.5) : (Math.random() - 0.5) * 5,
+                vy:
+                    type === 'bubble'
+                        ? -ABYSS_CONFIG.bubbleSpeed * (0.5 + Math.random() * 0.5)
+                        : (Math.random() - 0.5) * 5,
                 size,
                 alpha: 0.3 + Math.random() * 0.5,
                 type,
@@ -693,7 +696,6 @@ export class RunMapDisplay {
             // Inner glow
             this.transitionOverlay.circle(screenX, screenY, voidRadius * 0.6)
             this.transitionOverlay.fill({ color: colors.eye, alpha: 0.5 * eyeOpenness })
-
         } else if (state.phase === 'expanding') {
             // Void expands to fill screen with swirling effect
             const easeProgress = 1 - Math.pow(1 - state.progress, 3) // Ease out cubic
@@ -744,7 +746,6 @@ export class RunMapDisplay {
                 this.transitionOverlay.ellipse(screenX, screenY, eyeRadius * 0.2, eyeRadius * 0.6)
                 this.transitionOverlay.fill({ color: 0x000000, alpha: 0.9 })
             }
-
         } else if (state.phase === 'complete') {
             // Full screen black
             this.transitionOverlay.rect(0, 0, this.width, this.height)
@@ -844,7 +845,10 @@ export class RunMapDisplay {
 
                     // Add wave motion
                     const waveAmp = isCompleted ? 5 : 3
-                    const wave = Math.sin(phase + progress * Math.PI * 2) * waveAmp * Math.sin(progress * Math.PI)
+                    const wave =
+                        Math.sin(phase + progress * Math.PI * 2) *
+                        waveAmp *
+                        Math.sin(progress * Math.PI)
 
                     points.push({
                         x: baseX + offsetX + wave,
@@ -871,12 +875,7 @@ export class RunMapDisplay {
             // Draw glow line for completed paths
             if (isCompleted) {
                 g.moveTo(startX, startY)
-                g.quadraticCurveTo(
-                    (startX + endX) / 2,
-                    (startY + endY) / 2,
-                    endX,
-                    endY
-                )
+                g.quadraticCurveTo((startX + endX) / 2, (startY + endY) / 2, endX, endY)
                 g.stroke({ color: colors.glow, width: 1.5, alpha: 0.15 })
             }
         }
@@ -996,8 +995,14 @@ export class RunMapDisplay {
         const state = this.eldritchStates.get(node.id)
         if (!state) return
 
-        const { tentacleCount, tentacleLength, tentacleSegments, eyeRadius, pupilRadius, bodyRadius } =
-            ABYSS_CONFIG.eldritch
+        const {
+            tentacleCount,
+            tentacleLength,
+            tentacleSegments,
+            eyeRadius,
+            pupilRadius,
+            bodyRadius,
+        } = ABYSS_CONFIG.eldritch
 
         // Clear and redraw
         g.clear()
@@ -1091,14 +1096,30 @@ export class RunMapDisplay {
         }
 
         // === Draw body ===
-        const bodyColor = isLocked ? 0x0a0a12 : isCurrent ? 0x2a2a1a : isCompleted ? 0x1a1a2a : 0x0a1a1a
+        const bodyColor = isLocked
+            ? 0x0a0a12
+            : isCurrent
+              ? 0x2a2a1a
+              : isCompleted
+                ? 0x1a1a2a
+                : 0x0a1a1a
         g.circle(0, 0, bodyRadius * breatheScale)
         g.fill({ color: bodyColor, alpha: 0.95 })
 
         // Body outline (sealed nodes get cyan outline)
-        const outlineColor = isCurrent ? 0xffdd44 : isAvailable ? colors.primary : isCompleted ? 0x44aaaa : 0x222233
+        const outlineColor = isCurrent
+            ? 0xffdd44
+            : isAvailable
+              ? colors.primary
+              : isCompleted
+                ? 0x44aaaa
+                : 0x222233
         g.circle(0, 0, bodyRadius * breatheScale)
-        g.stroke({ color: outlineColor, width: isCurrent ? 3 : 2, alpha: isCompleted ? 0.6 : intensity })
+        g.stroke({
+            color: outlineColor,
+            width: isCurrent ? 3 : 2,
+            alpha: isCompleted ? 0.6 : intensity,
+        })
 
         // === Draw eye ===
         if (isCompleted && !isCurrent) {
@@ -1340,8 +1361,13 @@ export class RunMapDisplay {
         // Calculate visible depth range
         const visibleTop = this.scrollY - 100
         const visibleBottom = this.scrollY + this.height + 100
-        const minVisibleDepth = Math.max(1, Math.floor((visibleTop - ABYSS_CONFIG.padding.top) / ABYSS_CONFIG.nodeSpacingY))
-        const maxVisibleDepth = Math.ceil((visibleBottom - ABYSS_CONFIG.padding.top) / ABYSS_CONFIG.nodeSpacingY)
+        const minVisibleDepth = Math.max(
+            1,
+            Math.floor((visibleTop - ABYSS_CONFIG.padding.top) / ABYSS_CONFIG.nodeSpacingY)
+        )
+        const maxVisibleDepth = Math.ceil(
+            (visibleBottom - ABYSS_CONFIG.padding.top) / ABYSS_CONFIG.nodeSpacingY
+        )
 
         for (const [nodeId, state] of this.eldritchStates) {
             // Parse depth from nodeId (format: "depth-column")
@@ -1482,7 +1508,9 @@ export class RunMapDisplay {
             for (let i = 1; i <= tentacle.segments; i++) {
                 const t = i / tentacle.segments
                 const wave = Math.sin(tentacle.phase + t * Math.PI * 1.5) * 15 * t
-                const x = startX + direction * tentacle.length * t * (0.8 + Math.sin(tentacle.phase * 0.5) * 0.2)
+                const x =
+                    startX +
+                    direction * tentacle.length * t * (0.8 + Math.sin(tentacle.phase * 0.5) * 0.2)
                 const y = tentacle.baseY + wave + t * 20 // Slight droop
 
                 points.push({ x, y })

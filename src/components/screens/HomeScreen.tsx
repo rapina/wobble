@@ -105,39 +105,52 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
     const [tutorialActive, setTutorialActive] = useState(false)
     const [tutorialStep, setTutorialStep] = useState(0)
     const [tutorialTargetRect, setTutorialTargetRect] = useState<DOMRect | null>(null)
-    const [hasCompletedFormulaSelectTutorial, setHasCompletedFormulaSelectTutorial] = useState(() => {
-        return localStorage.getItem(FORMULA_SELECT_TUTORIAL_KEY) === 'true'
-    })
+    const [hasCompletedFormulaSelectTutorial, setHasCompletedFormulaSelectTutorial] = useState(
+        () => {
+            return localStorage.getItem(FORMULA_SELECT_TUTORIAL_KEY) === 'true'
+        }
+    )
 
     // Language helper for tutorial messages
     const isKo = i18n.language === 'ko' || i18n.language.startsWith('ko')
     const isJa = i18n.language === 'ja' || i18n.language.startsWith('ja')
 
     // Tutorial steps for formula selection phase
-    const tutorialSteps: TutorialStep[] = useMemo(() => [
-        {
-            targetSymbol: '__welcome__',
-            targetType: 'welcome' as const,
-            title: isKo ? '물리 샌드박스에 오신 것을 환영해요!' : isJa ? '物理サンドボックスへようこそ！' : 'Welcome to Physics Sandbox!',
-            message: isKo
-                ? '여기서 물리 공식을 직접 만져보며 배울 수 있어요. 변수를 조절하면 결과가 어떻게 바뀌는지 눈으로 확인해보세요!'
-                : isJa
-                ? 'ここで物理公式を直接触りながら学べます。変数を調整すると結果がどう変わるか、目で確認してみてください！'
-                : 'Here you can learn physics formulas by interacting with them. Adjust variables and see how the results change in real-time!',
-            wobbleExpression: 'happy',
-        },
-        {
-            targetSymbol: '__formula_first__',
-            targetType: 'formula-list' as const,
-            title: isKo ? '공식을 선택해보세요' : isJa ? '公式を選んでみてください' : 'Select a Formula',
-            message: isKo
-                ? '다양한 물리 공식이 준비되어 있어요. 원하는 공식을 탭해서 시뮬레이션을 시작해보세요!'
-                : isJa
-                ? '様々な物理公式が用意されています。好きな公式をタップしてシミュレーションを始めてみてください！'
-                : 'Various physics formulas are ready for you. Tap any formula to start the simulation!',
-            wobbleExpression: 'excited',
-        },
-    ], [isKo, isJa])
+    const tutorialSteps: TutorialStep[] = useMemo(
+        () => [
+            {
+                targetSymbol: '__welcome__',
+                targetType: 'welcome' as const,
+                title: isKo
+                    ? '물리 샌드박스에 오신 것을 환영해요!'
+                    : isJa
+                      ? '物理サンドボックスへようこそ！'
+                      : 'Welcome to Physics Sandbox!',
+                message: isKo
+                    ? '여기서 물리 공식을 직접 만져보며 배울 수 있어요. 변수를 조절하면 결과가 어떻게 바뀌는지 눈으로 확인해보세요!'
+                    : isJa
+                      ? 'ここで物理公式を直接触りながら学べます。変数を調整すると結果がどう変わるか、目で確認してみてください！'
+                      : 'Here you can learn physics formulas by interacting with them. Adjust variables and see how the results change in real-time!',
+                wobbleExpression: 'happy',
+            },
+            {
+                targetSymbol: '__formula_first__',
+                targetType: 'formula-list' as const,
+                title: isKo
+                    ? '공식을 선택해보세요'
+                    : isJa
+                      ? '公式を選んでみてください'
+                      : 'Select a Formula',
+                message: isKo
+                    ? '다양한 물리 공식이 준비되어 있어요. 원하는 공식을 탭해서 시뮬레이션을 시작해보세요!'
+                    : isJa
+                      ? '様々な物理公式が用意されています。好きな公式をタップしてシミュレーションを始めてみてください！'
+                      : 'Various physics formulas are ready for you. Tap any formula to start the simulation!',
+                wobbleExpression: 'excited',
+            },
+        ],
+        [isKo, isJa]
+    )
 
     // Tutorial functions
     const startTutorial = useCallback((forceRestart = false) => {
@@ -151,7 +164,7 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
 
     const nextTutorialStep = useCallback(() => {
         if (tutorialStep < tutorialSteps.length - 1) {
-            setTutorialStep(prev => prev + 1)
+            setTutorialStep((prev) => prev + 1)
         }
     }, [tutorialStep, tutorialSteps.length])
 
@@ -815,7 +828,9 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                             {/* Tutorial Help Button */}
                             <button
                                 onClick={() => {
-                                    console.log('[Tutorial Debug] Manual start clicked in HomeScreen')
+                                    console.log(
+                                        '[Tutorial Debug] Manual start clicked in HomeScreen'
+                                    )
                                     startTutorial(true)
                                 }}
                                 className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95"
@@ -855,7 +870,9 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                                 className="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-bold transition-all active:scale-95"
                                 style={{
                                     background:
-                                        selectedCategory === 'all' ? theme.gold : theme.bgPanelLight,
+                                        selectedCategory === 'all'
+                                            ? theme.gold
+                                            : theme.bgPanelLight,
                                     color: selectedCategory === 'all' ? '#000' : '#fff',
                                     border: `2px solid ${theme.border}`,
                                     boxShadow: `0 2px 0 ${theme.border}`,
@@ -897,10 +914,14 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                                         <div key={f.id} className="relative">
                                             <button
                                                 onClick={() => handleFormulaSelect(f)}
-                                                data-tutorial-formula-first={isFirstFormula ? 'true' : undefined}
+                                                data-tutorial-formula-first={
+                                                    isFirstFormula ? 'true' : undefined
+                                                }
                                                 className="relative w-full text-left px-4 py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                                                 style={{
-                                                    background: isLocked ? '#2a2a2a' : theme.bgPanelLight,
+                                                    background: isLocked
+                                                        ? '#2a2a2a'
+                                                        : theme.bgPanelLight,
                                                     border: `2px solid ${theme.border}`,
                                                     boxShadow: `0 3px 0 ${theme.border}`,
                                                     opacity: isLocked ? 0.7 : 1,

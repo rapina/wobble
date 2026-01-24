@@ -52,7 +52,16 @@ function createMiniGameScene(
 
 export const MiniGameCanvas = forwardRef<MiniGameCanvasHandle, MiniGameCanvasProps>(
     function MiniGameCanvas(
-        { gameId, mode = 'endless', onGameOver, onRetry, onExit, onContinueWithAd, width = '100%', height = '100%' },
+        {
+            gameId,
+            mode = 'endless',
+            onGameOver,
+            onRetry,
+            onExit,
+            onContinueWithAd,
+            width = '100%',
+            height = '100%',
+        },
         ref
     ) {
         const containerRef = useRef<HTMLDivElement>(null)

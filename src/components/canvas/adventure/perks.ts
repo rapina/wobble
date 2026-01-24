@@ -398,20 +398,20 @@ export function formatPerkEffect(
     effect: { stat: PerkStat; value: number; isPercent?: boolean },
     lang: string
 ): string {
-    const statNames: Record<PerkStat, { ko: string; en: string }> = {
-        damage: { ko: '데미지', en: 'Damage' },
-        fireRate: { ko: '발사 속도', en: 'Fire Rate' },
-        projectileSpeed: { ko: '탄속', en: 'Projectile Speed' },
-        projectileSize: { ko: '탄환 크기', en: 'Projectile Size' },
-        knockback: { ko: '넉백', en: 'Knockback' },
-        bounce: { ko: '튕김', en: 'Bounce' },
-        piercing: { ko: '관통', en: 'Pierce' },
-        explosionRadius: { ko: '폭발 범위', en: 'Explosion' },
-        moveSpeed: { ko: '이동 속도', en: 'Move Speed' },
+    const statNames: Record<PerkStat, { ko: string; en: string; ja: string }> = {
+        damage: { ko: '데미지', en: 'Damage', ja: 'ダメージ' },
+        fireRate: { ko: '발사 속도', en: 'Fire Rate', ja: '発射速度' },
+        projectileSpeed: { ko: '탄속', en: 'Projectile Speed', ja: '弾速' },
+        projectileSize: { ko: '탄환 크기', en: 'Projectile Size', ja: '弾サイズ' },
+        knockback: { ko: '넉백', en: 'Knockback', ja: 'ノックバック' },
+        bounce: { ko: '튕김', en: 'Bounce', ja: 'バウンス' },
+        piercing: { ko: '관통', en: 'Pierce', ja: '貫通' },
+        explosionRadius: { ko: '폭발 범위', en: 'Explosion', ja: '爆発範囲' },
+        moveSpeed: { ko: '이동 속도', en: 'Move Speed', ja: '移動速度' },
     }
 
-    const isKorean = lang === 'ko'
-    const name = isKorean ? statNames[effect.stat].ko : statNames[effect.stat].en
+    const stat = statNames[effect.stat]
+    const name = lang === 'ko' ? stat.ko : lang === 'ja' ? stat.ja : stat.en
     const sign = effect.value >= 0 ? '+' : ''
     const suffix = effect.isPercent ? '%' : ''
 

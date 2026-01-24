@@ -6,12 +6,7 @@
  */
 
 import { SeededRandom } from '@/utils/SeededRandom'
-import {
-    RunMap,
-    RunLength,
-    MapNode,
-    createNodeId,
-} from './RunMapTypes'
+import { RunMap, RunLength, MapNode, createNodeId } from './RunMapTypes'
 
 /**
  * Static map generator class
@@ -34,7 +29,10 @@ export class RunMapGenerator {
     /**
      * Legacy: Generate map with old node structure for compatibility
      */
-    static generateLegacy(runSeed: number, maxDepth: RunLength): {
+    static generateLegacy(
+        runSeed: number,
+        maxDepth: RunLength
+    ): {
         nodes: Record<string, MapNode>
         startNodeIds: string[]
     } {

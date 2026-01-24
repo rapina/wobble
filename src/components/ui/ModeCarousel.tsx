@@ -168,7 +168,9 @@ export function ModeCarousel({
                                     transform: isActive
                                         ? 'skewX(-3deg) rotate(0deg)'
                                         : `skewX(-3deg) rotate(${index % 2 === 0 ? -3 : 3}deg)`,
-                                    animation: isActive ? 'persona-card-active 2s ease-in-out infinite' : 'none',
+                                    animation: isActive
+                                        ? 'persona-card-active 2s ease-in-out infinite'
+                                        : 'none',
                                 }}
                             >
                                 {/* Shadow layer */}
@@ -219,21 +221,28 @@ export function ModeCarousel({
                                             <div
                                                 className="mb-2 p-2 rounded-lg relative"
                                                 style={{
-                                                    background: isActive ? `${card.color}30` : 'transparent',
+                                                    background: isActive
+                                                        ? `${card.color}30`
+                                                        : 'transparent',
                                                     transform: 'skewX(3deg)',
                                                 }}
                                             >
                                                 {isActive && (
                                                     <div
                                                         className="absolute inset-0 rounded-lg blur-md"
-                                                        style={{ background: card.color, opacity: 0.3 }}
+                                                        style={{
+                                                            background: card.color,
+                                                            opacity: 0.3,
+                                                        }}
                                                     />
                                                 )}
                                                 <span
                                                     className="relative"
                                                     style={{
                                                         color: card.color,
-                                                        filter: isActive ? `drop-shadow(0 0 4px ${card.color})` : 'none',
+                                                        filter: isActive
+                                                            ? `drop-shadow(0 0 4px ${card.color})`
+                                                            : 'none',
                                                     }}
                                                 >
                                                     {card.icon}
@@ -246,39 +255,48 @@ export function ModeCarousel({
                                                 style={{
                                                     color: isActive ? card.color : 'white',
                                                     transform: 'skewX(3deg)',
-                                                    textShadow: isActive ? `0 0 10px ${card.color}80` : 'none',
+                                                    textShadow: isActive
+                                                        ? `0 0 10px ${card.color}80`
+                                                        : 'none',
                                                 }}
                                             >
                                                 {t(card.titleKey)}
                                             </h3>
 
                                             {/* Badge for specific modes */}
-                                            {card.id === 'sandbox' && unseenFormulaCount && unseenFormulaCount > 0 && (
-                                                <span
-                                                    className="mt-2 px-2 py-0.5 text-[9px] font-black"
-                                                    style={{
-                                                        background: theme.red,
-                                                        color: 'white',
-                                                        transform: 'skewX(-5deg)',
-                                                        boxShadow: `2px 2px 0 ${theme.border}`,
-                                                    }}
-                                                >
-                                                    NEW
-                                                </span>
-                                            )}
-                                            {card.id === 'collection' && collectionProgress && achievementProgress && (
-                                                <span
-                                                    className="mt-2 px-2 py-0.5 text-[10px] font-bold"
-                                                    style={{
-                                                        background: 'rgba(0,0,0,0.5)',
-                                                        color: 'white',
-                                                        transform: 'skewX(-5deg)',
-                                                    }}
-                                                >
-                                                    {collectionProgress.unlocked + achievementProgress.unlocked}/
-                                                    {collectionProgress.total + achievementProgress.total}
-                                                </span>
-                                            )}
+                                            {card.id === 'sandbox' &&
+                                                unseenFormulaCount &&
+                                                unseenFormulaCount > 0 && (
+                                                    <span
+                                                        className="mt-2 px-2 py-0.5 text-[9px] font-black"
+                                                        style={{
+                                                            background: theme.red,
+                                                            color: 'white',
+                                                            transform: 'skewX(-5deg)',
+                                                            boxShadow: `2px 2px 0 ${theme.border}`,
+                                                        }}
+                                                    >
+                                                        NEW
+                                                    </span>
+                                                )}
+                                            {card.id === 'collection' &&
+                                                collectionProgress &&
+                                                achievementProgress && (
+                                                    <span
+                                                        className="mt-2 px-2 py-0.5 text-[10px] font-bold"
+                                                        style={{
+                                                            background: 'rgba(0,0,0,0.5)',
+                                                            color: 'white',
+                                                            transform: 'skewX(-5deg)',
+                                                        }}
+                                                    >
+                                                        {collectionProgress.unlocked +
+                                                            achievementProgress.unlocked}
+                                                        /
+                                                        {collectionProgress.total +
+                                                            achievementProgress.total}
+                                                    </span>
+                                                )}
                                         </div>
 
                                         {/* Bottom accent */}
@@ -287,7 +305,8 @@ export function ModeCarousel({
                                                 className="absolute bottom-0 left-0 right-0 h-1"
                                                 style={{
                                                     background: card.color,
-                                                    animation: 'persona-bottom-glow 1.5s ease-in-out infinite',
+                                                    animation:
+                                                        'persona-bottom-glow 1.5s ease-in-out infinite',
                                                 }}
                                             />
                                         )}

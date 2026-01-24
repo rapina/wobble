@@ -20,14 +20,14 @@ const PADDING = 6
 // Station colors for badge
 const STATION_COLORS: Record<StationId, number> = {
     'gravity-lab': 0x9b59b6,
-    'accelerator': 0x3498db,
+    accelerator: 0x3498db,
     'collision-lab': 0xe74c3c,
     'thermodynamics-lab': 0xe67e22,
 }
 
 const STATION_SYMBOLS: Record<StationId, string> = {
     'gravity-lab': 'G',
-    'accelerator': 'p',
+    accelerator: 'p',
     'collision-lab': 'e',
     'thermodynamics-lab': 'Q',
 }

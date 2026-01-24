@@ -19,8 +19,12 @@ function TutorialWobbleAvatar({ expression }: { expression: string }) {
                 return (
                     <>
                         {/* Star eyes */}
-                        <text x="18" y="26" fontSize="8" textAnchor="middle" fill="#333">★</text>
-                        <text x="30" y="26" fontSize="8" textAnchor="middle" fill="#333">★</text>
+                        <text x="18" y="26" fontSize="8" textAnchor="middle" fill="#333">
+                            ★
+                        </text>
+                        <text x="30" y="26" fontSize="8" textAnchor="middle" fill="#333">
+                            ★
+                        </text>
                     </>
                 )
             case 'surprised':
@@ -41,8 +45,24 @@ function TutorialWobbleAvatar({ expression }: { expression: string }) {
                         <circle cx="30" cy="23" r="3" fill="white" />
                         <circle cx="18" cy="23" r="2" fill="#333" />
                         <circle cx="30" cy="23" r="2" fill="#333" />
-                        <line x1="14" y1="17" x2="21" y2="19" stroke="#333" strokeWidth="1.5" strokeLinecap="round" />
-                        <line x1="34" y1="17" x2="27" y2="19" stroke="#333" strokeWidth="1.5" strokeLinecap="round" />
+                        <line
+                            x1="14"
+                            y1="17"
+                            x2="21"
+                            y2="19"
+                            stroke="#333"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                        />
+                        <line
+                            x1="34"
+                            y1="17"
+                            x2="27"
+                            y2="19"
+                            stroke="#333"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                        />
                     </>
                 )
             default: // happy
@@ -64,9 +84,25 @@ function TutorialWobbleAvatar({ expression }: { expression: string }) {
             case 'surprised':
                 return <circle cx="24" cy="33" r="3" fill="#333" />
             case 'worried':
-                return <path d="M 19 34 Q 24 31 29 34" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" />
+                return (
+                    <path
+                        d="M 19 34 Q 24 31 29 34"
+                        fill="none"
+                        stroke="#333"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                    />
+                )
             default: // happy
-                return <path d="M 19 31 Q 24 36 29 31" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" />
+                return (
+                    <path
+                        d="M 19 31 Q 24 36 29 31"
+                        fill="none"
+                        stroke="#333"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                    />
+                )
         }
     }
 
@@ -96,7 +132,13 @@ function TutorialWobbleAvatar({ expression }: { expression: string }) {
             {getMouth()}
 
             {/* Mustache */}
-            <path d="M 17 29 Q 24 32 31 29" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" />
+            <path
+                d="M 17 29 Q 24 32 31 29"
+                fill="none"
+                stroke="#888"
+                strokeWidth="2"
+                strokeLinecap="round"
+            />
         </svg>
     )
 }
@@ -105,7 +147,14 @@ export interface TutorialStep {
     targetSymbol: string
     message: string
     title?: string
-    targetType?: 'variable' | 'info-button' | 'formula-list' | 'challenge-submit' | 'welcome' | 'canvas' | 'challenge'
+    targetType?:
+        | 'variable'
+        | 'info-button'
+        | 'formula-list'
+        | 'challenge-submit'
+        | 'welcome'
+        | 'canvas'
+        | 'challenge'
     wobbleExpression?: 'happy' | 'excited' | 'surprised' | 'worried'
 }
 
@@ -255,8 +304,13 @@ export function TutorialOverlay({
                     isAnimating ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
                 }`}
                 style={{
-                    top: isWelcomeStep ? '50%' : targetRect ?
-                        (targetRect.top > window.innerHeight / 2 ? '20%' : '60%') : '50%',
+                    top: isWelcomeStep
+                        ? '50%'
+                        : targetRect
+                          ? targetRect.top > window.innerHeight / 2
+                              ? '20%'
+                              : '60%'
+                          : '50%',
                     transform: isWelcomeStep ? 'translateY(-50%)' : 'translateY(-50%)',
                 }}
             >
@@ -327,9 +381,7 @@ export function TutorialOverlay({
                         </div>
 
                         {/* Message */}
-                        <p className="text-white/90 text-sm leading-relaxed mb-5">
-                            {step.message}
-                        </p>
+                        <p className="text-white/90 text-sm leading-relaxed mb-5">{step.message}</p>
 
                         {/* Buttons */}
                         <div className="flex items-center justify-between gap-3">

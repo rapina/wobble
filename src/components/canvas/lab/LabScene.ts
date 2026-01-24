@@ -436,7 +436,10 @@ export class LabScene {
      * Get worker position around a station (for multiple workers)
      * Workers are spread in a row below the station
      */
-    private getStationWorkerPosition(stationId: StationId, workerIndex: number): { x: number; y: number } {
+    private getStationWorkerPosition(
+        stationId: StationId,
+        workerIndex: number
+    ): { x: number; y: number } {
         const station = this.stations.get(stationId)
         if (!station) return { x: this.width / 2, y: this.height / 2 }
 
@@ -518,7 +521,8 @@ export class LabScene {
 
                 // Setup drag callbacks for reassignment
                 sprite.setDragCallbacks(
-                    (workerId, globalX, globalY) => this.handleWorkerSpriteDragStart(workerId, globalX, globalY),
+                    (workerId, globalX, globalY) =>
+                        this.handleWorkerSpriteDragStart(workerId, globalX, globalY),
                     (globalX, globalY) => this.handleDragMove(globalX, globalY),
                     (globalX, globalY) => this.handleWorkerSpriteDragEnd(globalX, globalY)
                 )

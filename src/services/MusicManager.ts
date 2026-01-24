@@ -302,7 +302,9 @@ class MusicManager {
             this.analyser = this.audioContext.createAnalyser()
             this.analyser.fftSize = 256 // Smaller for faster response
             this.analyser.smoothingTimeConstant = 0.7 // Smooth transitions
-            this.frequencyData = new Uint8Array(this.analyser.frequencyBinCount) as Uint8Array<ArrayBuffer>
+            this.frequencyData = new Uint8Array(
+                this.analyser.frequencyBinCount
+            ) as Uint8Array<ArrayBuffer>
 
             // Connect analyser to destination
             this.analyser.connect(this.audioContext.destination)

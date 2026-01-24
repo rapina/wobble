@@ -155,7 +155,9 @@ function AbyssLockedModal({
             <div
                 className={cn(
                     'relative max-w-sm w-full rounded-2xl overflow-hidden transition-all duration-500',
-                    mounted ? 'scale-100 translate-y-0 opacity-100' : 'scale-95 translate-y-4 opacity-0'
+                    mounted
+                        ? 'scale-100 translate-y-0 opacity-100'
+                        : 'scale-95 translate-y-4 opacity-0'
                 )}
                 style={{
                     background: 'linear-gradient(180deg, #18081a 0%, #0a0510 100%)',
@@ -199,7 +201,8 @@ function AbyssLockedModal({
                             <div
                                 className="w-6 h-6 rounded-full flex items-center justify-center"
                                 style={{
-                                    background: 'radial-gradient(circle, #982840 0%, #501020 70%, #200810 100%)',
+                                    background:
+                                        'radial-gradient(circle, #982840 0%, #501020 70%, #200810 100%)',
                                 }}
                             >
                                 {/* Pupil */}
@@ -261,9 +264,10 @@ function AbyssLockedModal({
                                 className="h-full rounded-full transition-all duration-700"
                                 style={{
                                     width: `${Math.min(100, (currentDepth / requiredDepth) * 100)}%`,
-                                    background: currentDepth >= requiredDepth
-                                        ? 'linear-gradient(90deg, #4a9a90 0%, #5a4a70 100%)'
-                                        : 'linear-gradient(90deg, #501030 0%, #803050 100%)',
+                                    background:
+                                        currentDepth >= requiredDepth
+                                            ? 'linear-gradient(90deg, #4a9a90 0%, #5a4a70 100%)'
+                                            : 'linear-gradient(90deg, #501030 0%, #803050 100%)',
                                 }}
                             />
                         </div>
@@ -275,20 +279,14 @@ function AbyssLockedModal({
                             >
                                 {currentDepth}
                             </span>
-                            <span
-                                className="text-lg font-bold"
-                                style={{ color: '#a08050' }}
-                            >
+                            <span className="text-lg font-bold" style={{ color: '#a08050' }}>
                                 {requiredDepth}
                             </span>
                         </div>
                     </div>
 
                     {/* Hint text */}
-                    <p
-                        className="text-xs"
-                        style={{ color: '#504058' }}
-                    >
+                    <p className="text-xs" style={{ color: '#504058' }}>
                         {t('game.abyss.hint', { depth: requiredDepth })}
                     </p>
                 </div>
@@ -491,7 +489,6 @@ function WobblediverCard({
                             ))}
                         </div>
                     )}
-
                 </div>
 
                 {/* Info area */}

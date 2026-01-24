@@ -196,7 +196,8 @@ export const useLabStore = create<LabStoreState>()(
                         gravity: state.resources.gravity + offlineProduction.gravity,
                         momentum: state.resources.momentum + offlineProduction.momentum,
                         elasticity: state.resources.elasticity + offlineProduction.elasticity,
-                        thermodynamics: state.resources.thermodynamics + offlineProduction.thermodynamics,
+                        thermodynamics:
+                            state.resources.thermodynamics + offlineProduction.thermodynamics,
                     },
                     lastSyncAt: Date.now(),
                 }))
@@ -214,8 +215,10 @@ export const useLabStore = create<LabStoreState>()(
                 return {
                     gravityMultiplier: 1 + calculateStatEffect('gravity', state.stats.gravity),
                     momentumMultiplier: 1 + calculateStatEffect('momentum', state.stats.momentum),
-                    elasticityMultiplier: 1 + calculateStatEffect('elasticity', state.stats.elasticity),
-                    thermodynamicsMultiplier: 1 + calculateStatEffect('thermodynamics', state.stats.thermodynamics),
+                    elasticityMultiplier:
+                        1 + calculateStatEffect('elasticity', state.stats.elasticity),
+                    thermodynamicsMultiplier:
+                        1 + calculateStatEffect('thermodynamics', state.stats.thermodynamics),
                 }
             },
 
@@ -248,13 +251,15 @@ export const useLabStore = create<LabStoreState>()(
                                 gravity: oldResources.gravity ?? oldResources.mass ?? 0,
                                 momentum: oldResources.momentum ?? oldResources.velocity ?? 0,
                                 elasticity: oldResources.elasticity ?? oldResources.force ?? 0,
-                                thermodynamics: oldResources.thermodynamics ?? oldResources.resistance ?? 0,
+                                thermodynamics:
+                                    oldResources.thermodynamics ?? oldResources.resistance ?? 0,
                             },
                             stats: {
                                 gravity: oldStats.gravity ?? oldStats.massLevel ?? 0,
                                 momentum: oldStats.momentum ?? oldStats.velocityLevel ?? 0,
                                 elasticity: oldStats.elasticity ?? oldStats.forceLevel ?? 0,
-                                thermodynamics: oldStats.thermodynamics ?? oldStats.resistanceLevel ?? 0,
+                                thermodynamics:
+                                    oldStats.thermodynamics ?? oldStats.resistanceLevel ?? 0,
                             },
                             workers: data.state.workers || createInitialWorkers(),
                             lastSyncAt: data.state.lastSyncAt || Date.now(),
@@ -276,8 +281,11 @@ export function syncLabOnMount(): { production: LabResources; elapsedSeconds: nu
     const result = useLabStore.getState().syncOfflineProgress()
 
     // Check if there was significant production (at least 100 total resources)
-    const totalProduction = result.production.gravity + result.production.momentum +
-                           result.production.elasticity + result.production.thermodynamics
+    const totalProduction =
+        result.production.gravity +
+        result.production.momentum +
+        result.production.elasticity +
+        result.production.thermodynamics
 
     // Only return if significant and was offline for at least 30 seconds
     if (totalProduction >= 100 && result.elapsedSeconds >= 30) {

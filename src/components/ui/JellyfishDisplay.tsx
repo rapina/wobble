@@ -11,7 +11,11 @@ interface JellyfishDisplayProps {
     animated?: boolean
 }
 
-export function JellyfishDisplay({ size = 80, color = '#e85d4c', animated = true }: JellyfishDisplayProps) {
+export function JellyfishDisplay({
+    size = 80,
+    color = '#e85d4c',
+    animated = true,
+}: JellyfishDisplayProps) {
     const [time, setTime] = useState(0)
 
     // Animation loop
@@ -166,14 +170,7 @@ export function JellyfishDisplay({ size = 80, color = '#e85d4c', animated = true
             </g>
 
             {/* Highlight on top */}
-            <ellipse
-                cx={cx - 6}
-                cy={cy - 10}
-                rx={4}
-                ry={3}
-                fill="white"
-                opacity="0.3"
-            />
+            <ellipse cx={cx - 6} cy={cy - 10} rx={4} ry={3} fill="white" opacity="0.3" />
         </svg>
     )
 }

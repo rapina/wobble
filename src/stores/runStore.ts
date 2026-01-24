@@ -117,7 +117,9 @@ export const useRunStore = create<RunState>()(
 
                 // Apply lab physics multiplier (gravity affects HP/mass)
                 const labStats = useLabStore.getState().getAppliedStats()
-                const startingHP = Math.round(DEFAULT_RUN_HP.startingHP * labStats.gravityMultiplier)
+                const startingHP = Math.round(
+                    DEFAULT_RUN_HP.startingHP * labStats.gravityMultiplier
+                )
                 const maxHP = Math.round(DEFAULT_RUN_HP.maxHP * labStats.gravityMultiplier)
 
                 // Create new active run (using legacy structure)
@@ -189,8 +191,7 @@ export const useRunStore = create<RunState>()(
                 const state = get()
                 if (!state.activeRun || !state.activeRun.currentNodeId) return
 
-                const { currentNodeId, scoreMultiplier, scoreMultiplierDuration } =
-                    state.activeRun
+                const { currentNodeId, scoreMultiplier, scoreMultiplierDuration } = state.activeRun
 
                 // Apply score multiplier
                 const multipliedScore = Math.floor(stageScore * scoreMultiplier)

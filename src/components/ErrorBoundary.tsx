@@ -58,7 +58,7 @@ interface ErrorFallbackProps {
 
 function ErrorFallback({ error, onRetry, onGoHome }: ErrorFallbackProps) {
     const { i18n } = useTranslation()
-    const isKorean = i18n.language.startsWith('ko')
+    const lang = i18n.language
 
     return (
         <div
@@ -92,7 +92,11 @@ function ErrorFallback({ error, onRetry, onGoHome }: ErrorFallbackProps) {
                     color: '#e74c3c',
                 }}
             >
-                {isKorean ? '오류가 발생했습니다' : 'Something went wrong'}
+                {lang === 'ko'
+                    ? '오류가 발생했습니다'
+                    : lang === 'ja'
+                      ? 'エラーが発生しました'
+                      : 'Something went wrong'}
             </h1>
             <p
                 style={{
@@ -103,9 +107,11 @@ function ErrorFallback({ error, onRetry, onGoHome }: ErrorFallbackProps) {
                     maxWidth: '300px',
                 }}
             >
-                {isKorean
+                {lang === 'ko'
                     ? '앱에서 예기치 않은 오류가 발생했습니다.'
-                    : 'The app encountered an unexpected error.'}
+                    : lang === 'ja'
+                      ? 'アプリで予期しないエラーが発生しました。'
+                      : 'The app encountered an unexpected error.'}
             </p>
 
             {import.meta.env.DEV && error && (
@@ -146,7 +152,7 @@ function ErrorFallback({ error, onRetry, onGoHome }: ErrorFallbackProps) {
                         cursor: 'pointer',
                     }}
                 >
-                    {isKorean ? '다시 시도' : 'Try Again'}
+                    {lang === 'ko' ? '다시 시도' : lang === 'ja' ? 'もう一度' : 'Try Again'}
                 </button>
                 <button
                     onClick={onGoHome}
@@ -161,7 +167,7 @@ function ErrorFallback({ error, onRetry, onGoHome }: ErrorFallbackProps) {
                         cursor: 'pointer',
                     }}
                 >
-                    {isKorean ? '홈으로' : 'Go Home'}
+                    {lang === 'ko' ? '홈으로' : lang === 'ja' ? 'ホームへ' : 'Go Home'}
                 </button>
             </div>
         </div>

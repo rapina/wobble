@@ -968,23 +968,48 @@ export class Wobble extends Container {
         g.fill(mustacheColor)
 
         // Left side - droopy
-        g.ellipse(-mustacheWidth * 0.35, mustacheY + eyeSize * 0.15, mustacheWidth * 0.35, mustacheHeight * 0.5)
+        g.ellipse(
+            -mustacheWidth * 0.35,
+            mustacheY + eyeSize * 0.15,
+            mustacheWidth * 0.35,
+            mustacheHeight * 0.5
+        )
         g.fill(mustacheColor)
 
         // Right side - droopy
-        g.ellipse(mustacheWidth * 0.35, mustacheY + eyeSize * 0.15, mustacheWidth * 0.35, mustacheHeight * 0.5)
+        g.ellipse(
+            mustacheWidth * 0.35,
+            mustacheY + eyeSize * 0.15,
+            mustacheWidth * 0.35,
+            mustacheHeight * 0.5
+        )
         g.fill(mustacheColor)
 
         // Add some texture/detail with smaller circles
         ;[-1, 0, 1].forEach((pos) => {
-            g.ellipse(pos * mustacheWidth * 0.25, mustacheY - eyeSize * 0.1, eyeSize * 0.3, eyeSize * 0.2)
+            g.ellipse(
+                pos * mustacheWidth * 0.25,
+                mustacheY - eyeSize * 0.1,
+                eyeSize * 0.3,
+                eyeSize * 0.2
+            )
         })
         g.fill({ color: 0xe0e0e0, alpha: 0.7 })
 
         // Outline for definition
         g.moveTo(-mustacheWidth * 0.6, mustacheY + eyeSize * 0.3)
-        g.quadraticCurveTo(-mustacheWidth * 0.3, mustacheY - eyeSize * 0.2, 0, mustacheY - eyeSize * 0.1)
-        g.quadraticCurveTo(mustacheWidth * 0.3, mustacheY - eyeSize * 0.2, mustacheWidth * 0.6, mustacheY + eyeSize * 0.3)
+        g.quadraticCurveTo(
+            -mustacheWidth * 0.3,
+            mustacheY - eyeSize * 0.2,
+            0,
+            mustacheY - eyeSize * 0.1
+        )
+        g.quadraticCurveTo(
+            mustacheWidth * 0.3,
+            mustacheY - eyeSize * 0.2,
+            mustacheWidth * 0.6,
+            mustacheY + eyeSize * 0.3
+        )
         g.stroke({ color: 0xaaaaaa, width: 1.5, cap: 'round' })
     }
 
@@ -1320,7 +1345,9 @@ export class Wobble extends Container {
     /**
      * Clean up resources to prevent memory leaks
      */
-    public override destroy(options?: boolean | { children?: boolean; texture?: boolean; textureSource?: boolean }): void {
+    public override destroy(
+        options?: boolean | { children?: boolean; texture?: boolean; textureSource?: boolean }
+    ): void {
         // Cancel any pending gulp animation
         if (this.gulpAnimationId !== null) {
             cancelAnimationFrame(this.gulpAnimationId)

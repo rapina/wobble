@@ -419,7 +419,11 @@ export class Wormhole {
 
         // Main horizon ring
         g.ellipse(0, 0, horizonRx, horizonRy)
-        g.stroke({ color: this.colors.primary, width: 2, alpha: 0.4 * horizonPulse * intensityBoost })
+        g.stroke({
+            color: this.colors.primary,
+            width: 2,
+            alpha: 0.4 * horizonPulse * intensityBoost,
+        })
 
         // === GRAVITATIONAL LENSING DISTORTION ===
         // Subtle warped light effects around the edge
@@ -438,7 +442,11 @@ export class Wormhole {
             // Light streak being pulled in
             g.moveTo(endX, endY)
             g.lineTo(startX, startY)
-            g.stroke({ color: this.colors.beam, width: distortWidth, alpha: 0.2 * distortPulse * intensityBoost })
+            g.stroke({
+                color: this.colors.beam,
+                width: distortWidth,
+                alpha: 0.2 * distortPulse * intensityBoost,
+            })
         }
 
         // Suction/hit flash
@@ -517,9 +525,12 @@ export class Wormhole {
                 const spiralAngle = baseAngle + t * Math.PI * 1.2 + pulseOffset * t
                 const shrink = 1 - Math.pow(t, 0.8) * 0.97
                 // Organic wave in the tendril
-                const waveOffset = Math.sin(t * Math.PI * 3 + this.time * 2 + line.phase) * 5 * (1 - t)
+                const waveOffset =
+                    Math.sin(t * Math.PI * 3 + this.time * 2 + line.phase) * 5 * (1 - t)
 
-                const px = Math.cos(spiralAngle) * rx * shrink + waveOffset * Math.cos(spiralAngle + Math.PI / 2)
+                const px =
+                    Math.cos(spiralAngle) * rx * shrink +
+                    waveOffset * Math.cos(spiralAngle + Math.PI / 2)
                 const py = Math.sin(spiralAngle) * ry * shrink + depth * t + waveOffset * 0.3
 
                 g.lineTo(px, py)
@@ -594,7 +605,8 @@ export class Wormhole {
 
             // Particles get brighter then fade as they approach singularity
             const brightnessPhase = Math.sin(particle.depth * Math.PI) // Peak brightness in middle
-            const fadeAlpha = particle.alpha * (0.3 + brightnessPhase * 0.7) * (1 - particle.depth * 0.5)
+            const fadeAlpha =
+                particle.alpha * (0.3 + brightnessPhase * 0.7) * (1 - particle.depth * 0.5)
             const size = particle.size * (1 - depthCurve * 0.7)
 
             // Elongated trail (stretched by gravitational pull)
@@ -696,7 +708,11 @@ export class Wormhole {
         const perfectRx = this.perfectRadius * this.widthScale
         const perfectRy = this.perfectRadius * this.ellipseRatio
         g.ellipse(0, 0, perfectRx * perfectPulse, perfectRy * perfectPulse)
-        g.stroke({ color: this.colors.beam, width: 2, alpha: Math.min(1, 0.6 * alphaBoost * perfectPulse) })
+        g.stroke({
+            color: this.colors.beam,
+            width: 2,
+            alpha: Math.min(1, 0.6 * alphaBoost * perfectPulse),
+        })
 
         // === BIOLUMINESCENT NODULES ===
         // Organic glowing points around the rim
@@ -725,7 +741,8 @@ export class Wormhole {
         // === ORGANIC TENDRILS connecting nodules ===
         for (let i = 0; i < noduleCount; i++) {
             const angle1 = (Math.PI * 2 * i) / noduleCount + this.rotationAngle * 0.3
-            const angle2 = (Math.PI * 2 * ((i + 1) % noduleCount)) / noduleCount + this.rotationAngle * 0.3
+            const angle2 =
+                (Math.PI * 2 * ((i + 1) % noduleCount)) / noduleCount + this.rotationAngle * 0.3
 
             const x1 = Math.cos(angle1) * rx * 1.02
             const y1 = Math.sin(angle1) * ry * 1.02

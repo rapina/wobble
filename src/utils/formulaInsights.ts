@@ -29,9 +29,11 @@ export function getFormulaInsight(
 export function getInsightText(
     formulaId: string,
     variables: Record<string, number>,
-    isKorean: boolean
+    lang: string
 ): string | null {
     const insight = getFormulaInsight(formulaId, variables)
     if (!insight) return null
-    return isKorean ? insight.ko : insight.en
+    if (lang === 'ko') return insight.ko
+    if (lang === 'ja') return insight.ja ?? insight.en
+    return insight.en
 }

@@ -40,7 +40,6 @@ interface AchievementsScreenProps {
 export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
     const { i18n } = useTranslation()
     const lang = i18n.language
-    const isKorean = lang === 'ko'
     const { isUnlocked, getProgress, getAchievementProgress } = useAchievementStore()
     const { studiedFormulas } = useProgressStore()
     const { totalSolved } = useChallengeStore()
@@ -64,8 +63,7 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
     const sandboxSubcategories: AchievementSubcategory[] = ['collection']
     const gameSubcategories: AchievementSubcategory[] = ['wobblediver']
 
-    const subcategories =
-        activeCategory === 'sandbox' ? sandboxSubcategories : gameSubcategories
+    const subcategories = activeCategory === 'sandbox' ? sandboxSubcategories : gameSubcategories
 
     // Calculate visible achievements progress (excluding survivor)
     const visibleAchievements = ACHIEVEMENTS.filter((a) => a.subcategory !== 'survivor')
@@ -248,7 +246,7 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
                                     textShadow: '0 1px 2px rgba(0,0,0,0.3)',
                                 }}
                             >
-                                {isKorean ? '도전 과제' : 'Challenges'}
+                                {t({ ko: '도전 과제', en: 'Challenges', ja: 'チャレンジ' }, lang)}
                             </h3>
                         </div>
 
@@ -284,7 +282,9 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
                                             {/* Header Row */}
                                             <div className="flex items-center justify-between mb-2">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-xl">{challenge.icon}</span>
+                                                    <span className="text-xl">
+                                                        {challenge.icon}
+                                                    </span>
                                                     <span
                                                         className="font-black"
                                                         style={{ color: challenge.color }}
@@ -332,13 +332,27 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
                                                         />
                                                     </div>
                                                     <div className="flex justify-between text-xs">
-                                                        <span style={{ color: 'rgba(255,255,255,0.5)' }}>
+                                                        <span
+                                                            style={{
+                                                                color: 'rgba(255,255,255,0.5)',
+                                                            }}
+                                                        >
                                                             {currentValue} / {nextLevel.requirement}
                                                         </span>
-                                                        <span style={{ color: 'rgba(255,255,255,0.4)' }}>
-                                                            {isKorean
-                                                                ? `다음: ${t(nextLevel.title, lang)}`
-                                                                : `Next: ${t(nextLevel.title, lang)}`}
+                                                        <span
+                                                            style={{
+                                                                color: 'rgba(255,255,255,0.4)',
+                                                            }}
+                                                        >
+                                                            {t(
+                                                                {
+                                                                    ko: '다음: ',
+                                                                    en: 'Next: ',
+                                                                    ja: '次: ',
+                                                                },
+                                                                lang
+                                                            )}
+                                                            {t(nextLevel.title, lang)}
                                                         </span>
                                                     </div>
                                                 </>
@@ -348,7 +362,14 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
                                                     className="text-xs font-bold"
                                                     style={{ color: theme.gold }}
                                                 >
-                                                    {isKorean ? '🎉 최고 레벨 달성!' : '🎉 Max Level!'}
+                                                    {t(
+                                                        {
+                                                            ko: '🎉 최고 레벨 달성!',
+                                                            en: '🎉 Max Level!',
+                                                            ja: '🎉 最高レベル達成！',
+                                                        },
+                                                        lang
+                                                    )}
                                                 </p>
                                             )}
                                         </div>
@@ -433,7 +454,9 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
                                 key={subcategory}
                                 className={cn(
                                     'transition-all duration-300',
-                                    mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                                    mounted
+                                        ? 'opacity-100 translate-y-0'
+                                        : 'opacity-0 translate-y-4'
                                 )}
                                 style={{ transitionDelay: `${subIndex * 80 + 300}ms` }}
                             >

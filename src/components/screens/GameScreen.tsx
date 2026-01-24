@@ -8,6 +8,7 @@ import { Pause, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Balatro from '@/components/Balatro'
 import { gamePreset } from '@/config/backgroundPresets'
+import { t } from '@/utils/localization'
 
 const theme = {
     border: '#1a1a1a',
@@ -19,7 +20,7 @@ interface MinigameScreenProps {
 
 export function GameScreen({ onBack }: MinigameScreenProps) {
     const { i18n } = useTranslation()
-    const isKorean = i18n.language === 'ko'
+    const lang = i18n.language
     const [mounted, setMounted] = useState(false)
     const [playResult, setPlayResult] = useState<PlayResult | null>(null)
     const [gamePhase, setGamePhase] = useState<GameState | null>(null)
@@ -170,7 +171,7 @@ export function GameScreen({ onBack }: MinigameScreenProps) {
                         )}
                     >
                         <RotateCcw className="w-5 h-5" />
-                        <span>{isKorean ? '다시 시도' : 'Try Again'}</span>
+                        <span>{t({ ko: '다시 시도', en: 'Try Again', ja: 'もう一度' }, lang)}</span>
                     </button>
                 </div>
             )}
@@ -184,7 +185,14 @@ export function GameScreen({ onBack }: MinigameScreenProps) {
                     }}
                 >
                     <p className="text-red-400 text-sm animate-pulse">
-                        {isKorean ? '목표에 도달하지 못했어요!' : "Didn't reach the target!"}
+                        {t(
+                            {
+                                ko: '목표에 도달하지 못했어요!',
+                                en: "Didn't reach the target!",
+                                ja: '目標に到達できませんでした！',
+                            },
+                            lang
+                        )}
                     </p>
                 </div>
             )}

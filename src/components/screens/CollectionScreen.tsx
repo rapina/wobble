@@ -1,15 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-    ArrowLeft,
-    Sparkles,
-    BookOpen,
-    Trophy,
-    Users,
-    Target,
-    Waves,
-    Check,
-} from 'lucide-react'
+import { ArrowLeft, Sparkles, BookOpen, Trophy, Users, Target, Waves, Check } from 'lucide-react'
 import Balatro from '@/components/Balatro'
 import { collectionPreset } from '@/config/backgroundPresets'
 import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
@@ -66,8 +57,8 @@ interface CollectionScreenProps {
 }
 
 export function CollectionScreen({ onBack }: CollectionScreenProps) {
-    const { t, i18n } = useTranslation()
-    const isKorean = i18n.language === 'ko'
+    const { i18n } = useTranslation()
+    const lang = i18n.language
     const { unlockedWobbles, getProgress } = useCollectionStore()
     const { getStudiedFormulas } = useProgressStore()
     const wobblediverRecord = useMinigameRecordStore((s) => s.getWobblediverRecord())
@@ -126,22 +117,22 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
         {
             id: 'characters',
             icon: <Users className="w-3.5 h-3.5" />,
-            label: isKorean ? '캐릭터' : 'Chars',
+            label: localizeText({ ko: '캐릭터', en: 'Chars', ja: 'キャラ' }, lang),
         },
         {
             id: 'formulas',
             icon: <BookOpen className="w-3.5 h-3.5" />,
-            label: isKorean ? '학습' : 'Study',
+            label: localizeText({ ko: '학습', en: 'Study', ja: '学習' }, lang),
         },
         {
             id: 'achievements',
             icon: <Trophy className="w-3.5 h-3.5" />,
-            label: isKorean ? '업적' : 'Achieve',
+            label: localizeText({ ko: '업적', en: 'Achieve', ja: '実績' }, lang),
         },
         {
             id: 'records',
             icon: <Target className="w-3.5 h-3.5" />,
-            label: isKorean ? '기록' : 'Stats',
+            label: localizeText({ ko: '기록', en: 'Stats', ja: '記録' }, lang),
         },
     ]
 
@@ -219,7 +210,7 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                             textShadow: '0 2px 0 #8a6d1a',
                         }}
                     >
-                        {isKorean ? '컬렉션' : 'COLLECTION'}
+                        {localizeText({ ko: '컬렉션', en: 'COLLECTION', ja: 'コレクション' }, lang)}
                     </h1>
                 </div>
             </div>
@@ -314,7 +305,7 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                 {activeTab === 'formulas' && (
                     <FormulasTab
                         mounted={mounted}
-                        isKorean={isKorean}
+                        lang={lang}
                         studiedFormulas={studiedFormulas}
                         totalFormulas={totalFormulas}
                     />
@@ -331,7 +322,7 @@ export function CollectionScreen({ onBack }: CollectionScreenProps) {
                 {activeTab === 'records' && (
                     <RecordsTab
                         mounted={mounted}
-                        isKorean={isKorean}
+                        lang={lang}
                         wobblediverRecord={wobblediverRecord}
                     />
                 )}
@@ -494,12 +485,12 @@ function CharactersTab({
 // Formulas Tab Component
 function FormulasTab({
     mounted,
-    isKorean,
+    lang,
     studiedFormulas,
     totalFormulas,
 }: {
     mounted: boolean
-    isKorean: boolean
+    lang: string
     studiedFormulas: string[]
     totalFormulas: number
 }) {
@@ -507,7 +498,7 @@ function FormulasTab({
     const categories = [
         {
             id: 'mechanics',
-            name: isKorean ? '역학' : 'Mechanics',
+            name: { ko: '역학', en: 'Mechanics', ja: '力学' },
             color: theme.red,
             formulas: [
                 'newton-second',
@@ -525,7 +516,7 @@ function FormulasTab({
         },
         {
             id: 'gravity',
-            name: isKorean ? '중력' : 'Gravity',
+            name: { ko: '중력', en: 'Gravity', ja: '重力' },
             color: theme.purple,
             formulas: [
                 'gravity',
@@ -538,7 +529,7 @@ function FormulasTab({
         },
         {
             id: 'waves',
-            name: isKorean ? '파동 & 광학' : 'Waves & Optics',
+            name: { ko: '파동 & 광학', en: 'Waves & Optics', ja: '波動と光学' },
             color: theme.blue,
             formulas: [
                 'wave',
@@ -553,7 +544,7 @@ function FormulasTab({
         },
         {
             id: 'thermo',
-            name: isKorean ? '열역학' : 'Thermodynamics',
+            name: { ko: '열역학', en: 'Thermodynamics', ja: '熱力学' },
             color: '#e67e22',
             formulas: [
                 'ideal-gas',
@@ -567,7 +558,7 @@ function FormulasTab({
         },
         {
             id: 'electricity',
-            name: isKorean ? '전자기' : 'Electricity',
+            name: { ko: '전자기', en: 'Electricity', ja: '電磁気' },
             color: '#f1c40f',
             formulas: [
                 'ohm',
@@ -581,19 +572,19 @@ function FormulasTab({
         },
         {
             id: 'modern',
-            name: isKorean ? '현대 물리' : 'Modern Physics',
+            name: { ko: '현대 물리', en: 'Modern Physics', ja: '現代物理' },
             color: theme.green,
             formulas: ['buoyancy', 'photoelectric', 'debroglie', 'time-dilation'],
         },
         {
             id: 'quantum',
-            name: isKorean ? '양자역학' : 'Quantum',
+            name: { ko: '양자역학', en: 'Quantum', ja: '量子力学' },
             color: '#9b59b6',
             formulas: ['uncertainty', 'infinite-well', 'tunneling', 'bohr', 'radioactive-decay'],
         },
         {
             id: 'chemistry',
-            name: isKorean ? '화학' : 'Chemistry',
+            name: { ko: '화학', en: 'Chemistry', ja: '化学' },
             color: '#1abc9c',
             formulas: ['ph', 'dilution', 'reaction-rate'],
         },
@@ -668,7 +659,7 @@ function FormulasTab({
                                             textShadow: '0 1px 2px rgba(0,0,0,0.3)',
                                         }}
                                     >
-                                        {category.name}
+                                        {localizeText(category.name, lang)}
                                     </h3>
                                     <div
                                         className="px-2.5 py-1 rounded-md"
@@ -708,10 +699,7 @@ function FormulasTab({
                                                 }}
                                             >
                                                 {formula
-                                                    ? localizeText(
-                                                          formula.name,
-                                                          isKorean ? 'ko' : 'en'
-                                                      )
+                                                    ? localizeText(formula.name, lang)
                                                     : formulaId}
                                             </div>
                                         )
@@ -736,11 +724,11 @@ const abyssTheme = {
 // Records Tab Component
 function RecordsTab({
     mounted,
-    isKorean,
+    lang,
     wobblediverRecord,
 }: {
     mounted: boolean
-    isKorean: boolean
+    lang: string
     wobblediverRecord: WobblediverRecord
 }) {
     const rankColors: Record<string, string> = {
@@ -789,13 +777,23 @@ function RecordsTab({
                         </div>
                         <div>
                             <h3 className="font-black text-white text-sm">
-                                {isKorean ? '워블다이버' : 'Wobblediver'}
+                                {localizeText(
+                                    { ko: '워블다이버', en: 'Wobblediver', ja: 'ワブルダイバー' },
+                                    lang
+                                )}
                             </h3>
                             <p
                                 className="text-[10px] font-medium"
                                 style={{ color: abyssTheme.teal }}
                             >
-                                {isKorean ? '심연 다이빙 미니게임' : 'Abyss Diving Minigame'}
+                                {localizeText(
+                                    {
+                                        ko: '심연 다이빙 미니게임',
+                                        en: 'Abyss Diving Minigame',
+                                        ja: '深淵ダイビングミニゲーム',
+                                    },
+                                    lang
+                                )}
                             </p>
                         </div>
                         {/* Best Rank Badge */}
@@ -835,7 +833,10 @@ function RecordsTab({
                                         style={{ color: abyssTheme.teal }}
                                     />
                                     <span className="text-[10px] font-medium text-white/50">
-                                        {isKorean ? '최고 깊이' : 'Best Depth'}
+                                        {localizeText(
+                                            { ko: '최고 깊이', en: 'Best Depth', ja: '最高深度' },
+                                            lang
+                                        )}
                                     </span>
                                 </div>
                                 <div
@@ -857,7 +858,10 @@ function RecordsTab({
                                 <div className="flex items-center gap-2 mb-1">
                                     <Trophy className="w-3.5 h-3.5" style={{ color: theme.gold }} />
                                     <span className="text-[10px] font-medium text-white/50">
-                                        {isKorean ? '최고 점수' : 'High Score'}
+                                        {localizeText(
+                                            { ko: '최고 점수', en: 'High Score', ja: 'ハイスコア' },
+                                            lang
+                                        )}
                                     </span>
                                 </div>
                                 <div className="text-2xl font-black" style={{ color: theme.gold }}>
@@ -876,7 +880,14 @@ function RecordsTab({
                                 <div className="flex items-center gap-2 mb-1">
                                     <span className="text-xs">🎮</span>
                                     <span className="text-[10px] font-medium text-white/50">
-                                        {isKorean ? '총 플레이' : 'Total Games'}
+                                        {localizeText(
+                                            {
+                                                ko: '총 플레이',
+                                                en: 'Total Games',
+                                                ja: 'プレイ回数',
+                                            },
+                                            lang
+                                        )}
                                     </span>
                                 </div>
                                 <div className="text-2xl font-black" style={{ color: theme.blue }}>
@@ -895,7 +906,10 @@ function RecordsTab({
                                 <div className="flex items-center gap-2 mb-1">
                                     <span className="text-xs">⭐</span>
                                     <span className="text-[10px] font-medium text-white/50">
-                                        {isKorean ? 'S랭크 횟수' : 'S-Ranks'}
+                                        {localizeText(
+                                            { ko: 'S랭크 횟수', en: 'S-Ranks', ja: 'Sランク回数' },
+                                            lang
+                                        )}
                                     </span>
                                 </div>
                                 <div
@@ -915,7 +929,11 @@ function RecordsTab({
                             {hasRecords ? (
                                 <>
                                     <span className="text-white/40">
-                                        {isKorean ? '평균 깊이' : 'Avg Depth'}:{' '}
+                                        {localizeText(
+                                            { ko: '평균 깊이', en: 'Avg Depth', ja: '平均深度' },
+                                            lang
+                                        )}
+                                        :{' '}
                                         <span style={{ color: abyssTheme.teal }}>
                                             {(
                                                 wobblediverRecord.totalDepth /
@@ -924,7 +942,11 @@ function RecordsTab({
                                         </span>
                                     </span>
                                     <span className="text-white/40">
-                                        {isKorean ? '평균 점수' : 'Avg Score'}:{' '}
+                                        {localizeText(
+                                            { ko: '평균 점수', en: 'Avg Score', ja: '平均スコア' },
+                                            lang
+                                        )}
+                                        :{' '}
                                         <span style={{ color: theme.gold }}>
                                             {Math.round(
                                                 wobblediverRecord.totalScore /
@@ -935,9 +957,14 @@ function RecordsTab({
                                 </>
                             ) : (
                                 <span className="text-white/30 w-full text-center">
-                                    {isKorean
-                                        ? '아직 플레이 기록이 없습니다'
-                                        : 'No play records yet'}
+                                    {localizeText(
+                                        {
+                                            ko: '아직 플레이 기록이 없습니다',
+                                            en: 'No play records yet',
+                                            ja: 'まだプレイ記録がありません',
+                                        },
+                                        lang
+                                    )}
                                 </span>
                             )}
                         </div>
@@ -953,7 +980,10 @@ function RecordsTab({
                                 borderTop: `1px solid ${abyssTheme.accent}20`,
                             }}
                         >
-                            {isKorean ? '마지막 플레이: ' : 'Last played: '}
+                            {localizeText(
+                                { ko: '마지막 플레이: ', en: 'Last played: ', ja: '最終プレイ: ' },
+                                lang
+                            )}
                             {new Date(wobblediverRecord.lastPlayedAt).toLocaleDateString()}
                         </div>
                     )}
@@ -977,9 +1007,14 @@ function RecordsTab({
                     }}
                 >
                     <p className="text-white/40 text-xs font-medium">
-                        {isKorean
-                            ? '더 많은 미니게임이 곧 추가됩니다!'
-                            : 'More minigames coming soon!'}
+                        {localizeText(
+                            {
+                                ko: '더 많은 미니게임이 곧 추가됩니다!',
+                                en: 'More minigames coming soon!',
+                                ja: 'もっとミニゲームが近日追加予定！',
+                            },
+                            lang
+                        )}
                     </p>
                 </div>
             </div>
@@ -1001,7 +1036,6 @@ function AchievementsTab({
     getAchievementItemProgress: (id: string) => AchievementProgress | null
     achievementProgress: { unlocked: number; total: number }
 }) {
-    const isKorean = lang === 'ko'
     const [activeCategory, setActiveCategory] = useState<AchievementCategory>('sandbox')
 
     // Get data for level challenges
@@ -1018,8 +1052,7 @@ function AchievementsTab({
     const sandboxSubcategories: AchievementSubcategory[] = ['collection']
     const gameSubcategories: AchievementSubcategory[] = ['wobblediver']
 
-    const subcategories =
-        activeCategory === 'sandbox' ? sandboxSubcategories : gameSubcategories
+    const subcategories = activeCategory === 'sandbox' ? sandboxSubcategories : gameSubcategories
 
     // Calculate visible achievements progress (excluding survivor)
     const visibleAchievements = ACHIEVEMENTS.filter((a) => a.subcategory !== 'survivor')
@@ -1053,7 +1086,10 @@ function AchievementsTab({
 
                 <div className="relative flex items-center justify-between mb-3">
                     <span className="text-white/60 text-sm font-bold">
-                        {isKorean ? '전체 진행률' : 'Overall Progress'}
+                        {localizeText(
+                            { ko: '전체 진행률', en: 'Overall Progress', ja: '全体進捗' },
+                            lang
+                        )}
                     </span>
                     <div
                         className="px-3 py-1 rounded-lg"
@@ -1113,7 +1149,10 @@ function AchievementsTab({
                                 textShadow: '0 1px 2px rgba(0,0,0,0.3)',
                             }}
                         >
-                            {isKorean ? '도전 과제' : 'Challenges'}
+                            {localizeText(
+                                { ko: '도전 과제', en: 'Challenges', ja: 'チャレンジ' },
+                                lang
+                            )}
                         </h3>
                     </div>
 
@@ -1197,13 +1236,23 @@ function AchievementsTab({
                                                     />
                                                 </div>
                                                 <div className="flex justify-between text-xs">
-                                                    <span style={{ color: 'rgba(255,255,255,0.5)' }}>
+                                                    <span
+                                                        style={{ color: 'rgba(255,255,255,0.5)' }}
+                                                    >
                                                         {currentValue} / {nextLevel.requirement}
                                                     </span>
-                                                    <span style={{ color: 'rgba(255,255,255,0.4)' }}>
-                                                        {isKorean
-                                                            ? `다음: ${localizeText(nextLevel.title, lang)}`
-                                                            : `Next: ${localizeText(nextLevel.title, lang)}`}
+                                                    <span
+                                                        style={{ color: 'rgba(255,255,255,0.4)' }}
+                                                    >
+                                                        {localizeText(
+                                                            {
+                                                                ko: '다음: ',
+                                                                en: 'Next: ',
+                                                                ja: '次: ',
+                                                            },
+                                                            lang
+                                                        )}
+                                                        {localizeText(nextLevel.title, lang)}
                                                     </span>
                                                 </div>
                                             </>
@@ -1213,7 +1262,14 @@ function AchievementsTab({
                                                 className="text-xs font-bold"
                                                 style={{ color: theme.gold }}
                                             >
-                                                {isKorean ? '🎉 최고 레벨 달성!' : '🎉 Max Level!'}
+                                                {localizeText(
+                                                    {
+                                                        ko: '🎉 최고 레벨 달성!',
+                                                        en: '🎉 Max Level!',
+                                                        ja: '🎉 最高レベル達成!',
+                                                    },
+                                                    lang
+                                                )}
                                             </p>
                                         )}
                                     </div>
@@ -1383,9 +1439,14 @@ function AchievementsTab({
                         mounted ? 'opacity-100' : 'opacity-0'
                     )}
                 >
-                    {isKorean
-                        ? '물리 탐험을 계속하며 업적을 달성해보세요!'
-                        : 'Keep exploring physics to unlock more achievements!'}
+                    {localizeText(
+                        {
+                            ko: '물리 탐험을 계속하며 업적을 달성해보세요!',
+                            en: 'Keep exploring physics to unlock more achievements!',
+                            ja: '物理探索を続けて、もっと実績をアンロックしよう！',
+                        },
+                        lang
+                    )}
                 </p>
             )}
         </>

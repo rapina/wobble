@@ -11,14 +11,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Application } from 'pixi.js'
-import {
-    ArrowLeft,
-    FlaskConical,
-    TrendingUp,
-    Plus,
-    X,
-    ChevronUp,
-} from 'lucide-react'
+import { ArrowLeft, FlaskConical, TrendingUp, Plus, X, ChevronUp } from 'lucide-react'
 import Balatro from '@/components/Balatro'
 import { LabScene } from '@/components/canvas/lab/LabScene'
 import { useLabStore, syncLabOnMount } from '@/stores/labStore'
@@ -106,7 +99,10 @@ export function LabScreen({ onBack }: LabScreenProps) {
     const [mounted, setMounted] = useState(false)
     const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null)
     const [showUpgradePanel, setShowUpgradePanel] = useState(false)
-    const [offlineData, setOfflineData] = useState<{ production: LabResources; elapsedSeconds: number } | null>(null)
+    const [offlineData, setOfflineData] = useState<{
+        production: LabResources
+        elapsedSeconds: number
+    } | null>(null)
 
     // Refs for callbacks
     const selectedWorkerIdRef = useRef<string | null>(null)
@@ -220,8 +216,12 @@ export function LabScreen({ onBack }: LabScreenProps) {
         [upgradeStat]
     )
 
-
-    const physicsProperties: PhysicsProperty[] = ['gravity', 'momentum', 'elasticity', 'thermodynamics']
+    const physicsProperties: PhysicsProperty[] = [
+        'gravity',
+        'momentum',
+        'elasticity',
+        'thermodynamics',
+    ]
 
     return (
         <div className="relative w-full h-full overflow-hidden" style={{ background: theme.bg }}>
@@ -243,7 +243,11 @@ export function LabScreen({ onBack }: LabScreenProps) {
             </div>
 
             {/* PixiJS Canvas */}
-            <div ref={canvasRef} className="absolute inset-0 z-10" style={{ touchAction: 'none' }} />
+            <div
+                ref={canvasRef}
+                className="absolute inset-0 z-10"
+                style={{ touchAction: 'none' }}
+            />
 
             {/* Header */}
             <div
@@ -332,7 +336,10 @@ export function LabScreen({ onBack }: LabScreenProps) {
                                 <div className="flex items-center gap-1.5 w-full">
                                     <span
                                         className="text-sm font-bold italic"
-                                        style={{ color: PHYSICS_COLORS[property], fontFamily: 'Georgia, serif' }}
+                                        style={{
+                                            color: PHYSICS_COLORS[property],
+                                            fontFamily: 'Georgia, serif',
+                                        }}
                                     >
                                         {PHYSICS_SYMBOLS[property]}
                                     </span>
@@ -343,7 +350,10 @@ export function LabScreen({ onBack }: LabScreenProps) {
                                 {/* Level indicator */}
                                 <div className="flex items-center gap-1 w-full">
                                     <span className="text-[9px] text-white/40">Lv.</span>
-                                    <span className="text-[10px] font-bold" style={{ color: PHYSICS_COLORS[property] }}>
+                                    <span
+                                        className="text-[10px] font-bold"
+                                        style={{ color: PHYSICS_COLORS[property] }}
+                                    >
                                         {level}
                                     </span>
                                     {canAfford && level < UPGRADES[property].maxLevel && (
@@ -417,7 +427,10 @@ export function LabScreen({ onBack }: LabScreenProps) {
                                                 className="w-12 h-12 rounded-lg flex items-center justify-center"
                                                 style={{ background: PHYSICS_COLORS[property] }}
                                             >
-                                                <span className="text-white font-bold italic text-xl" style={{ fontFamily: 'Georgia, serif' }}>
+                                                <span
+                                                    className="text-white font-bold italic text-xl"
+                                                    style={{ fontFamily: 'Georgia, serif' }}
+                                                >
                                                     {PHYSICS_SYMBOLS[property]}
                                                 </span>
                                             </div>
@@ -430,7 +443,10 @@ export function LabScreen({ onBack }: LabScreenProps) {
                                                     </span>
                                                     <span
                                                         className="text-xs font-bold px-1.5 py-0.5 rounded"
-                                                        style={{ background: PHYSICS_COLORS[property], color: 'white' }}
+                                                        style={{
+                                                            background: PHYSICS_COLORS[property],
+                                                            color: 'white',
+                                                        }}
                                                     >
                                                         Lv.{level}
                                                     </span>
@@ -449,10 +465,15 @@ export function LabScreen({ onBack }: LabScreenProps) {
                                                 disabled={!canAfford || isMaxed}
                                                 className={cn(
                                                     'px-3 py-2 rounded-lg font-bold text-xs transition-all flex flex-col items-center gap-0.5',
-                                                    canAfford && !isMaxed ? 'active:scale-95' : 'opacity-50'
+                                                    canAfford && !isMaxed
+                                                        ? 'active:scale-95'
+                                                        : 'opacity-50'
                                                 )}
                                                 style={{
-                                                    background: canAfford && !isMaxed ? theme.green : theme.bgPanelLight,
+                                                    background:
+                                                        canAfford && !isMaxed
+                                                            ? theme.green
+                                                            : theme.bgPanelLight,
                                                     border: `2px solid ${theme.border}`,
                                                     minWidth: 70,
                                                 }}
@@ -465,7 +486,9 @@ export function LabScreen({ onBack }: LabScreenProps) {
                                                             <Plus className="w-3 h-3" />
                                                             {formatNumber(cost)}
                                                         </span>
-                                                        <span className="text-[9px] text-white/60">{PHYSICS_SYMBOLS[property]}</span>
+                                                        <span className="text-[9px] text-white/60">
+                                                            {PHYSICS_SYMBOLS[property]}
+                                                        </span>
                                                     </>
                                                 )}
                                             </button>
@@ -500,13 +523,18 @@ export function LabScreen({ onBack }: LabScreenProps) {
                             className="px-4 py-2 flex justify-between items-center"
                             style={{ background: `${theme.bg}80` }}
                         >
-                            <span className="text-[10px] text-white/40 uppercase">Current Resources</span>
+                            <span className="text-[10px] text-white/40 uppercase">
+                                Current Resources
+                            </span>
                             <div className="flex gap-3">
                                 {physicsProperties.map((property) => (
                                     <div key={property} className="flex items-center gap-1">
                                         <span
                                             className="text-xs font-bold italic"
-                                            style={{ color: PHYSICS_COLORS[property], fontFamily: 'Georgia, serif' }}
+                                            style={{
+                                                color: PHYSICS_COLORS[property],
+                                                fontFamily: 'Georgia, serif',
+                                            }}
                                         >
                                             {PHYSICS_SYMBOLS[property]}
                                         </span>
@@ -543,14 +571,17 @@ export function LabScreen({ onBack }: LabScreenProps) {
                         {/* Header */}
                         <div
                             className="px-4 py-3 flex flex-col items-center"
-                            style={{ background: `linear-gradient(135deg, ${theme.gold}30, transparent)` }}
+                            style={{
+                                background: `linear-gradient(135deg, ${theme.gold}30, transparent)`,
+                            }}
                         >
                             <FlaskConical className="w-8 h-8 text-yellow-400 mb-1" />
                             <h2 className="text-lg font-bold text-white">
                                 {t('lab.welcomeBack', 'Welcome Back!')}
                             </h2>
                             <p className="text-xs text-white/60">
-                                {formatTime(offlineData.elapsedSeconds)} {t('lab.ofResearch', 'of research')}
+                                {formatTime(offlineData.elapsedSeconds)}{' '}
+                                {t('lab.ofResearch', 'of research')}
                             </p>
                         </div>
 
@@ -574,7 +605,10 @@ export function LabScreen({ onBack }: LabScreenProps) {
                                         <div className="flex items-center gap-2">
                                             <span
                                                 className="text-lg font-bold italic"
-                                                style={{ color: PHYSICS_COLORS[property], fontFamily: 'Georgia, serif' }}
+                                                style={{
+                                                    color: PHYSICS_COLORS[property],
+                                                    fontFamily: 'Georgia, serif',
+                                                }}
                                             >
                                                 {PHYSICS_SYMBOLS[property]}
                                             </span>

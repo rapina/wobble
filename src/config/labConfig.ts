@@ -232,7 +232,7 @@ export const STATION_AFFORDANCES: Record<StationId, StationAffordance> = {
         animationSpeed: 1.0,
         particleEffect: 'glow',
     },
-    'accelerator': {
+    accelerator: {
         type: 'track_particles',
         workerOffset: { x: 0, y: 45 },
         animationSpeed: 1.5,

@@ -30,11 +30,7 @@ export class ResourcePopup extends Container {
     ) {
         super()
 
-        const {
-            maxLifetime = 1.2,
-            floatDistance = 60,
-            fontSize = 24,
-        } = options
+        const { maxLifetime = 1.2, floatDistance = 60, fontSize = 24 } = options
 
         this.maxLifetime = maxLifetime
         this.floatDistance = floatDistance

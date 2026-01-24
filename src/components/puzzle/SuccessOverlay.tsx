@@ -3,6 +3,7 @@ import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
 import { Star, ArrowRight, Home } from 'lucide-react'
 import { WobbleShape } from '@/components/canvas/Wobble'
 import { cn } from '@/lib/utils'
+import { t } from '@/utils/localization'
 
 interface SuccessOverlayProps {
     levelName: string
@@ -22,7 +23,7 @@ export function SuccessOverlay({
     onBack,
 }: SuccessOverlayProps) {
     const { i18n } = useTranslation()
-    const isKorean = i18n.language === 'ko'
+    const lang = i18n.language
 
     return (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center">
@@ -56,18 +57,26 @@ export function SuccessOverlay({
                         textShadow: '0 0 20px rgba(255, 215, 0, 0.5)',
                     }}
                 >
-                    {isKorean ? '성공!' : 'Success!'}
+                    {t({ ko: '성공!', en: 'Success!', ja: '成功！' }, lang)}
                 </h2>
 
                 <p className="text-white/70 mb-8">
-                    {isKorean ? levelName : levelNameEn} {isKorean ? '클리어!' : 'cleared!'}
+                    {lang === 'ko' ? levelName : levelNameEn}{' '}
+                    {t({ ko: '클리어!', en: 'cleared!', ja: 'クリア！' }, lang)}
                 </p>
 
                 {/* Reward wobble */}
                 {rewardWobble && (
                     <div className="mb-8 p-4 rounded-xl bg-purple-500/20 border border-purple-500/30">
                         <p className="text-center text-purple-300 text-sm mb-3">
-                            {isKorean ? '새로운 워블 해금!' : 'New Wobble unlocked!'}
+                            {t(
+                                {
+                                    ko: '새로운 워블 해금!',
+                                    en: 'New Wobble unlocked!',
+                                    ja: '新しいワブルをアンロック！',
+                                },
+                                lang
+                            )}
                         </p>
                         <div className="flex justify-center">
                             <WobbleDisplay size={50} shape={rewardWobble} expression="happy" />
@@ -88,7 +97,7 @@ export function SuccessOverlay({
                         )}
                     >
                         <Home className="w-5 h-5" />
-                        <span>{isKorean ? '메뉴로' : 'Menu'}</span>
+                        <span>{t({ ko: '메뉴로', en: 'Menu', ja: 'メニュー' }, lang)}</span>
                     </button>
 
                     {hasNextLevel && (
@@ -103,7 +112,9 @@ export function SuccessOverlay({
                                 'shadow-lg shadow-yellow-500/30'
                             )}
                         >
-                            <span>{isKorean ? '다시 하기' : 'Play Again'}</span>
+                            <span>
+                                {t({ ko: '다시 하기', en: 'Play Again', ja: 'もう一度' }, lang)}
+                            </span>
                             <ArrowRight className="w-5 h-5" />
                         </button>
                     )}

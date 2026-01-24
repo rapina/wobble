@@ -305,7 +305,10 @@ export class LabWorkerSprite extends Container {
                 // After reaching break position, start the break timer
                 this._state = 'taking_break'
                 this.aiTimer = 0
-                this.nextAiAction = randomRange(WORKER_AI.breakDuration.min, WORKER_AI.breakDuration.max)
+                this.nextAiAction = randomRange(
+                    WORKER_AI.breakDuration.min,
+                    WORKER_AI.breakDuration.max
+                )
                 this.updateExpression()
             }
         )
@@ -447,7 +450,10 @@ export class LabWorkerSprite extends Container {
 
     private scheduleNextIdleAction(): void {
         this.aiTimer = 0
-        this.nextAiAction = randomRange(WORKER_AI.idleWanderInterval.min, WORKER_AI.idleWanderInterval.max)
+        this.nextAiAction = randomRange(
+            WORKER_AI.idleWanderInterval.min,
+            WORKER_AI.idleWanderInterval.max
+        )
     }
 
     private resetWorkCycleCounter(): void {

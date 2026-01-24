@@ -833,7 +833,8 @@ export class PhysicsSurvivorScene extends AdventureScene {
         // elasticity affects damage (collision impact), momentum affects speed
         this.stats.damageMultiplier = wobbleStats.damageMultiplier * labStats.elasticityMultiplier
         this.stats.fireRateMultiplier = 1 / wobbleStats.fireRateMultiplier
-        this.stats.moveSpeedMultiplier = wobbleStats.moveSpeedMultiplier * labStats.momentumMultiplier
+        this.stats.moveSpeedMultiplier =
+            wobbleStats.moveSpeedMultiplier * labStats.momentumMultiplier
 
         // thermodynamics affects resistance (damage reduction = multiplier - 1)
         this.labDamageReduction = labStats.thermodynamicsMultiplier - 1
