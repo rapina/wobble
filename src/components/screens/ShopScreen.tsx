@@ -1,6 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Check, Loader2, RefreshCw, Sparkles, Ban } from 'lucide-react'
+import { ArrowLeft, Check, Loader2, RefreshCw, Sparkles, Ban, CheckCircle, AlertCircle } from 'lucide-react'
 import Balatro from '@/components/Balatro'
 import { shopPreset } from '@/config/backgroundPresets'
 import { useInAppPurchase } from '@/hooks/useInAppPurchase'
@@ -25,10 +25,13 @@ interface ShopScreenProps {
     onBack: () => void
 }
 
+type RestoreResult = 'success' | 'no_purchases' | null
+
 export function ShopScreen({ onBack }: ShopScreenProps) {
     const { i18n } = useTranslation()
     const lang = i18n.language
     const { isAdFree, isAllFormulasUnlocked } = usePurchaseStore()
+    const [restoreResult, setRestoreResult] = useState<RestoreResult>(null)
     const {
         isNative,
         removeAdsProduct,
@@ -56,7 +59,10 @@ export function ShopScreen({ onBack }: ShopScreenProps) {
     }
 
     const handleRestore = async () => {
-        await restorePurchases()
+        setRestoreResult(null)
+        const hasRestoredPurchases = await restorePurchases()
+        setRestoreResult(hasRestoredPurchases ? 'success' : 'no_purchases')
+        setTimeout(() => setRestoreResult(null), 3000)
     }
 
     return (
@@ -434,6 +440,48 @@ export function ShopScreen({ onBack }: ShopScreenProps) {
                                 style={{ color: theme.red }}
                             >
                                 {error}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Restore Result Message */}
+                    {restoreResult && (
+                        <div
+                            className="p-3 rounded-lg flex items-center justify-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300"
+                            style={{
+                                background:
+                                    restoreResult === 'success'
+                                        ? 'rgba(46, 204, 113, 0.2)'
+                                        : 'rgba(74, 158, 255, 0.2)',
+                                border: `2px solid ${restoreResult === 'success' ? theme.green : theme.blue}`,
+                            }}
+                        >
+                            {restoreResult === 'success' ? (
+                                <CheckCircle className="w-4 h-4" style={{ color: theme.green }} />
+                            ) : (
+                                <AlertCircle className="w-4 h-4" style={{ color: theme.blue }} />
+                            )}
+                            <p
+                                className="text-sm text-center font-medium"
+                                style={{ color: restoreResult === 'success' ? theme.green : theme.blue }}
+                            >
+                                {restoreResult === 'success'
+                                    ? t(
+                                          {
+                                              ko: '구매가 복원되었습니다!',
+                                              en: 'Purchases restored!',
+                                              ja: '購入が復元されました！',
+                                          },
+                                          lang
+                                      )
+                                    : t(
+                                          {
+                                              ko: '복원할 구매 내역이 없습니다',
+                                              en: 'No purchases to restore',
+                                              ja: '復元する購入履歴がありません',
+                                          },
+                                          lang
+                                      )}
                             </p>
                         </div>
                     )}

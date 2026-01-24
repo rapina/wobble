@@ -125,7 +125,15 @@
             "pendulumMotion": "振り子運動",
             "gravity": "重力",
             "momentum": "運動量"
-        }
+        },
+        "abyss": {
+            "notWorthy": "資格なし",
+            "proveYourself": "深淵はお前を認めない。\n果てしない闇の中で己の価値を証明せよ。",
+            "currentDepth": "現在の深度",
+            "required": "必要深度",
+            "hint": "エンドレスモードでDepth {{depth}}まで到達してください"
+        },
+        "moreComingSoon": "さらなる冒険が近日登場！"
     },
     "share": {
         "title": "結果をシェア",
