@@ -1,14 +1,22 @@
 /**
- * PortalPair.ts - Connected wormhole portals for teleportation
+ * PortalPair.ts - Connected wormhole portals for teleportation (Optimized)
  *
  * Manages a pair of portals (entrance and exit) with visual connection
  * and teleportation logic. Supports different orientations for entrance
  * and exit portals.
+ *
+ * Performance optimizations:
+ * - Reduced particle count
+ * - Skip drawing when portals are far apart
  */
 
 import { Container, Graphics } from 'pixi.js'
 import { Wormhole } from './Wormhole'
 import { PortalOrientation } from './StageConfig'
+
+// Reduced constants
+const CONNECTION_PARTICLE_COUNT = 6 // Was 15
+const MAX_CONNECTION_DISTANCE = 200 // Was 300
 
 export interface PortalPairConfig {
     entrance: {
@@ -86,13 +94,12 @@ export class PortalPair {
     }
 
     private initConnectionParticles(): void {
-        const count = 15
-        for (let i = 0; i < count; i++) {
+        for (let i = 0; i < CONNECTION_PARTICLE_COUNT; i++) {
             this.connectionParticles.push({
                 progress: Math.random(),
-                speed: 0.1 + Math.random() * 0.15,
-                size: 2 + Math.random() * 3,
-                alpha: 0.3 + Math.random() * 0.4,
+                speed: 0.12 + Math.random() * 0.12,
+                size: 2 + Math.random() * 2,
+                alpha: 0.35 + Math.random() * 0.3,
             })
         }
     }
@@ -105,8 +112,8 @@ export class PortalPair {
         const dy = this.exit.y - this.entrance.y
         const distance = Math.sqrt(dx * dx + dy * dy)
 
-        // Don't draw connection if portals are too far apart (visual clutter)
-        if (distance > 300) return
+        // Don't draw connection if portals are too far apart
+        if (distance > MAX_CONNECTION_DISTANCE) return
 
         // Bezier curve connection
         const controlX = (this.entrance.x + this.exit.x) / 2 + dy * 0.2
@@ -118,26 +125,17 @@ export class PortalPair {
         g.stroke({
             color: this.entrance.isFinish ? 0xf1c40f : 0x9b59b6,
             width: 2,
-            alpha: 0.15 + Math.sin(this.time * 2) * 0.05,
+            alpha: 0.15,
         })
 
         // Particles flowing along connection
         for (const particle of this.connectionParticles) {
             const t = particle.progress
-            const px =
-                (1 - t) * (1 - t) * this.entrance.x +
-                2 * (1 - t) * t * controlX +
-                t * t * this.exit.x
-            const py =
-                (1 - t) * (1 - t) * this.entrance.y +
-                2 * (1 - t) * t * controlY +
-                t * t * this.exit.y
+            const px = (1 - t) * (1 - t) * this.entrance.x + 2 * (1 - t) * t * controlX + t * t * this.exit.x
+            const py = (1 - t) * (1 - t) * this.entrance.y + 2 * (1 - t) * t * controlY + t * t * this.exit.y
 
             g.circle(px, py, particle.size)
-            g.fill({
-                color: this.entrance.isFinish ? 0xf1c40f : 0x9b59b6,
-                alpha: particle.alpha,
-            })
+            g.fill({ color: 0x9b59b6, alpha: particle.alpha })
         }
     }
 
