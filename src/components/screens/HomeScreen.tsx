@@ -681,12 +681,12 @@ export function HomeScreen({
                 `}</style>
             </div>
 
-            {/* Disclaimer */}
+            {/* Tagline */}
             <div
-                className="absolute left-0 right-0 text-center text-white/50 text-xs px-6 leading-relaxed whitespace-pre-line"
+                className="absolute left-0 right-0 text-center text-white/60 text-xs px-6 italic"
                 style={{ bottom: 130 }}
             >
-                {t('home.disclaimer')}
+                {t('home.tagline')}
             </div>
 
             {/* Footer - 광고 배너 위에 위치 */}

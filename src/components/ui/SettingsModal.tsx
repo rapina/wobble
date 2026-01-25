@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, Trash2, AlertTriangle, Volume2, VolumeX } from 'lucide-react'
+import { X, Trash2, AlertTriangle, Volume2, VolumeX, Play } from 'lucide-react'
+import { IntroScene } from '@/components/canvas/intro/IntroScene'
 import { usePurchaseStore } from '@/stores/purchaseStore'
 import { useCollectionStore } from '@/stores/collectionStore'
 import { useMusic } from '@/hooks/useMusic'
@@ -188,6 +189,97 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                             </div>
                         </div>
                     </div>
+
+                    {/* About Section */}
+                    <div
+                        className="p-4 rounded-xl"
+                        style={{
+                            background: theme.bgPanelLight,
+                            border: `3px solid ${theme.border}`,
+                            boxShadow: `0 3px 0 ${theme.border}`,
+                        }}
+                    >
+                        {/* Header */}
+                        <p className="font-black mb-3" style={{ color: theme.gold }}>
+                            {localizeText({
+                                ko: '소개',
+                                en: 'About',
+                                ja: 'このアプリについて',
+                                es: 'Acerca de',
+                                pt: 'Sobre',
+                                'zh-CN': '关于',
+                                'zh-TW': '關於',
+                            }, lang)}
+                        </p>
+
+                        {/* Philosophy */}
+                        <p className="text-sm text-white/80 mb-3 leading-relaxed">
+                            {localizeText({
+                                ko: 'Wobble은 물리를 직관적으로 느끼게 해주는 앱입니다. 정확한 계산보다 감각적인 이해를 추구합니다.',
+                                en: 'Wobble is designed to help you feel physics intuitively. We prioritize sensory understanding over precise calculation.',
+                                ja: 'Wobbleは物理を直感的に感じられるアプリです。正確な計算より感覚的な理解を大切にしています。',
+                                es: 'Wobble está diseñado para ayudarte a sentir la física de forma intuitiva. Priorizamos la comprensión sensorial sobre el cálculo preciso.',
+                                pt: 'Wobble foi projetado para ajudar você a sentir a física intuitivamente. Priorizamos a compreensão sensorial sobre o cálculo preciso.',
+                                'zh-CN': 'Wobble旨在帮助你直观地感受物理。我们重视感性理解，而非精确计算。',
+                                'zh-TW': 'Wobble旨在幫助你直觀地感受物理。我們重視感性理解，而非精確計算。',
+                            }, lang)}
+                        </p>
+
+                        {/* Accuracy Note (moved disclaimer) */}
+                        <p className="text-xs text-white/50 mb-4">
+                            {localizeText({
+                                ko: '정확한 계산이 필요하다면 적절한 과학 도구를 사용해 주세요.',
+                                en: 'For exact calculations, please use appropriate scientific tools.',
+                                ja: '正確な計算が必要な場合は、適切な科学ツールをご利用ください。',
+                                es: 'Para cálculos exactos, utiliza herramientas científicas apropiadas.',
+                                pt: 'Para cálculos exatos, utilize ferramentas científicas apropriadas.',
+                                'zh-CN': '如需精确计算，请使用适当的科学工具。',
+                                'zh-TW': '如需精確計算，請使用適當的科學工具。',
+                            }, lang)}
+                        </p>
+
+                        {/* Version & Credits */}
+                        <div className="flex items-center justify-between text-xs text-white/40">
+                            <span className="font-mono">v{__APP_VERSION__}</span>
+                            <span>Sputnik Workshop</span>
+                        </div>
+                    </div>
+
+                    {/* Replay Intro Button */}
+                    <button
+                        onClick={() => {
+                            IntroScene.resetIntro()
+                            onClose()
+                            window.location.reload()
+                        }}
+                        className={cn(
+                            'w-full py-3 rounded-xl font-bold',
+                            'transition-all duration-200',
+                            'active:scale-[0.97]'
+                        )}
+                        style={{
+                            background: theme.bgPanelLight,
+                            color: theme.gold,
+                            border: `3px solid ${theme.border}`,
+                            boxShadow: `0 3px 0 ${theme.border}`,
+                        }}
+                    >
+                        <span className="flex items-center justify-center gap-2">
+                            <Play className="w-4 h-4" />
+                            {localizeText(
+                                {
+                                    ko: '인트로 다시 보기',
+                                    en: 'Replay Intro',
+                                    ja: 'イントロを再生',
+                                    es: 'Ver intro de nuevo',
+                                    pt: 'Rever introdução',
+                                    'zh-CN': '重看介绍',
+                                    'zh-TW': '重看介紹',
+                                },
+                                lang
+                            )}
+                        </span>
+                    </button>
 
                     {/* Divider */}
                     <div

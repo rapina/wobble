@@ -13,7 +13,7 @@
         "shopDesc": "Remove ads & special items",
         "soon": "SOON",
         "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
-        "disclaimer": "Wobble is a game for exploring physics in a fun way.\nResults may differ from actual calculations."
+        "tagline": "Play with physics, not formulas."
     },
     "lab": {
         "title": "Physics Lab",

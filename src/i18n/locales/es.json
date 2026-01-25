@@ -13,7 +13,7 @@
         "shopDesc": "Quitar anuncios y articulos especiales",
         "soon": "PRONTO",
         "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
-        "disclaimer": "Wobble es un juego para explorar la fisica de forma divertida.\nLos resultados pueden diferir de los calculos reales."
+        "tagline": "Juega con la física, no con fórmulas."
     },
     "lab": {
         "title": "Laboratorio de Fisica",

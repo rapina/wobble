@@ -13,7 +13,7 @@
         "shopDesc": "広告削除＆特別アイテム",
         "soon": "SOON",
         "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
-        "disclaimer": "Wobbleは物理を楽しく探索するゲームです。\n実際の計算とは異なる場合があります。"
+        "tagline": "公式じゃなく、物理と遊ぼう。"
     },
     "lab": {
         "title": "物理研究所",
