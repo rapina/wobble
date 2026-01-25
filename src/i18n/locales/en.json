@@ -165,13 +165,13 @@
             "title1": "Wobblediver",
             "message1": "...Where am I?\nSomething is watching me from below...",
             "title2": "A Strange Friend",
-            "message2": "A jellyfish is holding me with its tentacle!\nTap to make it pulse and swing me.",
+            "message2": "A jellyfish is swinging me with its tentacle!\nTap to let go and launch toward the wormhole.",
             "title3": "Escape to the Wormhole!",
             "message3": "Land in the swirling wormhole to escape!\nHigher accuracy = higher score.",
             "title4": "Avoid the Abyss",
             "message4": "Down there... eyes and tentacles are waiting.\nFall in and... there's no return.",
             "title5": "...I Must Go",
-            "message5": "My jellyfish friend will help.\nBefore they get hungry..."
+            "message5": "My jellyfish friend will help.\nBut miss the wormhole and it gets disappointed...\nWhen its patience runs out, I'm on my own."
         },
         "panic": {
             "phrase1": "Ahhhhh!",
@@ -243,6 +243,60 @@
             "next": "Next",
             "start": "...Let's go",
             "skip": "Skip"
+        },
+        "perkSelection": {
+            "title": "BLESSING",
+            "subtitle": "The jellyfish offers a gift..."
+        },
+        "perks": {
+            "patience_orb": {
+                "name": "Patience Orb",
+                "desc": "+1 Patience"
+            },
+            "calm_aura": {
+                "name": "Calm Aura",
+                "desc": "-20% Patience drain"
+            },
+            "deep_bond": {
+                "name": "Deep Bond",
+                "desc": "+25 Max HP"
+            },
+            "soothing_touch": {
+                "name": "Soothing Touch",
+                "desc": "Restore 10 HP on clear"
+            },
+            "ethereal_shield": {
+                "name": "Ethereal Shield",
+                "desc": "+15 Shield (refills each stage)"
+            },
+            "buoyancy": {
+                "name": "Buoyancy",
+                "desc": "-25% Gravity"
+            },
+            "current_rider": {
+                "name": "Current Rider",
+                "desc": "+15% Swing Speed"
+            },
+            "rift_expansion": {
+                "name": "Rift Expansion",
+                "desc": "+25% Wormhole Size"
+            },
+            "abyssal_sight": {
+                "name": "Abyssal Sight",
+                "desc": "Always show trajectory"
+            },
+            "elastic_membrane": {
+                "name": "Elastic Membrane",
+                "desc": "Bounce off walls"
+            },
+            "tentacle_boost": {
+                "name": "Tentacle Boost",
+                "desc": "Jump once in mid-air"
+            },
+            "time_dilation": {
+                "name": "Time Dilation",
+                "desc": "0.5s slow-mo on release"
+            }
         }
     }
 }

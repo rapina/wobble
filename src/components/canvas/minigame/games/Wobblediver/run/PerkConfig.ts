@@ -73,8 +73,10 @@ export interface PerkEffect {
  */
 export interface PerkDefinition {
     id: string
-    name: string
-    description: string
+    /** i18n key for perk name (e.g., 'wobblediver.perks.patience_orb.name') */
+    nameKey: string
+    /** i18n key for perk description (e.g., 'wobblediver.perks.patience_orb.desc') */
+    descriptionKey: string
     icon: string // Emoji or symbol
     category: PerkCategory
     rarity: PerkRarity
@@ -95,14 +97,15 @@ export interface PerkInstance {
 
 /**
  * All available perks in the game
+ * Themed around jellyfish/abyss - perks relate to the jellyfish helper's patience
  */
 export const PERK_DEFINITIONS: PerkDefinition[] = [
     // === SURVIVAL (Common) ===
     {
-        id: 'extra_heart',
-        name: 'Extra Heart',
-        description: '+1 Life',
-        icon: '❤️',
+        id: 'patience_orb',
+        nameKey: 'wobblediver.perks.patience_orb.name',
+        descriptionKey: 'wobblediver.perks.patience_orb.desc',
+        icon: '🔮',
         category: 'survival',
         rarity: 'common',
         maxStacks: 3,
@@ -111,10 +114,10 @@ export const PERK_DEFINITIONS: PerkDefinition[] = [
         },
     },
     {
-        id: 'thick_skin',
-        name: 'Thick Skin',
-        description: '-20% Damage taken',
-        icon: '🛡️',
+        id: 'calm_aura',
+        nameKey: 'wobblediver.perks.calm_aura.name',
+        descriptionKey: 'wobblediver.perks.calm_aura.desc',
+        icon: '💜',
         category: 'survival',
         rarity: 'common',
         maxStacks: 3,
@@ -123,10 +126,10 @@ export const PERK_DEFINITIONS: PerkDefinition[] = [
         },
     },
     {
-        id: 'vital_boost',
-        name: 'Vital Boost',
-        description: '+25 Max HP',
-        icon: '💪',
+        id: 'deep_bond',
+        nameKey: 'wobblediver.perks.deep_bond.name',
+        descriptionKey: 'wobblediver.perks.deep_bond.desc',
+        icon: '🤝',
         category: 'survival',
         rarity: 'common',
         maxStacks: 5,
@@ -135,9 +138,9 @@ export const PERK_DEFINITIONS: PerkDefinition[] = [
         },
     },
     {
-        id: 'regeneration',
-        name: 'Regeneration',
-        description: 'Heal 10 HP on stage clear',
+        id: 'soothing_touch',
+        nameKey: 'wobblediver.perks.soothing_touch.name',
+        descriptionKey: 'wobblediver.perks.soothing_touch.desc',
         icon: '✨',
         category: 'survival',
         rarity: 'common',
@@ -147,10 +150,10 @@ export const PERK_DEFINITIONS: PerkDefinition[] = [
         },
     },
     {
-        id: 'barrier',
-        name: 'Barrier',
-        description: '+15 Shield (refills each stage)',
-        icon: '🔮',
+        id: 'ethereal_shield',
+        nameKey: 'wobblediver.perks.ethereal_shield.name',
+        descriptionKey: 'wobblediver.perks.ethereal_shield.desc',
+        icon: '🛡️',
         category: 'survival',
         rarity: 'rare',
         maxStacks: 3,
@@ -161,10 +164,10 @@ export const PERK_DEFINITIONS: PerkDefinition[] = [
 
     // === PHYSICS (Common) ===
     {
-        id: 'featherfall',
-        name: 'Featherfall',
-        description: '-25% Gravity',
-        icon: '🪶',
+        id: 'buoyancy',
+        nameKey: 'wobblediver.perks.buoyancy.name',
+        descriptionKey: 'wobblediver.perks.buoyancy.desc',
+        icon: '🫧',
         category: 'physics',
         rarity: 'common',
         maxStacks: 2,
@@ -173,10 +176,10 @@ export const PERK_DEFINITIONS: PerkDefinition[] = [
         },
     },
     {
-        id: 'momentum',
-        name: 'Momentum',
-        description: '+15% Swing Speed',
-        icon: '💨',
+        id: 'current_rider',
+        nameKey: 'wobblediver.perks.current_rider.name',
+        descriptionKey: 'wobblediver.perks.current_rider.desc',
+        icon: '🌊',
         category: 'physics',
         rarity: 'common',
         maxStacks: 3,
@@ -187,10 +190,10 @@ export const PERK_DEFINITIONS: PerkDefinition[] = [
 
     // === TARGETING (Common/Rare) ===
     {
-        id: 'big_target',
-        name: 'Big Target',
-        description: '+25% Wormhole Size',
-        icon: '🎯',
+        id: 'rift_expansion',
+        nameKey: 'wobblediver.perks.rift_expansion.name',
+        descriptionKey: 'wobblediver.perks.rift_expansion.desc',
+        icon: '🕳️',
         category: 'targeting',
         rarity: 'common',
         maxStacks: 3,
@@ -199,9 +202,9 @@ export const PERK_DEFINITIONS: PerkDefinition[] = [
         },
     },
     {
-        id: 'eagle_eye',
-        name: 'Eagle Eye',
-        description: 'Always show trajectory',
+        id: 'abyssal_sight',
+        nameKey: 'wobblediver.perks.abyssal_sight.name',
+        descriptionKey: 'wobblediver.perks.abyssal_sight.desc',
         icon: '👁️',
         category: 'targeting',
         rarity: 'rare',
@@ -213,9 +216,9 @@ export const PERK_DEFINITIONS: PerkDefinition[] = [
 
     // === SPECIAL (Rare) ===
     {
-        id: 'bounce_back',
-        name: 'Bounce Back',
-        description: 'Bounce off walls',
+        id: 'elastic_membrane',
+        nameKey: 'wobblediver.perks.elastic_membrane.name',
+        descriptionKey: 'wobblediver.perks.elastic_membrane.desc',
         icon: '🔄',
         category: 'special',
         rarity: 'rare',
@@ -227,10 +230,10 @@ export const PERK_DEFINITIONS: PerkDefinition[] = [
 
     // === SPECIAL (Legendary) ===
     {
-        id: 'double_jump',
-        name: 'Double Jump',
-        description: 'Jump once in mid-air',
-        icon: '🦘',
+        id: 'tentacle_boost',
+        nameKey: 'wobblediver.perks.tentacle_boost.name',
+        descriptionKey: 'wobblediver.perks.tentacle_boost.desc',
+        icon: '🦑',
         category: 'special',
         rarity: 'legendary',
         maxStacks: 2,
@@ -239,9 +242,9 @@ export const PERK_DEFINITIONS: PerkDefinition[] = [
         },
     },
     {
-        id: 'slow_motion',
-        name: 'Slow Motion',
-        description: '0.5s slow-mo on release',
+        id: 'time_dilation',
+        nameKey: 'wobblediver.perks.time_dilation.name',
+        descriptionKey: 'wobblediver.perks.time_dilation.desc',
         icon: '⏱️',
         category: 'special',
         rarity: 'legendary',

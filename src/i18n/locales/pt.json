@@ -165,13 +165,13 @@
             "title1": "Wobblediver",
             "message1": "...Onde estou?\nAlgo me observa la de baixo...",
             "title2": "Um Amigo Estranho",
-            "message2": "Uma agua-viva me segura com seu tentaculo!\nToque para fazer ela pulsar e me balançar.",
+            "message2": "Uma agua-viva me balança com seu tentaculo!\nToque para lançar em direcao ao buraco de minhoca.",
             "title3": "Escape pelo Buraco de Minhoca!",
             "message3": "Aterrisse no buraco de minhoca para escapar!\nMaior precisao = maior pontuacao.",
             "title4": "Evite o Abismo",
             "message4": "La embaixo... olhos e tentaculos esperam.\nSe cair... nao ha retorno.",
             "title5": "...Preciso Ir",
-            "message5": "Minha amiga agua-viva vai ajudar.\nAntes que fiquem com fome..."
+            "message5": "Minha amiga agua-viva vai ajudar.\nMas se errar o buraco, ela fica decepcionada...\nQuando sua paciencia acabar, vai embora."
         },
         "panic": {
             "phrase1": "Ahhhhh!",
@@ -243,6 +243,60 @@
             "next": "Proximo",
             "start": "...Vamos",
             "skip": "Pular"
+        },
+        "perkSelection": {
+            "title": "BÊNÇÃO",
+            "subtitle": "A água-viva oferece um presente..."
+        },
+        "perks": {
+            "patience_orb": {
+                "name": "Orbe de Paciência",
+                "desc": "+1 Paciência"
+            },
+            "calm_aura": {
+                "name": "Aura de Calma",
+                "desc": "-20% Consumo de paciência"
+            },
+            "deep_bond": {
+                "name": "Vínculo Profundo",
+                "desc": "+25 HP Máximo"
+            },
+            "soothing_touch": {
+                "name": "Toque Calmante",
+                "desc": "Restaura 10 HP ao completar"
+            },
+            "ethereal_shield": {
+                "name": "Escudo Etéreo",
+                "desc": "+15 Escudo (recarrega cada fase)"
+            },
+            "buoyancy": {
+                "name": "Flutuabilidade",
+                "desc": "-25% Gravidade"
+            },
+            "current_rider": {
+                "name": "Cavaleiro das Correntes",
+                "desc": "+15% Velocidade de Balanço"
+            },
+            "rift_expansion": {
+                "name": "Expansão da Fenda",
+                "desc": "+25% Tamanho do Buraco"
+            },
+            "abyssal_sight": {
+                "name": "Visão Abissal",
+                "desc": "Sempre mostra trajetória"
+            },
+            "elastic_membrane": {
+                "name": "Membrana Elástica",
+                "desc": "Rebate nas paredes"
+            },
+            "tentacle_boost": {
+                "name": "Impulso de Tentáculo",
+                "desc": "Pula uma vez no ar"
+            },
+            "time_dilation": {
+                "name": "Dilatação Temporal",
+                "desc": "0.5s câmera lenta ao soltar"
+            }
         }
     }
 }

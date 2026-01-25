@@ -7,6 +7,7 @@
 
 import { Container, Graphics, Text, TextStyle } from 'pixi.js'
 import { PerkDefinition } from './PerkConfig'
+import i18n from '@/i18n'
 
 // Abyss theme colors
 const ABYSS = {
@@ -79,7 +80,7 @@ export class PerkSelectionUI {
 
         // Title - positioned at top
         this.titleText = new Text({
-            text: 'CHOOSE A PERK',
+            text: i18n.t('wobblediver.perkSelection.title'),
             style: new TextStyle({
                 fontFamily: 'Arial Black, sans-serif',
                 fontSize: 20,
@@ -95,7 +96,7 @@ export class PerkSelectionUI {
 
         // Subtitle
         this.subtitleText = new Text({
-            text: 'Tap to select',
+            text: i18n.t('wobblediver.perkSelection.subtitle'),
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 12,
@@ -251,9 +252,9 @@ export class PerkSelectionUI {
         rarityText.position.set(iconAreaWidth / 2, height - 12)
         cardContainer.addChild(rarityText)
 
-        // Name - right side, top
+        // Name - right side, top (use i18n)
         const nameText = new Text({
-            text: perk.name,
+            text: i18n.t(perk.nameKey),
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 14,
@@ -265,9 +266,9 @@ export class PerkSelectionUI {
         nameText.position.set(textStartX, height / 2 - 12)
         cardContainer.addChild(nameText)
 
-        // Description - right side, bottom
+        // Description - right side, bottom (use i18n)
         const descText = new Text({
-            text: perk.description,
+            text: i18n.t(perk.descriptionKey),
             style: new TextStyle({
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 11,

@@ -165,13 +165,13 @@
             "title1": "워블다이버",
             "message1": "...여기가 어디지?\n아래에서 뭔가 나를 보고 있어...",
             "title2": "이상한 친구",
-            "message2": "해파리가 촉수로 날 붙잡고 있어!\n탭하면 힘을 줘서 흔들어줘.",
+            "message2": "해파리가 촉수로 날 흔들어주고 있어!\n탭하면 웜홀을 향해 발사돼.",
             "title3": "웜홀로 탈출!",
             "message3": "소용돌이치는 웜홀에 착지하면 탈출!\n정확할수록 점수가 높아.",
             "title4": "심연을 피해",
             "message4": "저 아래... 눈들과 촉수가 기다리고 있어.\n빠지면... 돌아올 수 없어.",
             "title5": "...가야 해",
-            "message5": "해파리 친구가 도와줄 거야.\n그것들이 배고파하기 전에..."
+            "message5": "해파리 친구가 도와줄 거야.\n하지만 웜홀에 실패하면 실망해서...\n인내심이 바닥나면 떠나버려."
         },
         "panic": {
             "phrase1": "으아아악!",
@@ -243,6 +243,60 @@
             "next": "다음",
             "start": "...가자",
             "skip": "Skip"
+        },
+        "perkSelection": {
+            "title": "축복",
+            "subtitle": "해파리가 선물을 건넨다..."
+        },
+        "perks": {
+            "patience_orb": {
+                "name": "인내의 구슬",
+                "desc": "+1 인내심"
+            },
+            "calm_aura": {
+                "name": "고요한 기운",
+                "desc": "-20% 인내심 소모"
+            },
+            "deep_bond": {
+                "name": "깊은 유대",
+                "desc": "+25 최대 HP"
+            },
+            "soothing_touch": {
+                "name": "치유의 손길",
+                "desc": "클리어 시 10 HP 회복"
+            },
+            "ethereal_shield": {
+                "name": "영묘한 보호막",
+                "desc": "+15 보호막 (매 스테이지 충전)"
+            },
+            "buoyancy": {
+                "name": "부력",
+                "desc": "-25% 중력"
+            },
+            "current_rider": {
+                "name": "해류 타기",
+                "desc": "+15% 스윙 속도"
+            },
+            "rift_expansion": {
+                "name": "균열 확장",
+                "desc": "+25% 웜홀 크기"
+            },
+            "abyssal_sight": {
+                "name": "심연의 시야",
+                "desc": "항상 궤도 표시"
+            },
+            "elastic_membrane": {
+                "name": "탄성 피막",
+                "desc": "벽에서 튕김"
+            },
+            "tentacle_boost": {
+                "name": "촉수 부스트",
+                "desc": "공중에서 한 번 점프"
+            },
+            "time_dilation": {
+                "name": "시간 팽창",
+                "desc": "발사 시 0.5초 슬로모션"
+            }
         }
     }
 }

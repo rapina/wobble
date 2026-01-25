@@ -165,13 +165,13 @@
             "title1": "深渊潜水员",
             "message1": "...这是哪里？\n下面有什么东西在看着我...",
             "title2": "奇怪的朋友",
-            "message2": "一只水母用触手抓住了我！\n点击让它脉动并摇摆我。",
+            "message2": "一只水母用触手摇摆着我！\n点击向虫洞发射。",
             "title3": "逃向虫洞！",
             "message3": "降落在旋转的虫洞中逃脱！\n越精确=分数越高。",
             "title4": "避开深渊",
             "message4": "下面...眼睛和触手在等待。\n掉下去的话...就回不来了。",
             "title5": "...我必须走了",
-            "message5": "我的水母朋友会帮忙。\n在它们饿了之前..."
+            "message5": "我的水母朋友会帮忙。\n但如果错过虫洞，它会很失望...\n当它的耐心耗尽，就会离开。"
         },
         "panic": {
             "phrase1": "啊啊啊！",
@@ -243,6 +243,60 @@
             "next": "下一步",
             "start": "...走吧",
             "skip": "跳过"
+        },
+        "perkSelection": {
+            "title": "祝福",
+            "subtitle": "水母献上礼物..."
+        },
+        "perks": {
+            "patience_orb": {
+                "name": "耐心之珠",
+                "desc": "+1 耐心"
+            },
+            "calm_aura": {
+                "name": "平静光环",
+                "desc": "-20% 耐心消耗"
+            },
+            "deep_bond": {
+                "name": "深厚羁绊",
+                "desc": "+25 最大生命值"
+            },
+            "soothing_touch": {
+                "name": "抚慰之触",
+                "desc": "通关时恢复10 HP"
+            },
+            "ethereal_shield": {
+                "name": "灵体护盾",
+                "desc": "+15 护盾（每关补充）"
+            },
+            "buoyancy": {
+                "name": "浮力",
+                "desc": "-25% 重力"
+            },
+            "current_rider": {
+                "name": "乘流者",
+                "desc": "+15% 摆动速度"
+            },
+            "rift_expansion": {
+                "name": "裂隙扩张",
+                "desc": "+25% 虫洞大小"
+            },
+            "abyssal_sight": {
+                "name": "深渊视觉",
+                "desc": "始终显示轨迹"
+            },
+            "elastic_membrane": {
+                "name": "弹性膜",
+                "desc": "撞墙反弹"
+            },
+            "tentacle_boost": {
+                "name": "触手推进",
+                "desc": "空中跳跃一次"
+            },
+            "time_dilation": {
+                "name": "时间膨胀",
+                "desc": "释放时0.5秒慢动作"
+            }
         }
     }
 }

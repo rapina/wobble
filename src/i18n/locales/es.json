@@ -165,13 +165,13 @@
             "title1": "Wobblediver",
             "message1": "...Donde estoy?\nAlgo me observa desde abajo...",
             "title2": "Un Amigo Extrano",
-            "message2": "Una medusa me sostiene con su tentaculo!\nToca para hacer que pulse y me balancee.",
+            "message2": "Una medusa me balancea con su tentaculo!\nToca para lanzarte hacia el agujero de gusano.",
             "title3": "Escapa al Agujero de Gusano!",
             "message3": "Aterriza en el agujero de gusano para escapar!\nMayor precision = mayor puntuacion.",
             "title4": "Evita el Abismo",
             "message4": "Alli abajo... ojos y tentaculos esperan.\nSi caes... no hay retorno.",
             "title5": "...Debo Ir",
-            "message5": "Mi amiga medusa ayudara.\nAntes de que tengan hambre..."
+            "message5": "Mi amiga medusa ayudara.\nPero si fallo el agujero, se decepciona...\nCuando su paciencia se agote, se ira."
         },
         "panic": {
             "phrase1": "Ahhhhh!",
@@ -243,6 +243,60 @@
             "next": "Siguiente",
             "start": "...Vamos",
             "skip": "Saltar"
+        },
+        "perkSelection": {
+            "title": "BENDICIÓN",
+            "subtitle": "La medusa ofrece un regalo..."
+        },
+        "perks": {
+            "patience_orb": {
+                "name": "Orbe de Paciencia",
+                "desc": "+1 Paciencia"
+            },
+            "calm_aura": {
+                "name": "Aura de Calma",
+                "desc": "-20% Consumo de paciencia"
+            },
+            "deep_bond": {
+                "name": "Vínculo Profundo",
+                "desc": "+25 HP Máximo"
+            },
+            "soothing_touch": {
+                "name": "Toque Calmante",
+                "desc": "Restaura 10 HP al completar"
+            },
+            "ethereal_shield": {
+                "name": "Escudo Etéreo",
+                "desc": "+15 Escudo (se recarga cada nivel)"
+            },
+            "buoyancy": {
+                "name": "Flotabilidad",
+                "desc": "-25% Gravedad"
+            },
+            "current_rider": {
+                "name": "Jinete de Corrientes",
+                "desc": "+15% Velocidad de Balanceo"
+            },
+            "rift_expansion": {
+                "name": "Expansión de Grieta",
+                "desc": "+25% Tamaño del Agujero"
+            },
+            "abyssal_sight": {
+                "name": "Visión Abismal",
+                "desc": "Siempre muestra trayectoria"
+            },
+            "elastic_membrane": {
+                "name": "Membrana Elástica",
+                "desc": "Rebota en las paredes"
+            },
+            "tentacle_boost": {
+                "name": "Impulso de Tentáculo",
+                "desc": "Salta una vez en el aire"
+            },
+            "time_dilation": {
+                "name": "Dilatación Temporal",
+                "desc": "0.5s cámara lenta al soltar"
+            }
         }
     }
 }

@@ -726,7 +726,10 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Track lives from life system
         this.customHudLives = this.lifeSystem.lives
 
-        // Draw hearts above player
+        // Update jellyfish patience based on lives
+        this.anchorWobble.setPatience(this.lifeSystem.lives, this.lifeSystem.maxLives)
+
+        // Draw patience orbs above jellyfish
         this.drawPlayerHearts()
     }
 
@@ -734,73 +737,78 @@ export class WobblediverScene extends BaseMiniGameScene {
         const g = this.playerHeartsGraphics
         g.clear()
 
-        // Don't draw if no wobble
-        if (!this.wobble) return
-
-        // Hide hearts during certain states (like speech bubbles do)
-        const hideStates = ['drowning', 'success', 'failed']
-        if (hideStates.includes(this.wobble.state)) return
-
-        // Hide during pending result (suction animation)
-        if (this.pendingResult) return
-
-        // Hide during transitions
-        if (this.isTransitioning || this.isShowingResult) return
-
-        // Get position and validate it
-        const pos = this.wobble.getPosition()
-        if (!pos || isNaN(pos.x) || isNaN(pos.y)) return
-
-        // Check if position is within reasonable bounds
-        if (pos.x < -100 || pos.x > this.width + 100 || pos.y < -100 || pos.y > this.height + 100)
-            return
-
-        const heartSize = 10
-        const heartGap = 4
-        const maxLives = this.lifeSystem.maxLives
-        const totalWidth = maxLives * (heartSize + heartGap) - heartGap
-        const startX = pos.x - totalWidth / 2
-        const heartY = pos.y - 45 // Above the wobble
-
-        // Draw each heart (shows all max lives, filled based on current lives)
-        for (let i = 0; i < maxLives; i++) {
-            const x = startX + i * (heartSize + heartGap)
-            const filled = i < this.customHudLives
-
-            this.drawMiniHeart(g, x, heartY, heartSize, filled)
-        }
+        // Always show patience orbs (jellyfish's patience indicator)
+        this.drawPatienceOrbs(g)
     }
 
-    private drawMiniHeart(g: Graphics, x: number, y: number, size: number, filled: boolean): void {
-        const s = size / 18
+    /**
+     * Draw glowing orbs representing jellyfish's patience
+     * Color changes based on jellyfish's mood (patience level)
+     */
+    private drawPatienceOrbs(g: Graphics): void {
+        const maxLives = this.lifeSystem.maxLives
+        const currentLives = this.customHudLives
 
-        // Heart shape using bezier curves
-        g.moveTo(x + 9 * s, y + 16 * s)
-        g.bezierCurveTo(x + 9 * s, y + 15 * s, x + 9 * s, y + 12 * s, x + 9 * s, y + 12 * s)
-        g.bezierCurveTo(x + 9 * s, y + 8 * s, x + 5 * s, y + 4 * s, x + 1 * s, y + 4 * s)
-        g.bezierCurveTo(x - 3 * s, y + 4 * s, x - 3 * s, y + 9 * s, x - 3 * s, y + 9 * s)
-        g.bezierCurveTo(x - 3 * s, y + 11 * s, x - 2 * s, y + 13 * s, x + 9 * s, y + 18 * s)
-        g.bezierCurveTo(x + 20 * s, y + 13 * s, x + 21 * s, y + 11 * s, x + 21 * s, y + 9 * s)
-        g.bezierCurveTo(x + 21 * s, y + 9 * s, x + 21 * s, y + 4 * s, x + 17 * s, y + 4 * s)
-        g.bezierCurveTo(x + 13 * s, y + 4 * s, x + 9 * s, y + 8 * s, x + 9 * s, y + 12 * s)
+        // Position above the jellyfish (anchorWobble is at y=100)
+        const centerX = (this.boundaryLeft + this.boundaryRight) / 2
+        const orbY = 55 // Above jellyfish
 
-        if (filled) {
-            // Filled heart - red with slight glow effect
-            g.fill({ color: 0xe85d4c })
-            // Add small highlight
-            g.circle(x + 4 * s, y + 8 * s, 2 * s)
-            g.fill({ color: 0xff8888, alpha: 0.5 })
-        } else {
-            // Empty heart - dark outline
-            g.fill({ color: 0x2a1a30, alpha: 0.6 })
-            g.stroke({ color: 0x4a3a50, width: 1 })
+        const orbSize = 8
+        const orbGap = 14
+        const totalWidth = maxLives * orbGap - orbGap + orbSize
+        const startX = centerX - totalWidth / 2
+
+        // Get current color from jellyfish (changes with patience)
+        const jellyfishColor = this.anchorWobble.getColor()
+
+        // Calculate lighter version for glow
+        const r = (jellyfishColor >> 16) & 0xff
+        const gr = (jellyfishColor >> 8) & 0xff
+        const b = jellyfishColor & 0xff
+        const lighterColor = ((Math.min(255, r + 60) << 16) | (Math.min(255, gr + 60) << 8) | Math.min(255, b + 60))
+        const coreColor = ((Math.min(255, r + 100) << 16) | (Math.min(255, gr + 100) << 8) | Math.min(255, b + 100))
+
+        // Animated time for glow effect
+        const time = performance.now() / 1000
+
+        for (let i = 0; i < maxLives; i++) {
+            const x = startX + i * orbGap
+            const filled = i < currentLives
+
+            if (filled) {
+                // Glowing orb - pulsing bioluminescent effect
+                const pulse = 0.8 + Math.sin(time * 3 + i * 0.5) * 0.2
+                const glowSize = orbSize + 4 + Math.sin(time * 2 + i) * 2
+
+                // Outer glow (jellyfish color)
+                g.circle(x, orbY, glowSize)
+                g.fill({ color: jellyfishColor, alpha: 0.2 * pulse })
+
+                // Middle glow
+                g.circle(x, orbY, orbSize + 2)
+                g.fill({ color: lighterColor, alpha: 0.4 * pulse })
+
+                // Core orb
+                g.circle(x, orbY, orbSize)
+                g.fill({ color: coreColor, alpha: 0.9 })
+
+                // Inner bright spot
+                g.circle(x - 2, orbY - 2, orbSize * 0.4)
+                g.fill({ color: 0xffffff, alpha: 0.7 })
+            } else {
+                // Empty orb - dim and hollow
+                g.circle(x, orbY, orbSize)
+                g.fill({ color: 0x1a1025, alpha: 0.5 })
+                g.circle(x, orbY, orbSize)
+                g.stroke({ color: 0x3a2a4a, width: 1.5, alpha: 0.4 })
+            }
         }
     }
 
     private setupAnchorWobble(): void {
         // Center anchor in game area (not screen)
         const anchorX = this.gameOffsetX + this.effectiveGameWidth / 2
-        const anchorY = 70 // Fixed position from top (clear of HUD)
+        const anchorY = 100 // Fixed position from top (below hearts HUD)
 
         this.anchorWobble = new AnchorWobble(anchorX, anchorY)
         this.gameContainer.addChild(this.anchorWobble.container)
@@ -1800,7 +1808,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         this.wallTentacleTips = []
 
         const left = this.boundaryLeft
-        const top = this.boundaryTop + 60 // Start below HUD
+        const top = this.boundaryTop + 100 // Start below HUD
         const right = this.boundaryRight
         const bottom = this.boundaryBottom - 80 // Stop above water
         const wallHeight = bottom - top
@@ -4292,7 +4300,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Create new wobble (anchor Y matches AnchorWobble position)
         this.wobble = new SwingingWobble(
             anchorX,
-            this.boundaryTop + 60,
+            this.boundaryTop + 100,
             ropeLength,
             startAngleSigned
         )
@@ -4628,7 +4636,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         const startAngle = this.getRandomStartAngle()
 
         // Create new wobble
-        this.wobble = new SwingingWobble(anchorX, this.boundaryTop + 60, ropeLength, startAngle)
+        this.wobble = new SwingingWobble(anchorX, this.boundaryTop + 100, ropeLength, startAngle)
         this.wobble.resetHp()
         this.wobble.setTentacleColor(this.anchorWobble.getColor()) // Sync tentacle color with jellyfish
         this.gameContainer.addChild(this.wobble.container)
@@ -5932,7 +5940,7 @@ export class WobblediverScene extends BaseMiniGameScene {
         // Create new wobble
         this.wobble = new SwingingWobble(
             anchorX,
-            this.boundaryTop + 60,
+            this.boundaryTop + 100,
             ropeLength,
             startAngleSigned
         )
