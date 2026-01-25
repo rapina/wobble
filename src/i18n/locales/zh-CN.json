@@ -58,6 +58,16 @@
             "quantum": "量子",
             "chemistry": "化学"
         },
+        "categoryDescriptions": {
+            "mechanics": "力、运动、能量 - 物体运动的基本原理",
+            "wave": "光、声音和振动在空间中传播的现象",
+            "gravity": "使行星保持轨道、苹果下落的力",
+            "thermodynamics": "热、能量和粒子的行为",
+            "electricity": "电荷、电流和电磁现象",
+            "special": "独特的物理概念和特殊情况",
+            "quantum": "原子和亚原子粒子的奇妙世界",
+            "chemistry": "化学反应、pH和分子相互作用"
+        },
         "emptyCategory": "此分类暂无公式",
         "info": {
             "title": "现实应用",
@@ -82,8 +92,10 @@
         "sandbox": {
             "welcomeTitle": "欢迎来到物理沙盒！",
             "welcomeMessage": "在这里你可以通过互动学习物理公式。调整变量，实时观察结果如何变化！",
+            "categoryTitle": "探索类别",
+            "categoryMessage": "左右滑动浏览物理类别。每个类别包含相关的公式！",
             "selectFormulaTitle": "选择一个公式",
-            "selectFormulaMessage": "这里有各种物理公式供你选择。点击任意公式开始模拟！",
+            "selectFormulaMessage": "从下方列表中选择公式。点击任意公式开始模拟！",
             "canvasTitle": "模拟视图",
             "canvasMessage": "物理现象在这里可视化。调整变量，观察Wobble角色的运动如何变化！",
             "variableTitle": "变量: {{symbol}}",
@@ -159,6 +171,13 @@
         "title": "成就",
         "unlocked": "成就解锁！",
         "progress": "已解锁{{unlocked}}/{{total}}"
+    },
+    "carousel": {
+        "moreFormulas": "{{count}}个公式",
+        "formulaCount": "此类别有{{count}}个公式",
+        "tapToExplore": "点击公式开始",
+        "featuredFormula": "代表公式",
+        "formulas": "个公式"
     },
     "wobblediver": {
         "intro": {

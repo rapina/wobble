@@ -39,6 +39,7 @@ export function MainScreen() {
     const [selectedMiniGame, setSelectedMiniGame] = useState<MiniGameId | null>(null)
     const [selectedMiniGameMode, setSelectedMiniGameMode] = useState<MiniGameMode>('endless')
     const [isTransitioning, setIsTransitioning] = useState(false)
+    const [showFormulaCarousel, setShowFormulaCarousel] = useState(false)
     const { isMusicEnabled, switchTrack, markUserInteracted } = useMusic()
     const { restorePurchases } = useInAppPurchase()
 
@@ -101,6 +102,7 @@ export function MainScreen() {
 
     const handleSelectSandboxFormula = (formula: Formula) => {
         setIsTransitioning(true)
+        setShowFormulaCarousel(false)
         setTimeout(() => {
             setScreenState('sandbox')
             setSelectedFormula(formula)
@@ -181,7 +183,24 @@ export function MainScreen() {
         setTimeout(() => {
             setScreenState('home')
             setSelectedFormula(null)
+            setShowFormulaCarousel(false)
             setIsTransitioning(false)
+        }, 150)
+    }
+
+    const handleBackToFormulaCarousel = () => {
+        setIsTransitioning(true)
+        // Set carousel state BEFORE screen transition to avoid flash
+        setShowFormulaCarousel(true)
+        setTimeout(() => {
+            setScreenState('home')
+            setSelectedFormula(null)
+            // Double rAF to let React render and browser paint before fading in
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    setIsTransitioning(false)
+                })
+            })
         }, 150)
     }
 
@@ -199,13 +218,14 @@ export function MainScreen() {
                     <HomeScreen
                         onSelectMode={handleSelectMode}
                         onSelectSandboxFormula={handleSelectSandboxFormula}
+                        initialShowFormulaSelect={showFormulaCarousel}
                     />
                 ) : screenState === 'sandbox' && selectedFormula ? (
                     <SandboxScreen
                         formulaId={selectedFormula.id}
                         formulas={formulaList}
                         onFormulaChange={handleFormulaChange}
-                        onBack={handleBackToHome}
+                        onBack={handleBackToFormulaCarousel}
                     />
                 ) : screenState === 'collection' ? (
                     <CollectionScreen onBack={handleBackToHome} />

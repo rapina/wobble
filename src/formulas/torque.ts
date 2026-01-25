@@ -79,7 +79,15 @@ export const torque: Formula = {
     variables: [
         {
             symbol: 'r',
-            name: { ko: '거리 (반지름)', en: 'Distance (Radius)', ja: '距離（半径）', es: 'Distancia (Radio)', pt: 'Distância (Raio)', 'zh-CN': '距离（半径）', 'zh-TW': '距離（半徑）' },
+            name: {
+                ko: '거리 (반지름)',
+                en: 'Distance (Radius)',
+                ja: '距離（半径）',
+                es: 'Distancia (Radio)',
+                pt: 'Distância (Raio)',
+                'zh-CN': '距离（半径）',
+                'zh-TW': '距離（半徑）',
+            },
             role: 'input',
             unit: 'm',
             range: [0.1, 2],
@@ -92,7 +100,15 @@ export const torque: Formula = {
         },
         {
             symbol: 'F',
-            name: { ko: '힘', en: 'Force', ja: '力', es: 'Fuerza', pt: 'Força', 'zh-CN': '力', 'zh-TW': '力' },
+            name: {
+                ko: '힘',
+                en: 'Force',
+                ja: '力',
+                es: 'Fuerza',
+                pt: 'Força',
+                'zh-CN': '力',
+                'zh-TW': '力',
+            },
             role: 'input',
             unit: 'N',
             range: [10, 200],
@@ -105,7 +121,15 @@ export const torque: Formula = {
         },
         {
             symbol: 'θ',
-            name: { ko: '각도', en: 'Angle', ja: '角度', es: 'Ángulo', pt: 'Ângulo', 'zh-CN': '角度', 'zh-TW': '角度' },
+            name: {
+                ko: '각도',
+                en: 'Angle',
+                ja: '角度',
+                es: 'Ángulo',
+                pt: 'Ângulo',
+                'zh-CN': '角度',
+                'zh-TW': '角度',
+            },
             role: 'input',
             unit: '°',
             range: [0, 90],
@@ -118,7 +142,15 @@ export const torque: Formula = {
         },
         {
             symbol: 'τ',
-            name: { ko: '토크', en: 'Torque', ja: 'トルク', es: 'Torque', pt: 'Torque', 'zh-CN': '扭矩', 'zh-TW': '扭矩' },
+            name: {
+                ko: '토크',
+                en: 'Torque',
+                ja: 'トルク',
+                es: 'Torque',
+                pt: 'Torque',
+                'zh-CN': '扭矩',
+                'zh-TW': '扭矩',
+            },
             role: 'output',
             unit: 'N·m',
             range: [0, 400],

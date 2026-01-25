@@ -58,6 +58,16 @@
             "quantum": "量子",
             "chemistry": "化学"
         },
+        "categoryDescriptions": {
+            "mechanics": "力、運動、エネルギー - 物が動く基本原理",
+            "wave": "光、音、振動が空間を伝わる現象",
+            "gravity": "惑星を軌道に保ち、りんごを落とす力",
+            "thermodynamics": "熱、エネルギー、粒子の振る舞い",
+            "electricity": "電荷、電流、電磁気現象の世界",
+            "special": "ユニークな物理概念と特殊なケース",
+            "quantum": "原子と素粒子の不思議な世界",
+            "chemistry": "化学反応、pH、分子相互作用"
+        },
         "emptyCategory": "このカテゴリには公式がありません",
         "info": {
             "title": "どこで使われる？",
@@ -82,8 +92,10 @@
         "sandbox": {
             "welcomeTitle": "物理サンドボックスへようこそ！",
             "welcomeMessage": "ここで物理公式を直接触りながら学べます。変数を調整すると結果がどう変わるか、目で確認してみてください！",
+            "categoryTitle": "カテゴリーを探索",
+            "categoryMessage": "左右にスワイプして物理カテゴリーを見てみましょう。各カテゴリーには関連する公式があります！",
             "selectFormulaTitle": "公式を選んでみてください",
-            "selectFormulaMessage": "様々な物理公式が用意されています。好きな公式をタップしてシミュレーションを始めてみてください！",
+            "selectFormulaMessage": "下のリストから公式を選んでください。好きな公式をタップしてシミュレーションを始めてみてください！",
             "canvasTitle": "シミュレーション画面",
             "canvasMessage": "この画面で物理現象が可視化されます。変数を調整するとウォブルキャラクターの動きが変わるのが見えます！",
             "variableTitle": "変数: {{symbol}}",
@@ -160,6 +172,13 @@
         "title": "実績",
         "unlocked": "実績達成！",
         "progress": "{{unlocked}}/{{total}} 達成"
+    },
+    "carousel": {
+        "moreFormulas": "{{count}}個の公式",
+        "formulaCount": "このカテゴリに{{count}}個の公式",
+        "tapToExplore": "公式をタップして開始",
+        "featuredFormula": "代表公式",
+        "formulas": "個の公式"
     },
     "wobblediver": {
         "intro": {

@@ -200,7 +200,15 @@ export class WobblediverScene extends BaseMiniGameScene {
     private perkIconTexts: Text[] = []
 
     // Gravity visual effect (from Featherfall/Heavy Drop perks)
-    private gravityParticles: { x: number; y: number; vx: number; vy: number; size: number; alpha: number; life: number }[] = []
+    private gravityParticles: {
+        x: number
+        y: number
+        vx: number
+        vy: number
+        size: number
+        alpha: number
+        life: number
+    }[] = []
     private gravityEffectGraphics: Graphics | null = null
     private currentGravityMultiplier: number = 1.0
 
@@ -510,7 +518,10 @@ export class WobblediverScene extends BaseMiniGameScene {
             if (perkDef.effect.extraLives) {
                 this.localExtraLives += perkDef.effect.extraLives
                 const totalLives = 3 + this.localExtraLives
-                this.lifeSystem.configure(totalLives, this.lifeSystem.lives + perkDef.effect.extraLives)
+                this.lifeSystem.configure(
+                    totalLives,
+                    this.lifeSystem.lives + perkDef.effect.extraLives
+                )
                 this.customHudLives = this.lifeSystem.lives
             }
 
@@ -765,8 +776,10 @@ export class WobblediverScene extends BaseMiniGameScene {
         const r = (jellyfishColor >> 16) & 0xff
         const gr = (jellyfishColor >> 8) & 0xff
         const b = jellyfishColor & 0xff
-        const lighterColor = ((Math.min(255, r + 60) << 16) | (Math.min(255, gr + 60) << 8) | Math.min(255, b + 60))
-        const coreColor = ((Math.min(255, r + 100) << 16) | (Math.min(255, gr + 100) << 8) | Math.min(255, b + 100))
+        const lighterColor =
+            (Math.min(255, r + 60) << 16) | (Math.min(255, gr + 60) << 8) | Math.min(255, b + 60)
+        const coreColor =
+            (Math.min(255, r + 100) << 16) | (Math.min(255, gr + 100) << 8) | Math.min(255, b + 100)
 
         // Animated time for glow effect
         const time = performance.now() / 1000
@@ -2180,7 +2193,11 @@ export class WobblediverScene extends BaseMiniGameScene {
                 const strength = Math.min(1, falloffDist / dist)
                 const forceX = (dx / dist) * magnetForce * strength * deltaSeconds
                 const forceY = (dy / dist) * magnetForce * strength * deltaSeconds
-                this.wobble.applyImpulse(dx / dist, dy / dist, magnetForce * strength * deltaSeconds)
+                this.wobble.applyImpulse(
+                    dx / dist,
+                    dy / dist,
+                    magnetForce * strength * deltaSeconds
+                )
             }
         }
 
@@ -4168,7 +4185,11 @@ export class WobblediverScene extends BaseMiniGameScene {
         if (!this.wobble) return
 
         // Double jump - tap while falling
-        if (this.wobble.state === 'released' && this.doubleJumpAvailable && this.currentPerkEffects.hasDoubleJump) {
+        if (
+            this.wobble.state === 'released' &&
+            this.doubleJumpAvailable &&
+            this.currentPerkEffects.hasDoubleJump
+        ) {
             this.performDoubleJump()
             return
         }

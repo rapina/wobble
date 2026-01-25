@@ -58,6 +58,16 @@
             "quantum": "Quantum",
             "chemistry": "Chemistry"
         },
+        "categoryDescriptions": {
+            "mechanics": "Force, motion, and energy - the foundation of how things move",
+            "wave": "Light, sound, and oscillations traveling through space",
+            "gravity": "The force that keeps planets in orbit and apples falling",
+            "thermodynamics": "Heat, energy, and the behavior of particles",
+            "electricity": "Charges, currents, and electromagnetic phenomena",
+            "special": "Unique physics concepts and special cases",
+            "quantum": "The strange world of atoms and subatomic particles",
+            "chemistry": "Reactions, pH, and molecular interactions"
+        },
         "emptyCategory": "No formulas in this category",
         "info": {
             "title": "Real-World Uses",
@@ -82,8 +92,10 @@
         "sandbox": {
             "welcomeTitle": "Welcome to Physics Sandbox!",
             "welcomeMessage": "Here you can learn physics formulas by interacting with them. Adjust variables and see how the results change in real-time!",
+            "categoryTitle": "Explore Categories",
+            "categoryMessage": "Swipe left or right to browse physics categories. Each category contains related formulas!",
             "selectFormulaTitle": "Select a Formula",
-            "selectFormulaMessage": "Various physics formulas are ready for you. Tap any formula to start the simulation!",
+            "selectFormulaMessage": "Choose a formula from the list below. Tap any formula to start the simulation!",
             "canvasTitle": "Simulation View",
             "canvasMessage": "Physics phenomena are visualized here. Adjust variables and watch how the Wobble character's movement changes!",
             "variableTitle": "Variable: {{symbol}}",
@@ -159,6 +171,13 @@
         "title": "Achievements",
         "unlocked": "Achievement Unlocked!",
         "progress": "{{unlocked}} of {{total}} unlocked"
+    },
+    "carousel": {
+        "moreFormulas": "{{count}} formulas",
+        "formulaCount": "{{count}} formulas in this category",
+        "tapToExplore": "Tap a formula to start",
+        "featuredFormula": "Featured",
+        "formulas": "formulas"
     },
     "wobblediver": {
         "intro": {

@@ -62,18 +62,8 @@ export const bohr: Formula = {
             'Cores em luzes fluorescentes e de néon',
             'Análise da composição elementar de estrelas',
         ],
-        'zh-CN': [
-            '氢原子光谱分析',
-            '激光器的能级设计',
-            '荧光灯和霓虹灯的颜色',
-            '恒星元素成分分析',
-        ],
-        'zh-TW': [
-            '氫原子光譜分析',
-            '雷射的能階設計',
-            '螢光燈和霓虹燈的顏色',
-            '恆星元素成分分析',
-        ],
+        'zh-CN': ['氢原子光谱分析', '激光器的能级设计', '荧光灯和霓虹灯的颜色', '恒星元素成分分析'],
+        'zh-TW': ['氫原子光譜分析', '雷射的能階設計', '螢光燈和霓虹燈的顏色', '恆星元素成分分析'],
     },
     category: 'quantum',
     variables: [

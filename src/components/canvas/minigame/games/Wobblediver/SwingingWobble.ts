@@ -550,7 +550,7 @@ export class SwingingWobble {
         // Pendulum equation: α = -(g/L) * sin(θ)
         // Apply swing speed multiplier: higher multiplier = faster swing
         // Since T = 2π√(L/g), to make swing faster we increase effective gravity
-        const effectiveGravity = this.physics.gravity * (this.swingSpeedMultiplier ** 2)
+        const effectiveGravity = this.physics.gravity * this.swingSpeedMultiplier ** 2
         const angularAcceleration =
             -(effectiveGravity / this.physics.ropeLength) * Math.sin(this.physics.angle)
 

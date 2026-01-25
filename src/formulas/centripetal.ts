@@ -79,7 +79,15 @@ export const centripetal: Formula = {
     variables: [
         {
             symbol: 'm',
-            name: { ko: '질량', en: 'Mass', ja: '質量', es: 'Masa', pt: 'Massa', 'zh-CN': '质量', 'zh-TW': '質量' },
+            name: {
+                ko: '질량',
+                en: 'Mass',
+                ja: '質量',
+                es: 'Masa',
+                pt: 'Massa',
+                'zh-CN': '质量',
+                'zh-TW': '質量',
+            },
             role: 'input',
             unit: 'kg',
             range: [1, 20],
@@ -92,7 +100,15 @@ export const centripetal: Formula = {
         },
         {
             symbol: 'v',
-            name: { ko: '속력', en: 'Velocity', ja: '速度', es: 'Velocidad', pt: 'Velocidade', 'zh-CN': '速率', 'zh-TW': '速率' },
+            name: {
+                ko: '속력',
+                en: 'Velocity',
+                ja: '速度',
+                es: 'Velocidad',
+                pt: 'Velocidade',
+                'zh-CN': '速率',
+                'zh-TW': '速率',
+            },
             role: 'input',
             unit: 'm/s',
             range: [1, 10],
@@ -105,7 +121,15 @@ export const centripetal: Formula = {
         },
         {
             symbol: 'r',
-            name: { ko: '반지름', en: 'Radius', ja: '半径', es: 'Radio', pt: 'Raio', 'zh-CN': '半径', 'zh-TW': '半徑' },
+            name: {
+                ko: '반지름',
+                en: 'Radius',
+                ja: '半径',
+                es: 'Radio',
+                pt: 'Raio',
+                'zh-CN': '半径',
+                'zh-TW': '半徑',
+            },
             role: 'input',
             unit: 'm',
             range: [1, 10],
@@ -118,7 +142,15 @@ export const centripetal: Formula = {
         },
         {
             symbol: 'F',
-            name: { ko: '구심력', en: 'Centripetal Force', ja: '向心力', es: 'Fuerza Centrípeta', pt: 'Força Centrípeta', 'zh-CN': '向心力', 'zh-TW': '向心力' },
+            name: {
+                ko: '구심력',
+                en: 'Centripetal Force',
+                ja: '向心力',
+                es: 'Fuerza Centrípeta',
+                pt: 'Força Centrípeta',
+                'zh-CN': '向心力',
+                'zh-TW': '向心力',
+            },
             role: 'output',
             unit: 'N',
             range: [0, 500],

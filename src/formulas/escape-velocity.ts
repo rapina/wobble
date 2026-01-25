@@ -62,18 +62,8 @@ export const escapeVelocity: Formula = {
             'Condições para retenção de atmosfera planetária',
             'Projeto de trajetórias de espaçonaves',
         ],
-        'zh-CN': [
-            '计算火箭发射速度',
-            '理解黑洞事件视界',
-            '行星大气保持条件',
-            '设计航天器轨道',
-        ],
-        'zh-TW': [
-            '計算火箭發射速度',
-            '理解黑洞事件視界',
-            '行星大氣保持條件',
-            '設計太空船軌道',
-        ],
+        'zh-CN': ['计算火箭发射速度', '理解黑洞事件视界', '行星大气保持条件', '设计航天器轨道'],
+        'zh-TW': ['計算火箭發射速度', '理解黑洞事件視界', '行星大氣保持條件', '設計太空船軌道'],
     },
     category: 'gravity',
     variables: [

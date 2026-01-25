@@ -79,7 +79,15 @@ export const pressure: Formula = {
     variables: [
         {
             symbol: 'F',
-            name: { ko: '힘', en: 'Force', ja: '力', es: 'Fuerza', pt: 'Força', 'zh-CN': '力', 'zh-TW': '力' },
+            name: {
+                ko: '힘',
+                en: 'Force',
+                ja: '力',
+                es: 'Fuerza',
+                pt: 'Força',
+                'zh-CN': '力',
+                'zh-TW': '力',
+            },
             role: 'input',
             unit: 'N',
             range: [10, 200],
@@ -92,7 +100,15 @@ export const pressure: Formula = {
         },
         {
             symbol: 'A',
-            name: { ko: '면적', en: 'Area', ja: '面積', es: 'Área', pt: 'Área', 'zh-CN': '面积', 'zh-TW': '面積' },
+            name: {
+                ko: '면적',
+                en: 'Area',
+                ja: '面積',
+                es: 'Área',
+                pt: 'Área',
+                'zh-CN': '面积',
+                'zh-TW': '面積',
+            },
             role: 'input',
             unit: 'cm²',
             range: [1, 100],
@@ -105,7 +121,15 @@ export const pressure: Formula = {
         },
         {
             symbol: 'P',
-            name: { ko: '압력', en: 'Pressure', ja: '圧力', es: 'Presión', pt: 'Pressão', 'zh-CN': '压强', 'zh-TW': '壓力' },
+            name: {
+                ko: '압력',
+                en: 'Pressure',
+                ja: '圧力',
+                es: 'Presión',
+                pt: 'Pressão',
+                'zh-CN': '压强',
+                'zh-TW': '壓力',
+            },
             role: 'output',
             unit: 'kPa',
             range: [0, 2000],

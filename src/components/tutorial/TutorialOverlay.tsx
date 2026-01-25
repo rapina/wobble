@@ -18,10 +18,12 @@ export interface TutorialStep {
         | 'variable'
         | 'info-button'
         | 'formula-list'
+        | 'category-carousel'
         | 'challenge-submit'
         | 'welcome'
         | 'canvas'
         | 'challenge'
+    wobbleExpression?: string
 }
 
 interface TutorialOverlayProps {
@@ -170,9 +172,7 @@ export function TutorialOverlay({
                             {step.title && (
                                 <div className="flex items-center gap-2">
                                     <Sparkles className="w-4 h-4 text-amber-400" />
-                                    <h3 className="text-base font-bold text-white">
-                                        {step.title}
-                                    </h3>
+                                    <h3 className="text-base font-bold text-white">{step.title}</h3>
                                 </div>
                             )}
                             {/* Step indicator */}
@@ -196,9 +196,7 @@ export function TutorialOverlay({
                         </div>
 
                         {/* Message */}
-                        <p className="text-white/80 text-sm leading-relaxed mb-5">
-                            {step.message}
-                        </p>
+                        <p className="text-white/80 text-sm leading-relaxed mb-5">{step.message}</p>
 
                         {/* Buttons */}
                         <div className="flex items-center justify-between">

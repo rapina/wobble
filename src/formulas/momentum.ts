@@ -79,7 +79,15 @@ export const momentum: Formula = {
     variables: [
         {
             symbol: 'm',
-            name: { ko: '질량', en: 'Mass', ja: '質量', es: 'Masa', pt: 'Massa', 'zh-CN': '质量', 'zh-TW': '質量' },
+            name: {
+                ko: '질량',
+                en: 'Mass',
+                ja: '質量',
+                es: 'Masa',
+                pt: 'Massa',
+                'zh-CN': '质量',
+                'zh-TW': '質量',
+            },
             role: 'input',
             unit: 'kg',
             range: [1, 50],
@@ -92,7 +100,15 @@ export const momentum: Formula = {
         },
         {
             symbol: 'v',
-            name: { ko: '속도', en: 'Velocity', ja: '速度', es: 'Velocidad', pt: 'Velocidade', 'zh-CN': '速度', 'zh-TW': '速度' },
+            name: {
+                ko: '속도',
+                en: 'Velocity',
+                ja: '速度',
+                es: 'Velocidad',
+                pt: 'Velocidade',
+                'zh-CN': '速度',
+                'zh-TW': '速度',
+            },
             role: 'input',
             unit: 'm/s',
             range: [1, 20],
@@ -105,7 +121,15 @@ export const momentum: Formula = {
         },
         {
             symbol: 'p',
-            name: { ko: '운동량', en: 'Momentum', ja: '運動量', es: 'Momento', pt: 'Momento', 'zh-CN': '动量', 'zh-TW': '動量' },
+            name: {
+                ko: '운동량',
+                en: 'Momentum',
+                ja: '運動量',
+                es: 'Momento',
+                pt: 'Momento',
+                'zh-CN': '动量',
+                'zh-TW': '動量',
+            },
             role: 'output',
             unit: 'kg·m/s',
             range: [0, 1000],

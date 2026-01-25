@@ -57,7 +57,11 @@ const GAMES: GameConfig[] = [
         titleKey: 'game.wobblediver',
         descKey: 'game.wobblediverDesc',
         available: true,
-        tags: ['game.physicsTags.pendulumMotion', 'game.physicsTags.gravity', 'game.physicsTags.momentum'],
+        tags: [
+            'game.physicsTags.pendulumMotion',
+            'game.physicsTags.gravity',
+            'game.physicsTags.momentum',
+        ],
         theme: {
             primary: abyssTheme.accent,
             secondary: abyssTheme.teal,
@@ -97,13 +101,15 @@ function AbyssLockedModal({
     t: (key: string, options?: Record<string, unknown>) => string
 }) {
     const [mounted, setMounted] = useState(false)
-    const eyePositions = useMemo(() =>
-        Array.from({ length: 5 }, (_, i) => ({
-            x: 10 + Math.random() * 80,
-            y: 10 + Math.random() * 80,
-            size: 8 + Math.random() * 12,
-            delay: i * 0.3,
-        })), []
+    const eyePositions = useMemo(
+        () =>
+            Array.from({ length: 5 }, (_, i) => ({
+                x: 10 + Math.random() * 80,
+                y: 10 + Math.random() * 80,
+                size: 8 + Math.random() * 12,
+                delay: i * 0.3,
+            })),
+        []
     )
 
     useEffect(() => {
@@ -118,7 +124,10 @@ function AbyssLockedModal({
 
     return (
         <div
-            className={cn('fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-500', mounted ? 'opacity-100' : 'opacity-0')}
+            className={cn(
+                'fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-500',
+                mounted ? 'opacity-100' : 'opacity-0'
+            )}
             style={{ background: 'rgba(3, 5, 8, 0.95)' }}
             onClick={onClose}
         >
@@ -126,49 +135,132 @@ function AbyssLockedModal({
                 <div
                     key={i}
                     className="absolute"
-                    style={{ left: `${eye.x}%`, top: `${eye.y}%`, opacity: mounted ? 0.3 : 0, transition: `opacity 1s ease-out ${eye.delay}s` }}
+                    style={{
+                        left: `${eye.x}%`,
+                        top: `${eye.y}%`,
+                        opacity: mounted ? 0.3 : 0,
+                        transition: `opacity 1s ease-out ${eye.delay}s`,
+                    }}
                 >
-                    <div className="rounded-full animate-pulse" style={{ width: eye.size, height: eye.size * 0.5, background: `radial-gradient(ellipse, ${abyssTheme.red}50 0%, transparent 70%)` }} />
+                    <div
+                        className="rounded-full animate-pulse"
+                        style={{
+                            width: eye.size,
+                            height: eye.size * 0.5,
+                            background: `radial-gradient(ellipse, ${abyssTheme.red}50 0%, transparent 70%)`,
+                        }}
+                    />
                 </div>
             ))}
 
             <div
-                className={cn('relative max-w-sm w-full rounded-2xl overflow-hidden transition-all duration-500', mounted ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4')}
-                style={{ background: `linear-gradient(180deg, ${abyssTheme.mid} 0%, ${abyssTheme.void} 100%)`, border: `2px solid ${abyssTheme.accent}50`, boxShadow: `0 0 40px ${abyssTheme.accent}30` }}
+                className={cn(
+                    'relative max-w-sm w-full rounded-2xl overflow-hidden transition-all duration-500',
+                    mounted ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'
+                )}
+                style={{
+                    background: `linear-gradient(180deg, ${abyssTheme.mid} 0%, ${abyssTheme.void} 100%)`,
+                    border: `2px solid ${abyssTheme.accent}50`,
+                    boxShadow: `0 0 40px ${abyssTheme.accent}30`,
+                }}
                 onClick={(e) => e.stopPropagation()}
             >
-                <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center z-10" style={{ background: `${abyssTheme.deep}cc`, border: `1px solid ${abyssTheme.teal}30` }}>
+                <button
+                    onClick={onClose}
+                    className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center z-10"
+                    style={{
+                        background: `${abyssTheme.deep}cc`,
+                        border: `1px solid ${abyssTheme.teal}30`,
+                    }}
+                >
                     <X className="w-4 h-4" style={{ color: abyssTheme.teal }} />
                 </button>
 
                 <div className="p-6 pt-8 text-center">
-                    <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center mb-5" style={{ background: `radial-gradient(circle, ${abyssTheme.deep} 0%, ${abyssTheme.void} 100%)`, border: `3px solid ${abyssTheme.accent}50`, boxShadow: `0 0 30px ${abyssTheme.accent}30` }}>
-                        <div className="w-12 h-7 rounded-full flex items-center justify-center overflow-hidden" style={{ background: 'radial-gradient(ellipse, #d8ccc0 0%, #a89888 100%)' }}>
-                            <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: `radial-gradient(circle, ${abyssTheme.red} 0%, #501020 70%)` }}>
+                    <div
+                        className="mx-auto w-20 h-20 rounded-full flex items-center justify-center mb-5"
+                        style={{
+                            background: `radial-gradient(circle, ${abyssTheme.deep} 0%, ${abyssTheme.void} 100%)`,
+                            border: `3px solid ${abyssTheme.accent}50`,
+                            boxShadow: `0 0 30px ${abyssTheme.accent}30`,
+                        }}
+                    >
+                        <div
+                            className="w-12 h-7 rounded-full flex items-center justify-center overflow-hidden"
+                            style={{
+                                background: 'radial-gradient(ellipse, #d8ccc0 0%, #a89888 100%)',
+                            }}
+                        >
+                            <div
+                                className="w-6 h-6 rounded-full flex items-center justify-center"
+                                style={{
+                                    background: `radial-gradient(circle, ${abyssTheme.red} 0%, #501020 70%)`,
+                                }}
+                            >
                                 <div className="w-3 h-3 rounded-full bg-black animate-pulse" />
                             </div>
                         </div>
                     </div>
 
-                    <h2 className="text-xl font-black mb-3" style={{ color: abyssTheme.accent, textShadow: `0 0 20px ${abyssTheme.accent}60` }}>{t('game.abyss.notWorthy')}</h2>
-                    <p className="text-sm mb-6" style={{ color: abyssTheme.teal }}>{t('game.abyss.proveYourself')}</p>
+                    <h2
+                        className="text-xl font-black mb-3"
+                        style={{
+                            color: abyssTheme.accent,
+                            textShadow: `0 0 20px ${abyssTheme.accent}60`,
+                        }}
+                    >
+                        {t('game.abyss.notWorthy')}
+                    </h2>
+                    <p className="text-sm mb-6" style={{ color: abyssTheme.teal }}>
+                        {t('game.abyss.proveYourself')}
+                    </p>
 
-                    <div className="rounded-xl p-4 mb-4" style={{ background: `${abyssTheme.void}cc`, border: `1px solid ${abyssTheme.teal}20` }}>
+                    <div
+                        className="rounded-xl p-4 mb-4"
+                        style={{
+                            background: `${abyssTheme.void}cc`,
+                            border: `1px solid ${abyssTheme.teal}20`,
+                        }}
+                    >
                         <div className="flex justify-between mb-2">
-                            <span className="text-xs" style={{ color: `${abyssTheme.teal}99` }}>{t('game.abyss.currentDepth')}</span>
-                            <span className="text-xs" style={{ color: `${abyssTheme.gold}99` }}>{t('game.abyss.required')}</span>
+                            <span className="text-xs" style={{ color: `${abyssTheme.teal}99` }}>
+                                {t('game.abyss.currentDepth')}
+                            </span>
+                            <span className="text-xs" style={{ color: `${abyssTheme.gold}99` }}>
+                                {t('game.abyss.required')}
+                            </span>
                         </div>
-                        <div className="h-3 rounded-full overflow-hidden mb-2" style={{ background: abyssTheme.void }}>
-                            <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(100, (currentDepth / requiredDepth) * 100)}%`, background: `linear-gradient(90deg, ${abyssTheme.teal} 0%, ${abyssTheme.accent} 100%)` }} />
+                        <div
+                            className="h-3 rounded-full overflow-hidden mb-2"
+                            style={{ background: abyssTheme.void }}
+                        >
+                            <div
+                                className="h-full rounded-full transition-all"
+                                style={{
+                                    width: `${Math.min(100, (currentDepth / requiredDepth) * 100)}%`,
+                                    background: `linear-gradient(90deg, ${abyssTheme.teal} 0%, ${abyssTheme.accent} 100%)`,
+                                }}
+                            />
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-lg font-bold" style={{ color: abyssTheme.teal }}>{currentDepth}</span>
-                            <span className="text-lg font-bold" style={{ color: abyssTheme.gold }}>{requiredDepth}</span>
+                            <span className="text-lg font-bold" style={{ color: abyssTheme.teal }}>
+                                {currentDepth}
+                            </span>
+                            <span className="text-lg font-bold" style={{ color: abyssTheme.gold }}>
+                                {requiredDepth}
+                            </span>
                         </div>
                     </div>
-                    <p className="text-xs" style={{ color: `${abyssTheme.accent}80` }}>{t('game.abyss.hint', { depth: requiredDepth })}</p>
+                    <p className="text-xs" style={{ color: `${abyssTheme.accent}80` }}>
+                        {t('game.abyss.hint', { depth: requiredDepth })}
+                    </p>
                 </div>
-                <div className="h-1" style={{ background: `linear-gradient(90deg, transparent, ${abyssTheme.accent}60, transparent)` }} />
+                <div
+                    className="h-1"
+                    style={{
+                        background: `linear-gradient(90deg, transparent, ${abyssTheme.accent}60, transparent)`,
+                    }}
+                />
             </div>
         </div>
     )
@@ -197,28 +289,40 @@ function WobblediverScreen({
     const hasRecords = bestDepth > 0 || highScore > 0
 
     // More watching eyes scattered around (increased for atmosphere)
-    const eyes = useMemo(() => Array.from({ length: 12 }, (_, i) => ({
-        x: 5 + (i % 2 === 0 ? Math.random() * 30 : 65 + Math.random() * 30),
-        y: 25 + Math.random() * 55,
-        size: 10 + Math.random() * 22,
-        delay: i * 0.4,
-    })), [])
+    const eyes = useMemo(
+        () =>
+            Array.from({ length: 12 }, (_, i) => ({
+                x: 5 + (i % 2 === 0 ? Math.random() * 30 : 65 + Math.random() * 30),
+                y: 25 + Math.random() * 55,
+                size: 10 + Math.random() * 22,
+                delay: i * 0.4,
+            })),
+        []
+    )
 
-    const bubbles = useMemo(() => Array.from({ length: 15 }, (_, i) => ({
-        x: Math.random() * 100,
-        delay: Math.random() * 8,
-        duration: 6 + Math.random() * 5,
-        size: 2 + Math.random() * 6,
-    })), [])
+    const bubbles = useMemo(
+        () =>
+            Array.from({ length: 15 }, (_, i) => ({
+                x: Math.random() * 100,
+                delay: Math.random() * 8,
+                duration: 6 + Math.random() * 5,
+                size: 2 + Math.random() * 6,
+            })),
+        []
+    )
 
     // Floating particles (eldritch motes) - more for atmosphere
-    const particles = useMemo(() => Array.from({ length: 30 }, () => ({
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        size: 1 + Math.random() * 4,
-        duration: 3 + Math.random() * 5,
-        delay: Math.random() * 6,
-    })), [])
+    const particles = useMemo(
+        () =>
+            Array.from({ length: 30 }, () => ({
+                x: Math.random() * 100,
+                y: Math.random() * 100,
+                size: 1 + Math.random() * 4,
+                duration: 3 + Math.random() * 5,
+                delay: Math.random() * 6,
+            })),
+        []
+    )
 
     return (
         <div className="absolute inset-0 flex flex-col overflow-hidden">
@@ -263,7 +367,11 @@ function WobblediverScreen({
 
             {/* === ABYSS MOUTH AT BOTTOM - Like drawAbyssMouth === */}
             <div className="absolute bottom-20 left-0 right-0 h-40 pointer-events-none z-[2]">
-                <svg viewBox="0 0 400 160" className="w-full h-full" preserveAspectRatio="xMidYMax slice">
+                <svg
+                    viewBox="0 0 400 160"
+                    className="w-full h-full"
+                    preserveAspectRatio="xMidYMax slice"
+                >
                     <defs>
                         <radialGradient id="mouthGrad" cx="50%" cy="100%" r="80%">
                             <stop offset="0%" stopColor="#2a0818" />
@@ -279,9 +387,23 @@ function WobblediverScreen({
                         </filter>
                     </defs>
                     {/* Outer glow */}
-                    <ellipse cx="200" cy="160" rx="150" ry="80" fill="#dc262620" filter="url(#mouthGlow)" />
+                    <ellipse
+                        cx="200"
+                        cy="160"
+                        rx="150"
+                        ry="80"
+                        fill="#dc262620"
+                        filter="url(#mouthGlow)"
+                    />
                     {/* Mouth opening */}
-                    <ellipse cx="200" cy="160" rx="130" ry="70" fill="url(#mouthGrad)" className="animate-mouth-pulse" />
+                    <ellipse
+                        cx="200"
+                        cy="160"
+                        rx="130"
+                        ry="70"
+                        fill="url(#mouthGrad)"
+                        className="animate-mouth-pulse"
+                    />
                     {/* Inner darkness */}
                     <ellipse cx="200" cy="165" rx="90" ry="50" fill="#000" opacity="0.95" />
                     {/* Upper teeth - sharp fangs */}
@@ -291,7 +413,10 @@ function WobblediverScreen({
                             points={`${200 + offset - 10},100 ${200 + offset},125 ${200 + offset + 10},100`}
                             fill="#f5f5dc"
                             className="animate-teeth"
-                            style={{ animationDelay: `${i * 0.1}s`, filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.5))' }}
+                            style={{
+                                animationDelay: `${i * 0.1}s`,
+                                filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.5))',
+                            }}
                         />
                     ))}
                     {/* Smaller inner teeth */}
@@ -306,9 +431,21 @@ function WobblediverScreen({
                         />
                     ))}
                     {/* Gum/lip line - darker and more menacing */}
-                    <path d="M70,105 Q135,85 200,80 Q265,85 330,105" stroke="#4a1525" strokeWidth="10" fill="none" opacity="0.9" />
+                    <path
+                        d="M70,105 Q135,85 200,80 Q265,85 330,105"
+                        stroke="#4a1525"
+                        strokeWidth="10"
+                        fill="none"
+                        opacity="0.9"
+                    />
                     {/* Inner gum highlight */}
-                    <path d="M90,108 Q145,92 200,88 Q255,92 310,108" stroke="#6a2535" strokeWidth="4" fill="none" opacity="0.6" />
+                    <path
+                        d="M90,108 Q145,92 200,88 Q255,92 310,108"
+                        stroke="#6a2535"
+                        strokeWidth="4"
+                        fill="none"
+                        opacity="0.6"
+                    />
                 </svg>
             </div>
 
@@ -336,7 +473,12 @@ function WobblediverScreen({
                 <div
                     key={i}
                     className="absolute animate-eye-blink z-5"
-                    style={{ left: `${eye.x}%`, top: `${eye.y}%`, animationDelay: `${eye.delay}s`, animationDuration: `${4 + i * 0.5}s` }}
+                    style={{
+                        left: `${eye.x}%`,
+                        top: `${eye.y}%`,
+                        animationDelay: `${eye.delay}s`,
+                        animationDuration: `${4 + i * 0.5}s`,
+                    }}
                 >
                     {/* Outer red glow - like drawAbyssEyeOverlay */}
                     <div
@@ -372,8 +514,25 @@ function WobblediverScreen({
 
             {/* === RISING BUBBLES === */}
             {bubbles.map((b, i) => (
-                <div key={i} className="absolute animate-bubble-rise z-0" style={{ left: `${b.x}%`, bottom: 0, animationDelay: `${b.delay}s`, animationDuration: `${b.duration}s` }}>
-                    <div className="rounded-full" style={{ width: b.size, height: b.size, background: `radial-gradient(circle at 30% 30%, ${abyssTheme.teal}50, transparent)`, border: `1px solid ${abyssTheme.teal}25` }} />
+                <div
+                    key={i}
+                    className="absolute animate-bubble-rise z-0"
+                    style={{
+                        left: `${b.x}%`,
+                        bottom: 0,
+                        animationDelay: `${b.delay}s`,
+                        animationDuration: `${b.duration}s`,
+                    }}
+                >
+                    <div
+                        className="rounded-full"
+                        style={{
+                            width: b.size,
+                            height: b.size,
+                            background: `radial-gradient(circle at 30% 30%, ${abyssTheme.teal}50, transparent)`,
+                            border: `1px solid ${abyssTheme.teal}25`,
+                        }}
+                    />
                 </div>
             ))}
 
@@ -384,7 +543,11 @@ function WobblediverScreen({
                     {/* Shadow */}
                     <div
                         className="absolute inset-0"
-                        style={{ background: abyssTheme.void, transform: 'skewX(-5deg) translateX(6px) translateY(6px)', clipPath: 'polygon(5% 0%, 100% 0%, 95% 100%, 0% 100%)' }}
+                        style={{
+                            background: abyssTheme.void,
+                            transform: 'skewX(-5deg) translateX(6px) translateY(6px)',
+                            clipPath: 'polygon(5% 0%, 100% 0%, 95% 100%, 0% 100%)',
+                        }}
                     />
                     {/* Border */}
                     <div
@@ -411,7 +574,11 @@ function WobblediverScreen({
                     {/* Bottom accent line */}
                     <div
                         className="absolute -bottom-1 left-0 right-0 h-1"
-                        style={{ background: abyssTheme.teal, transform: 'skewX(-5deg)', boxShadow: `0 0 15px ${abyssTheme.teal}` }}
+                        style={{
+                            background: abyssTheme.teal,
+                            transform: 'skewX(-5deg)',
+                            boxShadow: `0 0 15px ${abyssTheme.teal}`,
+                        }}
                     />
                 </div>
 
@@ -454,19 +621,38 @@ function WobblediverScreen({
                         boxShadow: `0 0 20px ${abyssTheme.gold}60, 0 0 40px ${abyssTheme.gold}30`,
                     }}
                 >
-                    <div className="absolute inset-0 opacity-60" style={{ background: `repeating-linear-gradient(180deg, transparent 0px, transparent 6px, ${abyssTheme.gold}90 6px, ${abyssTheme.gold}90 8px)` }} />
+                    <div
+                        className="absolute inset-0 opacity-60"
+                        style={{
+                            background: `repeating-linear-gradient(180deg, transparent 0px, transparent 6px, ${abyssTheme.gold}90 6px, ${abyssTheme.gold}90 8px)`,
+                        }}
+                    />
                 </div>
 
                 {/* Wobble with glow */}
                 <div className="relative animate-diver-swing">
-                    <div className="absolute inset-0 rounded-full blur-3xl -z-10" style={{ background: abyssTheme.gold, transform: 'scale(3)', opacity: 0.25 }} />
-                    <div className="absolute inset-0 rounded-full blur-xl -z-10" style={{ background: abyssTheme.gold, transform: 'scale(2)', opacity: 0.4 }} />
+                    <div
+                        className="absolute inset-0 rounded-full blur-3xl -z-10"
+                        style={{
+                            background: abyssTheme.gold,
+                            transform: 'scale(3)',
+                            opacity: 0.25,
+                        }}
+                    />
+                    <div
+                        className="absolute inset-0 rounded-full blur-xl -z-10"
+                        style={{ background: abyssTheme.gold, transform: 'scale(2)', opacity: 0.4 }}
+                    />
                     <WobbleDisplay size={90} shape="circle" color={0xf5b041} expression="worried" />
                 </div>
 
                 {/* Water surface */}
                 <div className="absolute bottom-0 left-0 right-0 h-24 overflow-hidden pointer-events-none">
-                    <svg className="absolute bottom-0 w-full h-20" viewBox="0 0 400 80" preserveAspectRatio="none">
+                    <svg
+                        className="absolute bottom-0 w-full h-20"
+                        viewBox="0 0 400 80"
+                        preserveAspectRatio="none"
+                    >
                         <defs>
                             <linearGradient id="waterG" x1="0%" y1="0%" x2="0%" y2="100%">
                                 <stop offset="0%" stopColor={abyssTheme.accent} stopOpacity="0.5" />
@@ -474,8 +660,16 @@ function WobblediverScreen({
                                 <stop offset="100%" stopColor={abyssTheme.void} stopOpacity="1" />
                             </linearGradient>
                         </defs>
-                        <path className="animate-water-wave" d="M0,25 Q50,15 100,25 T200,25 T300,25 T400,25 L400,80 L0,80 Z" fill="url(#waterG)" />
-                        <path className="animate-water-wave-slow" d="M0,30 Q50,22 100,30 T200,30 T300,30 T400,30 L400,80 L0,80 Z" fill={`${abyssTheme.accent}30`} />
+                        <path
+                            className="animate-water-wave"
+                            d="M0,25 Q50,15 100,25 T200,25 T300,25 T400,25 L400,80 L0,80 Z"
+                            fill="url(#waterG)"
+                        />
+                        <path
+                            className="animate-water-wave-slow"
+                            d="M0,30 Q50,22 100,30 T200,30 T300,30 T400,30 L400,80 L0,80 Z"
+                            fill={`${abyssTheme.accent}30`}
+                        />
                     </svg>
                 </div>
             </div>
@@ -493,20 +687,47 @@ function WobblediverScreen({
                 {/* Game info */}
                 <div className="flex items-start justify-between mb-4">
                     <div className="flex-1 pr-4">
-                        <p className="text-sm leading-relaxed" style={{ color: `${abyssTheme.teal}dd` }}>
+                        <p
+                            className="text-sm leading-relaxed"
+                            style={{ color: `${abyssTheme.teal}dd` }}
+                        >
                             {t(game.descKey)}
                         </p>
                     </div>
 
                     {hasRecords && (
                         <div className="flex flex-col gap-2 shrink-0">
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: `${abyssTheme.teal}20`, border: `1px solid ${abyssTheme.teal}50`, boxShadow: `0 0 15px ${abyssTheme.teal}20` }}>
+                            <div
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+                                style={{
+                                    background: `${abyssTheme.teal}20`,
+                                    border: `1px solid ${abyssTheme.teal}50`,
+                                    boxShadow: `0 0 15px ${abyssTheme.teal}20`,
+                                }}
+                            >
                                 <Target className="w-4 h-4" style={{ color: abyssTheme.teal }} />
-                                <span className="text-sm font-bold" style={{ color: abyssTheme.teal }}>{bestDepth}</span>
+                                <span
+                                    className="text-sm font-bold"
+                                    style={{ color: abyssTheme.teal }}
+                                >
+                                    {bestDepth}
+                                </span>
                             </div>
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: `${abyssTheme.gold}20`, border: `1px solid ${abyssTheme.gold}50`, boxShadow: `0 0 15px ${abyssTheme.gold}20` }}>
+                            <div
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+                                style={{
+                                    background: `${abyssTheme.gold}20`,
+                                    border: `1px solid ${abyssTheme.gold}50`,
+                                    boxShadow: `0 0 15px ${abyssTheme.gold}20`,
+                                }}
+                            >
                                 <Trophy className="w-4 h-4" style={{ color: abyssTheme.gold }} />
-                                <span className="text-sm font-bold" style={{ color: abyssTheme.gold }}>{highScore.toLocaleString()}</span>
+                                <span
+                                    className="text-sm font-bold"
+                                    style={{ color: abyssTheme.gold }}
+                                >
+                                    {highScore.toLocaleString()}
+                                </span>
                             </div>
                         </div>
                     )}
@@ -562,12 +783,18 @@ function WobblediverScreen({
 }
 
 // Coming Soon Screen
-function ComingSoonScreen({ t }: { t: (key: string, options?: Record<string, unknown>) => string }) {
+function ComingSoonScreen({
+    t,
+}: {
+    t: (key: string, options?: Record<string, unknown>) => string
+}) {
     return (
         <div className="absolute inset-0 flex flex-col items-center justify-center p-8 pb-24">
             <div className="text-8xl mb-6 opacity-20">?</div>
             <h2 className="text-2xl font-black text-white/40 mb-2">{t('game.comingSoon')}</h2>
-            <p className="text-sm text-white/30 text-center">{t('game.moreComingSoon', { defaultValue: 'More adventures coming soon!' })}</p>
+            <p className="text-sm text-white/30 text-center">
+                {t('game.moreComingSoon', { defaultValue: 'More adventures coming soon!' })}
+            </p>
         </div>
     )
 }
@@ -590,7 +817,10 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreen
     }, [])
 
     return (
-        <div className="relative w-full h-full overflow-hidden" style={{ background: abyssTheme.void }}>
+        <div
+            className="relative w-full h-full overflow-hidden"
+            style={{ background: abyssTheme.void }}
+        >
             {/* Dynamic Balatro Background */}
             {currentGame.balatro && (
                 <div className="absolute inset-0 opacity-50">
@@ -611,7 +841,12 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreen
             )}
 
             {/* Depth gradient overlay */}
-            <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(180deg, transparent 0%, ${abyssTheme.void}40 50%, ${abyssTheme.void}90 100%)` }} />
+            <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                    background: `linear-gradient(180deg, transparent 0%, ${abyssTheme.void}40 50%, ${abyssTheme.void}90 100%)`,
+                }}
+            />
 
             {/* Vignette */}
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)] pointer-events-none" />
@@ -627,8 +862,16 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreen
             >
                 <button
                     onClick={onBack}
-                    className={cn('h-11 w-11 rounded-xl flex items-center justify-center transition-all active:scale-95', mounted ? 'opacity-100' : 'opacity-0')}
-                    style={{ background: `${abyssTheme.mid}dd`, border: `2px solid ${abyssTheme.accent}50`, boxShadow: `0 4px 0 ${abyssTheme.void}, 0 0 20px ${abyssTheme.accent}20`, backdropFilter: 'blur(8px)' }}
+                    className={cn(
+                        'h-11 w-11 rounded-xl flex items-center justify-center transition-all active:scale-95',
+                        mounted ? 'opacity-100' : 'opacity-0'
+                    )}
+                    style={{
+                        background: `${abyssTheme.mid}dd`,
+                        border: `2px solid ${abyssTheme.accent}50`,
+                        boxShadow: `0 4px 0 ${abyssTheme.void}, 0 0 20px ${abyssTheme.accent}20`,
+                        backdropFilter: 'blur(8px)',
+                    }}
                 >
                     <ArrowLeft className="w-5 h-5" style={{ color: abyssTheme.teal }} />
                 </button>
@@ -640,8 +883,14 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreen
                             key={i}
                             className="w-2.5 h-2.5 rounded-full transition-all"
                             style={{
-                                background: i === currentIndex ? currentGame.theme.secondary : `${currentGame.theme.secondary}40`,
-                                boxShadow: i === currentIndex ? `0 0 12px ${currentGame.theme.secondary}` : 'none',
+                                background:
+                                    i === currentIndex
+                                        ? currentGame.theme.secondary
+                                        : `${currentGame.theme.secondary}40`,
+                                boxShadow:
+                                    i === currentIndex
+                                        ? `0 0 12px ${currentGame.theme.secondary}`
+                                        : 'none',
                                 transform: i === currentIndex ? 'scale(1.2)' : 'scale(1)',
                             }}
                         />
@@ -659,7 +908,12 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreen
                     paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0px)',
                 }}
             >
-                <div className={cn('h-full transition-all duration-500', mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95')}>
+                <div
+                    className={cn(
+                        'h-full transition-all duration-500',
+                        mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                    )}
+                >
                     {currentGame.id === 'wobblediver' ? (
                         <WobblediverScreen
                             game={currentGame}
@@ -681,16 +935,30 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreen
             <button
                 onClick={() => canGoLeft && setCurrentIndex((i) => i - 1)}
                 disabled={!canGoLeft}
-                className={cn('absolute left-3 top-1/2 -translate-y-1/2 z-40 w-11 h-11 rounded-full flex items-center justify-center transition-all', canGoLeft ? 'opacity-100 active:scale-95' : 'opacity-20')}
-                style={{ background: `${abyssTheme.mid}cc`, border: `2px solid ${abyssTheme.accent}40`, boxShadow: `0 4px 0 ${abyssTheme.void}` }}
+                className={cn(
+                    'absolute left-3 top-1/2 -translate-y-1/2 z-40 w-11 h-11 rounded-full flex items-center justify-center transition-all',
+                    canGoLeft ? 'opacity-100 active:scale-95' : 'opacity-20'
+                )}
+                style={{
+                    background: `${abyssTheme.mid}cc`,
+                    border: `2px solid ${abyssTheme.accent}40`,
+                    boxShadow: `0 4px 0 ${abyssTheme.void}`,
+                }}
             >
                 <ChevronLeft className="w-6 h-6" style={{ color: abyssTheme.teal }} />
             </button>
             <button
                 onClick={() => canGoRight && setCurrentIndex((i) => i + 1)}
                 disabled={!canGoRight}
-                className={cn('absolute right-3 top-1/2 -translate-y-1/2 z-40 w-11 h-11 rounded-full flex items-center justify-center transition-all', canGoRight ? 'opacity-100 active:scale-95' : 'opacity-20')}
-                style={{ background: `${abyssTheme.mid}cc`, border: `2px solid ${abyssTheme.accent}40`, boxShadow: `0 4px 0 ${abyssTheme.void}` }}
+                className={cn(
+                    'absolute right-3 top-1/2 -translate-y-1/2 z-40 w-11 h-11 rounded-full flex items-center justify-center transition-all',
+                    canGoRight ? 'opacity-100 active:scale-95' : 'opacity-20'
+                )}
+                style={{
+                    background: `${abyssTheme.mid}cc`,
+                    border: `2px solid ${abyssTheme.accent}40`,
+                    boxShadow: `0 4px 0 ${abyssTheme.void}`,
+                }}
             >
                 <ChevronRight className="w-6 h-6" style={{ color: abyssTheme.teal }} />
             </button>

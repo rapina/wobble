@@ -15,7 +15,14 @@ import { Container, Graphics, Text, TextStyle } from 'pixi.js'
 import { AnchorPersonalityConfig, ANCHOR_PERSONALITIES } from './StageConfig'
 
 // Eye expression types for the jellyfish
-type JellyfishExpression = 'happy' | 'excited' | 'sleepy' | 'focused' | 'surprised' | 'annoyed' | 'angry'
+type JellyfishExpression =
+    | 'happy'
+    | 'excited'
+    | 'sleepy'
+    | 'focused'
+    | 'surprised'
+    | 'annoyed'
+    | 'angry'
 
 // Cthulhu-style eldritch language (friendly but eerie)
 const CTHULHU_PHRASES = {
@@ -42,8 +49,8 @@ const CTHULHU_PHRASES = {
     encourage: ["Wgah'nagl...", "Y'hah nog...", "Shugg'ya...", 'Vulgtm...', "N'gha..."],
     happy: ['Iä~', "Ng'ya~", 'Fhtagn~', 'Wgah~'],
     warning: ['Nog!', "Y'gth!", "Wgah'n!", "Cth'ulhu!"],
-    annoyed: ["Grah'n...", "Nygh!", "Shthn'g...", "Mg'lw..."],
-    angry: ["FHTAGN!", "NG'RYTH!", "CTHULHU!", "Y'GOLONAC!"],
+    annoyed: ["Grah'n...", 'Nygh!', "Shthn'g...", "Mg'lw..."],
+    angry: ['FHTAGN!', "NG'RYTH!", 'CTHULHU!', "Y'GOLONAC!"],
 }
 
 export class AnchorWobble {
@@ -116,7 +123,14 @@ export class AnchorWobble {
     // Anger visual effects
     private angerIntensity = 0 // 0 = calm, 1 = max anger (derived from patience)
     private shakeAmount = 0 // Screen shake/jitter when angry
-    private steamParticles: Array<{ x: number; y: number; vx: number; vy: number; life: number; maxLife: number }> = []
+    private steamParticles: Array<{
+        x: number
+        y: number
+        vx: number
+        vy: number
+        life: number
+        maxLife: number
+    }> = []
     private lastSteamSpawn = 0
 
     // Callbacks
@@ -381,16 +395,18 @@ export class AnchorWobble {
         const glowSpeed = 2 + this.angerIntensity * 4
         const baseGlow = 0.3 + this.angerIntensity * 0.15 // Brighter when angry
         const glowPulse = baseGlow + Math.sin(this.time * glowSpeed) * 0.1 + this.pulseAmount * 0.3
-        const glowRadius = this.bellRadius * (1.8 + this.pulseAmount * 0.3 + this.angerIntensity * 0.2)
+        const glowRadius =
+            this.bellRadius * (1.8 + this.pulseAmount * 0.3 + this.angerIntensity * 0.2)
 
         // Outer glow
         g.circle(0, -10, glowRadius)
         g.fill({ color: this.baseColor, alpha: glowPulse * 0.15 })
 
         // Inner glow - redder when angry
-        const innerGlowColor = this.angerIntensity > 0.3
-            ? this.lerpColor(this.baseColor, 0xff4444, (this.angerIntensity - 0.3) * 0.5)
-            : this.baseColor
+        const innerGlowColor =
+            this.angerIntensity > 0.3
+                ? this.lerpColor(this.baseColor, 0xff4444, (this.angerIntensity - 0.3) * 0.5)
+                : this.baseColor
         g.circle(0, -10, glowRadius * 0.6)
         g.fill({ color: innerGlowColor, alpha: glowPulse * 0.2 })
 
@@ -434,7 +450,8 @@ export class AnchorWobble {
             // Draw multiple veins radiating from center
             const veinCount = 4
             for (let i = 0; i < veinCount; i++) {
-                const baseAngle = (i / veinCount) * Math.PI - Math.PI / 2 + Math.PI / (veinCount * 2)
+                const baseAngle =
+                    (i / veinCount) * Math.PI - Math.PI / 2 + Math.PI / (veinCount * 2)
                 const startX = 0
                 const startY = -10
 
@@ -488,9 +505,10 @@ export class AnchorWobble {
             const spotAlpha = 0.4 + Math.sin(this.time * flickerSpeed + i) * 0.2
 
             // Spots become redder when angry
-            const spotColor = this.angerIntensity > 0.5
-                ? this.lerpColor(0xffffff, 0xffaaaa, (this.angerIntensity - 0.5) * 2)
-                : 0xffffff
+            const spotColor =
+                this.angerIntensity > 0.5
+                    ? this.lerpColor(0xffffff, 0xffaaaa, (this.angerIntensity - 0.5) * 2)
+                    : 0xffffff
 
             g.circle(spotX, spotY, 3)
             g.fill({ color: spotColor, alpha: spotAlpha })
@@ -526,13 +544,16 @@ export class AnchorWobble {
             const swayPhase = this.time * currentSpeed + i * 0.5
 
             // Anger adds erratic high-frequency jitter
-            const angerJitter = this.angerIntensity > 0.5
-                ? Math.sin(this.time * 20 + i * 3) * 3 * (this.angerIntensity - 0.5) * 2
-                : 0
+            const angerJitter =
+                this.angerIntensity > 0.5
+                    ? Math.sin(this.time * 20 + i * 3) * 3 * (this.angerIntensity - 0.5) * 2
+                    : 0
 
             // When mourning: minimal sway, droopy posture
             // When angry: wider, more aggressive sway
-            const baseSwayAmount = isMourning ? 3 : 8 + this.pulseAmount * 5 + this.angerIntensity * 6
+            const baseSwayAmount = isMourning
+                ? 3
+                : 8 + this.pulseAmount * 5 + this.angerIntensity * 6
             const flapSwayBoost = this.flapIntensity * 15
             const swayAmount = baseSwayAmount + flapSwayBoost
 
@@ -551,7 +572,12 @@ export class AnchorWobble {
             const mournSag = mournProgress * 10 * Math.abs(spread) // Outer tentacles sag more
 
             // Anger jitter applied to all control points
-            const cp1x = startX + Math.sin(swayPhase) * swayAmount + flapWiggle + spread * mournSag + angerJitter
+            const cp1x =
+                startX +
+                Math.sin(swayPhase) * swayAmount +
+                flapWiggle +
+                spread * mournSag +
+                angerJitter
             const cp1y = startY + length * 0.4 + mournSag * 0.5
             const cp2x =
                 startX +
@@ -560,7 +586,11 @@ export class AnchorWobble {
                 spread * mournSag * 1.5 -
                 angerJitter * 0.5
             const cp2y = startY + length * 0.7 + mournSag
-            const endX = startX + Math.sin(swayPhase + 2) * swayAmount * 0.8 + spread * mournSag * 2 + angerJitter * 0.8
+            const endX =
+                startX +
+                Math.sin(swayPhase + 2) * swayAmount * 0.8 +
+                spread * mournSag * 2 +
+                angerJitter * 0.8
             const endY = startY + length
 
             // Draw tentacle - dimmer when mourning

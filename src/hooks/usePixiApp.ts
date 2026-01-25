@@ -1,10 +1,12 @@
 import { Application } from 'pixi.js'
 import { useEffect, useRef, useState, useCallback, RefObject } from 'react'
 import { pixiColors } from '../utils/pixiHelpers'
-
-// Global queue to serialize PixiJS app lifecycle in React StrictMode
-let globalInitPromise: Promise<void> = Promise.resolve()
-let activeDestroyCount = 0
+import {
+    activeDestroyCount,
+    incrementDestroyCount,
+    decrementDestroyCount,
+    waitForDestroys,
+} from '../utils/pixiLifecycle'
 
 interface UsePixiAppOptions {
     backgroundColor?: number
@@ -52,18 +54,7 @@ export function usePixiApp(
             try {
                 // Wait for any pending destroys to complete before creating new app
                 // This prevents PixiJS v8 shared Batcher corruption in React StrictMode
-                if (activeDestroyCount > 0) {
-                    await new Promise<void>((resolve) => {
-                        const checkDestroy = () => {
-                            if (activeDestroyCount === 0) {
-                                resolve()
-                            } else {
-                                setTimeout(checkDestroy, 50)
-                            }
-                        }
-                        checkDestroy()
-                    })
-                }
+                await waitForDestroys()
 
                 const app = new Application()
 
@@ -138,7 +129,7 @@ export function usePixiApp(
                     }
 
                     // Mark destroy as pending so new apps wait
-                    activeDestroyCount++
+                    incrementDestroyCount()
 
                     // Defer the actual destroy with a longer delay
                     setTimeout(() => {
@@ -147,7 +138,7 @@ export function usePixiApp(
                         } catch (e) {
                             console.warn('[PixiApp] Deferred destroy error (safe to ignore):', e)
                         } finally {
-                            activeDestroyCount--
+                            decrementDestroyCount()
                         }
                     }, 100) // 100ms delay to ensure render cycle completes
                 } catch (e) {

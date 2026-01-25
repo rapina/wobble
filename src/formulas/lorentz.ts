@@ -62,18 +62,8 @@ export const lorentz: Formula = {
             'Controle de trajetórias de partículas em aceleradores',
             'A física por trás do fenômeno das auroras',
         ],
-        'zh-CN': [
-            '电动机的旋转原理',
-            'MRI医学成像设备',
-            '加速器中粒子路径控制',
-            '极光现象的原理',
-        ],
-        'zh-TW': [
-            '電動機的旋轉原理',
-            'MRI醫學成像設備',
-            '加速器中粒子路徑控制',
-            '極光現象的原理',
-        ],
+        'zh-CN': ['电动机的旋转原理', 'MRI医学成像设备', '加速器中粒子路径控制', '极光现象的原理'],
+        'zh-TW': ['電動機的旋轉原理', 'MRI醫學成像設備', '加速器中粒子路徑控制', '極光現象的原理'],
     },
     category: 'electricity',
     variables: [

@@ -1,6 +1,11 @@
 import { useEffect, useRef } from 'react'
 import { Application, Ticker } from 'pixi.js'
 import { Wobble, WobbleExpression, WobbleShape } from './Wobble'
+import {
+    incrementDestroyCount,
+    decrementDestroyCount,
+    waitForDestroys,
+} from '@/utils/pixiLifecycle'
 
 interface WobbleDisplayProps {
     size?: number
@@ -45,18 +50,26 @@ export function WobbleDisplay({
         const container = containerRef.current
         const canvasSize = size * 2
 
-        const app = new Application()
+        const initApp = async () => {
+            // Wait for any pending PixiJS app destroys to complete
+            await waitForDestroys()
 
-        app.init({
-            width: canvasSize,
-            height: canvasSize,
-            backgroundAlpha: 0,
-            antialias: true,
-            resolution: Math.min(window.devicePixelRatio || 1, 2),
-            autoDensity: true,
-        })
-            .then(() => {
-                // Check if this init is still valid (not stale)
+            // Check if still valid after waiting
+            if (!mountedRef.current || currentInitId !== initIdRef.current) return
+
+            try {
+                const app = new Application()
+
+                await app.init({
+                    width: canvasSize,
+                    height: canvasSize,
+                    backgroundAlpha: 0,
+                    antialias: true,
+                    resolution: Math.min(window.devicePixelRatio || 1, 2),
+                    autoDensity: true,
+                })
+
+                // Check if still valid after init
                 if (!mountedRef.current || currentInitId !== initIdRef.current) {
                     try {
                         app.destroy(true, { children: true })
@@ -90,19 +103,29 @@ export function WobbleDisplay({
                 // Wobble animation
                 let phase = 0
                 const tickerCallback = (ticker: Ticker) => {
-                    phase += ticker.deltaTime * 0.05
-                    wobble.updateOptions({
-                        wobblePhase: phase,
-                        scaleX: 1 + Math.sin(phase * 0.8) * 0.03,
-                        scaleY: 1 - Math.sin(phase * 0.8) * 0.03,
-                    })
+                    // Guard against race conditions during cleanup
+                    if (!mountedRef.current || !wobbleRef.current || !appRef.current) {
+                        return
+                    }
+                    try {
+                        phase += ticker.deltaTime * 0.05
+                        wobble.updateOptions({
+                            wobblePhase: phase,
+                            scaleX: 1 + Math.sin(phase * 0.8) * 0.03,
+                            scaleY: 1 - Math.sin(phase * 0.8) * 0.03,
+                        })
+                    } catch {
+                        // Ignore errors during animation - likely cleanup race condition
+                    }
                 }
                 tickerCallbackRef.current = tickerCallback
                 app.ticker.add(tickerCallback)
-            })
-            .catch(() => {
+            } catch {
                 // Ignore init errors
-            })
+            }
+        }
+
+        initApp()
 
         return () => {
             mountedRef.current = false
@@ -117,6 +140,9 @@ export function WobbleDisplay({
             tickerCallbackRef.current = null
 
             if (currentApp) {
+                // Mark destroy as pending so new apps wait
+                incrementDestroyCount()
+
                 // Stop ticker immediately
                 try {
                     currentApp.ticker.stop()
@@ -127,25 +153,29 @@ export function WobbleDisplay({
                     // Ignore ticker errors
                 }
 
+                // Remove canvas from DOM immediately
+                if (currentApp.canvas && currentApp.canvas.parentNode) {
+                    currentApp.canvas.parentNode.removeChild(currentApp.canvas)
+                }
+
                 // Delay destruction to avoid TexturePool race condition
-                // This gives PixiJS time to finish any pending render operations
-                requestAnimationFrame(() => {
-                    setTimeout(() => {
-                        try {
-                            if (currentWobble) {
-                                currentWobble.destroy({ children: true })
-                            }
-                            currentApp.stage.removeChildren()
-                            currentApp.destroy(true, {
-                                children: true,
-                                texture: false,
-                                textureSource: false,
-                            })
-                        } catch {
-                            // Ignore cleanup errors - TexturePool may already be cleared
+                setTimeout(() => {
+                    try {
+                        if (currentWobble) {
+                            currentWobble.destroy({ children: true })
                         }
-                    }, 0)
-                })
+                        currentApp.stage.removeChildren()
+                        currentApp.destroy(true, {
+                            children: true,
+                            texture: false,
+                            textureSource: false,
+                        })
+                    } catch {
+                        // Ignore cleanup errors - TexturePool may already be cleared
+                    } finally {
+                        decrementDestroyCount()
+                    }
+                }, 50)
             }
         }
     }, [size]) // Only recreate on size change

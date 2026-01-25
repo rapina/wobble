@@ -58,6 +58,16 @@
             "quantum": "Quantica",
             "chemistry": "Quimica"
         },
+        "categoryDescriptions": {
+            "mechanics": "Forca, movimento e energia - a base de como as coisas se movem",
+            "wave": "Luz, som e oscilacoes viajando pelo espaco",
+            "gravity": "A forca que mantem os planetas em orbita e faz as macas cairem",
+            "thermodynamics": "Calor, energia e o comportamento das particulas",
+            "electricity": "Cargas, correntes e fenomenos eletromagneticos",
+            "special": "Conceitos fisicos unicos e casos especiais",
+            "quantum": "O estranho mundo dos atomos e particulas subatomicas",
+            "chemistry": "Reacoes, pH e interacoes moleculares"
+        },
         "emptyCategory": "Nenhuma formula nesta categoria",
         "info": {
             "title": "Usos na Vida Real",
@@ -82,8 +92,10 @@
         "sandbox": {
             "welcomeTitle": "Bem-vindo ao Sandbox de Fisica!",
             "welcomeMessage": "Aqui voce pode aprender formulas de fisica interagindo com elas. Ajuste as variaveis e veja como os resultados mudam em tempo real!",
+            "categoryTitle": "Explorar Categorias",
+            "categoryMessage": "Deslize para a esquerda ou direita para explorar as categorias de fisica. Cada categoria contem formulas relacionadas!",
             "selectFormulaTitle": "Selecione uma Formula",
-            "selectFormulaMessage": "Varias formulas de fisica estao disponiveis. Toque em qualquer formula para iniciar a simulacao!",
+            "selectFormulaMessage": "Escolha uma formula da lista abaixo. Toque em qualquer formula para iniciar a simulacao!",
             "canvasTitle": "Tela de Simulacao",
             "canvasMessage": "Os fenomenos fisicos sao visualizados aqui. Ajuste as variaveis e observe como o movimento do personagem Wobble muda!",
             "variableTitle": "Variavel: {{symbol}}",
@@ -159,6 +171,13 @@
         "title": "Conquistas",
         "unlocked": "Conquista Desbloqueada!",
         "progress": "{{unlocked}} de {{total}} desbloqueadas"
+    },
+    "carousel": {
+        "moreFormulas": "{{count}} fórmulas",
+        "formulaCount": "{{count}} fórmulas nesta categoria",
+        "tapToExplore": "Toque uma fórmula para começar",
+        "featuredFormula": "Destaque",
+        "formulas": "fórmulas"
     },
     "wobblediver": {
         "intro": {

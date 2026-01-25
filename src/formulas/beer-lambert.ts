@@ -62,18 +62,8 @@ export const beerLambert: Formula = {
             'Medição de concentração em espectroscopia',
             'Tratamentos médicos a laser',
         ],
-        'zh-CN': [
-            '激光测距仪',
-            '光纤通信中的信号损失',
-            '光谱学中的浓度测量',
-            '医用激光治疗',
-        ],
-        'zh-TW': [
-            '雷射測距儀',
-            '光纖通信中的信號損失',
-            '光譜學中的濃度測量',
-            '醫用雷射治療',
-        ],
+        'zh-CN': ['激光测距仪', '光纤通信中的信号损失', '光谱学中的浓度测量', '医用激光治疗'],
+        'zh-TW': ['雷射測距儀', '光纖通信中的信號損失', '光譜學中的濃度測量', '醫用雷射治療'],
     },
     category: 'wave',
     variables: [

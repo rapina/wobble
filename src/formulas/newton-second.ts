@@ -79,7 +79,15 @@ export const newtonSecond: Formula = {
     variables: [
         {
             symbol: 'm',
-            name: { ko: '질량', en: 'Mass', ja: '質量', es: 'Masa', pt: 'Massa', 'zh-CN': '质量', 'zh-TW': '質量' },
+            name: {
+                ko: '질량',
+                en: 'Mass',
+                ja: '質量',
+                es: 'Masa',
+                pt: 'Massa',
+                'zh-CN': '质量',
+                'zh-TW': '質量',
+            },
             role: 'input',
             unit: 'kg',
             range: [1, 100],
@@ -92,7 +100,15 @@ export const newtonSecond: Formula = {
         },
         {
             symbol: 'a',
-            name: { ko: '가속도', en: 'Acceleration', ja: '加速度', es: 'Aceleración', pt: 'Aceleração', 'zh-CN': '加速度', 'zh-TW': '加速度' },
+            name: {
+                ko: '가속도',
+                en: 'Acceleration',
+                ja: '加速度',
+                es: 'Aceleración',
+                pt: 'Aceleração',
+                'zh-CN': '加速度',
+                'zh-TW': '加速度',
+            },
             role: 'input',
             unit: 'm/s²',
             range: [0.1, 20],
@@ -105,7 +121,15 @@ export const newtonSecond: Formula = {
         },
         {
             symbol: 'F',
-            name: { ko: '힘', en: 'Force', ja: '力', es: 'Fuerza', pt: 'Força', 'zh-CN': '力', 'zh-TW': '力' },
+            name: {
+                ko: '힘',
+                en: 'Force',
+                ja: '力',
+                es: 'Fuerza',
+                pt: 'Força',
+                'zh-CN': '力',
+                'zh-TW': '力',
+            },
             role: 'output',
             unit: 'N',
             range: [0, 2000],

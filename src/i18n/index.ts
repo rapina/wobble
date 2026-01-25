@@ -26,7 +26,8 @@ const normalizeLanguage = (lng: string | undefined): string => {
     const lower = lng.toLowerCase()
     // Handle Chinese variants first (before splitting by -)
     if (lower === 'zh-cn' || lower === 'zh-hans' || lower === 'zh-sg') return 'zh-CN'
-    if (lower === 'zh-tw' || lower === 'zh-hant' || lower === 'zh-hk' || lower === 'zh-mo') return 'zh-TW'
+    if (lower === 'zh-tw' || lower === 'zh-hant' || lower === 'zh-hk' || lower === 'zh-mo')
+        return 'zh-TW'
     if (lower.startsWith('zh')) return 'zh-CN' // Default Chinese to Simplified
     const base = lower.split('-')[0]
     if (base === 'en') return 'en'

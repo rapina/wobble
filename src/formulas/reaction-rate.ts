@@ -62,18 +62,8 @@ export const reactionRate: Formula = {
             'Avaliar eficiência do catalisador',
             'Otimizar processos químicos industriais',
         ],
-        'zh-CN': [
-            '预测药物分解速率',
-            '分析食品腐败速率',
-            '评估催化剂效率',
-            '优化工业化学过程',
-        ],
-        'zh-TW': [
-            '預測藥物分解速率',
-            '分析食品腐敗速率',
-            '評估催化劑效率',
-            '優化工業化學過程',
-        ],
+        'zh-CN': ['预测药物分解速率', '分析食品腐败速率', '评估催化剂效率', '优化工业化学过程'],
+        'zh-TW': ['預測藥物分解速率', '分析食品腐敗速率', '評估催化劑效率', '優化工業化學過程'],
     },
     category: 'chemistry',
     variables: [

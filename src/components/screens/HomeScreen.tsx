@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Settings, Bug, ChevronDown, ArrowLeft, Lock, HelpCircle } from 'lucide-react'
+import { Settings, Bug, ArrowLeft, HelpCircle, ChevronDown } from 'lucide-react'
 import { TutorialOverlay, TutorialStep } from '@/components/tutorial/TutorialOverlay'
 import { useAdMob } from '@/hooks/useAdMob'
 import { usePurchaseStore } from '@/stores/purchaseStore'
@@ -12,8 +12,11 @@ import {
     collectionPreset,
     shopPreset,
     labPreset,
+    categoryBackgrounds,
     BackgroundPreset,
 } from '@/config/backgroundPresets'
+import { FormulaCarousel } from '@/components/ui/FormulaCarousel'
+import { categoryConfigs } from '@/config/categoryConfig'
 import ShuffleText from '@/components/ShuffleText'
 import { RotatingText } from '@/components/RotatingText'
 import { LanguageToggle } from '@/components/LanguageToggle'
@@ -26,10 +29,8 @@ import { WOBBLE_CHARACTERS } from '@/components/canvas/Wobble'
 import { useCollectionStore } from '@/stores/collectionStore'
 import { useProgressStore } from '@/stores/progressStore'
 import { useAchievementStore } from '@/stores/achievementStore'
-import { useFormulaUnlockStore } from '@/stores/formulaUnlockStore'
 import { formulaList } from '@/formulas/registry'
 import { Formula, FormulaCategory } from '@/formulas/types'
-import { t as localizeText } from '@/utils/localization'
 import { cn } from '@/lib/utils'
 
 // 개발 빌드 여부
@@ -51,18 +52,6 @@ const theme = {
 
 export type GameMode = 'sandbox' | 'collection' | 'game' | 'learning' | 'shop' | 'lab'
 
-// Category colors for formula cards (matching SandboxScreen)
-const categoryColors: Record<FormulaCategory, string> = {
-    mechanics: '#f8b862',
-    wave: '#6ecff6',
-    gravity: '#c792ea',
-    thermodynamics: '#ff6b6b',
-    electricity: '#69f0ae',
-    special: '#ffd700',
-    quantum: '#e040fb',
-    chemistry: '#4fc3f7',
-}
-
 // Mode-specific background presets
 const modeBackgrounds: Record<GameMode, BackgroundPreset> = {
     sandbox: sandboxPreset,
@@ -76,25 +65,28 @@ const modeBackgrounds: Record<GameMode, BackgroundPreset> = {
 interface HomeScreenProps {
     onSelectMode: (mode: GameMode) => void
     onSelectSandboxFormula?: (formula: Formula) => void
+    initialShowFormulaSelect?: boolean
 }
 
-export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenProps) {
+export function HomeScreen({
+    onSelectMode,
+    onSelectSandboxFormula,
+    initialShowFormulaSelect = false,
+}: HomeScreenProps) {
     const { t, i18n } = useTranslation()
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
     const [isDevOpen, setIsDevOpen] = useState(false)
-    const [showFormulaSelect, setShowFormulaSelect] = useState(false)
-    const [selectedCategory, setSelectedCategory] = useState<FormulaCategory | 'all'>('all')
+    const [showFormulaSelect, setShowFormulaSelect] = useState(initialShowFormulaSelect)
     const [activeSlideIndex, setActiveSlideIndex] = useState(0)
+    // Formula carousel state
+    const [carouselCategory, setCarouselCategory] = useState<FormulaCategory>(
+        categoryConfigs[0]?.id || 'mechanics'
+    )
     const [isSlideAnimating, setIsSlideAnimating] = useState(false)
-    const [seenFormulas] = useState<Set<string>>(() => {
-        const saved = localStorage.getItem('wobble-seen-formulas')
-        return saved ? new Set(JSON.parse(saved)) : new Set()
-    })
     const { getProgress } = useCollectionStore()
     const { studiedFormulas } = useProgressStore()
     const { getProgress: getAchievementProgress } = useAchievementStore()
     const { isAdFree } = usePurchaseStore()
-    const { isUnlocked } = useFormulaUnlockStore()
     const { isInitialized, isBannerVisible, showBanner, isNative } = useAdMob()
     const collectionProgress = getProgress()
     const achievementProgress = getAchievementProgress()
@@ -122,11 +114,18 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                 wobbleExpression: 'happy',
             },
             {
-                targetSymbol: '__formula_first__',
+                targetSymbol: '__category_carousel__',
+                targetType: 'category-carousel' as const,
+                title: t('tutorial.sandbox.categoryTitle'),
+                message: t('tutorial.sandbox.categoryMessage'),
+                wobbleExpression: 'excited',
+            },
+            {
+                targetSymbol: '__formula_list__',
                 targetType: 'formula-list' as const,
                 title: t('tutorial.sandbox.selectFormulaTitle'),
                 message: t('tutorial.sandbox.selectFormulaMessage'),
-                wobbleExpression: 'excited',
+                wobbleExpression: 'happy',
             },
         ],
         [t]
@@ -183,8 +182,13 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
         const timer = setTimeout(() => {
             if (currentStep.targetSymbol === '__welcome__') {
                 setTutorialTargetRect(null)
-            } else if (currentStep.targetSymbol === '__formula_first__') {
-                const el = document.querySelector('[data-tutorial-formula-first]')
+            } else if (currentStep.targetSymbol === '__category_carousel__') {
+                const el = document.querySelector('[data-tutorial-category-carousel]')
+                if (el) {
+                    setTutorialTargetRect(el.getBoundingClientRect())
+                }
+            } else if (currentStep.targetSymbol === '__formula_list__') {
+                const el = document.querySelector('[data-tutorial-formula-list]')
                 if (el) {
                     setTutorialTargetRect(el.getBoundingClientRect())
                 }
@@ -198,14 +202,8 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
     const activeCard = modeCards[activeSlideIndex] || modeCards[0]
     const activeBackground = modeBackgrounds[activeCard.id] || homePreset
 
-    // Get unique categories from formulas
-    const categories = Array.from(new Set(formulaList.map((f) => f.category))) as FormulaCategory[]
-
-    // Filter formulas by selected category
-    const filteredFormulas =
-        selectedCategory === 'all'
-            ? formulaList
-            : formulaList.filter((f) => f.category === selectedCategory)
+    // Get carousel background based on selected category
+    const carouselBackground = categoryBackgrounds[carouselCategory] || sandboxPreset
 
     // Handle slide change - animate description area
     const handleSlideChange = (_mode: GameMode, index: number) => {
@@ -239,6 +237,11 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
     // Handle back from formula select
     const handleBackFromFormulaSelect = () => {
         setShowFormulaSelect(false)
+    }
+
+    // Handle carousel slide change
+    const handleCarouselSlideChange = (category: FormulaCategory) => {
+        setCarouselCategory(category)
     }
 
     // Show AdMob banner when initialized (unless ad-free)
@@ -493,20 +496,22 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                                     transform: 'scale(1.5)',
                                 }}
                             />
-                            {activeCard.id === 'game' ? (
-                                <JellyfishDisplay
-                                    size={80}
-                                    color={activeCard.color}
-                                    animated={true}
-                                />
-                            ) : (
-                                <WobbleDisplay
-                                    size={80}
-                                    shape={activeCard.wobbleShape}
-                                    color={WOBBLE_CHARACTERS[activeCard.wobbleShape].color}
-                                    expression={activeCard.wobbleExpression}
-                                />
-                            )}
+                            {/* Only render when formula carousel is hidden to save WebGL contexts */}
+                            {!showFormulaSelect &&
+                                (activeCard.id === 'game' ? (
+                                    <JellyfishDisplay
+                                        size={80}
+                                        color={activeCard.color}
+                                        animated={true}
+                                    />
+                                ) : (
+                                    <WobbleDisplay
+                                        size={80}
+                                        shape={activeCard.wobbleShape}
+                                        color={WOBBLE_CHARACTERS[activeCard.wobbleShape].color}
+                                        expression={activeCard.wobbleExpression}
+                                    />
+                                ))}
                         </div>
                     </div>
 
@@ -746,33 +751,33 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
             {/* Dev Options Modal */}
             {IS_DEV && <DevOptionsModal isOpen={isDevOpen} onClose={() => setIsDevOpen(false)} />}
 
-            {/* Formula Select Screen for Sandbox */}
+            {/* Formula Select Screen for Sandbox - Carousel View */}
             {showFormulaSelect && (
                 <div
                     className="fixed inset-0 z-50 animate-in fade-in duration-300"
                     style={{ background: '#0a0a12' }}
                 >
-                    {/* Balatro Background */}
-                    <div className="absolute inset-0 opacity-40">
+                    {/* Dynamic Balatro Background - changes with carousel category */}
+                    <div className="absolute inset-0 opacity-40 transition-all duration-500">
                         <Balatro
-                            color1={sandboxPreset.color1}
-                            color2={sandboxPreset.color2}
-                            color3={sandboxPreset.color3}
-                            spinSpeed={sandboxPreset.spinSpeed}
-                            spinRotation={sandboxPreset.spinRotation}
-                            contrast={sandboxPreset.contrast}
-                            lighting={sandboxPreset.lighting}
-                            spinAmount={sandboxPreset.spinAmount}
-                            pixelFilter={sandboxPreset.pixelFilter}
-                            isRotate={sandboxPreset.isRotate}
+                            color1={carouselBackground.color1}
+                            color2={carouselBackground.color2}
+                            color3={carouselBackground.color3}
+                            spinSpeed={carouselBackground.spinSpeed}
+                            spinRotation={carouselBackground.spinRotation}
+                            contrast={carouselBackground.contrast}
+                            lighting={carouselBackground.lighting}
+                            spinAmount={carouselBackground.spinAmount}
+                            pixelFilter={carouselBackground.pixelFilter}
+                            isRotate={carouselBackground.isRotate}
                             mouseInteraction={false}
-                            patternScale={sandboxPreset.patternScale}
-                            warpIntensity={sandboxPreset.warpIntensity}
-                            symmetry={sandboxPreset.symmetry}
-                            flowSpeed={sandboxPreset.flowSpeed}
-                            vortexStrength={sandboxPreset.vortexStrength}
-                            noiseScale={sandboxPreset.noiseScale}
-                            rippleStrength={sandboxPreset.rippleStrength}
+                            patternScale={carouselBackground.patternScale}
+                            warpIntensity={carouselBackground.warpIntensity}
+                            symmetry={carouselBackground.symmetry}
+                            flowSpeed={carouselBackground.flowSpeed}
+                            vortexStrength={carouselBackground.vortexStrength}
+                            noiseScale={carouselBackground.noiseScale}
+                            rippleStrength={carouselBackground.rippleStrength}
                         />
                     </div>
 
@@ -823,7 +828,7 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                         </div>
 
                         {/* Section Title */}
-                        <div className="flex items-center gap-2 mb-3 px-2">
+                        <div className="flex items-center gap-2 mb-4 px-2">
                             <div
                                 className="h-[2px] flex-1"
                                 style={{
@@ -841,114 +846,19 @@ export function HomeScreen({ onSelectMode, onSelectSandboxFormula }: HomeScreenP
                             />
                         </div>
 
-                        {/* Category Tabs */}
-                        <div className="flex gap-2 px-2 py-2 overflow-x-auto scrollbar-hide mb-3">
-                            <button
-                                onClick={() => setSelectedCategory('all')}
-                                className="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-bold transition-all active:scale-95"
-                                style={{
-                                    background:
-                                        selectedCategory === 'all'
-                                            ? theme.gold
-                                            : theme.bgPanelLight,
-                                    color: selectedCategory === 'all' ? '#000' : '#fff',
-                                    border: `2px solid ${theme.border}`,
-                                    boxShadow: `0 2px 0 ${theme.border}`,
-                                }}
-                            >
-                                {t('simulation.categories.all')}
-                            </button>
-                            {categories.map((cat) => {
-                                const color = categoryColors[cat]
-                                const isActive = selectedCategory === cat
-                                return (
-                                    <button
-                                        key={cat}
-                                        onClick={() => setSelectedCategory(cat)}
-                                        className="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-bold transition-all active:scale-95"
-                                        style={{
-                                            background: isActive ? color : theme.bgPanelLight,
-                                            color: isActive ? '#000' : '#fff',
-                                            border: `2px solid ${theme.border}`,
-                                            boxShadow: `0 2px 0 ${theme.border}`,
-                                        }}
-                                    >
-                                        {t(`simulation.categories.${cat}`)}
-                                    </button>
-                                )
-                            })}
+                        {/* Formula Carousel with integrated formula list */}
+                        <div className="flex-1 flex flex-col justify-center overflow-hidden">
+                            <FormulaCarousel
+                                onSelectFormula={handleFormulaSelect}
+                                onSlideChange={handleCarouselSlideChange}
+                            />
                         </div>
 
-                        {/* Formula Grid */}
-                        <div className="flex-1 overflow-y-auto px-2 pb-2">
-                            <div className="grid grid-cols-2 gap-3">
-                                {filteredFormulas.map((f, index) => {
-                                    const fColor = categoryColors[f.category]
-                                    const fName = localizeText(f.name, i18n.language)
-                                    const isNew = !seenFormulas.has(f.id)
-                                    const isLocked = !isAdFree && !isUnlocked(f.id)
-                                    const isFirstFormula = index === 0
-                                    return (
-                                        <div key={f.id} className="relative">
-                                            <button
-                                                onClick={() => handleFormulaSelect(f)}
-                                                data-tutorial-formula-first={
-                                                    isFirstFormula ? 'true' : undefined
-                                                }
-                                                className="relative w-full text-left px-4 py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                                style={{
-                                                    background: isLocked
-                                                        ? '#2a2a2a'
-                                                        : theme.bgPanelLight,
-                                                    border: `2px solid ${theme.border}`,
-                                                    boxShadow: `0 3px 0 ${theme.border}`,
-                                                    opacity: isLocked ? 0.7 : 1,
-                                                }}
-                                            >
-                                                {/* NEW badge for unseen formulas */}
-                                                {isNew && !isLocked && (
-                                                    <span
-                                                        className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 text-[10px] font-black rounded-md"
-                                                        style={{
-                                                            background: '#ff6b6b',
-                                                            color: 'white',
-                                                            border: `1.5px solid ${theme.border}`,
-                                                            boxShadow: `0 1px 0 ${theme.border}`,
-                                                        }}
-                                                    >
-                                                        NEW
-                                                    </span>
-                                                )}
-                                                <div className="flex items-center gap-2">
-                                                    {isLocked ? (
-                                                        <Lock className="w-3 h-3 text-white/50 flex-shrink-0" />
-                                                    ) : (
-                                                        <span
-                                                            className="w-2 h-2 rounded-full flex-shrink-0"
-                                                            style={{ background: fColor }}
-                                                        />
-                                                    )}
-                                                    <span
-                                                        className="block text-sm font-bold truncate"
-                                                        style={{
-                                                            color: isLocked ? '#888' : 'white',
-                                                        }}
-                                                    >
-                                                        {fName}
-                                                    </span>
-                                                </div>
-                                            </button>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-
-                            {/* Empty state */}
-                            {filteredFormulas.length === 0 && (
-                                <div className="text-center py-8 text-white/50 text-sm">
-                                    {t('simulation.emptyCategory')}
-                                </div>
-                            )}
+                        {/* Tap hint */}
+                        <div className="flex justify-center pb-3">
+                            <p className="text-[10px] font-medium text-white/40 uppercase tracking-wider">
+                                {t('carousel.tapToExplore')}
+                            </p>
                         </div>
                     </div>
 

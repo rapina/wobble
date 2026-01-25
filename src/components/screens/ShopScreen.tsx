@@ -1,6 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Check, Loader2, RefreshCw, Sparkles, Ban, CheckCircle, AlertCircle } from 'lucide-react'
+import {
+    ArrowLeft,
+    Check,
+    Loader2,
+    RefreshCw,
+    Sparkles,
+    Ban,
+    CheckCircle,
+    AlertCircle,
+} from 'lucide-react'
 import Balatro from '@/components/Balatro'
 import { shopPreset } from '@/config/backgroundPresets'
 import { useInAppPurchase } from '@/hooks/useInAppPurchase'
@@ -463,7 +472,9 @@ export function ShopScreen({ onBack }: ShopScreenProps) {
                             )}
                             <p
                                 className="text-sm text-center font-medium"
-                                style={{ color: restoreResult === 'success' ? theme.green : theme.blue }}
+                                style={{
+                                    color: restoreResult === 'success' ? theme.green : theme.blue,
+                                }}
                             >
                                 {restoreResult === 'success'
                                     ? t(

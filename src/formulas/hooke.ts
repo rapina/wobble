@@ -62,12 +62,7 @@ export const hooke: Formula = {
             'Projeto de balanças de mola para medição de peso',
             'Projeto de elasticidade para trampolins e pula-pulas',
         ],
-        'zh-CN': [
-            '汽车悬挂系统设计',
-            '调节床垫弹性',
-            '设计弹簧秤刻度',
-            '蹦床和充气城堡的弹性设计',
-        ],
+        'zh-CN': ['汽车悬挂系统设计', '调节床垫弹性', '设计弹簧秤刻度', '蹦床和充气城堡的弹性设计'],
         'zh-TW': [
             '汽車懸吊系統設計',
             '調節床墊彈性',
@@ -79,7 +74,15 @@ export const hooke: Formula = {
     variables: [
         {
             symbol: 'k',
-            name: { ko: '스프링 상수', en: 'Spring Constant', ja: 'バネ定数', es: 'Constante del resorte', pt: 'Constante da mola', 'zh-CN': '弹簧常数', 'zh-TW': '彈簧常數' },
+            name: {
+                ko: '스프링 상수',
+                en: 'Spring Constant',
+                ja: 'バネ定数',
+                es: 'Constante del resorte',
+                pt: 'Constante da mola',
+                'zh-CN': '弹簧常数',
+                'zh-TW': '彈簧常數',
+            },
             role: 'input',
             unit: 'N/m',
             range: [10, 100],
@@ -92,7 +95,15 @@ export const hooke: Formula = {
         },
         {
             symbol: 'x',
-            name: { ko: '변위', en: 'Displacement', ja: '変位', es: 'Desplazamiento', pt: 'Deslocamento', 'zh-CN': '位移', 'zh-TW': '位移' },
+            name: {
+                ko: '변위',
+                en: 'Displacement',
+                ja: '変位',
+                es: 'Desplazamiento',
+                pt: 'Deslocamento',
+                'zh-CN': '位移',
+                'zh-TW': '位移',
+            },
             role: 'input',
             unit: 'm',
             range: [0.1, 2],
@@ -105,7 +116,15 @@ export const hooke: Formula = {
         },
         {
             symbol: 'F',
-            name: { ko: '복원력', en: 'Restoring Force', ja: '復元力', es: 'Fuerza restauradora', pt: 'Força restauradora', 'zh-CN': '恢复力', 'zh-TW': '恢復力' },
+            name: {
+                ko: '복원력',
+                en: 'Restoring Force',
+                ja: '復元力',
+                es: 'Fuerza restauradora',
+                pt: 'Força restauradora',
+                'zh-CN': '恢复力',
+                'zh-TW': '恢復力',
+            },
             role: 'output',
             unit: 'N',
             range: [0, 200],
