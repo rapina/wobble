@@ -250,19 +250,6 @@ export const PERK_DEFINITIONS: PerkDefinition[] = [
             slowMoDuration: 0.5,
         },
     },
-    {
-        id: 'rewind',
-        name: 'Rewind',
-        description: 'Undo death once per run',
-        icon: '⏪',
-        category: 'special',
-        rarity: 'legendary',
-        maxStacks: 2,
-        effect: {
-            rewindUses: 1,
-        },
-    },
-
 ]
 
 /**
