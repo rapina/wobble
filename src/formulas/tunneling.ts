@@ -209,8 +209,13 @@ export const tunneling: Formula = {
             {
                 type: 'group',
                 items: [
-                    { type: 'text', value: '-2κ' },
+                    { type: 'text', value: '-' },
                     { type: 'var', symbol: 'L' },
+                    { type: 'text', value: '√(' },
+                    { type: 'var', symbol: 'V' },
+                    { type: 'text', value: '-' },
+                    { type: 'var', symbol: 'E' },
+                    { type: 'text', value: ')' },
                 ],
             },
         ],

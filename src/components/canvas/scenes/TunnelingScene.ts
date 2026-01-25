@@ -7,10 +7,11 @@ interface Particle {
     x: number
     y: number
     vx: number
-    state: 'approaching' | 'tunneling' | 'transmitted' | 'reflected'
+    state: 'approaching' | 'tunneling' | 'transmitted' | 'reflected' | 'classical'
     willTransmit: boolean
     tunnelingProgress: number
     flash: number
+    trail: { x: number; y: number; alpha: number }[]
 }
 
 export class TunnelingScene extends BaseScene {
@@ -18,6 +19,7 @@ export class TunnelingScene extends BaseScene {
     declare private waveGraphics: Graphics
     declare private particleGraphics: Graphics
     declare private indicatorGraphics: Graphics
+    declare private energyGaugeGraphics: Graphics
     declare private particles: Particle[]
     declare private time: number
     declare private spawnTimer: number
@@ -45,6 +47,9 @@ export class TunnelingScene extends BaseScene {
         this.indicatorGraphics = new Graphics()
         this.container.addChild(this.indicatorGraphics)
 
+        this.energyGaugeGraphics = new Graphics()
+        this.container.addChild(this.energyGaugeGraphics)
+
         // Status label
         const labelStyle = new TextStyle({
             fontFamily: 'system-ui, -apple-system, sans-serif',
@@ -69,17 +74,21 @@ export class TunnelingScene extends BaseScene {
     }
 
     private spawnParticle(offsetX: number = 0): void {
+        const E = this.variables['E'] || 8
+        const V = this.variables['V'] || 10
         const T = this.variables['T'] || 23.5
-        const willTransmit = Math.random() * 100 < T
+        const isClassical = E >= V
+        const willTransmit = isClassical || Math.random() * 100 < T
 
         this.particles.push({
             x: -30 + offsetX,
             y: this.centerY + (Math.random() - 0.5) * 20,
-            vx: 1.5 + Math.random() * 0.5,
+            vx: isClassical ? 2.5 + Math.random() * 0.5 : 1.5 + Math.random() * 0.5,
             state: 'approaching',
             willTransmit,
             tunnelingProgress: 0,
             flash: 0,
+            trail: [],
         })
     }
 
@@ -111,9 +120,10 @@ export class TunnelingScene extends BaseScene {
         // Draw everything
         this.drawWaveFunction(barrierX, barrierWidth, barrierCenterY, E, V, L)
         this.drawBarrier(barrierX, barrierWidth, barrierHeight, barrierCenterY, V, E)
-        this.drawParticles(barrierX, barrierWidth, E)
+        this.drawParticles(barrierX, barrierWidth, E, V)
         this.drawIndicators(T, barrierX, barrierWidth, barrierHeight, barrierCenterY)
-        this.updateStatusLabel(T)
+        this.drawEnergyGauge(E, V, barrierX, barrierCenterY, barrierHeight)
+        this.updateStatusLabel(T, E, V)
     }
 
     private updateParticles(
@@ -125,17 +135,38 @@ export class TunnelingScene extends BaseScene {
         V: number
     ): void {
         const barrierEndX = barrierX + barrierWidth
+        const isClassical = E >= V
 
         this.particles.forEach((p) => {
             p.flash *= 0.9
+
+            // Update trail
+            p.trail.unshift({ x: p.x, y: p.y, alpha: 1 })
+            if (p.trail.length > 8) p.trail.pop()
+            p.trail.forEach((t) => (t.alpha *= 0.85))
 
             switch (p.state) {
                 case 'approaching':
                     p.x += p.vx * delta
                     if (p.x >= barrierX - 15) {
-                        p.state = 'tunneling'
-                        p.flash = 1
+                        if (isClassical) {
+                            p.state = 'classical'
+                            p.flash = 1.5
+                        } else {
+                            p.state = 'tunneling'
+                            p.flash = 1
+                        }
                         this.totalCount++
+                    }
+                    break
+
+                case 'classical':
+                    // Fast pass-through for E >= V
+                    p.x += p.vx * delta * 1.5
+                    if (p.x >= barrierEndX + 10) {
+                        p.state = 'transmitted'
+                        p.flash = 1.5
+                        this.transmittedCount++
                     }
                     break
 
@@ -294,11 +325,12 @@ export class TunnelingScene extends BaseScene {
         g.fill({ color: 0xff6b6b, alpha: 0.4 })
     }
 
-    private drawParticles(barrierX: number, barrierWidth: number, E: number): void {
+    private drawParticles(barrierX: number, barrierWidth: number, E: number, V: number): void {
         const g = this.particleGraphics
         g.clear()
 
         const barrierEndX = barrierX + barrierWidth
+        const isClassical = E >= V
 
         this.particles.forEach((p) => {
             const size = 12 + E * 0.5
@@ -310,13 +342,18 @@ export class TunnelingScene extends BaseScene {
                 case 'approaching':
                     color = pixiColors.wavelength
                     break
+                case 'classical':
+                    // Bright golden when passing classically
+                    color = 0xffd700
+                    alpha = 1
+                    break
                 case 'tunneling':
                     // Particle becomes ghostly while tunneling
                     alpha = 0.5 + Math.sin(this.time * 10) * 0.2
                     color = p.willTransmit ? 0x58d68d : 0xff6b6b
                     break
                 case 'transmitted':
-                    color = 0x58d68d
+                    color = isClassical ? 0xffd700 : 0x58d68d
                     break
                 case 'reflected':
                     color = 0xff6b6b
@@ -324,17 +361,18 @@ export class TunnelingScene extends BaseScene {
                     break
             }
 
+            // Draw trail
+            p.trail.forEach((t, i) => {
+                if (i === 0) return
+                const trailSize = size * 0.4 * (1 - i / p.trail.length)
+                g.circle(t.x, t.y, trailSize)
+                g.fill({ color, alpha: t.alpha * 0.3 })
+            })
+
             // Flash effect
             if (p.flash > 0.1) {
-                g.circle(p.x, p.y, size * 2 * p.flash)
-                g.fill({ color, alpha: p.flash * 0.3 })
-            }
-
-            // Trail
-            if (p.state === 'transmitted') {
-                g.moveTo(p.x, p.y)
-                g.lineTo(p.x - 20, p.y)
-                g.stroke({ color, width: size * 0.5, alpha: 0.3 })
+                g.circle(p.x, p.y, size * 2.5 * p.flash)
+                g.fill({ color, alpha: p.flash * 0.4 })
             }
 
             // Particle body (diamond shape for Gem)
@@ -349,6 +387,12 @@ export class TunnelingScene extends BaseScene {
             // Inner highlight
             g.circle(p.x, p.y, size * 0.3)
             g.fill({ color: 0xffffff, alpha: alpha * 0.6 })
+
+            // Classical transmission: bright aura while passing
+            if (p.state === 'classical' && p.x > barrierX && p.x < barrierEndX) {
+                g.circle(p.x, p.y, size * 2)
+                g.fill({ color: 0xffd700, alpha: 0.3 })
+            }
 
             // Tunneling effect: show decay while inside barrier
             if (p.state === 'tunneling' && p.x > barrierX && p.x < barrierEndX) {
@@ -424,10 +468,80 @@ export class TunnelingScene extends BaseScene {
         g.stroke({ color: 0x58d68d, width: 2, alpha: 0.5 })
     }
 
-    private updateStatusLabel(T: number): void {
-        const ratio =
-            this.totalCount > 0 ? Math.round((this.transmittedCount / this.totalCount) * 100) : 0
-        this.statusLabel.text = `투과: ${this.transmittedCount}/${this.totalCount} (이론: ${T.toFixed(0)}%)`
-        this.statusLabel.style.fill = T > 50 ? 0x58d68d : T > 20 ? 0xf39c12 : 0xff6b6b
+    private drawEnergyGauge(
+        E: number,
+        V: number,
+        barrierX: number,
+        barrierCenterY: number,
+        barrierHeight: number
+    ): void {
+        const g = this.energyGaugeGraphics
+        g.clear()
+
+        // Energy gauge on the left side
+        const gaugeX = 20
+        const gaugeWidth = 8
+        const gaugeHeight = barrierHeight + 40
+        const gaugeTop = barrierCenterY - gaugeHeight / 2
+
+        // Max value for scaling
+        const maxEnergy = 12
+
+        // Background
+        g.roundRect(gaugeX, gaugeTop, gaugeWidth, gaugeHeight, 4)
+        g.fill({ color: 0x222233, alpha: 0.7 })
+        g.stroke({ color: 0x444466, width: 1 })
+
+        // V level marker (barrier height)
+        const vY = gaugeTop + gaugeHeight * (1 - V / maxEnergy)
+        const vBarWidth = 25
+
+        // V zone (danger zone above E)
+        g.rect(gaugeX, gaugeTop, gaugeWidth, vY - gaugeTop)
+        g.fill({ color: 0xff6b6b, alpha: 0.3 })
+
+        // V level line
+        g.moveTo(gaugeX - 2, vY)
+        g.lineTo(gaugeX + vBarWidth, vY)
+        g.stroke({ color: 0xff6b6b, width: 2 })
+
+        // V label
+        g.circle(gaugeX + vBarWidth + 8, vY, 10)
+        g.fill({ color: 0xff6b6b, alpha: 0.6 })
+
+        // E level indicator (particle energy)
+        const eY = gaugeTop + gaugeHeight * (1 - E / maxEnergy)
+
+        // E fill from bottom
+        g.rect(gaugeX, eY, gaugeWidth, gaugeTop + gaugeHeight - eY)
+        g.fill({ color: E >= V ? 0xffd700 : pixiColors.energy, alpha: 0.8 })
+
+        // E level line
+        g.moveTo(gaugeX - 2, eY)
+        g.lineTo(gaugeX + vBarWidth, eY)
+        g.stroke({ color: E >= V ? 0xffd700 : pixiColors.energy, width: 2 })
+
+        // E label
+        g.circle(gaugeX + vBarWidth + 8, eY, 10)
+        g.fill({ color: E >= V ? 0xffd700 : pixiColors.energy, alpha: 0.8 })
+
+        // Classical transmission indicator when E >= V
+        if (E >= V) {
+            // Pulsing glow around gauge
+            const pulseAlpha = 0.3 + Math.sin(this.time * 5) * 0.2
+            g.roundRect(gaugeX - 4, gaugeTop - 4, gaugeWidth + 8, gaugeHeight + 8, 6)
+            g.stroke({ color: 0xffd700, width: 2, alpha: pulseAlpha })
+        }
+    }
+
+    private updateStatusLabel(T: number, E: number, V: number): void {
+        const isClassical = E >= V
+        if (isClassical) {
+            this.statusLabel.text = `E≥V → 100%`
+            this.statusLabel.style.fill = 0xffd700
+        } else {
+            this.statusLabel.text = `${this.transmittedCount}/${this.totalCount} (T=${T.toFixed(0)}%)`
+            this.statusLabel.style.fill = T > 50 ? 0x58d68d : T > 20 ? 0xf39c12 : 0xff6b6b
+        }
     }
 }
