@@ -72,12 +72,21 @@ export function FormulaCarousel({ onSelectFormula, onSlideChange }: FormulaCarou
         }
     }
 
-    const handleActiveIndexChange = (swiper: SwiperType) => {
-        // Use activeIndex directly - it's the most reliable for non-loop mode
+    const handleSlideChangeInternal = (swiper: SwiperType) => {
         const index = swiper.activeIndex
         setActiveIndex(index)
         if (onSlideChange && categoryConfigs[index]) {
             onSlideChange(categoryConfigs[index].id, index)
+        }
+    }
+
+    const handleTransitionEnd = (swiper: SwiperType) => {
+        // Force snap to center position after any transition
+        // This ensures the active slide is always perfectly centered
+        if (swiper && !swiper.destroyed) {
+            const currentIndex = swiper.activeIndex
+            // Use slideToLoop for smoother behavior, but we're not in loop mode
+            swiper.slideTo(currentIndex, 0) // Instant snap to exact position
         }
     }
 
@@ -89,14 +98,12 @@ export function FormulaCarousel({ onSelectFormula, onSlideChange }: FormulaCarou
                     onSwiper={(swiper) => {
                         swiperRef.current = swiper
                     }}
-                    onActiveIndexChange={handleActiveIndexChange}
+                    onSlideChange={handleSlideChangeInternal}
+                    onSlideChangeTransitionEnd={handleTransitionEnd}
                     effect="coverflow"
                     grabCursor={true}
                     centeredSlides={true}
                     slidesPerView="auto"
-                    slideToClickedSlide={true}
-                    speed={300}
-                    threshold={10}
                     coverflowEffect={{
                         rotate: 0,
                         stretch: 0,
