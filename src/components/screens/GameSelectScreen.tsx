@@ -924,6 +924,7 @@ function ComingSoonScreen({
 export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreenProps) {
     const { t } = useTranslation()
     const [mounted, setMounted] = useState(false)
+    const [isInitialLoading, setIsInitialLoading] = useState(true)
     const [currentIndex, setCurrentIndex] = useState(0)
     const [showLockedModal, setShowLockedModal] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
@@ -934,9 +935,16 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreen
     const canGoLeft = currentIndex > 0
     const canGoRight = currentIndex < GAMES.length - 1
 
+    // Initial loading phase - show loading screen while heavy components mount
     useEffect(() => {
-        const timer = setTimeout(() => setMounted(true), 100)
-        return () => clearTimeout(timer)
+        const loadingTimer = setTimeout(() => {
+            setIsInitialLoading(false)
+        }, 400)
+        const mountTimer = setTimeout(() => setMounted(true), 500)
+        return () => {
+            clearTimeout(loadingTimer)
+            clearTimeout(mountTimer)
+        }
     }, [])
 
     // Handle game launch with loading state
@@ -947,6 +955,67 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreen
             onSelectAdventure(gameId, mode)
         }, 800)
     }, [onSelectAdventure])
+
+    // Show initial loading screen while heavy components mount
+    if (isInitialLoading) {
+        return (
+            <div
+                className="relative w-full h-full overflow-hidden flex flex-col items-center justify-center"
+                style={{
+                    background: `linear-gradient(180deg, ${abyssTheme.void} 0%, ${abyssTheme.deep} 100%)`,
+                }}
+            >
+                {/* Giant pulsing eye */}
+                <div className="relative animate-pulse">
+                    <div
+                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                        style={{
+                            width: 180,
+                            height: 90,
+                            background: `radial-gradient(ellipse, ${abyssTheme.accent}40 0%, transparent 70%)`,
+                            filter: 'blur(20px)',
+                        }}
+                    />
+                    <div
+                        className="relative"
+                        style={{
+                            width: 100,
+                            height: 45,
+                            borderRadius: '50%',
+                            background: 'radial-gradient(ellipse, #dc2626 0%, #991b1b 60%, #7f1d1d 100%)',
+                            boxShadow: '0 0 40px #dc262680, 0 0 80px #dc262640',
+                        }}
+                    >
+                        <div
+                            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                            style={{
+                                width: 15,
+                                height: 30,
+                                borderRadius: '50%',
+                                background: '#000',
+                            }}
+                        />
+                    </div>
+                </div>
+                {/* Loading text */}
+                <div className="mt-8 flex items-center gap-3">
+                    <Loader2
+                        className="w-5 h-5 animate-spin"
+                        style={{ color: abyssTheme.teal }}
+                    />
+                    <span
+                        className="text-base font-bold uppercase tracking-wider"
+                        style={{
+                            color: abyssTheme.teal,
+                            textShadow: `0 0 20px ${abyssTheme.teal}60`,
+                        }}
+                    >
+                        Awakening...
+                    </span>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div
