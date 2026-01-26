@@ -830,8 +830,41 @@ function WobblediverScreen({
                         </div>
                     </div>
 
+                    {/* Depth meter / Progress bar */}
+                    <div className="mt-8 w-48">
+                        <div className="flex justify-between mb-2">
+                            <span
+                                className="text-xs uppercase tracking-wider"
+                                style={{ color: `${abyssTheme.teal}99` }}
+                            >
+                                Depth
+                            </span>
+                            <span
+                                className="text-xs font-mono"
+                                style={{ color: abyssTheme.teal }}
+                            >
+                                ???m
+                            </span>
+                        </div>
+                        <div
+                            className="h-2 rounded-full overflow-hidden"
+                            style={{
+                                background: abyssTheme.void,
+                                border: `1px solid ${abyssTheme.accent}40`,
+                            }}
+                        >
+                            <div
+                                className="h-full rounded-full animate-depth-fill"
+                                style={{
+                                    background: `linear-gradient(90deg, ${abyssTheme.teal} 0%, ${abyssTheme.accent} 100%)`,
+                                    boxShadow: `0 0 10px ${abyssTheme.teal}60`,
+                                }}
+                            />
+                        </div>
+                    </div>
+
                     {/* Loading text */}
-                    <div className="mt-8 flex items-center gap-3">
+                    <div className="mt-6 flex items-center gap-3">
                         <Loader2
                             className="w-5 h-5 animate-spin"
                             style={{ color: abyssTheme.teal }}
@@ -843,7 +876,7 @@ function WobblediverScreen({
                                 textShadow: `0 0 20px ${abyssTheme.teal}60`,
                             }}
                         >
-                                                        Descending...
+                            Descending...
                         </span>
                     </div>
 
@@ -909,10 +942,10 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreen
     // Handle game launch with loading state
     const handleSelectGame = useCallback((gameId: string, mode: GameMode) => {
         setIsLoading(true)
-        // Small delay to show loading state before navigation
+        // Show loading for at least 800ms for clear visual feedback
         setTimeout(() => {
             onSelectAdventure(gameId, mode)
-        }, 150)
+        }, 800)
     }, [onSelectAdventure])
 
     return (
@@ -1163,6 +1196,12 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreen
                     50% { transform: translateY(-20px) scale(1.5); opacity: 0.8; }
                 }
                 .animate-loading-particle { animation: loading-particle 2s ease-in-out infinite; }
+
+                @keyframes depth-fill {
+                    0% { width: 0%; }
+                    100% { width: 100%; }
+                }
+                .animate-depth-fill { animation: depth-fill 0.8s ease-out forwards; }
             `}</style>
         </div>
     )

@@ -2,8 +2,16 @@ import { useRef, useEffect, useImperativeHandle, forwardRef, useState } from 're
 import { usePixiApp } from '@/hooks/usePixiApp'
 import { BaseMiniGameScene, MiniGameCallbacks, MiniGamePhase } from './minigame'
 import { WobblediverScene } from './minigame/games/Wobblediver'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Loader2 } from 'lucide-react'
 import { useMinigameRecordStore } from '@/stores/minigameRecordStore'
+
+// Abyss theme colors for loading state
+const abyssTheme = {
+    void: '#030508',
+    deep: '#0a0f18',
+    accent: '#6b5b95',
+    teal: '#4ecdc4',
+}
 
 export type MiniGameId = 'wobblediver'
 
@@ -256,13 +264,64 @@ export const MiniGameCanvas = forwardRef<MiniGameCanvasHandle, MiniGameCanvasPro
                     width,
                     height,
                     display: 'flex',
+                    flexDirection: 'column',
                     justifyContent: 'center',
                     alignItems: 'center',
                     overflow: 'hidden',
-                    background: '#1a1a2e',
+                    background: `linear-gradient(180deg, ${abyssTheme.void} 0%, ${abyssTheme.deep} 100%)`,
                 }}
             >
-                {!isReady && <div className="animate-pulse text-white/30 text-sm">Loading...</div>}
+                {!isReady && (
+                    <div className="flex flex-col items-center gap-6">
+                        {/* Pulsing eye */}
+                        <div className="relative animate-pulse">
+                            <div
+                                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                                style={{
+                                    width: 120,
+                                    height: 60,
+                                    background: `radial-gradient(ellipse, ${abyssTheme.accent}30 0%, transparent 70%)`,
+                                    filter: 'blur(15px)',
+                                }}
+                            />
+                            <div
+                                style={{
+                                    width: 80,
+                                    height: 36,
+                                    borderRadius: '50%',
+                                    background: 'radial-gradient(ellipse, #dc2626 0%, #991b1b 60%, #7f1d1d 100%)',
+                                    boxShadow: '0 0 30px #dc262660, 0 0 60px #dc262630',
+                                }}
+                            >
+                                <div
+                                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                                    style={{
+                                        width: 12,
+                                        height: 24,
+                                        borderRadius: '50%',
+                                        background: '#000',
+                                    }}
+                                />
+                            </div>
+                        </div>
+                        {/* Loading text with spinner */}
+                        <div className="flex items-center gap-3">
+                            <Loader2
+                                className="w-4 h-4 animate-spin"
+                                style={{ color: abyssTheme.teal }}
+                            />
+                            <span
+                                className="text-sm font-bold uppercase tracking-wider"
+                                style={{
+                                    color: abyssTheme.teal,
+                                    textShadow: `0 0 15px ${abyssTheme.teal}50`,
+                                }}
+                            >
+                                Preparing the Abyss...
+                            </span>
+                        </div>
+                    </div>
+                )}
             </div>
         )
     }
