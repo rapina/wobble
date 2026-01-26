@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Play, Lock, Trophy, Target, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Play, Lock, Trophy, Target, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import Balatro from '@/components/Balatro'
 import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
 import { cn } from '@/lib/utils'
@@ -275,6 +275,7 @@ function WobblediverScreen({
     isRunUnlocked,
     bestDepth,
     highScore,
+    isLoading,
     t,
 }: {
     game: GameConfig
@@ -284,41 +285,43 @@ function WobblediverScreen({
     isRunUnlocked: boolean
     bestDepth: number
     highScore: number
+    isLoading: boolean
     t: (key: string) => string
 }) {
     const hasRecords = bestDepth > 0 || highScore > 0
 
-    // More watching eyes scattered around (increased for atmosphere)
+    // Reduced eye count for performance (12 -> 6)
     const eyes = useMemo(
         () =>
-            Array.from({ length: 12 }, (_, i) => ({
+            Array.from({ length: 6 }, (_, i) => ({
                 x: 5 + (i % 2 === 0 ? Math.random() * 30 : 65 + Math.random() * 30),
                 y: 25 + Math.random() * 55,
-                size: 10 + Math.random() * 22,
-                delay: i * 0.4,
+                size: 12 + Math.random() * 20,
+                delay: i * 0.6,
             })),
         []
     )
 
+    // Reduced bubble count for performance (15 -> 8)
     const bubbles = useMemo(
         () =>
-            Array.from({ length: 15 }, (_, i) => ({
+            Array.from({ length: 8 }, (_, i) => ({
                 x: Math.random() * 100,
                 delay: Math.random() * 8,
                 duration: 6 + Math.random() * 5,
-                size: 2 + Math.random() * 6,
+                size: 3 + Math.random() * 5,
             })),
         []
     )
 
-    // Floating particles (eldritch motes) - more for atmosphere
+    // Reduced particle count for performance (30 -> 12)
     const particles = useMemo(
         () =>
-            Array.from({ length: 30 }, () => ({
+            Array.from({ length: 12 }, () => ({
                 x: Math.random() * 100,
                 y: Math.random() * 100,
-                size: 1 + Math.random() * 4,
-                duration: 3 + Math.random() * 5,
+                size: 1.5 + Math.random() * 3.5,
+                duration: 4 + Math.random() * 4,
                 delay: Math.random() * 6,
             })),
         []
@@ -328,7 +331,7 @@ function WobblediverScreen({
         <div className="absolute inset-0 flex flex-col overflow-hidden">
             {/* === GIANT WATCHING EYE - MATCHING GAME STYLE === */}
             <div className="absolute top-[22%] left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-[1]">
-                <div className="relative animate-giant-eye-pulse">
+                <div className="relative animate-giant-eye-pulse" style={{ willChange: 'transform, opacity' }}>
                     {/* Outer red glow (like drawAbyssEyeOverlay) */}
                     <div
                         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
@@ -464,6 +467,7 @@ function WobblediverScreen({
                         animationDuration: `${p.duration}s`,
                         animationDelay: `${p.delay}s`,
                         opacity: 0.6,
+                        willChange: 'transform, opacity',
                     }}
                 />
             ))}
@@ -477,7 +481,8 @@ function WobblediverScreen({
                         left: `${eye.x}%`,
                         top: `${eye.y}%`,
                         animationDelay: `${eye.delay}s`,
-                        animationDuration: `${4 + i * 0.5}s`,
+                        animationDuration: `${5 + i * 0.8}s`,
+                        willChange: 'opacity, transform',
                     }}
                 >
                     {/* Outer red glow - like drawAbyssEyeOverlay */}
@@ -522,6 +527,7 @@ function WobblediverScreen({
                         bottom: 0,
                         animationDelay: `${b.delay}s`,
                         animationDuration: `${b.duration}s`,
+                        willChange: 'transform, opacity',
                     }}
                 >
                     <div
@@ -630,7 +636,7 @@ function WobblediverScreen({
                 </div>
 
                 {/* Wobble with glow */}
-                <div className="relative animate-diver-swing">
+                <div className="relative animate-diver-swing" style={{ willChange: 'transform' }}>
                     <div
                         className="absolute inset-0 rounded-full blur-3xl -z-10"
                         style={{
@@ -737,7 +743,8 @@ function WobblediverScreen({
                 <div className="flex gap-3">
                     <button
                         onClick={onSelectEndless}
-                        className="flex-1 py-4 rounded-xl font-black text-base uppercase tracking-wide transition-all active:scale-[0.98]"
+                        disabled={isLoading}
+                        className="flex-1 py-4 rounded-xl font-black text-base uppercase tracking-wide transition-all active:scale-[0.98] disabled:opacity-50"
                         style={{
                             background: `linear-gradient(135deg, ${abyssTheme.teal} 0%, ${abyssTheme.accent} 100%)`,
                             boxShadow: `0 5px 0 ${abyssTheme.accent}, 0 8px 25px ${abyssTheme.teal}50, inset 0 2px 0 rgba(255,255,255,0.2)`,
@@ -751,7 +758,8 @@ function WobblediverScreen({
                     {isRunUnlocked ? (
                         <button
                             onClick={onSelectRun}
-                            className="flex-1 py-4 rounded-xl font-black text-base uppercase tracking-wide transition-all active:scale-[0.98]"
+                            disabled={isLoading}
+                            className="flex-1 py-4 rounded-xl font-black text-base uppercase tracking-wide transition-all active:scale-[0.98] disabled:opacity-50"
                             style={{
                                 background: `linear-gradient(135deg, ${abyssTheme.gold} 0%, #a67c00 100%)`,
                                 boxShadow: `0 5px 0 #8b6914, 0 8px 25px ${abyssTheme.gold}50, inset 0 2px 0 rgba(255,255,255,0.2)`,
@@ -764,7 +772,8 @@ function WobblediverScreen({
                     ) : (
                         <button
                             onClick={onLockedClick}
-                            className="flex-1 py-4 rounded-xl font-bold text-sm transition-all active:scale-[0.98]"
+                            disabled={isLoading}
+                            className="flex-1 py-4 rounded-xl font-bold text-sm transition-all active:scale-[0.98] disabled:opacity-50"
                             style={{
                                 background: `linear-gradient(135deg, ${abyssTheme.deep} 0%, ${abyssTheme.void} 100%)`,
                                 border: `2px solid ${abyssTheme.accent}60`,
@@ -778,6 +787,86 @@ function WobblediverScreen({
                     )}
                 </div>
             </div>
+
+            {/* === LOADING OVERLAY === */}
+            {isLoading && (
+                <div
+                    className="absolute inset-0 z-50 flex flex-col items-center justify-center transition-opacity duration-300"
+                    style={{
+                        background: `linear-gradient(180deg, ${abyssTheme.void}f0 0%, ${abyssTheme.deep}f8 100%)`,
+                        backdropFilter: 'blur(8px)',
+                    }}
+                >
+                    {/* Giant pulsing eye */}
+                    <div className="relative animate-loading-pulse">
+                        <div
+                            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                            style={{
+                                width: 200,
+                                height: 100,
+                                background: `radial-gradient(ellipse, ${abyssTheme.accent}40 0%, transparent 70%)`,
+                                filter: 'blur(20px)',
+                            }}
+                        />
+                        <div
+                            className="relative"
+                            style={{
+                                width: 120,
+                                height: 54,
+                                borderRadius: '50%',
+                                background: `radial-gradient(ellipse, #dc2626 0%, #991b1b 60%, #7f1d1d 100%)`,
+                                boxShadow: `0 0 40px #dc262680, 0 0 80px #dc262640`,
+                            }}
+                        >
+                            <div
+                                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-loading-iris"
+                                style={{
+                                    width: 18,
+                                    height: 36,
+                                    borderRadius: '50%',
+                                    background: '#000',
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Loading text */}
+                    <div className="mt-8 flex items-center gap-3">
+                        <Loader2
+                            className="w-5 h-5 animate-spin"
+                            style={{ color: abyssTheme.teal }}
+                        />
+                        <span
+                            className="text-lg font-bold uppercase tracking-wider"
+                            style={{
+                                color: abyssTheme.teal,
+                                textShadow: `0 0 20px ${abyssTheme.teal}60`,
+                            }}
+                        >
+                            {t('common.loading', { defaultValue: 'Descending...' })}
+                        </span>
+                    </div>
+
+                    {/* Subtle particles in loading */}
+                    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                        {[...Array(6)].map((_, i) => (
+                            <div
+                                key={i}
+                                className="absolute rounded-full animate-loading-particle"
+                                style={{
+                                    left: `${20 + i * 12}%`,
+                                    top: `${30 + (i % 3) * 20}%`,
+                                    width: 3 + (i % 3),
+                                    height: 3 + (i % 3),
+                                    background: i % 2 === 0 ? abyssTheme.teal : abyssTheme.accent,
+                                    animationDelay: `${i * 0.3}s`,
+                                    opacity: 0.5,
+                                }}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
@@ -804,6 +893,7 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreen
     const [mounted, setMounted] = useState(false)
     const [currentIndex, setCurrentIndex] = useState(0)
     const [showLockedModal, setShowLockedModal] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
     const wobblediverRecord = useMinigameRecordStore((s) => s.getWobblediverRecord())
     const isRunUnlocked = useMinigameRecordStore((s) => s.isRunModeUnlocked())
 
@@ -815,6 +905,15 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreen
         const timer = setTimeout(() => setMounted(true), 100)
         return () => clearTimeout(timer)
     }, [])
+
+    // Handle game launch with loading state
+    const handleSelectGame = useCallback((gameId: string, mode: GameMode) => {
+        setIsLoading(true)
+        // Small delay to show loading state before navigation
+        setTimeout(() => {
+            onSelectAdventure(gameId, mode)
+        }, 150)
+    }, [onSelectAdventure])
 
     return (
         <div
@@ -917,12 +1016,13 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreen
                     {currentGame.id === 'wobblediver' ? (
                         <WobblediverScreen
                             game={currentGame}
-                            onSelectEndless={() => onSelectAdventure('wobblediver', 'endless')}
-                            onSelectRun={() => onSelectAdventure('wobblediver', 'run')}
+                            onSelectEndless={() => handleSelectGame('wobblediver', 'endless')}
+                            onSelectRun={() => handleSelectGame('wobblediver', 'run')}
                             onLockedClick={() => setShowLockedModal(true)}
                             isRunUnlocked={isRunUnlocked}
                             bestDepth={wobblediverRecord.bestDepth}
                             highScore={wobblediverRecord.highScore}
+                            isLoading={isLoading}
                             t={t}
                         />
                     ) : (
@@ -1045,6 +1145,24 @@ export function GameSelectScreen({ onBack, onSelectAdventure }: GameSelectScreen
                 }
                 .animate-water-wave { animation: water-wave 4s ease-in-out infinite; }
                 .animate-water-wave-slow { animation: water-wave 6s ease-in-out infinite; animation-delay: 1s; }
+
+                @keyframes loading-pulse {
+                    0%, 100% { transform: scale(1); opacity: 0.8; }
+                    50% { transform: scale(1.1); opacity: 1; }
+                }
+                .animate-loading-pulse { animation: loading-pulse 1.5s ease-in-out infinite; }
+
+                @keyframes loading-iris {
+                    0%, 100% { transform: translate(-50%, -50%) scaleY(1); }
+                    50% { transform: translate(-50%, -50%) scaleY(0.6); }
+                }
+                .animate-loading-iris { animation: loading-iris 1s ease-in-out infinite; }
+
+                @keyframes loading-particle {
+                    0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
+                    50% { transform: translateY(-20px) scale(1.5); opacity: 0.8; }
+                }
+                .animate-loading-particle { animation: loading-particle 2s ease-in-out infinite; }
             `}</style>
         </div>
     )
