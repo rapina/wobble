@@ -843,7 +843,7 @@ function WobblediverScreen({
                                 textShadow: `0 0 20px ${abyssTheme.teal}60`,
                             }}
                         >
-                            {t('common.loading', { defaultValue: 'Descending...' })}
+                                                        Descending...
                         </span>
                     </div>
 
