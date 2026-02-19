@@ -68,8 +68,6 @@ src/
 
 ## Documentation
 
-- **[FORMULAS.md](./FORMULAS.md)** — Complete list of implemented physics formulas
-- **[SKILLS.md](./SKILLS.md)** — Survivor mode skill system documentation
 - **[Formula Audit](./docs/FORMULA_AUDIT.md)** — All 48 formulas verified against textbook equations
 - **[CLAUDE.md](./CLAUDE.md)** — AI assistant guidance for this codebase
 
