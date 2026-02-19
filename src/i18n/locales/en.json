@@ -1,0 +1,426 @@
+{
+    "home": {
+        "title": "WOBBLE",
+        "sandbox": "Sandbox",
+        "sandboxDesc": "Explore physics freely",
+        "collection": "Collection",
+        "collectionDesc": "Characters, Study, Records",
+        "game": "Game",
+        "gameDesc": "Challenge the minigames!",
+        "lab": "Lab",
+        "labDesc": "Wobbles research physics!",
+        "shop": "Shop",
+        "shopDesc": "Remove ads & special items",
+        "soon": "SOON",
+        "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
+        "tagline": "Play with physics, not formulas."
+    },
+    "lab": {
+        "title": "Physics Lab",
+        "workers": "Workers",
+        "tapStation": "Tap a station to assign",
+        "upgrades": "Upgrades",
+        "appliedStats": "Applied Stats",
+        "perLevel": "per level",
+        "welcomeBack": "Welcome Back!",
+        "ofResearch": "of research",
+        "workersProduced": "Your workers produced:",
+        "collect": "Collect!",
+        "stations": {
+            "gravityLab": "Gravity Lab",
+            "accelerator": "Accelerator",
+            "collisionLab": "Collision Lab",
+            "insulationResearch": "Insulation Research"
+        },
+        "stat": {
+            "hp": "HP",
+            "speed": "Speed",
+            "damage": "Damage",
+            "defense": "Defense"
+        },
+        "resources": {
+            "mass": "Mass",
+            "velocity": "Velocity",
+            "force": "Force",
+            "resistance": "Resistance"
+        }
+    },
+    "simulation": {
+        "loading": "Loading...",
+        "categories": {
+            "all": "All",
+            "mechanics": "Mechanics",
+            "wave": "Wave",
+            "gravity": "Gravity",
+            "thermodynamics": "Thermo",
+            "electricity": "Electric",
+            "special": "Special",
+            "quantum": "Quantum",
+            "chemistry": "Chemistry"
+        },
+        "categoryDescriptions": {
+            "mechanics": "Force, motion, and energy - the foundation of how things move",
+            "wave": "Light, sound, and oscillations traveling through space",
+            "gravity": "The force that keeps planets in orbit and apples falling",
+            "thermodynamics": "Heat, energy, and the behavior of particles",
+            "electricity": "Charges, currents, and electromagnetic phenomena",
+            "special": "Unique physics concepts and special cases",
+            "quantum": "The strange world of atoms and subatomic particles",
+            "chemistry": "Reactions, pH, and molecular interactions"
+        },
+        "emptyCategory": "No formulas in this category",
+        "info": {
+            "title": "Real-World Uses",
+            "applicationsLabel": "Practical Applications",
+            "dontShowAgain": "Don't auto-show for this formula"
+        },
+        "welcome": {
+            "title": "WOBBLE",
+            "description": "Welcome to Wobble!\nSelect a physics formula and explore the simulation.",
+            "openingDesc": "Select a physics formula,\nadjust variables,\nand explore the simulation!",
+            "tapToStart": "Tap to Start",
+            "selectFormula": "Select Formula"
+        }
+    },
+    "tutorial": {
+        "stepMessage": "Tap the {{symbol}} card to adjust {{name}}. Use the slider to see how it affects the simulation!",
+        "infoButtonMessage": "💡 Tap the info button to see real-world applications of this formula!",
+        "next": "Next",
+        "skip": "Skip",
+        "done": "Got it!",
+        "startButton": "How to use",
+        "sandbox": {
+            "welcomeTitle": "Welcome to Physics Sandbox!",
+            "welcomeMessage": "Here you can learn physics formulas by interacting with them. Adjust variables and see how the results change in real-time!",
+            "categoryTitle": "Explore Categories",
+            "categoryMessage": "Swipe left or right to browse physics categories. Each category contains related formulas!",
+            "selectFormulaTitle": "Select a Formula",
+            "selectFormulaMessage": "Choose a formula from the list below. Tap any formula to start the simulation!",
+            "canvasTitle": "Simulation View",
+            "canvasMessage": "Physics phenomena are visualized here. Adjust variables and watch how the Wobble character's movement changes!",
+            "variableTitle": "Variable: {{symbol}}",
+            "variableMessage": "This card controls \"{{name}}\". Tap to select it, then use the slider to change its value!",
+            "challengeTitle": "Challenge Mission",
+            "challengeMessage": "Missions appear at the top. Adjust variables to meet the target conditions!",
+            "submitTitle": "Submit Button",
+            "submitMessage": "Press submit when you think you have the answer! Earn points for correct answers, and combo bonuses for streaks!",
+            "infoTitle": "Info Button",
+            "infoMessage": "Tap this button to see how the formula is used in real life. Check it out if you're curious!"
+        }
+    },
+    "settings": {
+        "title": "Settings",
+        "removeAds": "Remove Ads",
+        "removeAdsDesc": "One-time purchase",
+        "adFree": "Ads Removed",
+        "adFreeDesc": "Enjoy ad-free experience!",
+        "buyFor": "Buy for",
+        "restore": "Restore Purchases",
+        "loading": "Loading...",
+        "loadingProduct": "Loading product...",
+        "webOnly": "Purchases available in the mobile app"
+    },
+    "game": {
+        "title": "Adventure",
+        "selectAdventure": "Select Adventure",
+        "wobbleAdventure": "Planet Wobble Crisis",
+        "wobbleAdventureTag": "SURVIVOR",
+        "wobbleAdventureDesc": "The rules of the world are vanishing! Wobi must survive the Shadow invasion and restore order to Planet Wobble!",
+        "pendulumFrenzy": "Pendulum Frenzy",
+        "pendulumFrenzyDesc": "Cut the rope at the right moment! Master pendulum physics to hit targets.",
+        "wobblediver": "Wobblediver",
+        "wobblediverDesc": "Dive into the abyss! Use pendulum momentum to escape through wormholes. Dodge tentacles as you descend deeper into darkness...",
+        "minigame": "MINIGAME",
+        "comingSoon": "Coming Soon",
+        "levelSelect": "Level Select",
+        "completed": "completed",
+        "locked": "Locked",
+        "success": "Success!",
+        "cleared": "cleared!",
+        "nextLevel": "Next Level",
+        "levels": "Levels",
+        "target": "Target",
+        "tapToContinue": "Tap to continue",
+        "tapForNext": "Tap for next",
+        "tryAgain": "Try Again",
+        "play": "Play",
+        "newWobbleUnlocked": "New Wobble unlocked!",
+        "formulaLearned": "Physics You Used",
+        "formulaUsed": "These formulas powered your game!",
+        "realWorldUse": "Real-world use",
+        "continue": "Continue",
+        "physicsTags": {
+            "pendulumMotion": "Pendulum Motion",
+            "gravity": "Gravity",
+            "momentum": "Momentum"
+        },
+        "abyss": {
+            "notWorthy": "NOT WORTHY",
+            "proveYourself": "The Abyss does not recognize you.\nProve your worth in the endless depths.",
+            "currentDepth": "Your Depth",
+            "required": "Required",
+            "hint": "Reach Depth {{depth}} in Endless mode"
+        }
+    },
+    "share": {
+        "title": "Share Result",
+        "button": "Share",
+        "gameResult": "Achieved {{rank}} rank in Wobble Survivor!\n\nLevel {{level}} | {{kills}} kills | {{time}} survived\n\nA survivor game powered by physics formulas!\n#Wobble #PhysicsGame #Survivor"
+    },
+    "achievements": {
+        "title": "Achievements",
+        "unlocked": "Achievement Unlocked!",
+        "progress": "{{unlocked}} of {{total}} unlocked"
+    },
+    "carousel": {
+        "moreFormulas": "{{count}} formulas",
+        "formulaCount": "{{count}} formulas in this category",
+        "tapToExplore": "Tap a formula to start",
+        "featuredFormula": "Featured",
+        "formulas": "formulas"
+    },
+    "collection": {
+        "title": "COLLECTION",
+        "loading": "Loading...",
+        "tabs": {
+            "characters": "Chars",
+            "study": "Study",
+            "achieve": "Achieve",
+            "records": "Stats"
+        },
+        "characters": {
+            "notDiscovered": "Not yet discovered"
+        },
+        "formulas": {
+            "mechanics": "Mechanics",
+            "gravity": "Gravity",
+            "waves": "Waves & Optics",
+            "thermo": "Thermodynamics",
+            "electricity": "Electricity",
+            "modern": "Modern Physics",
+            "quantum": "Quantum",
+            "chemistry": "Chemistry"
+        },
+        "records": {
+            "wobblediver": "Wobblediver",
+            "abyssDiving": "Abyss Diving Minigame",
+            "bestDepth": "Best Depth",
+            "highScore": "High Score",
+            "totalGames": "Total Games",
+            "sRanks": "S-Ranks",
+            "avgDepth": "Avg Depth",
+            "avgScore": "Avg Score",
+            "noRecords": "No play records yet",
+            "lastPlayed": "Last played: ",
+            "moreGames": "More minigames coming soon!"
+        },
+        "achievements": {
+            "overallProgress": "Overall Progress",
+            "challenges": "Challenges",
+            "next": "Next: ",
+            "maxLevel": "🎉 Max Level!",
+            "keepExploring": "Keep exploring physics to unlock more achievements!"
+        }
+    },
+    "sandbox": {
+        "missions": {
+            "target": "Set {{variable}} to {{value}}{{unit}}!",
+            "range": "Get {{variable}} between {{start}}-{{end}}!",
+            "conditionSingle": "Set {{variable}} to {{condition}}!",
+            "conditionDouble": "{{var1}} to {{cond1}}, {{var2}} to {{cond2}}!"
+        },
+        "conditions": {
+            "maximum": "maximum",
+            "minimum": "minimum",
+            "middle": "middle"
+        },
+        "hints": {
+            "almostThere": "Almost there!",
+            "goHigher": "↑ Go higher!",
+            "aBitMore": "↑ A bit more!",
+            "goLower": "↓ Go lower!",
+            "aBitLess": "↓ A bit less!",
+            "intoRangeUp": "↑ Into the range!",
+            "intoRangeDown": "↓ Into the range!",
+            "inRange": "In range!",
+            "maximize": "↑ Maximize!",
+            "minimize": "↓ Minimize!",
+            "toMiddleUp": "↑ To middle!",
+            "toMiddleDown": "↓ To middle!",
+            "tryAgain": "Try again!"
+        },
+        "locked": {
+            "prerequisite": "Prerequisite",
+            "completeChallenge": "Complete a challenge in \"{{formula}}\"",
+            "loading": "Loading...",
+            "unlock": "Unlock",
+            "locked": "Locked"
+        },
+        "challenge": {
+            "submit": "Submit",
+            "pass": "Pass",
+            "combo": "Combo!"
+        },
+        "ad": {
+            "watchAd": "Watch Ad",
+            "testAd": "Test Advertisement",
+            "rewardSoon": "Reward available soon",
+            "claimReward": "Claim Reward"
+        }
+    },
+    "wobblediver": {
+        "intro": {
+            "title1": "Wobblediver",
+            "message1": "...Where am I?\nSomething is watching me from below...",
+            "title2": "A Strange Friend",
+            "message2": "A jellyfish is swinging me with its tentacle!\nTap to let go and launch toward the wormhole.",
+            "title3": "Escape to the Wormhole!",
+            "message3": "Land in the swirling wormhole to escape!\nHigher accuracy = higher score.",
+            "title4": "Avoid the Abyss",
+            "message4": "Down there... eyes and tentacles are waiting.\nFall in and... there's no return.",
+            "title5": "...I Must Go",
+            "message5": "My jellyfish friend will help.\nBut miss the wormhole and it gets disappointed...\nWhen its patience runs out, I'm on my own."
+        },
+        "panic": {
+            "phrase1": "Ahhhhh!",
+            "phrase2": "Help me!",
+            "phrase3": "No!",
+            "phrase4": "Aaahhh!",
+            "phrase5": "Save me!"
+        },
+        "transitions": {
+            "awaken": "The abyss awakens...",
+            "depth1": "Descending into the abyss...",
+            "depth2": "Deeper into darkness...",
+            "depth3": "Light is disappearing...",
+            "depth4": "Water pressure rising...",
+            "depth5": "They are waking up...",
+            "depth6": "No turning back...",
+            "depth7": "Endless abyss...",
+            "depth8": "Hope is fading...",
+            "tapToStart": "TAP TO START"
+        },
+        "hints": {
+            "wormholeShrinks": "The exit is getting narrower... (wormhole shrinks)",
+            "abyssTentacles": "Something's gripping the exit... (abyss tentacles)",
+            "wormholeDrifts": "The exit is drifting... (wormhole moves)",
+            "portalAppears": "A rift in space opens... (portal appears)",
+            "obstacleAppears": "Something stirs in the walls... (tentacles emerge)",
+            "moreObstacles": "More of them are waking... (more tentacles)",
+            "maxObstacles": "They're everywhere... (max tentacles)",
+            "trajectoryTimed": "Trust your instincts... (trajectory limited)",
+            "trajectoryFlicker": "Something clouds your vision... (trajectory flickers)",
+            "trajectoryMinimal": "Can barely see anything... (trajectory faint)",
+            "waterPressure": "Water pressure rising... (increased gravity)"
+        },
+        "perfect": {
+            "phrase1": "Perfect!",
+            "phrase2": "Amazing!",
+            "phrase3": "Awesome!",
+            "phrase4": "Yay!",
+            "phrase5": "Dimension shift!"
+        },
+        "success": {
+            "phrase1": "Phew~",
+            "phrase2": "I survived!",
+            "phrase3": "Lucky!",
+            "phrase4": "That was close",
+            "phrase5": "Wormhole entry!"
+        },
+        "teleport": {
+            "phrase1": "Warp!",
+            "phrase2": "Teleport!",
+            "phrase3": "Dimension shift!",
+            "phrase4": "Portal jump!"
+        },
+        "pain": {
+            "phrase1": "Ow!",
+            "phrase2": "Ugh!",
+            "phrase3": "It hurts!",
+            "phrase4": "Agh!",
+            "phrase5": "Ouch!",
+            "phrase6": "Argh!"
+        },
+        "ranks": {
+            "S": "The abyss fears you",
+            "A": "Impressive resistance",
+            "B": "Decent prey",
+            "C": "Ordinary sacrifice",
+            "D": "Insignificant soul"
+        },
+        "buttons": {
+            "next": "Next",
+            "start": "...Let's go",
+            "skip": "Skip"
+        },
+        "perkSelection": {
+            "title": "BLESSING",
+            "subtitle": "The jellyfish offers a gift..."
+        },
+        "perks": {
+            "patience_orb": {
+                "name": "Patience Orb",
+                "desc": "+1 Patience"
+            },
+            "calm_aura": {
+                "name": "Calm Aura",
+                "desc": "-20% Patience drain"
+            },
+            "deep_bond": {
+                "name": "Deep Bond",
+                "desc": "+25 Max HP"
+            },
+            "soothing_touch": {
+                "name": "Soothing Touch",
+                "desc": "Restore 10 HP on clear"
+            },
+            "ethereal_shield": {
+                "name": "Ethereal Shield",
+                "desc": "+15 Shield (refills each stage)"
+            },
+            "buoyancy": {
+                "name": "Buoyancy",
+                "desc": "-25% Gravity"
+            },
+            "current_rider": {
+                "name": "Current Rider",
+                "desc": "+15% Swing Speed"
+            },
+            "rift_expansion": {
+                "name": "Rift Expansion",
+                "desc": "+25% Wormhole Size"
+            },
+            "abyssal_sight": {
+                "name": "Abyssal Sight",
+                "desc": "Always show trajectory"
+            },
+            "elastic_membrane": {
+                "name": "Elastic Membrane",
+                "desc": "Bounce off walls"
+            },
+            "tentacle_boost": {
+                "name": "Tentacle Boost",
+                "desc": "Jump once in mid-air"
+            },
+            "time_dilation": {
+                "name": "Time Dilation",
+                "desc": "0.5s slow-mo on release"
+            }
+        }
+    },
+    "shop": {
+        "title": "Shop",
+        "removeAds": "Remove Ads",
+        "removeAdsDesc": "Permanently remove bottom banner ads",
+        "adFreeTitle": "Remove Ads",
+        "adFreeDesc": "Enjoying ad-free experience!",
+        "unlockAllFormulas": "Unlock All Formulas",
+        "unlockAllFormulasDesc": "Permanently unlock all formulas, including future additions.",
+        "allFormulasUnlockedDesc": "All formulas are available!",
+        "loading": "Loading...",
+        "webOnly": "Purchases available in the mobile app",
+        "restorePurchases": "Restore Purchases",
+        "purchasesRestored": "Purchases restored!",
+        "noPurchasesToRestore": "No purchases to restore"
+    }
+}

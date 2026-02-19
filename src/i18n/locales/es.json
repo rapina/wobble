@@ -1,0 +1,426 @@
+{
+    "home": {
+        "title": "WOBBLE",
+        "sandbox": "Sandbox",
+        "sandboxDesc": "Explora la fisica libremente",
+        "collection": "Coleccion",
+        "collectionDesc": "Personajes, Estudio, Registros",
+        "game": "Juego",
+        "gameDesc": "Desafia los minijuegos!",
+        "lab": "Laboratorio",
+        "labDesc": "Los Wobbles investigan fisica!",
+        "shop": "Tienda",
+        "shopDesc": "Quitar anuncios y articulos especiales",
+        "soon": "PRONTO",
+        "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
+        "tagline": "Juega con la física, no con fórmulas."
+    },
+    "lab": {
+        "title": "Laboratorio de Fisica",
+        "workers": "Trabajadores",
+        "tapStation": "Toca una estacion para asignar",
+        "upgrades": "Mejoras",
+        "appliedStats": "Estadisticas Aplicadas",
+        "perLevel": "por nivel",
+        "welcomeBack": "Bienvenido de nuevo!",
+        "ofResearch": "de investigacion",
+        "workersProduced": "Tus trabajadores produjeron:",
+        "collect": "Recolectar!",
+        "stations": {
+            "gravityLab": "Lab de Gravedad",
+            "accelerator": "Acelerador",
+            "collisionLab": "Lab de Colision",
+            "insulationResearch": "Investigacion de Aislamiento"
+        },
+        "stat": {
+            "hp": "Vida",
+            "speed": "Velocidad",
+            "damage": "Dano",
+            "defense": "Defensa"
+        },
+        "resources": {
+            "mass": "Masa",
+            "velocity": "Velocidad",
+            "force": "Fuerza",
+            "resistance": "Resistencia"
+        }
+    },
+    "simulation": {
+        "loading": "Cargando...",
+        "categories": {
+            "all": "Todo",
+            "mechanics": "Mecanica",
+            "wave": "Ondas",
+            "gravity": "Gravedad",
+            "thermodynamics": "Termo",
+            "electricity": "Electricidad",
+            "special": "Especial",
+            "quantum": "Cuantica",
+            "chemistry": "Quimica"
+        },
+        "categoryDescriptions": {
+            "mechanics": "Fuerza, movimiento y energia - la base de como se mueven las cosas",
+            "wave": "Luz, sonido y oscilaciones viajando por el espacio",
+            "gravity": "La fuerza que mantiene los planetas en orbita y hace caer las manzanas",
+            "thermodynamics": "Calor, energia y el comportamiento de las particulas",
+            "electricity": "Cargas, corrientes y fenomenos electromagneticos",
+            "special": "Conceptos fisicos unicos y casos especiales",
+            "quantum": "El extrano mundo de los atomos y particulas subatomicas",
+            "chemistry": "Reacciones, pH e interacciones moleculares"
+        },
+        "emptyCategory": "No hay formulas en esta categoria",
+        "info": {
+            "title": "Usos en la Vida Real",
+            "applicationsLabel": "Aplicaciones Practicas",
+            "dontShowAgain": "No mostrar automaticamente para esta formula"
+        },
+        "welcome": {
+            "title": "WOBBLE",
+            "description": "Bienvenido a Wobble!\nSelecciona una formula de fisica y explora la simulacion.",
+            "openingDesc": "Selecciona una formula de fisica,\najusta las variables,\ny explora la simulacion!",
+            "tapToStart": "Toca para Empezar",
+            "selectFormula": "Seleccionar Formula"
+        }
+    },
+    "tutorial": {
+        "stepMessage": "Toca la tarjeta {{symbol}} para ajustar {{name}}. Usa el deslizador para ver como afecta la simulacion!",
+        "infoButtonMessage": "Toca el boton de info para ver aplicaciones reales de esta formula!",
+        "next": "Siguiente",
+        "skip": "Saltar",
+        "done": "Entendido!",
+        "startButton": "Como usar",
+        "sandbox": {
+            "welcomeTitle": "Bienvenido al Sandbox de Fisica!",
+            "welcomeMessage": "Aqui puedes aprender formulas de fisica interactuando con ellas. Ajusta las variables y observa como cambian los resultados en tiempo real!",
+            "categoryTitle": "Explorar Categorias",
+            "categoryMessage": "Desliza a la izquierda o derecha para explorar las categorias de fisica. Cada categoria contiene formulas relacionadas!",
+            "selectFormulaTitle": "Selecciona una Formula",
+            "selectFormulaMessage": "Elige una formula de la lista de abajo. Toca cualquier formula para iniciar la simulacion!",
+            "canvasTitle": "Vista de Simulacion",
+            "canvasMessage": "Los fenomenos fisicos se visualizan aqui. Ajusta las variables y observa como cambia el movimiento del personaje Wobble!",
+            "variableTitle": "Variable: {{symbol}}",
+            "variableMessage": "Esta tarjeta controla \"{{name}}\". Toca para seleccionarla y usa el deslizador para cambiar su valor!",
+            "challengeTitle": "Mision de Desafio",
+            "challengeMessage": "Las misiones aparecen arriba. Ajusta las variables para cumplir las condiciones objetivo!",
+            "submitTitle": "Boton Enviar",
+            "submitMessage": "Presiona enviar cuando creas tener la respuesta! Gana puntos por respuestas correctas y bonos de combo por rachas!",
+            "infoTitle": "Boton de Info",
+            "infoMessage": "Toca este boton para ver como se usa la formula en la vida real. Echale un vistazo si tienes curiosidad!"
+        }
+    },
+    "settings": {
+        "title": "Ajustes",
+        "removeAds": "Quitar Anuncios",
+        "removeAdsDesc": "Compra unica",
+        "adFree": "Sin Anuncios",
+        "adFreeDesc": "Disfruta sin anuncios!",
+        "buyFor": "Comprar por",
+        "restore": "Restaurar Compras",
+        "loading": "Cargando...",
+        "loadingProduct": "Cargando producto...",
+        "webOnly": "Compras disponibles en la app movil"
+    },
+    "game": {
+        "title": "Aventura",
+        "selectAdventure": "Seleccionar Aventura",
+        "wobbleAdventure": "Crisis en Planeta Wobble",
+        "wobbleAdventureTag": "SUPERVIVENCIA",
+        "wobbleAdventureDesc": "Las reglas del mundo estan desapareciendo! Wobi debe sobrevivir la invasion de Sombras y restaurar el orden en el Planeta Wobble!",
+        "pendulumFrenzy": "Frenesi del Pendulo",
+        "pendulumFrenzyDesc": "Corta la cuerda en el momento justo! Domina la fisica del pendulo para dar en el blanco.",
+        "wobblediver": "Wobblediver",
+        "wobblediverDesc": "Sumérgete en el abismo! Usa el impulso del péndulo para escapar por los agujeros de gusano. Esquiva los tentáculos mientras desciendes a la oscuridad...",
+        "minigame": "MINIJUEGO",
+        "comingSoon": "Proximamente",
+        "levelSelect": "Seleccionar Nivel",
+        "completed": "completado",
+        "locked": "Bloqueado",
+        "success": "Exito!",
+        "cleared": "completado!",
+        "nextLevel": "Siguiente Nivel",
+        "levels": "Niveles",
+        "target": "Objetivo",
+        "tapToContinue": "Toca para continuar",
+        "tapForNext": "Toca para siguiente",
+        "tryAgain": "Intentar de Nuevo",
+        "play": "Jugar",
+        "newWobbleUnlocked": "Nuevo Wobble desbloqueado!",
+        "formulaLearned": "Fisica que Usaste",
+        "formulaUsed": "Estas formulas potenciaron tu juego!",
+        "realWorldUse": "Uso en la vida real",
+        "continue": "Continuar",
+        "physicsTags": {
+            "pendulumMotion": "Movimiento Pendular",
+            "gravity": "Gravedad",
+            "momentum": "Momento"
+        },
+        "abyss": {
+            "notWorthy": "NO ERES DIGNO",
+            "proveYourself": "El Abismo no te reconoce.\nDemuestra tu valor en las profundidades infinitas.",
+            "currentDepth": "Tu Profundidad",
+            "required": "Requerido",
+            "hint": "Alcanza Profundidad {{depth}} en modo Sin Fin"
+        }
+    },
+    "share": {
+        "title": "Compartir Resultado",
+        "button": "Compartir",
+        "gameResult": "Consegui rango {{rank}} en Wobble Survivor!\n\nNivel {{level}} | {{kills}} eliminaciones | {{time}} sobrevivido\n\nUn juego de supervivencia con formulas de fisica!\n#Wobble #JuegoDeFisica #Supervivencia"
+    },
+    "achievements": {
+        "title": "Logros",
+        "unlocked": "Logro Desbloqueado!",
+        "progress": "{{unlocked}} de {{total}} desbloqueados"
+    },
+    "carousel": {
+        "moreFormulas": "{{count}} fórmulas",
+        "formulaCount": "{{count}} fórmulas en esta categoría",
+        "tapToExplore": "Toca una fórmula para empezar",
+        "featuredFormula": "Destacada",
+        "formulas": "fórmulas"
+    },
+    "collection": {
+        "title": "COLECCIÓN",
+        "loading": "Cargando...",
+        "tabs": {
+            "characters": "Chars",
+            "study": "Estudio",
+            "achieve": "Logros",
+            "records": "Stats"
+        },
+        "characters": {
+            "notDiscovered": "Aún no descubierto"
+        },
+        "formulas": {
+            "mechanics": "Mecánica",
+            "gravity": "Gravedad",
+            "waves": "Ondas y Óptica",
+            "thermo": "Termodinámica",
+            "electricity": "Electricidad",
+            "modern": "Física Moderna",
+            "quantum": "Cuántica",
+            "chemistry": "Química"
+        },
+        "records": {
+            "wobblediver": "Wobblediver",
+            "abyssDiving": "Minijuego de Buceo Abisal",
+            "bestDepth": "Mejor Profundidad",
+            "highScore": "Puntuación Máxima",
+            "totalGames": "Partidas Totales",
+            "sRanks": "Rangos S",
+            "avgDepth": "Prof. Promedio",
+            "avgScore": "Punt. Promedio",
+            "noRecords": "Sin registros de juego aún",
+            "lastPlayed": "Última partida: ",
+            "moreGames": "¡Más minijuegos próximamente!"
+        },
+        "achievements": {
+            "overallProgress": "Progreso General",
+            "challenges": "Desafíos",
+            "next": "Siguiente: ",
+            "maxLevel": "🎉 ¡Nivel Máximo!",
+            "keepExploring": "¡Sigue explorando la física para desbloquear más logros!"
+        }
+    },
+    "sandbox": {
+        "missions": {
+            "target": "¡Ajusta {{variable}} a {{value}}{{unit}}!",
+            "range": "¡Pon {{variable}} entre {{start}}-{{end}}!",
+            "conditionSingle": "¡Ajusta {{variable}} al {{condition}}!",
+            "conditionDouble": "¡{{var1}} al {{cond1}}, {{var2}} al {{cond2}}!"
+        },
+        "conditions": {
+            "maximum": "máximo",
+            "minimum": "mínimo",
+            "middle": "medio"
+        },
+        "hints": {
+            "almostThere": "¡Casi listo!",
+            "goHigher": "↑ ¡Sube más!",
+            "aBitMore": "↑ ¡Un poco más!",
+            "goLower": "↓ ¡Baja más!",
+            "aBitLess": "↓ ¡Un poco menos!",
+            "intoRangeUp": "↑ ¡Dentro del rango!",
+            "intoRangeDown": "↓ ¡Dentro del rango!",
+            "inRange": "¡En el rango!",
+            "maximize": "↑ ¡Maximiza!",
+            "minimize": "↓ ¡Minimiza!",
+            "toMiddleUp": "↑ ¡Al medio!",
+            "toMiddleDown": "↓ ¡Al medio!",
+            "tryAgain": "¡Inténtalo de nuevo!"
+        },
+        "locked": {
+            "prerequisite": "Requisito previo",
+            "completeChallenge": "Completa un desafío en \"{{formula}}\"",
+            "loading": "Cargando...",
+            "unlock": "Desbloquear",
+            "locked": "Bloqueado"
+        },
+        "challenge": {
+            "submit": "Enviar",
+            "pass": "Pasar",
+            "combo": "¡Combo!"
+        },
+        "ad": {
+            "watchAd": "Ver anuncio",
+            "testAd": "Anuncio de prueba",
+            "rewardSoon": "Recompensa disponible pronto",
+            "claimReward": "Reclamar recompensa"
+        }
+    },
+    "wobblediver": {
+        "intro": {
+            "title1": "Wobblediver",
+            "message1": "...Donde estoy?\nAlgo me observa desde abajo...",
+            "title2": "Un Amigo Extrano",
+            "message2": "Una medusa me balancea con su tentaculo!\nToca para lanzarte hacia el agujero de gusano.",
+            "title3": "Escapa al Agujero de Gusano!",
+            "message3": "Aterriza en el agujero de gusano para escapar!\nMayor precision = mayor puntuacion.",
+            "title4": "Evita el Abismo",
+            "message4": "Alli abajo... ojos y tentaculos esperan.\nSi caes... no hay retorno.",
+            "title5": "...Debo Ir",
+            "message5": "Mi amiga medusa ayudara.\nPero si fallo el agujero, se decepciona...\nCuando su paciencia se agote, se ira."
+        },
+        "panic": {
+            "phrase1": "Ahhhhh!",
+            "phrase2": "Ayudame!",
+            "phrase3": "No!",
+            "phrase4": "Aaahhh!",
+            "phrase5": "Salvame!"
+        },
+        "transitions": {
+            "awaken": "El abismo despierta...",
+            "depth1": "Descendiendo al abismo...",
+            "depth2": "Mas profundo en la oscuridad...",
+            "depth3": "La luz desaparece...",
+            "depth4": "La presion del agua aumenta...",
+            "depth5": "Estan despertando...",
+            "depth6": "No hay vuelta atras...",
+            "depth7": "Abismo sin fin...",
+            "depth8": "La esperanza se desvanece...",
+            "tapToStart": "TOCA PARA EMPEZAR"
+        },
+        "hints": {
+            "wormholeShrinks": "La salida se estrecha... (agujero se encoge)",
+            "abyssTentacles": "Algo agarra la salida... (tentaculos del abismo)",
+            "wormholeDrifts": "La salida esta derivando... (agujero se mueve)",
+            "portalAppears": "Una grieta en el espacio se abre... (aparece portal)",
+            "obstacleAppears": "Algo se agita en las paredes... (emergen tentaculos)",
+            "moreObstacles": "Mas de ellos despiertan... (mas tentaculos)",
+            "maxObstacles": "Estan por todas partes... (tentaculos maximos)",
+            "trajectoryTimed": "Confia en tus instintos... (trayectoria limitada)",
+            "trajectoryFlicker": "Algo nubla tu vision... (trayectoria parpadea)",
+            "trajectoryMinimal": "Apenas puedo ver... (trayectoria debil)",
+            "waterPressure": "La presion del agua aumenta... (gravedad aumentada)"
+        },
+        "perfect": {
+            "phrase1": "Perfecto!",
+            "phrase2": "Increible!",
+            "phrase3": "Genial!",
+            "phrase4": "Yupi!",
+            "phrase5": "Cambio dimensional!"
+        },
+        "success": {
+            "phrase1": "Uf~",
+            "phrase2": "Sobrevivi!",
+            "phrase3": "Suerte!",
+            "phrase4": "Estuvo cerca",
+            "phrase5": "Entrada al agujero!"
+        },
+        "teleport": {
+            "phrase1": "Warp!",
+            "phrase2": "Teletransporte!",
+            "phrase3": "Cambio dimensional!",
+            "phrase4": "Salto de portal!"
+        },
+        "pain": {
+            "phrase1": "Ay!",
+            "phrase2": "Ugh!",
+            "phrase3": "Duele!",
+            "phrase4": "Agh!",
+            "phrase5": "Auch!",
+            "phrase6": "Argh!"
+        },
+        "ranks": {
+            "S": "El abismo te teme",
+            "A": "Resistencia impresionante",
+            "B": "Presa decente",
+            "C": "Sacrificio ordinario",
+            "D": "Alma insignificante"
+        },
+        "buttons": {
+            "next": "Siguiente",
+            "start": "...Vamos",
+            "skip": "Saltar"
+        },
+        "perkSelection": {
+            "title": "BENDICIÓN",
+            "subtitle": "La medusa ofrece un regalo..."
+        },
+        "perks": {
+            "patience_orb": {
+                "name": "Orbe de Paciencia",
+                "desc": "+1 Paciencia"
+            },
+            "calm_aura": {
+                "name": "Aura de Calma",
+                "desc": "-20% Consumo de paciencia"
+            },
+            "deep_bond": {
+                "name": "Vínculo Profundo",
+                "desc": "+25 HP Máximo"
+            },
+            "soothing_touch": {
+                "name": "Toque Calmante",
+                "desc": "Restaura 10 HP al completar"
+            },
+            "ethereal_shield": {
+                "name": "Escudo Etéreo",
+                "desc": "+15 Escudo (se recarga cada nivel)"
+            },
+            "buoyancy": {
+                "name": "Flotabilidad",
+                "desc": "-25% Gravedad"
+            },
+            "current_rider": {
+                "name": "Jinete de Corrientes",
+                "desc": "+15% Velocidad de Balanceo"
+            },
+            "rift_expansion": {
+                "name": "Expansión de Grieta",
+                "desc": "+25% Tamaño del Agujero"
+            },
+            "abyssal_sight": {
+                "name": "Visión Abismal",
+                "desc": "Siempre muestra trayectoria"
+            },
+            "elastic_membrane": {
+                "name": "Membrana Elástica",
+                "desc": "Rebota en las paredes"
+            },
+            "tentacle_boost": {
+                "name": "Impulso de Tentáculo",
+                "desc": "Salta una vez en el aire"
+            },
+            "time_dilation": {
+                "name": "Dilatación Temporal",
+                "desc": "0.5s cámara lenta al soltar"
+            }
+        }
+    },
+    "shop": {
+        "title": "Tienda",
+        "removeAds": "Quitar Anuncios",
+        "removeAdsDesc": "Elimina permanentemente los anuncios de banner inferiores",
+        "adFreeTitle": "Quitar Anuncios",
+        "adFreeDesc": "¡Disfrutando sin anuncios!",
+        "unlockAllFormulas": "Desbloquear Todas las Fórmulas",
+        "unlockAllFormulasDesc": "Desbloquea permanentemente todas las fórmulas, incluyendo las futuras adiciones.",
+        "allFormulasUnlockedDesc": "¡Todas las fórmulas están disponibles!",
+        "loading": "Cargando...",
+        "webOnly": "Compras disponibles en la app móvil",
+        "restorePurchases": "Restaurar Compras",
+        "purchasesRestored": "¡Compras restauradas!",
+        "noPurchasesToRestore": "No hay compras para restaurar"
+    }
+}

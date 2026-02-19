@@ -1,0 +1,19 @@
+# Android specific files
+android/
+*.apk
+*.aab
+
+# Development files
+.env.development
+.env.local
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

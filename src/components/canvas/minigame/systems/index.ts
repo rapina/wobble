@@ -1,0 +1,5 @@
+export { ScoreSystem } from './ScoreSystem'
+export { DifficultyManager } from './DifficultyManager'
+export type { DifficultyChangeCallback } from './DifficultyManager'
+export { LifeSystem } from './LifeSystem'
+export type { LifeChangeCallback, GameOverCallback } from './LifeSystem'

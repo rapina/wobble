@@ -1,0 +1,427 @@
+{
+    "home": {
+        "title": "WOBBLE",
+        "sandbox": "サンドボックス",
+        "sandboxDesc": "物理を自由に探索",
+        "collection": "コレクション",
+        "collectionDesc": "キャラ、学習、記録",
+        "game": "ゲーム",
+        "gameDesc": "ミニゲームに挑戦しよう！",
+        "lab": "研究所",
+        "labDesc": "ワブルたちが物理を研究！",
+        "shop": "ショップ",
+        "shopDesc": "広告削除＆特別アイテム",
+        "soon": "SOON",
+        "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
+        "tagline": "公式じゃなく、物理と遊ぼう。"
+    },
+    "lab": {
+        "title": "物理研究所",
+        "workers": "研究員",
+        "tapStation": "施設をタップして配置",
+        "upgrades": "強化",
+        "appliedStats": "適用ステータス",
+        "perLevel": "レベルごと",
+        "welcomeBack": "おかえりなさい！",
+        "ofResearch": "の研究成果",
+        "workersProduced": "研究員たちが生産しました：",
+        "collect": "受け取る！",
+        "stations": {
+            "gravityLab": "重力研究所",
+            "accelerator": "加速器",
+            "collisionLab": "衝突実験室",
+            "insulationResearch": "絶縁体研究"
+        },
+        "stat": {
+            "hp": "HP",
+            "speed": "スピード",
+            "damage": "攻撃力",
+            "defense": "防御力"
+        },
+        "resources": {
+            "mass": "質量",
+            "velocity": "速度",
+            "force": "力",
+            "resistance": "抵抗"
+        }
+    },
+    "simulation": {
+        "loading": "読み込み中...",
+        "categories": {
+            "all": "すべて",
+            "mechanics": "力学",
+            "wave": "波動",
+            "gravity": "重力",
+            "thermodynamics": "熱力学",
+            "electricity": "電気",
+            "special": "特殊",
+            "quantum": "量子",
+            "chemistry": "化学"
+        },
+        "categoryDescriptions": {
+            "mechanics": "力、運動、エネルギー - 物が動く基本原理",
+            "wave": "光、音、振動が空間を伝わる現象",
+            "gravity": "惑星を軌道に保ち、りんごを落とす力",
+            "thermodynamics": "熱、エネルギー、粒子の振る舞い",
+            "electricity": "電荷、電流、電磁気現象の世界",
+            "special": "ユニークな物理概念と特殊なケース",
+            "quantum": "原子と素粒子の不思議な世界",
+            "chemistry": "化学反応、pH、分子相互作用"
+        },
+        "emptyCategory": "このカテゴリには公式がありません",
+        "info": {
+            "title": "どこで使われる？",
+            "applicationsLabel": "実生活での活用例",
+            "dontShowAgain": "この公式は自動表示しない"
+        },
+        "welcome": {
+            "title": "WOBBLE",
+            "description": "Wobbleへようこそ！\n物理公式を選んでシミュレーションを探索しよう。",
+            "openingDesc": "物理公式を選んで\n変数を調整しながら\nシミュレーションを探索しよう！",
+            "tapToStart": "タップして開始",
+            "selectFormula": "公式を選択"
+        }
+    },
+    "tutorial": {
+        "stepMessage": "{{symbol}}カードをタップして{{name}}の値を調整しよう。スライダーでシミュレーションがどう変わるか確認しよう！",
+        "infoButtonMessage": "💡 情報ボタンをタップして、この公式の実生活での活用例を確認しよう！",
+        "next": "次へ",
+        "skip": "スキップ",
+        "done": "わかった！",
+        "startButton": "使い方を見る",
+        "sandbox": {
+            "welcomeTitle": "物理サンドボックスへようこそ！",
+            "welcomeMessage": "ここで物理公式を直接触りながら学べます。変数を調整すると結果がどう変わるか、目で確認してみてください！",
+            "categoryTitle": "カテゴリーを探索",
+            "categoryMessage": "左右にスワイプして物理カテゴリーを見てみましょう。各カテゴリーには関連する公式があります！",
+            "selectFormulaTitle": "公式を選んでみてください",
+            "selectFormulaMessage": "下のリストから公式を選んでください。好きな公式をタップしてシミュレーションを始めてみてください！",
+            "canvasTitle": "シミュレーション画面",
+            "canvasMessage": "この画面で物理現象が可視化されます。変数を調整するとウォブルキャラクターの動きが変わるのが見えます！",
+            "variableTitle": "変数: {{symbol}}",
+            "variableMessage": "このカードは「{{name}}」を調整します。タップして選択し、スライダーで値を変えてみてください！",
+            "challengeTitle": "チャレンジミッション",
+            "challengeMessage": "画面上部にミッションが表示されます。変数を調整して目標条件を合わせてみてください！",
+            "submitTitle": "提出ボタン",
+            "submitMessage": "正解だと思ったら提出ボタンを押してください！当たるとポイントがもらえ、連続で当てるとコンボボーナスもあります！",
+            "infoTitle": "情報ボタン",
+            "infoMessage": "このボタンを押すと公式が実生活でどう使われるか分かります。気になったら押してみてください！"
+        }
+    },
+    "settings": {
+        "title": "設定",
+        "removeAds": "広告を削除",
+        "removeAdsDesc": "1回の購入で永久適用",
+        "adFree": "広告削除済み",
+        "adFreeDesc": "広告なしでお楽しみください！",
+        "buyFor": "購入する",
+        "restore": "購入を復元",
+        "loading": "読み込み中...",
+        "loadingProduct": "商品情報を取得中...",
+        "webOnly": "モバイルアプリで購入できます"
+    },
+    "game": {
+        "title": "ゲーム",
+        "selectAdventure": "ゲームを選択",
+        "wobbleAdventure": "ワブルサバイバー",
+        "wobbleAdventureTag": "SURVIVOR",
+        "wobbleAdventureDesc": "世界のルールが消えていく！ワビはシャドウの侵攻を生き延び、ワブル星の秩序を取り戻さなければならない！",
+        "pendulumFrenzy": "振り子フレンジー",
+        "pendulumFrenzyDesc": "絶妙なタイミングでロープを切れ！振り子の物理をマスターしてターゲットを狙え。",
+        "wobblediver": "ワブルダイバー",
+        "wobblediverDesc": "深淵へダイブせよ！振り子の運動量を使ってワームホールから脱出。触手を避けながら、さらに深い闇の中へ...",
+        "minigame": "ミニゲーム",
+        "comingSoon": "準備中",
+        "levelSelect": "レベル選択",
+        "completed": "完了",
+        "locked": "ロック中",
+        "success": "成功！",
+        "cleared": "クリア！",
+        "nextLevel": "次のレベル",
+        "levels": "レベル選択",
+        "target": "目標",
+        "tapToContinue": "タップして続ける",
+        "tapForNext": "タップして次へ",
+        "tryAgain": "もう一度",
+        "play": "プレイ",
+        "newWobbleUnlocked": "新しいワブル解放！",
+        "formulaLearned": "今日学んだ公式",
+        "formulaUsed": "ミニゲームで使った公式だよ！",
+        "realWorldUse": "実生活での応用",
+        "continue": "続ける",
+        "physicsTags": {
+            "pendulumMotion": "振り子運動",
+            "gravity": "重力",
+            "momentum": "運動量"
+        },
+        "abyss": {
+            "notWorthy": "資格なし",
+            "proveYourself": "深淵はお前を認めない。\n果てしない闇の中で己の価値を証明せよ。",
+            "currentDepth": "現在の深度",
+            "required": "必要深度",
+            "hint": "エンドレスモードでDepth {{depth}}まで到達してください"
+        },
+        "moreComingSoon": "さらなる冒険が近日登場！"
+    },
+    "share": {
+        "title": "結果をシェア",
+        "button": "シェア",
+        "gameResult": "Wobbleサバイバーで{{rank}}ランク達成！\n\nレベル{{level}} | {{kills}}体撃破 | {{time}}生存\n\n物理公式で戦うサバイバーゲーム！\n#Wobble #物理ゲーム #サバイバー"
+    },
+    "achievements": {
+        "title": "実績",
+        "unlocked": "実績達成！",
+        "progress": "{{unlocked}}/{{total}} 達成"
+    },
+    "carousel": {
+        "moreFormulas": "{{count}}個の公式",
+        "formulaCount": "このカテゴリに{{count}}個の公式",
+        "tapToExplore": "公式をタップして開始",
+        "featuredFormula": "代表公式",
+        "formulas": "個の公式"
+    },
+    "collection": {
+        "title": "コレクション",
+        "loading": "読み込み中...",
+        "tabs": {
+            "characters": "キャラ",
+            "study": "学習",
+            "achieve": "実績",
+            "records": "記録"
+        },
+        "characters": {
+            "notDiscovered": "まだ発見していません"
+        },
+        "formulas": {
+            "mechanics": "力学",
+            "gravity": "重力",
+            "waves": "波動と光学",
+            "thermo": "熱力学",
+            "electricity": "電磁気",
+            "modern": "現代物理",
+            "quantum": "量子力学",
+            "chemistry": "化学"
+        },
+        "records": {
+            "wobblediver": "ワブルダイバー",
+            "abyssDiving": "深淵ダイビングミニゲーム",
+            "bestDepth": "最高深度",
+            "highScore": "ハイスコア",
+            "totalGames": "プレイ回数",
+            "sRanks": "Sランク回数",
+            "avgDepth": "平均深度",
+            "avgScore": "平均スコア",
+            "noRecords": "まだプレイ記録がありません",
+            "lastPlayed": "最終プレイ: ",
+            "moreGames": "もっとミニゲームが近日追加予定！"
+        },
+        "achievements": {
+            "overallProgress": "全体進捗",
+            "challenges": "チャレンジ",
+            "next": "次: ",
+            "maxLevel": "🎉 最高レベル達成!",
+            "keepExploring": "物理探索を続けて、もっと実績をアンロックしよう！"
+        }
+    },
+    "sandbox": {
+        "missions": {
+            "target": "{{variable}}を{{value}}{{unit}}にしよう！",
+            "range": "{{variable}}を{{start}}～{{end}}の間に！",
+            "conditionSingle": "{{variable}}を{{condition}}にしよう！",
+            "conditionDouble": "{{var1}}は{{cond1}}、{{var2}}は{{cond2}}！"
+        },
+        "conditions": {
+            "maximum": "最大",
+            "minimum": "最小",
+            "middle": "中間"
+        },
+        "hints": {
+            "almostThere": "あと少し！",
+            "goHigher": "↑ もっと上げて！",
+            "aBitMore": "↑ もう少し！",
+            "goLower": "↓ もっと下げて！",
+            "aBitLess": "↓ もう少し下げて！",
+            "intoRangeUp": "↑ 範囲内へ！",
+            "intoRangeDown": "↓ 範囲内へ！",
+            "inRange": "範囲内だよ！",
+            "maximize": "↑ 最大に！",
+            "minimize": "↓ 最小に！",
+            "toMiddleUp": "↑ 中間へ！",
+            "toMiddleDown": "↓ 中間へ！",
+            "tryAgain": "もう一度やってみて！"
+        },
+        "locked": {
+            "prerequisite": "前提条件",
+            "completeChallenge": "「{{formula}}」でチャレンジを完了してください",
+            "loading": "読み込み中...",
+            "unlock": "アンロック",
+            "locked": "ロック中"
+        },
+        "challenge": {
+            "submit": "提出",
+            "pass": "パス",
+            "combo": "コンボ!"
+        },
+        "ad": {
+            "watchAd": "広告を見る",
+            "testAd": "テスト広告",
+            "rewardSoon": "まもなく報酬を受け取れます",
+            "claimReward": "報酬を受け取る"
+        }
+    },
+    "wobblediver": {
+        "intro": {
+            "title1": "ワブルダイバー",
+            "message1": "...ここはどこ？\n下から何かが私を見ている...",
+            "title2": "不思議な友達",
+            "message2": "クラゲが触手で私を揺らしてくれてる！\nタップするとワームホールに向かって飛び出す。",
+            "title3": "ワームホールへ脱出！",
+            "message3": "渦巻くワームホールに着地すれば脱出！\n正確なほど高得点。",
+            "title4": "深淵を避けて",
+            "message4": "あの下に...目と触手が待っている。\n落ちたら...戻れない。",
+            "title5": "...行かなければ",
+            "message5": "クラゲの友達が助けてくれる。\nでもワームホールに失敗するとがっかりして...\n忍耐力が尽きたら、去ってしまう。"
+        },
+        "panic": {
+            "phrase1": "うわああああ！",
+            "phrase2": "助けて！",
+            "phrase3": "やだ！",
+            "phrase4": "きゃああ！",
+            "phrase5": "誰か！"
+        },
+        "transitions": {
+            "awaken": "深淵が目覚める...",
+            "depth1": "深淵へ降下中...",
+            "depth2": "より深い闇の中へ...",
+            "depth3": "光が消えていく...",
+            "depth4": "水圧が上昇している...",
+            "depth5": "奴らが目覚める...",
+            "depth6": "もう戻れない...",
+            "depth7": "終わりなき深淵...",
+            "depth8": "希望が消えていく...",
+            "tapToStart": "タップしてスタート"
+        },
+        "hints": {
+            "wormholeShrinks": "出口が狭くなっていく... (ワームホール縮小)",
+            "abyssTentacles": "誰かが出口を締めている... (深淵の触手)",
+            "wormholeDrifts": "出口が漂っている... (ワームホール移動)",
+            "portalAppears": "次元の裂け目が開く... (ポータル出現)",
+            "obstacleAppears": "壁で何かが蠢いている... (触手出現)",
+            "moreObstacles": "更に多くが目覚める... (触手増加)",
+            "maxObstacles": "四方八方から這い出す... (触手最大)",
+            "trajectoryTimed": "直感を信じる時... (軌道制限)",
+            "trajectoryFlicker": "何かが視界を遮る... (軌道点滅)",
+            "trajectoryMinimal": "ほとんど見えない... (軌道微弱)",
+            "waterPressure": "水圧が上昇している... (重力増加)"
+        },
+        "perfect": {
+            "phrase1": "完璧！",
+            "phrase2": "最高だ！",
+            "phrase3": "すごい！",
+            "phrase4": "やった！",
+            "phrase5": "次元移動成功！"
+        },
+        "success": {
+            "phrase1": "ふぅ〜",
+            "phrase2": "生きた！",
+            "phrase3": "良かった",
+            "phrase4": "危なかった",
+            "phrase5": "ワームホール進入！"
+        },
+        "teleport": {
+            "phrase1": "ワープ！",
+            "phrase2": "瞬間移動！",
+            "phrase3": "次元移動！",
+            "phrase4": "テレポート！"
+        },
+        "pain": {
+            "phrase1": "痛っ！",
+            "phrase2": "うぐっ！",
+            "phrase3": "痛い！",
+            "phrase4": "うっ！",
+            "phrase5": "あっ！",
+            "phrase6": "ぎゃあ！"
+        },
+        "ranks": {
+            "S": "深淵があなたを恐れている",
+            "A": "印象的な抵抗",
+            "B": "まあまあの餌",
+            "C": "平凡な生贄",
+            "D": "取るに足らない魂"
+        },
+        "buttons": {
+            "next": "次へ",
+            "start": "...行こう",
+            "skip": "スキップ"
+        },
+        "perkSelection": {
+            "title": "祝福",
+            "subtitle": "クラゲが贈り物を差し出す..."
+        },
+        "perks": {
+            "patience_orb": {
+                "name": "忍耐のオーブ",
+                "desc": "+1 忍耐力"
+            },
+            "calm_aura": {
+                "name": "静寂のオーラ",
+                "desc": "-20% 忍耐力消費"
+            },
+            "deep_bond": {
+                "name": "深い絆",
+                "desc": "+25 最大HP"
+            },
+            "soothing_touch": {
+                "name": "癒しの手",
+                "desc": "クリア時に10 HP回復"
+            },
+            "ethereal_shield": {
+                "name": "霊妙なシールド",
+                "desc": "+15 シールド（ステージ毎に補充）"
+            },
+            "buoyancy": {
+                "name": "浮力",
+                "desc": "-25% 重力"
+            },
+            "current_rider": {
+                "name": "海流乗り",
+                "desc": "+15% スイング速度"
+            },
+            "rift_expansion": {
+                "name": "裂け目拡張",
+                "desc": "+25% ワームホールサイズ"
+            },
+            "abyssal_sight": {
+                "name": "深淵の視覚",
+                "desc": "常に軌道を表示"
+            },
+            "elastic_membrane": {
+                "name": "弾性膜",
+                "desc": "壁で跳ね返る"
+            },
+            "tentacle_boost": {
+                "name": "触手ブースト",
+                "desc": "空中で1回ジャンプ"
+            },
+            "time_dilation": {
+                "name": "時間膨張",
+                "desc": "発射時0.5秒スローモー"
+            }
+        }
+    },
+    "shop": {
+        "title": "ショップ",
+        "removeAds": "広告を削除",
+        "removeAdsDesc": "下部のバナー広告を永久に削除します",
+        "adFreeTitle": "広告を削除",
+        "adFreeDesc": "広告なしで楽しんでいます！",
+        "unlockAllFormulas": "全公式をアンロック",
+        "unlockAllFormulasDesc": "すべての公式を永久にアンロックします。今後追加される公式も含まれます。",
+        "allFormulasUnlockedDesc": "すべての公式が利用可能です！",
+        "loading": "読み込み中...",
+        "webOnly": "購入はモバイルアプリでのみ可能です",
+        "restorePurchases": "購入を復元",
+        "purchasesRestored": "購入が復元されました！",
+        "noPurchasesToRestore": "復元する購入履歴がありません"
+    }
+}

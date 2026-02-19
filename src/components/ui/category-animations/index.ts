@@ -1,0 +1,7 @@
+export { MechanicsAnimation } from './MechanicsAnimation'
+export { WaveAnimation } from './WaveAnimation'
+export { GravityAnimation } from './GravityAnimation'
+export { ThermodynamicsAnimation } from './ThermodynamicsAnimation'
+export { ElectricityAnimation } from './ElectricityAnimation'
+export { QuantumAnimation } from './QuantumAnimation'
+export { ChemistryAnimation } from './ChemistryAnimation'

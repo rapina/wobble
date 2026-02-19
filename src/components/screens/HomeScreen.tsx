@@ -1,0 +1,853 @@
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Settings, Bug, ArrowLeft, HelpCircle, ChevronDown } from 'lucide-react'
+import { TutorialOverlay, TutorialStep } from '@/components/tutorial/TutorialOverlay'
+import { useAdMob } from '@/hooks/useAdMob'
+import { usePurchaseStore } from '@/stores/purchaseStore'
+import Balatro from '@/components/Balatro'
+import {
+    homePreset,
+    sandboxPreset,
+    gameSelectPreset,
+    collectionPreset,
+    shopPreset,
+    labPreset,
+    categoryBackgrounds,
+    BackgroundPreset,
+} from '@/config/backgroundPresets'
+import { FormulaCarousel } from '@/components/ui/FormulaCarousel'
+import { categoryConfigs } from '@/config/categoryConfig'
+import ShuffleText from '@/components/ShuffleText'
+import { PlayStoreBanner } from '@/components/ui/PlayStoreBanner'
+import { RotatingText } from '@/components/RotatingText'
+import { LanguageToggle } from '@/components/LanguageToggle'
+import { SettingsModal } from '@/components/ui/SettingsModal'
+import { DevOptionsModal, useDevButtonStore } from '@/components/ui/DevOptionsModal'
+import { ModeCarousel, modeCards } from '@/components/ui/ModeCarousel'
+import { WobbleDisplay } from '@/components/canvas/WobbleDisplay'
+import { JellyfishDisplay } from '@/components/ui/JellyfishDisplay'
+import { WOBBLE_CHARACTERS } from '@/components/canvas/Wobble'
+import { useCollectionStore } from '@/stores/collectionStore'
+import { useProgressStore } from '@/stores/progressStore'
+import { useAchievementStore } from '@/stores/achievementStore'
+import { formulaList } from '@/formulas/registry'
+import { Formula, FormulaCategory } from '@/formulas/types'
+import { cn } from '@/lib/utils'
+
+// 개발 빌드 여부 (vite build --mode development 에서도 true)
+const IS_DEV = __DEV_BUILD__
+
+// Balatro theme
+const theme = {
+    bg: '#1a1a2e',
+    felt: '#3d6b59',
+    bgPanel: '#374244',
+    bgPanelLight: '#4a5658',
+    border: '#1a1a1a',
+    gold: '#c9a227',
+    red: '#e85d4c',
+    blue: '#4a9eff',
+    pink: '#FF6B9D',
+    purple: '#9b59b6',
+}
+
+export type GameMode = 'sandbox' | 'collection' | 'game' | 'learning' | 'shop' | 'lab'
+
+// Mode-specific background presets
+const modeBackgrounds: Record<GameMode, BackgroundPreset> = {
+    sandbox: sandboxPreset,
+    game: gameSelectPreset,
+    collection: collectionPreset,
+    shop: shopPreset,
+    learning: sandboxPreset,
+    lab: labPreset,
+}
+
+interface HomeScreenProps {
+    onSelectMode: (mode: GameMode) => void
+    onSelectSandboxFormula?: (formula: Formula) => void
+    initialShowFormulaSelect?: boolean
+}
+
+export function HomeScreen({
+    onSelectMode,
+    onSelectSandboxFormula,
+    initialShowFormulaSelect = false,
+}: HomeScreenProps) {
+    const { t, i18n } = useTranslation()
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+    const [isDevOpen, setIsDevOpen] = useState(false)
+    const [showFormulaSelect, setShowFormulaSelect] = useState(initialShowFormulaSelect)
+    const [activeSlideIndex, setActiveSlideIndex] = useState(0)
+    // Formula carousel state
+    const [carouselCategory, setCarouselCategory] = useState<FormulaCategory>(
+        categoryConfigs[0]?.id || 'mechanics'
+    )
+    const [isSlideAnimating, setIsSlideAnimating] = useState(false)
+    const { getProgress } = useCollectionStore()
+    const { studiedFormulas } = useProgressStore()
+    const { getProgress: getAchievementProgress } = useAchievementStore()
+    const { isAdFree } = usePurchaseStore()
+    const { isInitialized, isBannerVisible, showBanner, isNative } = useAdMob()
+    const { isHidden: isDevButtonHidden } = useDevButtonStore()
+    const collectionProgress = getProgress()
+    const achievementProgress = getAchievementProgress()
+    const unseenFormulaCount = formulaList.length - studiedFormulas.size
+
+    // Tutorial state for formula selection (separate from simulation tutorial)
+    const FORMULA_SELECT_TUTORIAL_KEY = 'wobble-tutorial-formula-select-completed'
+    const [tutorialActive, setTutorialActive] = useState(false)
+    const [tutorialStep, setTutorialStep] = useState(0)
+    const [tutorialTargetRect, setTutorialTargetRect] = useState<DOMRect | null>(null)
+    const [hasCompletedFormulaSelectTutorial, setHasCompletedFormulaSelectTutorial] = useState(
+        () => {
+            return localStorage.getItem(FORMULA_SELECT_TUTORIAL_KEY) === 'true'
+        }
+    )
+
+    // Tutorial steps for formula selection phase
+    const tutorialSteps: TutorialStep[] = useMemo(
+        () => [
+            {
+                targetSymbol: '__welcome__',
+                targetType: 'welcome' as const,
+                title: t('tutorial.sandbox.welcomeTitle'),
+                message: t('tutorial.sandbox.welcomeMessage'),
+                wobbleExpression: 'happy',
+            },
+            {
+                targetSymbol: '__category_carousel__',
+                targetType: 'category-carousel' as const,
+                title: t('tutorial.sandbox.categoryTitle'),
+                message: t('tutorial.sandbox.categoryMessage'),
+                wobbleExpression: 'excited',
+            },
+            {
+                targetSymbol: '__formula_list__',
+                targetType: 'formula-list' as const,
+                title: t('tutorial.sandbox.selectFormulaTitle'),
+                message: t('tutorial.sandbox.selectFormulaMessage'),
+                wobbleExpression: 'happy',
+            },
+        ],
+        [t]
+    )
+
+    // Tutorial functions
+    const startTutorial = useCallback((forceRestart = false) => {
+        if (forceRestart) {
+            localStorage.removeItem(FORMULA_SELECT_TUTORIAL_KEY)
+            setHasCompletedFormulaSelectTutorial(false)
+        }
+        setTutorialStep(0)
+        setTutorialActive(true)
+    }, [])
+
+    const nextTutorialStep = useCallback(() => {
+        if (tutorialStep < tutorialSteps.length - 1) {
+            setTutorialStep((prev) => prev + 1)
+        }
+    }, [tutorialStep, tutorialSteps.length])
+
+    const completeTutorial = useCallback(() => {
+        localStorage.setItem(FORMULA_SELECT_TUTORIAL_KEY, 'true')
+        setHasCompletedFormulaSelectTutorial(true)
+        setTutorialActive(false)
+        setTutorialStep(0)
+    }, [])
+
+    const skipTutorial = useCallback(() => {
+        completeTutorial()
+    }, [completeTutorial])
+
+    // Auto-start tutorial when formula select is shown for first-time users
+    useEffect(() => {
+        if (showFormulaSelect && !hasCompletedFormulaSelectTutorial && !tutorialActive) {
+            console.log('[Tutorial Debug] Auto-starting formula select tutorial')
+            const timer = setTimeout(() => {
+                startTutorial()
+            }, 500)
+            return () => clearTimeout(timer)
+        }
+    }, [showFormulaSelect, hasCompletedFormulaSelectTutorial, tutorialActive, startTutorial])
+
+    // Update target rect when tutorial step changes
+    useEffect(() => {
+        if (!tutorialActive) {
+            setTutorialTargetRect(null)
+            return
+        }
+
+        const currentStep = tutorialSteps[tutorialStep]
+        if (!currentStep) return
+
+        const timer = setTimeout(() => {
+            if (currentStep.targetSymbol === '__welcome__') {
+                setTutorialTargetRect(null)
+            } else if (currentStep.targetSymbol === '__category_carousel__') {
+                const el = document.querySelector('[data-tutorial-category-carousel]')
+                if (el) {
+                    setTutorialTargetRect(el.getBoundingClientRect())
+                }
+            } else if (currentStep.targetSymbol === '__formula_list__') {
+                const el = document.querySelector('[data-tutorial-formula-list]')
+                if (el) {
+                    setTutorialTargetRect(el.getBoundingClientRect())
+                }
+            }
+        }, 100)
+
+        return () => clearTimeout(timer)
+    }, [tutorialActive, tutorialStep, tutorialSteps])
+
+    // Get current active mode card and background preset
+    const activeCard = modeCards[activeSlideIndex] || modeCards[0]
+    const activeBackground = modeBackgrounds[activeCard.id] || homePreset
+
+    // Get carousel background based on selected category
+    const carouselBackground = categoryBackgrounds[carouselCategory] || sandboxPreset
+
+    // Handle slide change - animate description area
+    const handleSlideChange = (_mode: GameMode, index: number) => {
+        setIsSlideAnimating(true)
+        setTimeout(() => {
+            setActiveSlideIndex(index)
+            setTimeout(() => setIsSlideAnimating(false), 50)
+        }, 150)
+    }
+
+    // Handle mode selection - go directly to mode
+    const handleModeSelect = (mode: GameMode) => {
+        if (mode === 'sandbox') {
+            // Show formula select screen for sandbox
+            setShowFormulaSelect(true)
+        } else {
+            // Go directly to mode without intro
+            onSelectMode(mode)
+        }
+    }
+
+    // Handle formula selection in sandbox mode
+    const handleFormulaSelect = (formula: Formula) => {
+        // Allow selecting locked formulas - they will show locked overlay in simulation
+        // Don't close the overlay here - it will unmount when screen transitions to sandbox
+        if (onSelectSandboxFormula) {
+            onSelectSandboxFormula(formula)
+        }
+    }
+
+    // Handle back from formula select
+    const handleBackFromFormulaSelect = () => {
+        setShowFormulaSelect(false)
+    }
+
+    // Handle carousel slide change
+    const handleCarouselSlideChange = (category: FormulaCategory) => {
+        setCarouselCategory(category)
+    }
+
+    // Show AdMob banner when initialized (unless ad-free)
+    useEffect(() => {
+        if (isInitialized && !isBannerVisible && !isAdFree) {
+            showBanner()
+        }
+    }, [isInitialized, isAdFree, isBannerVisible, showBanner])
+
+    return (
+        <div className="relative w-full h-full overflow-hidden" style={{ background: theme.felt }}>
+            {/* Dynamic Balatro Background - changes with mode */}
+            <div className="absolute inset-0 opacity-40">
+                <Balatro
+                    color1={activeBackground.color1}
+                    color2={activeBackground.color2}
+                    color3={activeBackground.color3}
+                    spinSpeed={activeBackground.spinSpeed}
+                    spinRotation={activeBackground.spinRotation}
+                    contrast={activeBackground.contrast}
+                    lighting={activeBackground.lighting}
+                    spinAmount={activeBackground.spinAmount}
+                    pixelFilter={activeBackground.pixelFilter}
+                    isRotate={activeBackground.isRotate}
+                    mouseInteraction={false}
+                    patternScale={activeBackground.patternScale}
+                    warpIntensity={activeBackground.warpIntensity}
+                    symmetry={activeBackground.symmetry}
+                    flowSpeed={activeBackground.flowSpeed}
+                    vortexStrength={activeBackground.vortexStrength}
+                    noiseScale={activeBackground.noiseScale}
+                    rippleStrength={activeBackground.rippleStrength}
+                />
+            </div>
+
+            {/* Felt texture overlay */}
+            <div
+                className="absolute inset-0 pointer-events-none opacity-30"
+                style={{
+                    backgroundImage:
+                        'radial-gradient(circle at 50% 50%, transparent 20%, rgba(0,0,0,0.3) 100%)',
+                }}
+            />
+
+            {/* Vignette overlay */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)] pointer-events-none" />
+
+            {/* Subtle diagonal accent lines - static, not animated */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {/* Static diagonal stripes */}
+                {[...Array(5)].map((_, i) => (
+                    <div
+                        key={`stripe-${activeCard.id}-${i}`}
+                        className="absolute transition-all duration-700"
+                        style={{
+                            background: `linear-gradient(90deg, transparent 0%, ${activeCard.color}15 50%, transparent 100%)`,
+                            height: '1px',
+                            width: '150%',
+                            left: '-25%',
+                            top: `${15 + i * 18}%`,
+                            transform: 'rotate(-12deg)',
+                        }}
+                    />
+                ))}
+                {/* Corner accent glow */}
+                <div
+                    className="absolute -top-20 -right-20 w-80 h-80 rounded-full transition-all duration-700"
+                    style={{
+                        background: `radial-gradient(circle, ${activeCard.color}10 0%, transparent 70%)`,
+                    }}
+                />
+                <div
+                    className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full transition-all duration-700"
+                    style={{
+                        background: `radial-gradient(circle, ${activeCard.color}08 0%, transparent 60%)`,
+                    }}
+                />
+            </div>
+
+            {/* DEV Button - Top Left (dev build only, can be hidden via DevOptionsModal) */}
+            {IS_DEV && !isDevButtonHidden && (
+                <div
+                    className="absolute z-20"
+                    style={{
+                        top: 'max(env(safe-area-inset-top, 0px), 16px)',
+                        left: 'max(env(safe-area-inset-left, 0px), 16px)',
+                    }}
+                >
+                    <button
+                        onClick={() => setIsDevOpen(true)}
+                        className="h-10 px-3 rounded-lg flex items-center gap-2 transition-all active:scale-95"
+                        style={{
+                            background: theme.purple,
+                            border: `2px solid ${theme.border}`,
+                            boxShadow: `0 3px 0 ${theme.border}`,
+                        }}
+                    >
+                        <Bug className="w-4 h-4 text-white" />
+                        <span className="text-xs font-bold text-white">DEV</span>
+                    </button>
+                </div>
+            )}
+
+            {/* Settings - Top Right */}
+            <div
+                className="absolute z-20 flex gap-2"
+                style={{
+                    top: 'max(env(safe-area-inset-top, 0px), 16px)',
+                    right: 'max(env(safe-area-inset-right, 0px), 16px)',
+                }}
+            >
+                <button
+                    onClick={() => setIsSettingsOpen(true)}
+                    className="h-10 w-10 rounded-lg flex items-center justify-center transition-all active:scale-95"
+                    style={{
+                        background: theme.bgPanel,
+                        border: `2px solid ${theme.border}`,
+                        boxShadow: `0 3px 0 ${theme.border}`,
+                    }}
+                >
+                    <Settings className="w-5 h-5 text-white/80" />
+                </button>
+                <LanguageToggle />
+            </div>
+
+            {/* Content */}
+            <div
+                className="relative z-10 h-full flex flex-col"
+                style={{
+                    paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 16px) + 64px)',
+                    paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 160px)',
+                    paddingLeft: 'max(env(safe-area-inset-left, 0px), 40px)',
+                    paddingRight: 'max(env(safe-area-inset-right, 0px), 40px)',
+                }}
+            >
+                {/* Persona-style Logo */}
+                <div className="text-center relative flex flex-col items-center">
+                    {/* Angled background shape - fixed width container */}
+                    <div className="relative" style={{ width: '310px', minWidth: '310px' }}>
+                        {/* Shadow layer */}
+                        <div
+                            className="absolute inset-0 translate-x-2 translate-y-2"
+                            style={{
+                                background: theme.border,
+                                transform: 'skewX(-5deg) translateX(8px) translateY(8px)',
+                                clipPath: 'polygon(8% 0%, 100% 0%, 92% 100%, 0% 100%)',
+                            }}
+                        />
+                        {/* Border wrapper */}
+                        <div
+                            className="relative"
+                            style={{
+                                background: theme.border,
+                                transform: 'skewX(-5deg)',
+                                clipPath: 'polygon(8% 0%, 100% 0%, 92% 100%, 0% 100%)',
+                                padding: '4px',
+                            }}
+                        >
+                            {/* Main container */}
+                            <div
+                                className="relative px-10 py-4 overflow-hidden"
+                                style={{
+                                    background: `linear-gradient(135deg, ${theme.bgPanel} 0%, #2a3234 100%)`,
+                                    clipPath: 'polygon(8% 0%, 100% 0%, 92% 100%, 0% 100%)',
+                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)',
+                                }}
+                            >
+                                <h1
+                                    className="text-5xl font-black tracking-wider whitespace-nowrap"
+                                    style={{
+                                        color: theme.gold,
+                                        textShadow: `3px 3px 0 ${theme.border}, -1px -1px 0 ${theme.border}`,
+                                        fontFamily: 'system-ui, -apple-system, sans-serif',
+                                        transform: 'skewX(5deg)',
+                                        animation: 'persona-title-pulse 3s ease-in-out infinite',
+                                    }}
+                                >
+                                    <ShuffleText
+                                        duration={1200}
+                                        trigger="mount"
+                                        loop={true}
+                                        loopDelay={5000}
+                                    >
+                                        {t('home.title')}
+                                    </ShuffleText>
+                                </h1>
+                            </div>
+                            {/* Accent line - inside border wrapper to match frame */}
+                            <div
+                                className="absolute -bottom-0 left-0 right-0 h-1"
+                                style={{
+                                    background: theme.gold,
+                                    animation: 'persona-line-glow 2s ease-in-out infinite',
+                                    boxShadow: `0 0 8px ${theme.gold}80`,
+                                }}
+                            />
+                        </div>
+                    </div>
+                    {/* Subtitle with persona style */}
+                    <div
+                        className="mt-5 inline-block px-6 py-1.5"
+                        style={{
+                            background: 'rgba(0,0,0,0.6)',
+                            transform: 'skewX(-8deg)',
+                            borderLeft: `3px solid ${theme.gold}`,
+                            boxShadow: `2px 2px 8px rgba(0,0,0,0.3)`,
+                        }}
+                    >
+                        <p
+                            className="text-sm tracking-[0.2em] font-black uppercase"
+                            style={{
+                                color: 'rgba(255,255,255,0.95)',
+                                transform: 'skewX(8deg)',
+                            }}
+                        >
+                            PHYSICS{' '}
+                            <span style={{ color: theme.gold }}>
+                                <RotatingText
+                                    texts={t('home.modes', { returnObjects: true }) as string[]}
+                                    interval={2500}
+                                />
+                            </span>
+                        </p>
+                    </div>
+                </div>
+
+                {/* Persona-style Mode Description Area */}
+                <div className="flex-1 flex flex-col items-center justify-center px-4">
+                    {/* Wobble Character with dynamic entrance - fixed size container */}
+                    <div
+                        className={cn(
+                            'mb-2 transition-all duration-500 flex items-center justify-center',
+                            isSlideAnimating
+                                ? 'opacity-0 scale-50 rotate-12'
+                                : 'opacity-100 scale-100 rotate-0'
+                        )}
+                        style={{
+                            transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+                            width: 100,
+                            height: 100,
+                        }}
+                    >
+                        <div
+                            className="relative"
+                            style={{
+                                animation: 'persona-character-bounce 2s ease-in-out infinite',
+                            }}
+                        >
+                            {/* Character glow effect */}
+                            <div
+                                className="absolute inset-0 rounded-full blur-xl opacity-30"
+                                style={{
+                                    background: activeCard.color,
+                                    transform: 'scale(1.5)',
+                                }}
+                            />
+                            {/* Only render when formula carousel is hidden to save WebGL contexts */}
+                            {!showFormulaSelect &&
+                                (activeCard.id === 'game' ? (
+                                    <JellyfishDisplay
+                                        size={80}
+                                        color={activeCard.color}
+                                        animated={true}
+                                    />
+                                ) : (
+                                    <WobbleDisplay
+                                        size={80}
+                                        shape={activeCard.wobbleShape}
+                                        color={WOBBLE_CHARACTERS[activeCard.wobbleShape].color}
+                                        expression={activeCard.wobbleExpression}
+                                    />
+                                ))}
+                        </div>
+                    </div>
+
+                    {/* Persona-style Speech Bubble */}
+                    <div
+                        className={cn(
+                            'relative transition-all duration-500',
+                            isSlideAnimating
+                                ? 'opacity-0 scale-90 translate-x-10'
+                                : 'opacity-100 scale-100 translate-x-0'
+                        )}
+                        style={{
+                            transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+                            transitionDelay: '100ms',
+                        }}
+                    >
+                        {/* Speech bubble tail with shadow */}
+                        <div
+                            className="absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0"
+                            style={{
+                                borderLeft: '12px solid transparent',
+                                borderRight: '12px solid transparent',
+                                borderBottom: `12px solid ${activeCard.color}`,
+                                filter: 'drop-shadow(2px 2px 2px rgba(0,0,0,0.3))',
+                            }}
+                        />
+                        {/* Main bubble */}
+                        <div
+                            className="relative px-6 py-4 max-w-[300px]"
+                            style={{
+                                background: activeCard.color,
+                                transform: 'skewX(-3deg)',
+                                clipPath: 'polygon(3% 0%, 97% 0%, 100% 100%, 0% 100%)',
+                                boxShadow: `4px 4px 0 ${theme.border}, inset 0 1px 0 rgba(255,255,255,0.3)`,
+                            }}
+                        >
+                            <p
+                                className="text-base font-bold leading-relaxed text-center"
+                                style={{
+                                    color: theme.border,
+                                    transform: 'skewX(3deg)',
+                                    textShadow: '0 1px 0 rgba(255,255,255,0.3)',
+                                }}
+                            >
+                                {t(activeCard.descriptionKey, '')}
+                            </p>
+                        </div>
+                        {/* Decorative corner accent */}
+                        <div
+                            className="absolute -bottom-1 -right-1 w-3 h-3"
+                            style={{
+                                background: theme.border,
+                                transform: 'rotate(45deg)',
+                            }}
+                        />
+                    </div>
+
+                    {/* Animated Tap hint */}
+                    <div
+                        className={cn(
+                            'mt-6 flex flex-col items-center gap-1 transition-all duration-300',
+                            isSlideAnimating ? 'opacity-0' : 'opacity-100'
+                        )}
+                    >
+                        <div
+                            className="flex items-center gap-2 px-4 py-2 rounded"
+                            style={{
+                                background: 'rgba(0,0,0,0.5)',
+                                transform: 'skewX(-5deg)',
+                                animation: 'persona-tap-pulse 1.5s ease-in-out infinite',
+                                border: `1px solid ${theme.gold}40`,
+                                boxShadow: `0 0 12px ${theme.gold}20`,
+                            }}
+                        >
+                            <ChevronDown
+                                className="w-4 h-4"
+                                style={{
+                                    color: theme.gold,
+                                    transform: 'skewX(5deg)',
+                                    animation: 'bounce-home-arrow 0.8s ease-in-out infinite',
+                                }}
+                            />
+                            <p
+                                className="text-xs font-bold uppercase tracking-wider"
+                                style={{
+                                    color: theme.gold,
+                                    transform: 'skewX(5deg)',
+                                    textShadow: `0 0 8px ${theme.gold}40`,
+                                }}
+                            >
+                                {t('home.tapToStart', 'Tap to start')}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Mode Carousel */}
+                <div className="shrink-0 pb-2">
+                    <ModeCarousel
+                        onSelectMode={handleModeSelect}
+                        onSlideChange={handleSlideChange}
+                        collectionProgress={collectionProgress}
+                        achievementProgress={achievementProgress}
+                        unseenFormulaCount={unseenFormulaCount}
+                    />
+                </div>
+
+                {/* Persona-style CSS Animations */}
+                <style>{`
+                    @keyframes speed-line-move {
+                        0% { transform: rotate(-15deg) translateX(-100%); }
+                        100% { transform: rotate(-15deg) translateX(100%); }
+                    }
+                    @keyframes speed-line-move-reverse {
+                        0% { transform: rotate(15deg) translateX(100%); }
+                        100% { transform: rotate(15deg) translateX(-100%); }
+                    }
+                    @keyframes persona-title-pulse {
+                        0%, 100% {
+                            filter: brightness(1);
+                            transform: skewX(5deg) scale(1);
+                        }
+                        50% {
+                            filter: brightness(1.1);
+                            transform: skewX(5deg) scale(1.02);
+                        }
+                    }
+                    @keyframes persona-line-glow {
+                        0%, 100% {
+                            opacity: 1;
+                            box-shadow: 0 0 10px ${theme.gold}40;
+                        }
+                        50% {
+                            opacity: 0.8;
+                            box-shadow: 0 0 20px ${theme.gold}80;
+                        }
+                    }
+                    @keyframes persona-character-bounce {
+                        0%, 100% {
+                            transform: translateY(0) rotate(0deg);
+                        }
+                        25% {
+                            transform: translateY(-8px) rotate(-3deg);
+                        }
+                        75% {
+                            transform: translateY(-4px) rotate(3deg);
+                        }
+                    }
+                    @keyframes persona-tap-pulse {
+                        0%, 100% {
+                            transform: skewX(-5deg) scale(1);
+                            opacity: 0.8;
+                        }
+                        50% {
+                            transform: skewX(-5deg) scale(1.05);
+                            opacity: 1;
+                        }
+                    }
+                    @keyframes bounce-home-arrow {
+                        0%, 100% { transform: skewX(5deg) translateY(0); }
+                        50% { transform: skewX(5deg) translateY(4px); }
+                    }
+                    @keyframes persona-card-float {
+                        0%, 100% { transform: translateY(0) rotate(0deg); }
+                        50% { transform: translateY(-3px) rotate(1deg); }
+                    }
+                `}</style>
+            </div>
+
+            {/* Tagline */}
+            <div
+                className="absolute left-0 right-0 text-center text-white/60 text-xs px-6 italic"
+                style={{ bottom: 130 }}
+            >
+                {t('home.tagline')}
+            </div>
+
+            {/* Footer - 광고 배너 위에 위치 */}
+            <div
+                className="absolute left-0 right-0 text-center text-white/40 text-[11px]"
+                style={{ bottom: 105 }}
+            >
+                <span className="font-medium">2026 Sputnik Workshop</span>
+                <span className="mx-2">·</span>
+                <span className="font-mono">v{__APP_VERSION__}</span>
+            </div>
+
+            {/* Play Store Banner (Web) */}
+            {!isNative && !isAdFree && (
+                <div
+                    className="absolute left-0 right-0 z-10 flex justify-center"
+                    style={{
+                        bottom: 'max(env(safe-area-inset-bottom, 0px), 16px)',
+                        paddingLeft: 'max(env(safe-area-inset-left, 0px), 16px)',
+                        paddingRight: 'max(env(safe-area-inset-right, 0px), 16px)',
+                    }}
+                >
+                    <PlayStoreBanner />
+                </div>
+            )}
+
+            {/* Settings Modal */}
+            <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+
+            {/* Dev Options Modal */}
+            {IS_DEV && <DevOptionsModal isOpen={isDevOpen} onClose={() => setIsDevOpen(false)} />}
+
+            {/* Formula Select Screen for Sandbox - Carousel View */}
+            {showFormulaSelect && (
+                <div
+                    className="absolute inset-0 z-50 animate-in fade-in duration-300"
+                    style={{ background: '#0a0a12' }}
+                >
+                    {/* Dynamic Balatro Background - changes with carousel category */}
+                    <div className="absolute inset-0 opacity-40 transition-all duration-500">
+                        <Balatro
+                            color1={carouselBackground.color1}
+                            color2={carouselBackground.color2}
+                            color3={carouselBackground.color3}
+                            spinSpeed={carouselBackground.spinSpeed}
+                            spinRotation={carouselBackground.spinRotation}
+                            contrast={carouselBackground.contrast}
+                            lighting={carouselBackground.lighting}
+                            spinAmount={carouselBackground.spinAmount}
+                            pixelFilter={carouselBackground.pixelFilter}
+                            isRotate={carouselBackground.isRotate}
+                            mouseInteraction={false}
+                            patternScale={carouselBackground.patternScale}
+                            warpIntensity={carouselBackground.warpIntensity}
+                            symmetry={carouselBackground.symmetry}
+                            flowSpeed={carouselBackground.flowSpeed}
+                            vortexStrength={carouselBackground.vortexStrength}
+                            noiseScale={carouselBackground.noiseScale}
+                            rippleStrength={carouselBackground.rippleStrength}
+                        />
+                    </div>
+
+                    {/* Vignette overlay */}
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.5)_100%)] pointer-events-none" />
+
+                    {/* Content */}
+                    <div
+                        className="relative z-10 h-full flex flex-col"
+                        style={{
+                            paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)',
+                            paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
+                            paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
+                            paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)',
+                        }}
+                    >
+                        {/* Header Row with Back Button and Tutorial Button */}
+                        <div className="flex items-center justify-between mb-4">
+                            <button
+                                onClick={handleBackFromFormulaSelect}
+                                className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95"
+                                style={{
+                                    background: theme.bgPanel,
+                                    border: `2px solid ${theme.border}`,
+                                    boxShadow: `0 3px 0 ${theme.border}`,
+                                }}
+                            >
+                                <ArrowLeft className="h-5 w-5 text-white" />
+                            </button>
+
+                            {/* Tutorial Help Button */}
+                            <button
+                                onClick={() => {
+                                    console.log(
+                                        '[Tutorial Debug] Manual start clicked in HomeScreen'
+                                    )
+                                    startTutorial(true)
+                                }}
+                                className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95"
+                                style={{
+                                    background: theme.purple,
+                                    border: `2px solid ${theme.border}`,
+                                    boxShadow: `0 3px 0 ${theme.border}`,
+                                }}
+                            >
+                                <HelpCircle className="h-5 w-5 text-white" />
+                            </button>
+                        </div>
+
+                        {/* Section Title */}
+                        <div className="flex items-center gap-2 mb-4 px-2">
+                            <div
+                                className="h-[2px] flex-1"
+                                style={{
+                                    background: `linear-gradient(90deg, transparent, ${theme.gold}40)`,
+                                }}
+                            />
+                            <span className="text-xs font-bold text-white/50 uppercase tracking-wider">
+                                {t('simulation.welcome.selectFormula')}
+                            </span>
+                            <div
+                                className="h-[2px] flex-1"
+                                style={{
+                                    background: `linear-gradient(90deg, ${theme.gold}40, transparent)`,
+                                }}
+                            />
+                        </div>
+
+                        {/* Formula Carousel with integrated formula list */}
+                        <div className="flex-1 flex flex-col justify-center overflow-hidden">
+                            <FormulaCarousel
+                                onSelectFormula={handleFormulaSelect}
+                                onSlideChange={handleCarouselSlideChange}
+                            />
+                        </div>
+
+                        {/* Tap hint */}
+                        <div className="flex justify-center pb-3">
+                            <p className="text-[10px] font-medium text-white/40 uppercase tracking-wider">
+                                {t('carousel.tapToExplore')}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Tutorial Overlay for formula selection */}
+                    {tutorialActive && (
+                        <TutorialOverlay
+                            steps={tutorialSteps}
+                            currentStep={tutorialStep}
+                            onNext={nextTutorialStep}
+                            onSkip={skipTutorial}
+                            onComplete={completeTutorial}
+                            targetRect={tutorialTargetRect}
+                            sliderRect={null}
+                        />
+                    )}
+                </div>
+            )}
+        </div>
+    )
+}

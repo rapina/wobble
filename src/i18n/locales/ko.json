@@ -1,0 +1,426 @@
+{
+    "home": {
+        "title": "WOBBLE",
+        "sandbox": "샌드박스",
+        "sandboxDesc": "자유롭게 물리 탐험",
+        "collection": "콜렉션",
+        "collectionDesc": "캐릭터, 학습, 게임 기록",
+        "game": "게임",
+        "gameDesc": "미니게임에 도전하세요!",
+        "lab": "연구소",
+        "labDesc": "워블들이 물리를 연구해요!",
+        "shop": "상점",
+        "shopDesc": "광고 제거 및 특별 아이템",
+        "soon": "SOON",
+        "modes": ["ARCADE", "SANDBOX", "PUZZLE"],
+        "tagline": "공식이 아닌, 물리와 놀아보세요."
+    },
+    "lab": {
+        "title": "물리 연구소",
+        "workers": "연구원",
+        "tapStation": "시설을 탭하여 배치",
+        "upgrades": "강화",
+        "appliedStats": "적용 스탯",
+        "perLevel": "레벨당",
+        "welcomeBack": "다시 오셨군요!",
+        "ofResearch": "동안 연구한 결과",
+        "workersProduced": "연구원들이 생산했어요:",
+        "collect": "받기!",
+        "stations": {
+            "gravityLab": "중력 연구소",
+            "accelerator": "가속기",
+            "collisionLab": "충돌 실험실",
+            "insulationResearch": "절연체 연구"
+        },
+        "stat": {
+            "hp": "체력",
+            "speed": "속도",
+            "damage": "공격력",
+            "defense": "방어력"
+        },
+        "resources": {
+            "mass": "질량",
+            "velocity": "속도",
+            "force": "힘",
+            "resistance": "저항"
+        }
+    },
+    "simulation": {
+        "loading": "로딩 중...",
+        "categories": {
+            "all": "전체",
+            "mechanics": "역학",
+            "wave": "파동",
+            "gravity": "중력",
+            "thermodynamics": "열역학",
+            "electricity": "전기",
+            "special": "특수",
+            "quantum": "양자",
+            "chemistry": "화학"
+        },
+        "categoryDescriptions": {
+            "mechanics": "힘, 운동, 에너지 - 물체가 움직이는 기본 원리",
+            "wave": "빛, 소리, 진동이 공간을 통해 전달되는 현상",
+            "gravity": "행성을 궤도에 유지하고 사과를 떨어뜨리는 힘",
+            "thermodynamics": "열, 에너지, 입자들의 행동 원리",
+            "electricity": "전하, 전류, 전자기 현상의 세계",
+            "special": "독특한 물리 개념과 특수한 경우들",
+            "quantum": "원자와 아원자 입자들의 신비로운 세계",
+            "chemistry": "화학 반응, pH, 분자 상호작용"
+        },
+        "emptyCategory": "이 카테고리에 공식이 없습니다",
+        "info": {
+            "title": "어디에 쓰일까?",
+            "applicationsLabel": "실생활 활용 예시",
+            "dontShowAgain": "이 공식은 다시 자동으로 표시하지 않기"
+        },
+        "welcome": {
+            "title": "WOBBLE",
+            "description": "Wobble에 오신 것을 환영합니다!\n물리 공식을 선택하고 시뮬레이션을 탐험하세요.",
+            "openingDesc": "물리 공식을 선택하고\n변수를 조절하며\n시뮬레이션을 탐험해보세요!",
+            "tapToStart": "탭하여 시작",
+            "selectFormula": "공식 선택"
+        }
+    },
+    "tutorial": {
+        "stepMessage": "{{symbol}} 카드를 탭해서 {{name}} 값을 조절해보세요. 슬라이더로 시뮬레이션이 어떻게 변하는지 확인하세요!",
+        "infoButtonMessage": "💡 정보 버튼을 눌러 이 공식의 실생활 활용 사례를 확인해보세요!",
+        "next": "다음",
+        "skip": "건너뛰기",
+        "done": "알겠어요!",
+        "startButton": "사용법 보기",
+        "sandbox": {
+            "welcomeTitle": "물리 샌드박스에 오신 것을 환영해요!",
+            "welcomeMessage": "여기서 물리 공식을 직접 만져보며 배울 수 있어요. 변수를 조절하면 결과가 어떻게 바뀌는지 눈으로 확인해보세요!",
+            "categoryTitle": "카테고리 탐색하기",
+            "categoryMessage": "좌우로 스와이프해서 물리 카테고리를 둘러보세요. 각 카테고리에는 관련 공식들이 담겨있어요!",
+            "selectFormulaTitle": "공식을 선택해보세요",
+            "selectFormulaMessage": "아래 목록에서 공식을 선택하세요. 원하는 공식을 탭해서 시뮬레이션을 시작해보세요!",
+            "canvasTitle": "시뮬레이션 화면",
+            "canvasMessage": "이 화면에서 물리 현상이 시각화돼요. 변수를 조절하면 워블 캐릭터의 움직임이 바뀌는 걸 볼 수 있어요!",
+            "variableTitle": "변수: {{symbol}}",
+            "variableMessage": "이 카드는 \"{{name}}\"를 조절해요. 탭해서 선택한 뒤 슬라이더로 값을 바꿔보세요!",
+            "challengeTitle": "챌린지 미션",
+            "challengeMessage": "화면 상단에 미션이 표시돼요. 변수를 조절해서 목표 조건을 맞춰보세요!",
+            "submitTitle": "제출 버튼",
+            "submitMessage": "정답이라고 생각되면 제출 버튼을 눌러주세요! 맞추면 점수를 얻고, 연속으로 맞추면 콤보 보너스도 받아요!",
+            "infoTitle": "정보 버튼",
+            "infoMessage": "이 버튼을 누르면 공식이 실생활에서 어떻게 쓰이는지 알 수 있어요. 궁금하면 눌러보세요!"
+        }
+    },
+    "settings": {
+        "title": "설정",
+        "removeAds": "광고 제거",
+        "removeAdsDesc": "1회 구매로 영구 적용",
+        "adFree": "광고 제거됨",
+        "adFreeDesc": "광고 없이 즐기세요!",
+        "buyFor": "구매하기",
+        "restore": "구매 복원",
+        "loading": "로딩 중...",
+        "loadingProduct": "상품 정보 불러오는 중...",
+        "webOnly": "모바일 앱에서 구매할 수 있습니다"
+    },
+    "game": {
+        "title": "게임",
+        "selectAdventure": "게임 선택",
+        "wobbleAdventure": "워블 서바이버",
+        "wobbleAdventureTag": "SURVIVOR",
+        "wobbleAdventureDesc": "세계의 규칙이 사라지고 있다! 워비는 섀도우의 침공에서 살아남아 워블 행성의 질서를 되찾아야 한다!",
+        "pendulumFrenzy": "진자 광란",
+        "pendulumFrenzyDesc": "적절한 타이밍에 줄을 끊어라! 진자 물리를 마스터해서 타겟을 맞추세요.",
+        "wobblediver": "워블다이버",
+        "wobblediverDesc": "심연 속으로 다이빙하라! 진자의 운동량을 이용해 워프홀로 탈출하세요. 촉수를 피해 더 깊은 어둠 속으로...",
+        "minigame": "미니게임",
+        "comingSoon": "준비 중",
+        "levelSelect": "레벨 선택",
+        "completed": "완료",
+        "locked": "잠김",
+        "success": "성공!",
+        "cleared": "클리어!",
+        "nextLevel": "다음 레벨",
+        "levels": "레벨 선택",
+        "target": "목표",
+        "tapToContinue": "탭하여 계속",
+        "tapForNext": "탭하여 다음",
+        "tryAgain": "다시 시도",
+        "play": "실행",
+        "newWobbleUnlocked": "새로운 워블 해금!",
+        "formulaLearned": "오늘 배운 공식",
+        "formulaUsed": "방금 미니게임에서 사용된 공식이에요!",
+        "realWorldUse": "실생활 적용",
+        "continue": "계속하기",
+        "physicsTags": {
+            "pendulumMotion": "진자 운동",
+            "gravity": "중력",
+            "momentum": "운동량"
+        },
+        "abyss": {
+            "notWorthy": "자격 없음",
+            "proveYourself": "심연이 너를 인정하지 않는다.\n끝없는 어둠 속에서 네 가치를 증명하라.",
+            "currentDepth": "현재 심도",
+            "required": "필요 심도",
+            "hint": "Endless 모드에서 Depth {{depth}}까지 도달하세요"
+        }
+    },
+    "share": {
+        "title": "결과 공유하기",
+        "button": "공유",
+        "gameResult": "Wobble 서바이버에서 {{rank}} 랭크 달성!\n\nLevel {{level}} | {{kills}} 처치 | {{time}} 생존\n\n물리 공식으로 싸우는 서바이버 게임!\n#Wobble #물리게임 #서바이버"
+    },
+    "achievements": {
+        "title": "업적",
+        "unlocked": "업적 달성!",
+        "progress": "{{unlocked}}/{{total}} 달성"
+    },
+    "carousel": {
+        "moreFormulas": "{{count}}개 공식",
+        "formulaCount": "이 카테고리에 {{count}}개 공식",
+        "tapToExplore": "공식을 탭하여 시작",
+        "featuredFormula": "대표 공식",
+        "formulas": "개 공식"
+    },
+    "collection": {
+        "title": "컬렉션",
+        "loading": "불러오는 중...",
+        "tabs": {
+            "characters": "캐릭터",
+            "study": "학습",
+            "achieve": "업적",
+            "records": "기록"
+        },
+        "characters": {
+            "notDiscovered": "아직 만나지 못했어요"
+        },
+        "formulas": {
+            "mechanics": "역학",
+            "gravity": "중력",
+            "waves": "파동 & 광학",
+            "thermo": "열역학",
+            "electricity": "전자기",
+            "modern": "현대 물리",
+            "quantum": "양자역학",
+            "chemistry": "화학"
+        },
+        "records": {
+            "wobblediver": "워블다이버",
+            "abyssDiving": "심연 다이빙 미니게임",
+            "bestDepth": "최고 깊이",
+            "highScore": "최고 점수",
+            "totalGames": "총 플레이",
+            "sRanks": "S랭크 횟수",
+            "avgDepth": "평균 깊이",
+            "avgScore": "평균 점수",
+            "noRecords": "아직 플레이 기록이 없습니다",
+            "lastPlayed": "마지막 플레이: ",
+            "moreGames": "더 많은 미니게임이 곧 추가됩니다!"
+        },
+        "achievements": {
+            "overallProgress": "전체 진행률",
+            "challenges": "도전 과제",
+            "next": "다음: ",
+            "maxLevel": "🎉 최고 레벨 달성!",
+            "keepExploring": "물리 탐험을 계속하며 업적을 달성해보세요!"
+        }
+    },
+    "sandbox": {
+        "missions": {
+            "target": "{{variable}}을(를) {{value}}{{unit}}로 맞춰봐!",
+            "range": "{{variable}}을(를) {{start}}~{{end}} 사이로!",
+            "conditionSingle": "{{variable}}을(를) {{condition}}!",
+            "conditionDouble": "{{var1}}은 {{cond1}}, {{var2}}은 {{cond2}}!"
+        },
+        "conditions": {
+            "maximum": "최대로",
+            "minimum": "최소로",
+            "middle": "중간으로"
+        },
+        "hints": {
+            "almostThere": "거의 다 왔어!",
+            "goHigher": "↑ 많이 올려!",
+            "aBitMore": "↑ 조금만 더!",
+            "goLower": "↓ 많이 내려!",
+            "aBitLess": "↓ 조금만 줄여!",
+            "intoRangeUp": "↑ 범위 안으로!",
+            "intoRangeDown": "↓ 범위 안으로!",
+            "inRange": "범위 안에 있어!",
+            "maximize": "↑ 최대로!",
+            "minimize": "↓ 최소로!",
+            "toMiddleUp": "↑ 중간으로!",
+            "toMiddleDown": "↓ 중간으로!",
+            "tryAgain": "다시 시도해봐!"
+        },
+        "locked": {
+            "prerequisite": "선행 조건",
+            "completeChallenge": "\"{{formula}}\"에서 챌린지를 완료하세요",
+            "loading": "로딩...",
+            "unlock": "잠금 해제",
+            "locked": "잠김"
+        },
+        "challenge": {
+            "submit": "제출",
+            "pass": "패스",
+            "combo": "콤보!"
+        },
+        "ad": {
+            "watchAd": "광고 시청",
+            "testAd": "테스트 광고",
+            "rewardSoon": "잠시 후 보상을 받을 수 있어요",
+            "claimReward": "보상 받기"
+        }
+    },
+    "wobblediver": {
+        "intro": {
+            "title1": "워블다이버",
+            "message1": "...여기가 어디지?\n아래에서 뭔가 나를 보고 있어...",
+            "title2": "이상한 친구",
+            "message2": "해파리가 촉수로 날 흔들어주고 있어!\n탭하면 웜홀을 향해 발사돼.",
+            "title3": "웜홀로 탈출!",
+            "message3": "소용돌이치는 웜홀에 착지하면 탈출!\n정확할수록 점수가 높아.",
+            "title4": "심연을 피해",
+            "message4": "저 아래... 눈들과 촉수가 기다리고 있어.\n빠지면... 돌아올 수 없어.",
+            "title5": "...가야 해",
+            "message5": "해파리 친구가 도와줄 거야.\n하지만 웜홀에 실패하면 실망해서...\n인내심이 바닥나면 떠나버려."
+        },
+        "panic": {
+            "phrase1": "으아아악!",
+            "phrase2": "살려줘!",
+            "phrase3": "안돼에!",
+            "phrase4": "꺄아악!",
+            "phrase5": "도와줘!"
+        },
+        "transitions": {
+            "awaken": "심연이 깨어난다...",
+            "depth1": "심연으로 하강 중...",
+            "depth2": "더 깊은 어둠 속으로...",
+            "depth3": "빛이 사라진다...",
+            "depth4": "수압이 높아진다...",
+            "depth5": "그것들이 깨어난다...",
+            "depth6": "돌아갈 수 없다...",
+            "depth7": "끝없는 심연...",
+            "depth8": "희망이 사라진다...",
+            "tapToStart": "터치하여 시작"
+        },
+        "hints": {
+            "wormholeShrinks": "출구가 점점 좁아진다... (웜홀 축소)",
+            "abyssTentacles": "누군가 출구를 조이고 있다... (심연 촉수)",
+            "wormholeDrifts": "출구가 떠돌고 있다... (웜홀 이동)",
+            "portalAppears": "차원의 틈새가 열린다... (포탈 등장)",
+            "obstacleAppears": "벽에서 뭔가 꿈틀댄다... (촉수 등장)",
+            "moreObstacles": "더 많은 것들이 깨어난다... (촉수 증가)",
+            "maxObstacles": "사방에서 기어나온다... (촉수 최대)",
+            "trajectoryTimed": "직감을 믿어야 할 때... (궤도 제한)",
+            "trajectoryFlicker": "뭔가 시야를 가린다... (궤도 깜빡임)",
+            "trajectoryMinimal": "거의 보이지 않는다... (궤도 희미)",
+            "waterPressure": "수압이 높아진다... (중력 증가)"
+        },
+        "perfect": {
+            "phrase1": "완벽해!",
+            "phrase2": "최고다!",
+            "phrase3": "대단해!",
+            "phrase4": "야호!",
+            "phrase5": "차원이동 성공!"
+        },
+        "success": {
+            "phrase1": "휴~",
+            "phrase2": "살았다!",
+            "phrase3": "다행이야",
+            "phrase4": "위험했어",
+            "phrase5": "웜홀 진입!"
+        },
+        "teleport": {
+            "phrase1": "워프!",
+            "phrase2": "순간이동!",
+            "phrase3": "차원이동!",
+            "phrase4": "텔레포트!"
+        },
+        "pain": {
+            "phrase1": "아야!",
+            "phrase2": "으악!",
+            "phrase3": "아프다!",
+            "phrase4": "윽!",
+            "phrase5": "앗!",
+            "phrase6": "꺄악!"
+        },
+        "ranks": {
+            "S": "심연이 두려워한다",
+            "A": "인상적인 저항",
+            "B": "쓸만한 먹이",
+            "C": "평범한 제물",
+            "D": "보잘것없는 영혼"
+        },
+        "buttons": {
+            "next": "다음",
+            "start": "...가자",
+            "skip": "Skip"
+        },
+        "perkSelection": {
+            "title": "축복",
+            "subtitle": "해파리가 선물을 건넨다..."
+        },
+        "perks": {
+            "patience_orb": {
+                "name": "인내의 구슬",
+                "desc": "+1 인내심"
+            },
+            "calm_aura": {
+                "name": "고요한 기운",
+                "desc": "-20% 인내심 소모"
+            },
+            "deep_bond": {
+                "name": "깊은 유대",
+                "desc": "+25 최대 HP"
+            },
+            "soothing_touch": {
+                "name": "치유의 손길",
+                "desc": "클리어 시 10 HP 회복"
+            },
+            "ethereal_shield": {
+                "name": "영묘한 보호막",
+                "desc": "+15 보호막 (매 스테이지 충전)"
+            },
+            "buoyancy": {
+                "name": "부력",
+                "desc": "-25% 중력"
+            },
+            "current_rider": {
+                "name": "해류 타기",
+                "desc": "+15% 스윙 속도"
+            },
+            "rift_expansion": {
+                "name": "균열 확장",
+                "desc": "+25% 웜홀 크기"
+            },
+            "abyssal_sight": {
+                "name": "심연의 시야",
+                "desc": "항상 궤도 표시"
+            },
+            "elastic_membrane": {
+                "name": "탄성 피막",
+                "desc": "벽에서 튕김"
+            },
+            "tentacle_boost": {
+                "name": "촉수 부스트",
+                "desc": "공중에서 한 번 점프"
+            },
+            "time_dilation": {
+                "name": "시간 팽창",
+                "desc": "발사 시 0.5초 슬로모션"
+            }
+        }
+    },
+    "shop": {
+        "title": "상점",
+        "removeAds": "광고 제거",
+        "removeAdsDesc": "하단 배너 광고를 영구적으로 제거합니다",
+        "adFreeTitle": "광고 제거",
+        "adFreeDesc": "광고 없이 즐기고 있어요!",
+        "unlockAllFormulas": "모든 공식 해금",
+        "unlockAllFormulasDesc": "모든 공식을 영구적으로 해금합니다. 향후 추가되는 공식도 포함됩니다.",
+        "allFormulasUnlockedDesc": "모든 공식을 이용할 수 있어요!",
+        "loading": "로딩...",
+        "webOnly": "구매는 모바일 앱에서만 가능합니다",
+        "restorePurchases": "구매 복원",
+        "purchasesRestored": "구매가 복원되었습니다!",
+        "noPurchasesToRestore": "복원할 구매 내역이 없습니다"
+    }
+}
