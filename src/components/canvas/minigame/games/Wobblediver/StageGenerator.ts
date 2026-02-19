@@ -349,14 +349,19 @@ export class StageGenerator {
         width: number,
         abyssTop: number
     ): StageConfig['wormhole'] {
-        const padding = 60
+        // Padding must account for the wormhole's visual size (radius * widthScale + glow)
+        // At widthScale 2.5 and radius 35: visual extent ~35*2.5*1.36 ≈ 119px
+        const wormholeVisualRadius = 35 * 2.5 * 1.4 // radius * widthScale * glow scale
+        const padding = Math.max(60, Math.ceil(wormholeVisualRadius))
         const GOAL_RANGE_ABOVE_WATER = 180
         const GOAL_MIN_DISTANCE_FROM_WATER = 50
 
         const maxY = abyssTop - GOAL_MIN_DISTANCE_FROM_WATER
         const minY = abyssTop - GOAL_RANGE_ABOVE_WATER
 
-        const x = padding + rng.nextFloat(0, width - padding * 2)
+        // Ensure there's enough room after padding; fallback to center if too narrow
+        const availableWidth = width - padding * 2
+        const x = availableWidth > 0 ? padding + rng.nextFloat(0, availableWidth) : width / 2
         const y = rng.nextFloat(minY, maxY)
 
         const orientation: PortalOrientation = 'horizontal'

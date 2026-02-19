@@ -4569,11 +4569,11 @@ export class WobblediverScene extends BaseMiniGameScene {
         const maxRise = 150
         const waterSurfaceY = baseWaterLevel - this.currentStageConfig.waterLevelRise * maxRise
 
-        // Keep wormhole within bounds
-        const padding = 60
+        // Keep wormhole within bounds (padding accounts for visual size: radius * widthScale * glow)
+        const wormholePadding = Math.max(60, Math.ceil(this.wormhole.radius * this.currentWormholeScale * 1.4))
         const clampedX = Math.max(
-            this.boundaryLeft + padding,
-            Math.min(this.boundaryRight - padding, newX)
+            this.boundaryLeft + wormholePadding,
+            Math.min(this.boundaryRight - wormholePadding, newX)
         )
         const minWormholeY = this.boundaryTop + 100
         const maxWormholeY = waterSurfaceY - 50
